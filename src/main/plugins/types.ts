@@ -447,10 +447,13 @@ export type PluginHostResponse =
         | 'qishuiGetQrLogin'
         | 'qishuiCheckQrLogin'
         | 'qishuiClear'
+        | 'qqGetQrLogin'
+        | 'qqCheckQrLogin'
+        | 'qqClear'
       args: unknown[]
     }
   | {
-      /** Cancels an in-flight host API call, currently used by built-in NCM requests. */
+      /** Cancels an in-flight NCM request or QQ QR-window creation. */
       kind: 'api-cancel'
       requestId: string
       reason: string

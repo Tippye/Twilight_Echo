@@ -3,6 +3,7 @@ import { deletePluginSetting, getPluginSetting, setPluginSetting } from './setti
 import { initProxy } from './proxyBootstrap'
 import { redactSensitiveText } from '../security/secureStorage.ts'
 import { QISHUI_PLUGIN_ID } from './qishuiAuthBridge.ts'
+import { QQMUSIC_PLUGIN_ID } from './qqAuthBridge.ts'
 import type {
   PluginHostApiResult,
   PluginHostRequest,
@@ -108,6 +109,11 @@ interface TwilightPluginContext {
     }
     qishuiAuth?: {
       getQrLogin: () => Promise<unknown>
+      checkQrLogin: (key: string) => Promise<unknown>
+      clear: () => Promise<void>
+    }
+    qqAuth?: {
+      getQrLogin: (options?: { signal?: AbortSignal }) => Promise<unknown>
       checkQrLogin: (key: string) => Promise<unknown>
       clear: () => Promise<void>
     }
@@ -378,6 +384,13 @@ function createContext(
       getQrLogin: () => callQishuiAuthApi('qishuiGetQrLogin', []),
       checkQrLogin: (key) => callQishuiAuthApi('qishuiCheckQrLogin', [key]),
       clear: () => callQishuiAuthApi('qishuiClear', []).then(() => undefined)
+    }
+  }
+  if (pluginId === QQMUSIC_PLUGIN_ID) {
+    twilight.qqAuth = {
+      getQrLogin: (options) => callApi('auth', 'qqGetQrLogin', [], options?.signal),
+      checkQrLogin: (key) => callApi('auth', 'qqCheckQrLogin', [key]),
+      clear: () => callApi('auth', 'qqClear', []).then(() => undefined)
     }
   }
 

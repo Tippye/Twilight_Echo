@@ -84,6 +84,7 @@ function createWakeHarness(): {
       PLUGIN_ACTIVATE_TIMEOUT_MS: 5000,
       PLUGIN_DEACTIVATE_TIMEOUT_MS: 1500,
       QISHUI_PLUGIN_ID: 'com.twilightecho.provider.qishui',
+      QQMUSIC_PLUGIN_ID: 'com.twilightecho.provider.qqmusic',
       utilityProcess: {
         fork: () => {
           forks++

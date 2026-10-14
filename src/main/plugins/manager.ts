@@ -61,6 +61,7 @@ import { redactSensitiveText } from '../security/secureStorage.ts'
 import { protectProviderMedia } from '../security/remoteMediaGrants.ts'
 import { normalizeThemeContribution, normalizeUiContribution } from './themeContribution.ts'
 import { QISHUI_PLUGIN_ID, QishuiAuthBridge } from './qishuiAuthBridge.ts'
+import { QQMUSIC_PLUGIN_ID, QqAuthBridge } from './qqAuthBridge.ts'
 import {
   DEFAULT_PLUGIN_HOST_IDLE_TIMEOUT_MS,
   isPluginHostedPlaybackUrl,
@@ -254,6 +255,8 @@ export class TwilightPluginManager extends EventEmitter {
   private readonly stopOperations = new Map<string, Promise<void>>()
   private readonly internalNcmRequests = new Map<string, AbortController>()
   private readonly qishuiAuth = new QishuiAuthBridge()
+  private readonly qqAuth = new QqAuthBridge()
+  private readonly qqAuthRequests = new Map<string, AbortController>()
   private readonly loggedThemeCompatibilityNotes = new Set<string>()
   /**
    * Every state-changing lifecycle action for one plugin shares this queue.
@@ -948,6 +951,7 @@ export class TwilightPluginManager extends EventEmitter {
     // The Qishui auth bridge is bound to the live host process; stopping it
     // would discard the user's login, so that plugin stays resident.
     if (id === QISHUI_PLUGIN_ID) return false
+    if (id === QQMUSIC_PLUGIN_ID && this.qqAuth.hasActiveLogin()) return false
     // Local media URLs remain usable by the player after the provider RPC ends,
     // including paused playback and prepared queue entries. Hibernation closes
     // the server and invalidates those URLs, so retain it for this host's lifetime.
@@ -1222,6 +1226,10 @@ export class TwilightPluginManager extends EventEmitter {
       if (descriptor.id === QISHUI_PLUGIN_ID) {
         void this.qishuiAuth.clear(descriptor.paths.versionRoot).catch(() => undefined)
       }
+      if (descriptor.id === QQMUSIC_PLUGIN_ID) {
+        this.abortQqAuthRequests(descriptor.id)
+        void this.qqAuth.clear(descriptor.paths.versionRoot).catch(() => undefined)
+      }
       this.running.delete(descriptor.id)
       this.hostIdle?.clear(descriptor.id)
       if (
@@ -1287,6 +1295,10 @@ export class TwilightPluginManager extends EventEmitter {
       }
       this.rpcCalls.cancelPlugin(id, `Plugin ${id} is no longer running.`)
       this.abortInternalNcmRequests(id, `Plugin ${id} is no longer running.`)
+      if (id === QQMUSIC_PLUGIN_ID) {
+        this.abortQqAuthRequests(id)
+        await this.qqAuth.clear().catch(() => undefined)
+      }
       return
     }
     const trackedStop = this.stopRunningPlugin(id, running).finally(() => {
@@ -1303,6 +1315,10 @@ export class TwilightPluginManager extends EventEmitter {
     }
     this.rpcCalls.cancelPlugin(id, `Plugin ${id} was stopped before its RPC completed.`)
     this.abortInternalNcmRequests(id, `Plugin ${id} was stopped before its internal API completed.`)
+    if (id === QQMUSIC_PLUGIN_ID) {
+      this.abortQqAuthRequests(id)
+      await this.qqAuth.clear(running.descriptor.paths.versionRoot).catch(() => undefined)
+    }
     const requestId = randomUUID()
     try {
       running.process.postMessage({ kind: 'deactivate', requestId } satisfies PluginHostRequest)
@@ -1402,6 +1418,9 @@ export class TwilightPluginManager extends EventEmitter {
     }
     if (message.kind === 'api-cancel') {
       this.abortInternalNcmRequest(id, message.requestId, message.reason)
+      this.qqAuthRequests
+        .get(`${id}\u0000${message.requestId}`)
+        ?.abort(new Error('QQ 登录请求已取消'))
       return
     }
     if (message.kind === 'api-call') {
@@ -1412,12 +1431,25 @@ export class TwilightPluginManager extends EventEmitter {
           : null
       const requestKey = controller ? this.internalNcmRequestKey(id, message.requestId) : null
       if (controller && requestKey) this.internalNcmRequests.set(requestKey, controller)
+      const qqController =
+        message.namespace === 'auth' && message.method === 'qqGetQrLogin'
+          ? new AbortController()
+          : null
+      const qqRequestKey = qqController ? `${id}\u0000${message.requestId}` : null
+      if (qqController && qqRequestKey) this.qqAuthRequests.set(qqRequestKey, qqController)
       try {
-        const result = await this.handleApiCall(id, message, controller?.signal)
+        const result = await this.handleApiCall(
+          id,
+          message,
+          qqController?.signal || controller?.signal
+        )
         if (this.running.get(id) === running) running.process.postMessage(result)
       } finally {
         if (requestKey && this.internalNcmRequests.get(requestKey) === controller) {
           this.internalNcmRequests.delete(requestKey)
+        }
+        if (qqRequestKey && this.qqAuthRequests.get(qqRequestKey) === qqController) {
+          this.qqAuthRequests.delete(qqRequestKey)
         }
       }
     }
@@ -1464,7 +1496,9 @@ export class TwilightPluginManager extends EventEmitter {
           kind: 'api-result',
           requestId: message.requestId,
           ok: true,
-          value: await this.handleQishuiAuthApiCall(id, message)
+          value: message.method.startsWith('qq')
+            ? await this.handleQqAuthApiCall(id, message, signal)
+            : await this.handleQishuiAuthApiCall(id, message)
         }
       }
       if (message.namespace !== 'player') throw new Error('未知 API 命名空间')
@@ -1653,6 +1687,37 @@ export class TwilightPluginManager extends EventEmitter {
       )
     }
     throw new Error('未知内部 API')
+  }
+
+  private abortQqAuthRequests(pluginId: string): void {
+    for (const [key, controller] of this.qqAuthRequests) {
+      if (!key.startsWith(`${pluginId}\u0000`)) continue
+      controller.abort(new Error('QQ 登录请求已取消'))
+      this.qqAuthRequests.delete(key)
+    }
+  }
+
+  private async handleQqAuthApiCall(
+    pluginId: string,
+    message: Extract<PluginHostResponse, { kind: 'api-call' }>,
+    signal?: AbortSignal
+  ): Promise<unknown> {
+    if (pluginId !== QQMUSIC_PLUGIN_ID) throw new Error('QQ 登录 API 仅允许 QQ 音乐插件访问')
+    this.requirePermission(pluginId, 'network', 'twilight.qqAuth')
+    const running = this.running.get(pluginId)
+    if (!running) throw new Error('插件未运行')
+    const versionRoot = running.descriptor.paths.versionRoot
+    if (message.method === 'qqGetQrLogin') return this.qqAuth.getQrLogin(versionRoot, signal)
+    if (message.method === 'qqCheckQrLogin') {
+      const key = message.args[0]
+      if (typeof key !== 'string' || !key || key.length > 128) throw new Error('QQ 二维码密钥无效')
+      return this.qqAuth.checkQrLogin(versionRoot, key)
+    }
+    if (message.method === 'qqClear') {
+      await this.qqAuth.clear(versionRoot)
+      return null
+    }
+    throw new Error('未知 QQ 登录 API')
   }
 
   private async handleQishuiAuthApiCall(

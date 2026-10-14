@@ -251,6 +251,15 @@ async function fixture(
       QISHUI_PLUGIN_ID: 'com.twilightecho.provider.qishui',
       QishuiAuthBridge: class {}
     },
+    './qqAuthBridge.ts': {
+      QQMUSIC_PLUGIN_ID: 'com.twilightecho.provider.qqmusic',
+      QqAuthBridge: class {
+        hasActiveLogin() {
+          return false
+        }
+        async clear() {}
+      }
+    },
     './packageSecurity.ts': { resolvePluginFile: (file) => file },
     '../security/remoteMediaGrants.ts': media,
     '../audio/providerPlaybackIdentity.ts': identities
@@ -372,6 +381,97 @@ test('only the host enables AutoMix preparation for the bundled provider', async
   ])
   message = f.children[0].messages.filter((m) => m.kind === 'provider-call').at(-1)
   assert.equal(message.args[1]._twilightAutoMixPrepare, false)
+})
+
+test('QQ auth calls are confined to the QQ plugin with network permission', async (t) => {
+  const f = await fixture(t, {
+    pluginId: 'com.twilightecho.provider.qqmusic',
+    providerId: 'qqmusic'
+  })
+  const waking = f.manager.callProvider('qqmusic', 'searchSongs', ['wake'])
+  await f.activationStarted
+  f.register()
+  f.activate()
+  await waking
+  let calls = 0
+  f.manager.qqAuth = {
+    hasActiveLogin: () => false,
+    async getQrLogin(root) {
+      assert.equal(root, f.directory)
+      calls++
+      return { key: 'local-key' }
+    },
+    async clear() {}
+  }
+  const request = {
+    kind: 'api-call',
+    requestId: 'qq-auth',
+    namespace: 'auth',
+    method: 'qqGetQrLogin',
+    args: []
+  }
+  const accepted = await f.manager.handleApiCall(f.descriptor.id, request)
+  assert.equal(accepted.ok, true)
+  assert.deepEqual(accepted.value, { key: 'local-key' })
+  f.descriptor.permissions = []
+  const refused = await f.manager.handleApiCall(f.descriptor.id, request)
+  assert.equal(refused.ok, false)
+  assert.equal(calls, 1)
+  const other = await fixture(t)
+  const foreign = await other.manager.handleApiCall(other.descriptor.id, request)
+  assert.equal(foreign.ok, false)
+  assert.match(foreign.error, /仅允许 QQ 音乐插件/)
+})
+
+test('QQ host API cancellation aborts window creation without serializing a signal', async (t) => {
+  const f = await fixture(t, {
+    pluginId: 'com.twilightecho.provider.qqmusic',
+    providerId: 'qqmusic'
+  })
+  const waking = f.manager.callProvider('qqmusic', 'searchSongs', ['wake'])
+  await f.activationStarted
+  f.register()
+  f.activate()
+  await waking
+  let signalSeen, started
+  const begun = new Promise((done) => {
+    started = done
+  })
+  f.manager.qqAuth = {
+    hasActiveLogin: () => true,
+    getQrLogin(_root, signal) {
+      signalSeen = signal
+      started()
+      return new Promise((_done, reject) =>
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+      )
+    },
+    async clear() {}
+  }
+  const request = {
+    kind: 'api-call',
+    requestId: 'qq-auth-cancel',
+    namespace: 'auth',
+    method: 'qqGetQrLogin',
+    args: []
+  }
+  const pending = f.manager.handleHostMessage(f.descriptor.id, request)
+  await begun
+  assert.equal(f.manager.canHibernatePlugin(f.descriptor.id), false)
+  assert.deepEqual(request.args, [])
+  await f.manager.handleHostMessage(f.descriptor.id, {
+    kind: 'api-cancel',
+    requestId: request.requestId,
+    reason: 'provider timeout'
+  })
+  await pending
+  assert.equal(signalSeen.aborted, true)
+  assert.equal(f.manager.qqAuthRequests.size, 0)
+  const result = f.children[0].messages.find(
+    (m) => m.kind === 'api-result' && m.requestId === request.requestId
+  )
+  assert.equal(result.ok, false)
+  assert.match(result.error, /QQ 登录请求已取消/)
 })
 
 test('AutoMix materialization is bundled-only, cancellable and gated by the current mode', async (t) => {
