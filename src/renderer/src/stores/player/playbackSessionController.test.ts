@@ -31,6 +31,7 @@ function fixture() {
   let resets = 0
   let pending = false
   let restoredPosition = 0
+  const skipped: number[] = []
   const controller = createPlaybackSessionController({
     queue,
     originalQueue,
@@ -78,7 +79,8 @@ function fixture() {
     setAutoAdvanceInFlight: () => {},
     getAdvancingFromEndedTrackId: () => '',
     setAdvancingFromEndedTrackId: () => {},
-    getNativePlaybackActive: () => false
+    getNativePlaybackActive: () => false,
+    onSkippedTracks: (count: number) => skipped.push(count)
   })
   function restore(track: Track, tracks: Track[], index: number) {
     const session: PlaybackSession = {
@@ -107,6 +109,7 @@ function fixture() {
     resets: () => resets,
     pending: () => pending,
     pendingPosition: () => restoredPosition,
+    skipped,
     seekDuringLoad: (position: number) => {
       pending = true
       restoredPosition = position
@@ -186,6 +189,34 @@ test('automatic restore strips stale provider URLs from both the queue and selec
   assert.equal(state.queue.value[0].streamUrl, null)
   assert.equal(state.currentTrack.value?.streamUrl, null)
   assert.equal(state.currentTrack.value?.queueEntryId, 'entry')
+})
+
+test('automatic restore filters unsupported rows and remaps saved selection without moving metadata', () => {
+  const blocked: Track = { ...makeTrack('blocked', 'blocked-entry'), playbackStatus: 'unsupported' }
+  const available = makeTrack('available', 'available-entry')
+  const rows = [blocked, available]
+  for (const selected of [blocked, available]) {
+    const state = fixture()
+    state.restore(selected, rows, selected === blocked ? 0 : 1)
+    assert.deepEqual(
+      state.queue.value.map((item) => item.id),
+      ['available']
+    )
+    assert.equal(state.queueIndex.value, 0)
+    assert.equal(state.currentTrack.value?.queueEntryId, 'available-entry')
+    assert.equal(state.currentTime.value, selected === available ? 25 : 0)
+    assert.deepEqual(state.skipped, [1])
+    assert.equal(rows.length, 2)
+    const previousQueue = state.queue.value
+    const previousMode = state.playMode.value
+    const resets = state.resets()
+    state.restore(blocked, [blocked], 0)
+    assert.equal(state.queue.value, previousQueue)
+    assert.equal(state.playMode.value, previousMode)
+    assert.equal(state.currentTrack.value?.queueEntryId, 'available-entry')
+    assert.equal(state.resets(), resets)
+    assert.deepEqual(state.skipped, [1, 1])
+  }
 })
 
 test('playing another song after a paused session restore does not inherit its position', () => {

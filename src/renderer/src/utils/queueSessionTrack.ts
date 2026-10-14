@@ -1,5 +1,6 @@
 import type { Track } from '@renderer/types/music'
 import { getTrackSource } from '@renderer/utils/playerTrackUtils.ts'
+import { cloneTrackArtistRefs, isTrackReferenceString } from '../../../shared/track.ts'
 import {
   MAX_SESSION_QUEUE_ENTRIES,
   type NamedQueueSession,
@@ -44,13 +45,17 @@ export function captureQueueSession(
 
 export function saveQueueTrack(track: Track): SavedQueueTrack {
   const source = getTrackSource(track)
+  const artists = cloneTrackArtistRefs(track.artists)
   return {
     id: track.id,
+    ...(track.playbackStatus === 'unsupported' ? { playbackStatus: 'unsupported' as const } : {}),
     queueEntryId: track.queueEntryId ?? `queue:${crypto.randomUUID()}`,
     source,
     title: track.title,
     artist: track.artist,
+    ...(artists ? { artists } : {}),
     album: track.album,
+    ...(isTrackReferenceString(track.albumId) ? { albumId: track.albumId } : {}),
     duration: Number.isFinite(track.duration) ? Math.max(0, track.duration) : 0,
     ...(source === 'local'
       ? {
@@ -74,13 +79,17 @@ export function saveQueueTrack(track: Track): SavedQueueTrack {
 }
 
 export function restoreQueueTrackIdentity(track: SavedQueueTrack): Track {
+  const artists = cloneTrackArtistRefs(track.artists)
   return {
     id: track.id,
+    ...(track.playbackStatus === 'unsupported' ? { playbackStatus: 'unsupported' as const } : {}),
     queueEntryId: track.queueEntryId,
     source: track.source,
     title: track.title,
     artist: track.artist,
+    ...(artists ? { artists } : {}),
     album: track.album,
+    ...(isTrackReferenceString(track.albumId) ? { albumId: track.albumId } : {}),
     duration: track.duration,
     filePath: track.source === 'local' ? (track.filePath ?? '') : '',
     fileName: track.title,

@@ -1,4 +1,5 @@
 import type { Track } from '../types/music'
+import { cloneTrackArtistRefs, isTrackReferenceString } from '../../../shared/track.ts'
 
 export const PLAYBACK_QUEUE_ROW_HEIGHT = 54
 export const PLAYBACK_QUEUE_OVERSCAN = 6
@@ -24,11 +25,13 @@ export interface PlaybackQueueWindow {
 export function toPlaybackQueueSnapshot(track: Track): Track {
   return {
     id: track.id,
+    ...(track.playbackStatus === 'unsupported' ? { playbackStatus: 'unsupported' as const } : {}),
     queueEntryId: track.queueEntryId,
     title: track.title,
     artist: track.artist,
-    artists: track.artists,
+    artists: cloneTrackArtistRefs(track.artists),
     album: track.album,
+    ...(isTrackReferenceString(track.albumId) ? { albumId: track.albumId } : {}),
     filePath: track.filePath,
     fileName: track.fileName,
     dir: track.dir,
@@ -97,6 +100,7 @@ export function patchPlaybackQueueTrack(tracks: Track[], updatedTrack: Track): T
 export function matchesPlaybackQueueSnapshot(track: Track, snapshot: Track): boolean {
   return (
     track.id === snapshot.id &&
+    track.playbackStatus === snapshot.playbackStatus &&
     track.title === snapshot.title &&
     track.artist === snapshot.artist &&
     (track.artists === snapshot.artists ||
@@ -106,6 +110,7 @@ export function matchesPlaybackQueueSnapshot(track: Track, snapshot: Track): boo
             artist.id === snapshot.artists![i].id && artist.name === snapshot.artists![i].name
         ))) &&
     track.album === snapshot.album &&
+    track.albumId === snapshot.albumId &&
     track.filePath === snapshot.filePath &&
     track.fileName === snapshot.fileName &&
     track.dir === snapshot.dir &&

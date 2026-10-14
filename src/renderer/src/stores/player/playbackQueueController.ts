@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import type { Track } from '@renderer/types/music'
 import type { PlayMode } from '@renderer/types/settings'
 import { shuffleArray } from '@renderer/utils/playerQueueUtils.ts'
+import { isTrackPlaybackSupported } from '@renderer/utils/trackPlaybackSupport.ts'
 import { createQueueCommandController } from '@renderer/stores/player/queueCommandController.ts'
 
 export type PersonalizedStreamKey = 'fm' | 'radar'
@@ -29,6 +30,7 @@ export interface PlaybackQueueControllerOptions {
   getPosition: () => number
   prepareSelection: (track: Track | null, position: number) => void
   onQueueNotice?: (label: string, revision: number) => void
+  onSkippedTracks?: (count: number) => void
   exitHeartModeForQueueEdit: () => void
 }
 
@@ -143,6 +145,10 @@ export function createPlaybackQueueController(options: PlaybackQueueControllerOp
   }
 
   function enqueueTrack(track: Track): void {
+    if (!isTrackPlaybackSupported(track)) {
+      options.onSkippedTracks?.(1)
+      return
+    }
     options.exitHeartModeForQueueEdit()
     endPersonalizedStream()
     commands.add([track], options.queue.value.length, options.originalQueue.value.length)
@@ -150,6 +156,10 @@ export function createPlaybackQueueController(options: PlaybackQueueControllerOp
 
   function appendQueueTracks(tracks: readonly Track[]): void {
     if (tracks.length === 0) return
+    if (!tracks.some(isTrackPlaybackSupported)) {
+      options.onSkippedTracks?.(tracks.length)
+      return
+    }
     options.exitHeartModeForQueueEdit()
     endPersonalizedStream()
     commands.add(tracks, options.queue.value.length, options.originalQueue.value.length, {
@@ -162,6 +172,10 @@ export function createPlaybackQueueController(options: PlaybackQueueControllerOp
     tracks: readonly Track[]
   ): boolean {
     if (tracks.length === 0 || !isPersonalizedStreamSessionCurrent(session)) return false
+    if (!tracks.some(isTrackPlaybackSupported)) {
+      options.onSkippedTracks?.(tracks.length)
+      return false
+    }
     const additions = commands.add(
       tracks,
       options.queue.value.length,
@@ -179,6 +193,10 @@ export function createPlaybackQueueController(options: PlaybackQueueControllerOp
   }
 
   function playNextTrack(track: Track): void {
+    if (!isTrackPlaybackSupported(track)) {
+      options.onSkippedTracks?.(1)
+      return
+    }
     options.exitHeartModeForQueueEdit()
     endPersonalizedStream()
     const insertAt = options.queueIndex.value >= 0 ? options.queueIndex.value + 1 : 0

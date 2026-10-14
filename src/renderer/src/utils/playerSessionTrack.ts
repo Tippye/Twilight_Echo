@@ -1,5 +1,6 @@
 import type { Track } from '../types/music'
 import { getTrackSource } from './playerTrackUtils.ts'
+import { cloneTrackArtistRefs, isTrackReferenceString } from '../../../shared/track.ts'
 
 const MAX_SESSION_TRACK_INLINE_COVER_LENGTH = 256 * 1024
 
@@ -15,11 +16,13 @@ export function cloneTrackForPlaybackSession(track: Track): Track {
       : track.cover
   const cloned: Track = {
     id: track.id,
+    ...(track.playbackStatus === 'unsupported' ? { playbackStatus: 'unsupported' as const } : {}),
     queueEntryId: track.queueEntryId,
     title: track.title,
     artist: track.artist,
-    artists: track.artists?.map((item) => ({ ...item })),
+    artists: cloneTrackArtistRefs(track.artists),
     album: track.album,
+    ...(isTrackReferenceString(track.albumId) ? { albumId: track.albumId } : {}),
     filePath: track.filePath,
     fileName: track.fileName,
     dir: track.dir,

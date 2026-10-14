@@ -19,6 +19,11 @@ import {
 } from 'vue'
 import { shouldApplyNativeTimePosition } from './playerProgressPolicy.ts'
 import type { Track } from '../types/music'
+import {
+  isTrackPlaybackSupported,
+  UNSUPPORTED_TRACK_PLAYBACK_MESSAGE,
+  unsupportedTracksNotice
+} from '../utils/trackPlaybackSupport.ts'
 import type {
   AudioProcessingSettings,
   OutputConfig,
@@ -1002,7 +1007,8 @@ const playbackSessionController = createPlaybackSessionController({
   setAdvancingFromEndedTrackId: (value) => {
     advancingFromEndedTrackId = value
   },
-  getNativePlaybackActive: () => nativePlaybackActive
+  getNativePlaybackActive: () => nativePlaybackActive,
+  onSkippedTracks: notifyUnsupportedTracks
 })
 const {
   persistSelectedTrackSession,
@@ -1210,6 +1216,10 @@ function activateCurrentTrack(
   track: Track,
   options: { resetUi?: boolean; position?: number } = {}
 ): void {
+  if (!isTrackPlaybackSupported(track)) {
+    setAudioEngineError(UNSUPPORTED_TRACK_PLAYBACK_MESSAGE)
+    return
+  }
   const next = hydratePlaybackTrack(track)
   // Fresh object every activation so cover/lyrics watchers always rebind.
   currentTrack.value = { ...next }
@@ -1866,6 +1876,13 @@ let nativeHistoryRestartPending = false
 const rendererPlayModeBoundaryPending = ref(false)
 let dominantColorRequestId = 0
 
+function notifyUnsupportedTracks(count: number): void {
+  useAppNoticeStore().pushNotice({
+    message: unsupportedTracksNotice(count),
+    dedupeKey: 'unsupported-tracks'
+  })
+}
+
 const playbackQueueController = createPlaybackQueueController({
   currentTrack,
   queue,
@@ -1882,6 +1899,7 @@ const playbackQueueController = createPlaybackQueueController({
   queueNativeQueueStateSync,
   setAudioEngineError,
   clearAutomaticLyricsBaselines: lyricsLoader.clearLyricsBaselines,
+  onSkippedTracks: notifyUnsupportedTracks,
   getPosition: getLatestPlaybackTime,
   prepareSelection: playbackSessionController.prepareQueueSelection,
   exitHeartModeForQueueEdit: () => exitHeartModeForManualQueueReplacement(),
@@ -2032,6 +2050,10 @@ const queueSessions = createQueueSessionController({
   getPosition: getLatestPlaybackTime,
   getSources: getQueueSessionSources,
   prepare: (result, mode) => {
+    if (!result.queue.some(isTrackPlaybackSupported)) {
+      throw new Error(UNSUPPORTED_TRACK_PLAYBACK_MESSAGE)
+    }
+    const savedTrack = result.queue[result.index]
     exitHeartModeForManualQueueReplacement()
     endPersonalizedStream()
     playMode.value = mode
@@ -2042,10 +2064,15 @@ const queueSessions = createQueueSessionController({
       synchronize: false,
       label: '恢复会话'
     })
-    const track = result.queue[result.index]
+    const track = queue.value[queueIndex.value] ?? null
+    const sameSelection =
+      !!track &&
+      track.queueEntryId === savedTrack?.queueEntryId &&
+      track.id === savedTrack?.id &&
+      track.source === savedTrack?.source
     playbackSessionController.prepareQueueSelection(
       track,
-      clampCuePlaybackPosition(track, result.position)
+      sameSelection ? clampCuePlaybackPosition(track, result.position) : 0
     )
     persistPlaybackSessionAfterQueueMutation()
     void queueNativeQueueStateSync().catch((error) => setAudioEngineError(String(error)))
@@ -2262,6 +2289,7 @@ async function isUsableLocalPlaybackFile(filePath: string): Promise<boolean> {
 }
 
 async function resolvePlayTarget(track: Track): Promise<string> {
+  if (!isTrackPlaybackSupported(track)) throw new Error(UNSUPPORTED_TRACK_PLAYBACK_MESSAGE)
   const source = getTrackSource(track)
   if (source === 'local') {
     const authorized = await window.api.fs.isAudioFileAuthorized(track.filePath)
@@ -2939,6 +2967,10 @@ function scheduleCrossfadeIfNeeded(): void {
 }
 
 async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
+  if (!isTrackPlaybackSupported(track)) {
+    setAudioEngineError(UNSUPPORTED_TRACK_PLAYBACK_MESSAGE)
+    return
+  }
   playbackHistoryController.beginPlaybackAttempt()
   nativeHistoryRestartPending = false
   // Capture previous playback identity before this load mutates state.
@@ -3673,6 +3705,7 @@ export function usePlayerStore() {
     endPersonalizedStream,
     activateCurrentTrack,
     loadAndPlay,
+    onSkippedTracks: notifyUnsupportedTracks,
     replaceQueue: (nextQueue, index, original) =>
       playbackQueueController.commands.replace(nextQueue, index, {
         original,

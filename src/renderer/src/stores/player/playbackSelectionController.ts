@@ -3,6 +3,10 @@ import type { Track } from '@renderer/types/music'
 import type { PlayMode } from '@renderer/types/settings'
 import { shuffleArray } from '@renderer/utils/playerQueueUtils.ts'
 import {
+  filterPlaybackSupportedTracks,
+  isTrackPlaybackSupported
+} from '@renderer/utils/trackPlaybackSupport.ts'
+import {
   createPlaybackQueueSnapshotCache,
   toPlaybackQueueSnapshots
 } from '@renderer/utils/playbackQueueVirtualization.ts'
@@ -18,6 +22,7 @@ interface PlaybackSelectionOptions {
   activateCurrentTrack: (track: Track, options: { resetUi: boolean; position: number }) => void
   loadAndPlay: (track: Track, position?: number) => Promise<void>
   replaceQueue: (queue: Track[], index: number, original: Track[]) => void
+  onSkippedTracks?: (count: number) => void
 }
 
 export function createPlaybackSelectionController(options: PlaybackSelectionOptions) {
@@ -28,6 +33,18 @@ export function createPlaybackSelectionController(options: PlaybackSelectionOpti
     trackList?: Track[],
     context?: { heartModePlaylistId?: number | null }
   ): void {
+    if (!isTrackPlaybackSupported(track)) {
+      options.onSkippedTracks?.(
+        trackList?.filter((item) => !isTrackPlaybackSupported(item)).length || 1
+      )
+      return
+    }
+    if (trackList) {
+      const playable = filterPlaybackSupportedTracks(trackList)
+      const skipped = trackList.length - playable.length
+      if (skipped) options.onSkippedTracks?.(skipped)
+      trackList = playable
+    }
     if (trackList) {
       options.setHeartModeContext(context?.heartModePlaylistId ?? null)
       options.exitHeartModeForManualQueueReplacement()

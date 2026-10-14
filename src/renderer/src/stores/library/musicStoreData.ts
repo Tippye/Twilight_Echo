@@ -1,4 +1,5 @@
 import type { Track } from '../../types/music'
+import { cloneTrackArtistRefs, isTrackReferenceString } from '../../../../shared/track.ts'
 import { getTrackSource } from '../../utils/playerTrackUtils.ts'
 import type { DerivedTrackGroup, Playlist } from './musicStoreTypes.ts'
 
@@ -154,19 +155,21 @@ export function isTrackUnderLibraryRoot(filePath: string, normalizedRoot: string
  */
 export function toPlaylistTrackSnapshot(track: Track): Track {
   const source = getTrackSource(track)
+  const artists = cloneTrackArtistRefs(track.artists)
   // 可选键一律条件展开：快照键集合与源轨保持一致（只剥离重载荷键），避免
   // undefined 值键改变持久化 JSON 形状与深比较语义。
   return {
     id: track.id,
+    ...(track.playbackStatus === 'unsupported' ? { playbackStatus: 'unsupported' as const } : {}),
     ...(track.queueEntryId !== undefined ? { queueEntryId: track.queueEntryId } : {}),
     title: track.title,
     artist: track.artist,
-    ...(track.artists !== undefined ? { artists: track.artists.map((item) => ({ ...item })) } : {}),
+    ...(artists ? { artists } : {}),
     album: track.album,
     ...(track.releaseDate !== undefined ? { releaseDate: track.releaseDate } : {}),
     ...(track.genre !== undefined ? { genre: track.genre } : {}),
     ...(track.albumArtist !== undefined ? { albumArtist: track.albumArtist } : {}),
-    ...(track.albumId !== undefined ? { albumId: track.albumId } : {}),
+    ...(isTrackReferenceString(track.albumId) ? { albumId: track.albumId } : {}),
     ...(track.discNumber !== undefined ? { discNumber: track.discNumber } : {}),
     ...(track.trackNumber !== undefined ? { trackNumber: track.trackNumber } : {}),
     filePath: track.filePath,

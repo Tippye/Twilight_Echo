@@ -1,11 +1,12 @@
 import type { BpmAnalysisResult } from '../../../shared/audioEngineTypes.ts'
-import type { TrackSource, TrackMetadataMatch } from '../../../shared/track.ts'
+import type { TrackSource, TrackMetadataMatch, TrackArtistRef } from '../../../shared/track.ts'
 import type { LyricSource } from '../../../shared/lyricsManagement.ts'
 export type { BpmTempoSegment, BpmAnalysisResult } from '../../../shared/audioEngineTypes.ts'
 export type {
   BuiltInTrackSource,
   TrackSource,
   MetadataMatchConfidence,
+  TrackArtistRef,
   TrackMetadataMatch
 } from '../../../shared/track.ts'
 export type { LyricSource } from '../../../shared/lyricsManagement.ts'
@@ -14,18 +15,10 @@ import type { NcmPlaybackQuality } from './settings'
 import type { CueRange, ParsedCueSheet } from '../../../shared/cue.ts'
 import type { NetworkEntry } from '../../../shared/networkSources.ts'
 
-/**
- * 单个歌手的 provider 侧身份。`artist` 展示串是同名歌手无法区分的，跳转歌手页
- * 必须走这里的 id。顺序与 `artist` 的 ' / ' 分段严格一致，`id` 缺失时也保留条目，
- * 否则首位歌手会错位到第二位的 id 上。
- */
-export interface TrackArtistRef {
-  id?: string | number
-  name: string
-}
-
 export interface Track {
   id: string
+  /** Metadata remains visible when the current source cannot play the track. */
+  playbackStatus?: 'unsupported'
   /**
    * Stable playback-queue entry identity. A track may occur more than once in
    * a queue, so UI commands must not use the provider track id as a row key.

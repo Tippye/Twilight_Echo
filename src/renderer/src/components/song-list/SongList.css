@@ -2580,3 +2580,7 @@
     font-size: 8px;
   }
 }
+.track-row.playback-unsupported {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

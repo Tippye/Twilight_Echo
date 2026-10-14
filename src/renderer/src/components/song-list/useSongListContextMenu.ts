@@ -8,6 +8,7 @@ import {
   type Ref
 } from 'vue'
 import type { Track } from '../../types/music'
+import { isTrackPlaybackSupported } from '../../utils/trackPlaybackSupport.ts'
 import type { PlaylistActions } from './types'
 
 type UseSongListContextMenuOptions = PlaylistActions & {
@@ -91,7 +92,9 @@ export function useSongListContextMenu({
     const track = selectedTrack.value
     return !!track && (!!viewArtist || !!viewAlbum)
   })
-  const canPlayNextSelectedTrack = computed(() => !!selectedTrack.value && !!playNext)
+  const canPlayNextSelectedTrack = computed(
+    () => !!selectedTrack.value && isTrackPlaybackSupported(selectedTrack.value) && !!playNext
+  )
 
   function onContextMenu(event: MouseEvent, track: Track): void {
     event.preventDefault()

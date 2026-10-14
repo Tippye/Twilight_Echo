@@ -220,11 +220,15 @@ export interface TrackArtistRef {
 
 export interface Track {
   id: string
+  /** Metadata is available, but this provider cannot currently play the track. */
+  playbackStatus?: 'unsupported'
   title: string
   artist: string
   /** Structured artist identities behind the `artist` display string. */
   artists?: TrackArtistRef[]
   album: string
+  /** Provider album identity used by the existing album navigation. */
+  albumId?: string
   filePath: string
   fileName: string
   duration: number

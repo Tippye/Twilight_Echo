@@ -13,6 +13,7 @@ import {
 import type { ProviderHomeSectionPresentation } from '../../../shared/providerHome'
 import { useBackHandler } from '../app/useBackStack'
 import type { Track, TrackArtistRef } from '../types/music'
+import { isTrackPlaybackSupported } from '../utils/trackPlaybackSupport.ts'
 import { copyTrackNames } from '../utils/copyTrackNames'
 import {
   useNcmStore,
@@ -2618,6 +2619,7 @@ function playStreamingTrack(track: Track, tracks: Track[]): void {
 }
 
 async function playTrackFromCurrentDetail(track: Track): Promise<void> {
+  if (!isTrackPlaybackSupported(track)) return
   const tracks = await resolveDetailPlaybackQueue()
   const resolvedTrack = tracks.find((item) => item.id === track.id) ?? track
   playStreamingTrack(resolvedTrack, tracks)
@@ -2675,14 +2677,14 @@ async function resolveDetailPlaybackQueue(): Promise<Track[]> {
 async function playAllDetailTracks(): Promise<void> {
   const tracks = await resolveDetailPlaybackQueue()
   if (tracks.length === 0) return
-  playStreamingTrack(tracks[0], tracks)
+  playStreamingTrack(tracks.find(isTrackPlaybackSupported) ?? tracks[0], tracks)
 }
 
 async function shufflePlayDetailTracks(): Promise<void> {
   const tracks = await resolveDetailPlaybackQueue()
   if (tracks.length === 0) return
   const shuffled = shuffleArray(tracks)
-  playStreamingTrack(shuffled[0], shuffled)
+  playStreamingTrack(shuffled.find(isTrackPlaybackSupported) ?? shuffled[0], shuffled)
 }
 
 function isDetailRowLiking(track: Track): boolean {

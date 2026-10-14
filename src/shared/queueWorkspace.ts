@@ -1,5 +1,6 @@
 import type { PlayMode } from './audioEngineTypes.ts'
 import { trackCueRangePropertyIsValid, type CueRange } from './cue.ts'
+import { isTrackArtistRefs, isTrackReferenceString, type TrackArtistRef } from './track.ts'
 
 export const MAX_QUEUE_SESSIONS = 20
 export const MAX_SESSION_QUEUE_ENTRIES = 20_000
@@ -8,11 +9,14 @@ export const MAX_PLAYBACK_ORDER_ENTRIES = 200
 
 export interface SavedQueueTrack {
   id: string
+  playbackStatus?: 'unsupported'
   queueEntryId: string
   source: string
   title: string
   artist: string
+  artists?: TrackArtistRef[]
   album: string
+  albumId?: string
   duration: number
   filePath?: string
   subTrack?: string
@@ -58,6 +62,9 @@ const positive = (value: unknown): value is number =>
 
 export function isSavedQueueTrack(value: unknown): value is SavedQueueTrack {
   if (!object(value)) return false
+  if (value.playbackStatus !== undefined && value.playbackStatus !== 'unsupported') return false
+  if (value.albumId !== undefined && !isTrackReferenceString(value.albumId)) return false
+  if (value.artists !== undefined && !isTrackArtistRefs(value.artists)) return false
   if (!identity(value.id) || !identity(value.queueEntryId) || !identity(value.source)) return false
   if (!text(value.title) || !text(value.artist) || !text(value.album) || !positive(value.duration))
     return false

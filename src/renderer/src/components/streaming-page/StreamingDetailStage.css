@@ -847,3 +847,11 @@ html[data-theme='dark'] .detail-stage .sk {
   height: 1px;
   list-style: none;
 }
+.stage-row.playback-unsupported {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stage-row .row-play-btn:disabled {
+  cursor: not-allowed;
+}

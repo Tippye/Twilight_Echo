@@ -3,6 +3,7 @@ import type { Track } from '@renderer/types/music'
 import type { PlayMode } from '@renderer/types/settings'
 import { toPlaybackQueueSnapshot } from '@renderer/utils/playbackQueueVirtualization.ts'
 import { shuffleArray } from '@renderer/utils/playerQueueUtils.ts'
+import { filterPlaybackSupportedTracks } from '@renderer/utils/trackPlaybackSupport.ts'
 
 export const MAX_QUEUE_UNDO_COMMANDS = 20
 export const MAX_QUEUE_UNDO_ENTRIES = 80_000
@@ -37,6 +38,7 @@ interface QueueCommandOptions {
   onMutation: () => void
   onNotice?: (label: string, revision: number) => void
   beforeUndo?: () => void
+  onSkippedTracks?: (count: number) => void
 }
 
 function sameEntries(left: readonly Track[], right: readonly Track[]): boolean {
@@ -102,6 +104,15 @@ export function createQueueCommandController(options: QueueCommandOptions) {
     restoreCursor?: QueueCursor,
     select = true
   ): void {
+    const selected = queue[index]
+    const playable = filterPlaybackSupportedTracks(queue)
+    const skipped = queue.length - playable.length
+    if (skipped) {
+      options.onSkippedTracks?.(skipped)
+      queue = playable
+      index = selected ? queue.indexOf(selected) : index
+    }
+    original = filterPlaybackSupportedTracks(original)
     applying = true
     try {
       const activeId = options.currentTrack.value?.queueEntryId
@@ -151,6 +162,10 @@ export function createQueueCommandController(options: QueueCommandOptions) {
     originalIndex: number,
     settings: { shuffle?: boolean; undoable?: boolean } = {}
   ): Track[] {
+    const playable = filterPlaybackSupportedTracks(tracks)
+    const skipped = tracks.length - playable.length
+    if (skipped) options.onSkippedTracks?.(skipped)
+    tracks = playable
     if (!tracks.length) return []
     const additions = tracks.map((track) =>
       toPlaybackQueueSnapshot({ ...track, queueEntryId: `queue:${crypto.randomUUID()}` })

@@ -31,6 +31,10 @@ import {
   useListeningStatsStore
 } from '../stores/useListeningStatsStore'
 import type { Track } from '../types/music'
+import {
+  isTrackPlaybackSupported,
+  UNSUPPORTED_TRACK_PLAYBACK_MESSAGE
+} from '../utils/trackPlaybackSupport.ts'
 import { copyTrackNames } from '../utils/copyTrackNames'
 import { resolveUnifiedRecentTracks } from '../utils/unifiedRecentTracks'
 import { getTrackSearchBlob, normalizeSearchText } from '../utils/localLibrarySearch'
@@ -687,6 +691,7 @@ function onRowDblClick(track: Track, event: MouseEvent): void {
   const target = event.target as HTMLElement
   if (target.closest('.btn-remove') || target.closest('.track-select-checkbox')) return
   if (multiSelect.shouldSuppressRowDoubleClick(event)) return
+  if (!isTrackPlaybackSupported(track)) return
   if (settingsStore.settings.value.trackActivationMode !== 'doubleClick') return
   if (track.source === 'network') {
     void playNetworkTrack(track)
@@ -713,14 +718,19 @@ async function playNetworkTrack(track: Track): Promise<void> {
 function playAllTracks(): void {
   const list = displayTracks.value
   if (list.length === 0) return
-  playTrack(list[0], list)
+  playTrack(list.find(isTrackPlaybackSupported) ?? list[0], list)
 }
 
 function shufflePlayTracks(): void {
   const list = displayTracks.value
   if (list.length === 0) return
+  const playable = list.filter(isTrackPlaybackSupported)
+  if (!playable.length) {
+    playTrack(list[0], list)
+    return
+  }
   setPlayMode('shuffle')
-  playTrack(list[Math.floor(Math.random() * list.length)], list)
+  playTrack(playable[Math.floor(Math.random() * playable.length)], list)
 }
 
 function trackQualityLabel(track: Track): string {
@@ -1060,6 +1070,7 @@ function onRowClick(track: Track, indexInVisible: number, event: MouseEvent): vo
   const index = absoluteIndex(indexInVisible)
   const result = multiSelect.onRowClick(track, index, event)
   if (result !== 'play') return
+  if (!isTrackPlaybackSupported(track)) return
   if (track.source === 'network') {
     void playNetworkTrack(track)
     return
@@ -1071,6 +1082,17 @@ function onRowClick(track: Track, indexInVisible: number, event: MouseEvent): vo
 function onTrackSelectToggle(track: Track, indexInVisible: number, event: Event): void {
   event.stopPropagation()
   toggle(track.id, absoluteIndex(indexInVisible))
+}
+
+function onRowKeyboardActivate(track: Track, event: KeyboardEvent): void {
+  if (event.target !== event.currentTarget) return
+  event.preventDefault()
+  if (!isTrackPlaybackSupported(track)) return
+  if (track.source === 'network') {
+    void playNetworkTrack(track)
+    return
+  }
+  playTrack(track, displayTracks.value)
 }
 
 function onTrackContextMenu(event: MouseEvent, track: Track): void {
@@ -2357,16 +2379,23 @@ function finishViewSwitchAndRestoreScroll(): void {
                   v-for="(track, index) in visibleTracks"
                   :key="track.id"
                   class="track-row"
+                  tabindex="0"
                   data-te-interactive
                   :class="{
                     'track-playing': currentTrack?.id === track.id,
                     'track-selected': isSelected(track.id),
+                    'playback-unsupported': !isTrackPlaybackSupported(track),
                     'playlist-draggable': isPlaylistDetail
                   }"
                   :style="{ height: rowHeight - 4 + 'px', display: 'flex' }"
                   :draggable="isPlaylistDetail"
+                  :aria-disabled="!isTrackPlaybackSupported(track) || undefined"
+                  :title="
+                    isTrackPlaybackSupported(track) ? undefined : UNSUPPORTED_TRACK_PLAYBACK_MESSAGE
+                  "
                   @click="onRowClick(track, Number(index), $event)"
                   @dblclick="onRowDblClick(track, $event)"
+                  @keydown.enter="onRowKeyboardActivate(track, $event)"
                   @dragstart="handlePlaylistDragStart($event, track)"
                   @dragover.prevent
                   @drop="handlePlaylistDrop($event, track)"

@@ -9,6 +9,10 @@ import type {
   StreamingSortDirection
 } from '@renderer/components/streaming-page/streamingTrackView'
 import type { Track } from '../../types/music'
+import {
+  isTrackPlaybackSupported,
+  UNSUPPORTED_TRACK_PLAYBACK_MESSAGE
+} from '../../utils/trackPlaybackSupport.ts'
 import CoverImg from '../CoverImg.vue'
 import { useProgressiveList } from './useProgressiveList.ts'
 
@@ -205,17 +209,21 @@ function trackIndex(offset: number): number {
 
 function onRowActivate(track: Track, index: number, event: MouseEvent): void {
   if (event.detail > 1) return
+  if (!isTrackPlaybackSupported(track) && !event.ctrlKey && !event.metaKey && !event.shiftKey)
+    return
   emit('trackClick', track, index, event)
 }
 
 function onRowDblClick(track: Track, index: number, event: MouseEvent): void {
   event.preventDefault()
   if (props.trackActivationMode !== 'doubleClick') return
+  if (!isTrackPlaybackSupported(track)) return
   emit('playTrack', track, index, event)
 }
 
 function onPlayRow(track: Track, index: number, event: MouseEvent): void {
   event.stopPropagation()
+  if (!isTrackPlaybackSupported(track)) return
   emit('playTrack', track, index)
 }
 
@@ -446,10 +454,13 @@ const infoTrack = shallowRef<Track | null>(null)
           data-te-interactive
           :class="{
             playing: currentTrackId === track.id,
+            'playback-unsupported': !isTrackPlaybackSupported(track),
             selected: isSelected(track.id)
           }"
           :style="index === 0 ? { marginTop: `${paddingTop}px` } : undefined"
           role="listitem"
+          :aria-disabled="!isTrackPlaybackSupported(track) || undefined"
+          :title="isTrackPlaybackSupported(track) ? undefined : UNSUPPORTED_TRACK_PLAYBACK_MESSAGE"
           @click="onRowActivate(track, trackIndex(index), $event)"
           @dblclick="onRowDblClick(track, trackIndex(index), $event)"
           @contextmenu="onContextMenu(track, trackIndex(index), $event)"
@@ -459,6 +470,7 @@ const infoTrack = shallowRef<Track | null>(null)
               v-if="currentTrackId === track.id"
               type="button"
               class="row-play-btn playing"
+              :disabled="!isTrackPlaybackSupported(track)"
               title="正在播放"
               @click="onPlayRow(track, trackIndex(index), $event)"
             >
@@ -468,6 +480,7 @@ const infoTrack = shallowRef<Track | null>(null)
               v-else
               type="button"
               class="row-play-btn"
+              :disabled="!isTrackPlaybackSupported(track)"
               :aria-label="`播放 ${track.title}`"
               @click="onPlayRow(track, trackIndex(index), $event)"
             >

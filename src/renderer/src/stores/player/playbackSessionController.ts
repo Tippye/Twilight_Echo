@@ -13,6 +13,7 @@ import {
 } from '../../utils/playerSessionTrack.ts'
 import { clampCuePlaybackPosition, cueDuration } from '../../utils/cuePlayback.ts'
 import { toPlaybackQueueSnapshots } from '../../utils/playbackQueueVirtualization.ts'
+import { filterPlaybackSupportedTracks } from '../../utils/trackPlaybackSupport.ts'
 import {
   onLocalTracksUnavailable,
   pruneUnavailableLocalTracks
@@ -52,6 +53,7 @@ export interface PlaybackSessionControllerOptions {
   getAdvancingFromEndedTrackId: () => string
   setAdvancingFromEndedTrackId: (value: string) => void
   getNativePlaybackActive: () => boolean
+  onSkippedTracks?: (count: number) => void
 }
 
 // 换曲同步 watch 每首触发一次全队列克隆+落盘；快速连切时合并为一次写。
@@ -122,15 +124,11 @@ export function createPlaybackSessionController(options: PlaybackSessionControll
   }
 
   function restorePlaybackSession(session: PlaybackSession): void {
-    if (session.playMode) {
-      options.setPlayModeInternal(session.playMode, { persist: false })
-    }
-
     const savedQueue =
       Array.isArray(session.queue) && session.queue.length > 0
         ? session.queue.map(cloneTrackForPlaybackSession)
         : [cloneTrackForPlaybackSession(session.track)]
-    const queue = toPlaybackQueueSnapshots(savedQueue)
+    let queue = toPlaybackQueueSnapshots(savedQueue)
     const rawIndex = session.queueIndex
     let savedIndex = session.track.queueEntryId
       ? queue.findIndex(
@@ -148,10 +146,22 @@ export function createPlaybackSessionController(options: PlaybackSessionControll
       savedIndex = rawIndex
     }
     if (savedIndex === -1) savedIndex = queue.findIndex((item) => item.id === session.track.id)
-    const sameSelection =
+    const identifiedSelection =
       savedIndex >= 0 &&
       (!session.track.queueEntryId || queue[savedIndex].queueEntryId === session.track.queueEntryId)
     if (savedIndex === -1) savedIndex = 0
+    const savedTrack = queue[savedIndex]
+    const playableQueue = filterPlaybackSupportedTracks(queue)
+    const skippedCount = queue.length - playableQueue.length
+    if (skippedCount) options.onSkippedTracks?.(skippedCount)
+    if (!playableQueue.length) return
+    queue = playableQueue
+    const selectedIndex = queue.indexOf(savedTrack)
+    const sameSelection = identifiedSelection && selectedIndex >= 0
+    savedIndex = selectedIndex >= 0 ? selectedIndex : 0
+    if (session.playMode) {
+      options.setPlayModeInternal(session.playMode, { persist: false })
+    }
     const track = queue[savedIndex]
     const position =
       sameSelection && session.mode === 'trackAndPosition'
