@@ -282,6 +282,9 @@ export interface ArtistSummary {
   id: string | number
   name: string
   cover?: string | null
+  /** Counts supplied by the provider; absence means the source did not supply one. */
+  musicSize?: number
+  albumSize?: number
 }
 
 export interface UserSummary {
