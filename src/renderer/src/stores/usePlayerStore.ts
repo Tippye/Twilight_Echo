@@ -1,5 +1,6 @@
 import { createAbLoopController } from './player/abLoopController.ts'
 import { createRendererPauseFadeController } from './player/rendererPauseFadeController.ts'
+import { createPlaybackQualityController } from './player/playbackQualityController.ts'
 import { createCastController } from './player/castController.ts'
 import { createBpmAnalysisController } from './player/bpmAnalysisController.ts'
 import { createAudioOutputState } from '@renderer/stores/player/audioOutputState.ts'
@@ -550,6 +551,7 @@ async function prefetchUpcomingNcmStream(): Promise<void> {
 const nativeQueueRevisionFence = new NativeQueueRevisionFence()
 const nativeQueueLoader = new NativeQueueLoader()
 let activeLoadToken = 0
+let sourceRecoveryDisabledLoadToken: number | null = null
 let rendererFallbackInProgress = false
 let rendererPlaybackWatchdogTimer: number | null = null
 let playbackToggleIntent: { playing: boolean; expiresAt: number } | null = null
@@ -691,7 +693,10 @@ function clearPlaybackToggleIntent(): void {
 
 function applyNativePlayingState(playing: boolean, pausePosition: number | null = null): void {
   if (playbackToggleIntent) {
-    if (getNowMs() > playbackToggleIntent.expiresAt) {
+    if (
+      getNowMs() > playbackToggleIntent.expiresAt &&
+      !(isLoading.value && sourceRecoveryDisabledLoadToken === activeLoadToken)
+    ) {
       clearPlaybackToggleIntent()
     } else if (playing !== playbackToggleIntent.playing) {
       // Drop stale pause/playback-info that still reflects the pre-toggle state.
@@ -899,12 +904,13 @@ function seekRendererAudioWhenReady(
   audio: HTMLAudioElement,
   startTime: number,
   track: Track,
-  loadToken: number
+  loadToken: number,
+  currentOwner?: () => boolean
 ): void {
   const targetTime = clampCuePlaybackPosition(track, startTime)
 
   const applySeek = (): void => {
-    if (!isActiveLoad(loadToken, track)) return
+    if (!isActiveLoad(loadToken, track) || !(currentOwner?.() ?? true)) return
     try {
       audio.currentTime = rendererAudioAbsolutePositionForTrack(targetTime, track)
     } catch (err) {
@@ -1063,7 +1069,8 @@ function isNativeQueueDelegated(): boolean {
 async function createPlayableUrl(
   target: string,
   track: Track,
-  loadToken: number
+  loadToken: number,
+  currentOwner?: () => boolean
 ): Promise<string | null> {
   // http(s)/blob/data stream directly. twilight-media:// is the granted proxy
   // scheme registered in main (protocol.handle) and allowed by media-src CSP.
@@ -1073,13 +1080,13 @@ async function createPlayableUrl(
     /^data:/i.test(target) ||
     /^twilight-media:/i.test(target)
   ) {
-    if (!isActiveLoad(loadToken, track)) return null
+    if (!isActiveLoad(loadToken, track) || !(currentOwner?.() ?? true)) return null
     releasePlaybackObjectUrl()
     return target
   }
 
   const fileUrl = await window.api.fs.getAudioFileUrl(target)
-  if (!isActiveLoad(loadToken, track)) return null
+  if (!isActiveLoad(loadToken, track) || !(currentOwner?.() ?? true)) return null
   releasePlaybackObjectUrl()
   if (!duration.value && track.duration) {
     duration.value = track.duration
@@ -1091,8 +1098,12 @@ async function playWithRendererAudio(
   track: Track,
   target: string,
   startTime: number,
-  loadToken: number
+  loadToken: number,
+  autoplay = true,
+  currentOwner?: () => boolean
 ): Promise<boolean> {
+  const isCurrentPlayback = (): boolean =>
+    isActiveLoad(loadToken, track) && (currentOwner?.() ?? true)
   const audio = getPlaybackAudio()
   rendererPauseFadeController.cancel()
   audio.pause()
@@ -1100,26 +1111,30 @@ async function playWithRendererAudio(
   // native engine (e.g. WASAPI Exclusive) could still be playing, or the same
   // track is heard twice. Stopping is a cheap no-op when native is already idle.
   await stopNativeAudio()
-  if (!isActiveLoad(loadToken, track)) return false
+  if (!isCurrentPlayback()) return false
 
-  const playableUrl = await createPlayableUrl(target, track, loadToken)
-  if (!playableUrl || !isActiveLoad(loadToken, track)) return false
+  const playableUrl = await createPlayableUrl(target, track, loadToken, isCurrentPlayback)
+  if (!playableUrl || !isCurrentPlayback()) return false
 
   audio.src = playableUrl
   audio.volume = volume.value
   applyPlaybackRateToHtmlAudio(audio)
-  if (!isActiveLoad(loadToken, track)) return false
+  if (!isCurrentPlayback()) return false
 
-  seekRendererAudioWhenReady(audio, startTime, track, loadToken)
-  if (!isActiveLoad(loadToken, track)) return false
+  seekRendererAudioWhenReady(audio, startTime, track, loadToken, isCurrentPlayback)
+  if (!isCurrentPlayback()) return false
+  if (!autoplay) {
+    audio.load()
+    return isCurrentPlayback()
+  }
 
   try {
     await audio.play()
   } catch (err) {
-    if (!isActiveLoad(loadToken, track)) return false
+    if (!isCurrentPlayback()) return false
 
     await new Promise((resolve) => window.setTimeout(resolve, 140))
-    if (!isActiveLoad(loadToken, track)) return false
+    if (!isCurrentPlayback()) return false
 
     try {
       await audio.play()
@@ -1132,7 +1147,7 @@ async function playWithRendererAudio(
     }
   }
 
-  return isActiveLoad(loadToken, track)
+  return isCurrentPlayback()
 }
 
 async function persistAudioProcessingFallback(
@@ -1464,7 +1479,7 @@ function applyNativePlaybackInfo(
     )
     nativeHistoryRestartPending = false
   }
-  isLoading.value = false
+  if (sourceRecoveryDisabledLoadToken !== activeLoadToken) isLoading.value = false
   autoAdvanceInFlight = false
   advancingFromEndedTrackId = ''
   if (!preserveRestoredPosition) {
@@ -2421,6 +2436,7 @@ async function handlePlaybackFallback(
   loadToken: number
 ): Promise<boolean> {
   if (!isActiveLoad(loadToken, failedTrack)) return false
+  if (sourceRecoveryDisabledLoadToken === loadToken) return false
   const failedSource = getTrackSource(failedTrack)
   const fallback = findPlaybackFallbackTrack({
     failedTrack,
@@ -2664,7 +2680,7 @@ function setupAudioEngineListeners(): void {
       // Resetting to zero here discards the confirmed position of the incoming track.
       // loadAndPlay anchors explicit starts before issuing the native command.
       pendingLoadStartTime = 0
-      isLoading.value = false
+      if (sourceRecoveryDisabledLoadToken !== activeLoadToken) isLoading.value = false
       // start-file is emitted by the native backend when the new file has
       // entered its playback pipeline. Re-open both clocks immediately: a
       // stale pause snapshot may have cleared isPlaying before this event, and
@@ -2966,7 +2982,18 @@ function scheduleCrossfadeIfNeeded(): void {
   )
 }
 
-async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
+interface PlaybackLoadOptions {
+  target?: string
+  autoplay?: boolean
+  allowSourceRecovery?: boolean
+  isCurrent?: () => boolean
+}
+
+async function loadAndPlay(
+  track: Track,
+  startTime = 0,
+  options?: PlaybackLoadOptions
+): Promise<void> {
   if (!isTrackPlaybackSupported(track)) {
     setAudioEngineError(UNSUPPORTED_TRACK_PLAYBACK_MESSAGE)
     return
@@ -2990,9 +3017,16 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
   const normalizedStartTime = clampCuePlaybackPosition(track, startTime)
   playbackSessionController.clearPendingPlaybackPosition()
   const loadToken = ++activeLoadToken
+  const isOwnedLoad = (): boolean =>
+    isActiveLoad(loadToken, track) && (options?.isCurrent?.() ?? true)
+  let autoplay = options?.autoplay !== false
+  const loadAutoplay = (): boolean =>
+    options?.allowSourceRecovery === false ? (playbackToggleIntent?.playing ?? autoplay) : autoplay
+  sourceRecoveryDisabledLoadToken = options?.allowSourceRecovery === false ? loadToken : null
   // New load is always an intentional play — drop pause-toggle grace so a
   // prior pause cannot keep the UI stuck while this track starts.
   clearPlaybackToggleIntent()
+  if (!autoplay) setPlaybackToggleIntent(false)
   setNativePlaybackInfoIntent(loadToken, track)
   stopVisualizationPolling(false)
   isLoading.value = true
@@ -3024,16 +3058,31 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
     // must leave isLoading true for the newer owner.
     if (loadToken === activeLoadToken) isLoading.value = false
   }
+  const startRendererWithCurrentIntent = async (): Promise<boolean> => {
+    do {
+      autoplay = loadAutoplay()
+      const started = await playWithRendererAudio(
+        track,
+        options?.target ?? track.streamUrl!,
+        normalizedStartTime,
+        loadToken,
+        autoplay,
+        isOwnedLoad
+      )
+      if (!started || !isOwnedLoad()) return false
+    } while (autoplay !== loadAutoplay())
+    return true
+  }
 
   try {
     await stopNativeAudio()
-    if (!isActiveLoad(loadToken, track)) {
+    if (!isOwnedLoad()) {
       releaseLoadIfOwned()
       return
     }
 
-    const playTarget = await resolvePlayTarget(track)
-    if (!isActiveLoad(loadToken, track)) {
+    const playTarget = options?.target ?? (await resolvePlayTarget(track))
+    if (!isOwnedLoad()) {
       releaseLoadIfOwned()
       return
     }
@@ -3074,7 +3123,7 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
             currentTarget: playTarget,
             currentIndex: playMode.value === 'heart' ? 0 : queueIndex.value,
             playMode: playMode.value,
-            isCurrent: () => isActiveLoad(loadToken, track)
+            isCurrent: () => isOwnedLoad()
           },
           {
             isAudioFileAuthorized: window.api.fs.isAudioFileAuthorized,
@@ -3082,7 +3131,7 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
           },
           window.api.audioEngine
         )
-        if (!isActiveLoad(loadToken, track)) {
+        if (!isOwnedLoad()) {
           releaseLoadIfOwned()
           return
         }
@@ -3099,7 +3148,7 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
         nativeSourceToTrackId.delete(playTarget)
         nativeSourceToTrackId.set(playTarget, track.id)
         pruneNativeSourceToTrackId(preparedQueue.items, playTarget)
-        if (!isActiveLoad(loadToken, track)) {
+        if (!isOwnedLoad()) {
           releaseLoadIfOwned()
           return
         }
@@ -3110,24 +3159,28 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
 
         const nativePlayMode = preparedNativePlayMode(preparedQueue, playMode.value)
         await window.api.audioEngine.setPlayMode(nativePlayMode)
-        if (!isActiveLoad(loadToken, track)) {
+        if (!isOwnedLoad()) {
           releaseLoadIfOwned()
           return
         }
 
-        const playResult = await window.api.audioEngine.play(playTarget, normalizedStartTime)
-        if (!isActiveLoad(loadToken, track)) {
-          releaseLoadIfOwned()
-          return
-        }
-        if (playResult?.superseded) {
-          releaseLoadIfOwned()
-          return
-        }
-        nativeStarted = playResult?.nativeStarted === true
-        nativeFallbackReason = playResult?.fallbackReason ?? ''
+        do {
+          autoplay = loadAutoplay()
+          if (!autoplay) setPlaybackToggleIntent(false)
+          const playResult = await window.api.audioEngine.play(
+            playTarget,
+            normalizedStartTime,
+            autoplay ? undefined : { paused: true }
+          )
+          if (!isOwnedLoad() || playResult?.superseded) {
+            releaseLoadIfOwned()
+            return
+          }
+          nativeStarted = playResult?.nativeStarted === true
+          nativeFallbackReason = playResult?.fallbackReason ?? ''
+        } while (nativeStarted && autoplay !== loadAutoplay())
       } catch (engineErr) {
-        if (!isActiveLoad(loadToken, track)) {
+        if (!isOwnedLoad()) {
           releaseLoadIfOwned()
           return
         }
@@ -3145,7 +3198,7 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
       }
     }
 
-    if (!isActiveLoad(loadToken, track)) {
+    if (!isOwnedLoad()) {
       releaseLoadIfOwned()
       return
     }
@@ -3161,7 +3214,7 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
         typeof window.api?.audioEngine?.isHtmlAudioFallbackAllowed === 'function'
           ? await window.api.audioEngine.isHtmlAudioFallbackAllowed()
           : false
-      if (!isActiveLoad(loadToken, track)) {
+      if (!isOwnedLoad()) {
         releaseLoadIfOwned()
         return
       }
@@ -3175,6 +3228,9 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
         )
         isPlaying.value = false
         releaseLoadIfOwned()
+        if (options?.allowSourceRecovery === false) {
+          throw new Error(nativeFallbackReason || '所选音质无法开始播放')
+        }
         return
       }
       // Degraded but audible: the HTML audio path took over, so this is a
@@ -3187,35 +3243,25 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
           : '',
         'warning'
       )
-      const rendererStarted = await playWithRendererAudio(
-        track,
-        playTarget,
-        normalizedStartTime,
-        loadToken
-      )
-      if (!rendererStarted || !isActiveLoad(loadToken, track)) {
+      const rendererStarted = await startRendererWithCurrentIntent()
+      if (!rendererStarted || !isOwnedLoad()) {
         releaseLoadIfOwned()
         return
       }
-      scheduleRendererPlaybackWatchdog(track, loadToken)
+      if (autoplay) scheduleRendererPlaybackWatchdog(track, loadToken)
     } else {
       nativeQueueDelegated = false
       clearNativePlaybackInfoIntentForLoad(loadToken)
       setAudioEngineError('')
-      const rendererStarted = await playWithRendererAudio(
-        track,
-        playTarget,
-        normalizedStartTime,
-        loadToken
-      )
-      if (!rendererStarted || !isActiveLoad(loadToken, track)) {
+      const rendererStarted = await startRendererWithCurrentIntent()
+      if (!rendererStarted || !isOwnedLoad()) {
         releaseLoadIfOwned()
         return
       }
-      scheduleRendererPlaybackWatchdog(track, loadToken)
+      if (autoplay) scheduleRendererPlaybackWatchdog(track, loadToken)
     }
 
-    if (!isActiveLoad(loadToken, track)) {
+    if (!isOwnedLoad()) {
       releaseLoadIfOwned()
       return
     }
@@ -3236,12 +3282,14 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
       }
     }
     isLoading.value = false
-    isPlaying.value = true
-    startVisualizationPolling()
+    if (!autoplay && !nativePlaybackActive) playbackAudio?.pause()
+    isPlaying.value = autoplay
+    if (autoplay) startVisualizationPolling()
+    else stopVisualizationPolling(true)
     playbackHistoryController.maybeOfferResumeForTrack(track, resumeAt)
-    playbackHistoryController.recordPlaybackStart(track, playMode.value)
+    if (autoplay) playbackHistoryController.recordPlaybackStart(track, playMode.value)
   } catch (err) {
-    if (!isActiveLoad(loadToken, track)) {
+    if (!isOwnedLoad()) {
       releaseLoadIfOwned()
       return
     }
@@ -3251,7 +3299,7 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
     } catch (fallbackError) {
       console.warn('[audio-engine] Source recovery failed:', fallbackError)
     }
-    if (!isActiveLoad(loadToken, track)) {
+    if (!isOwnedLoad()) {
       releaseLoadIfOwned()
       return
     }
@@ -3263,8 +3311,50 @@ async function loadAndPlay(track: Track, startTime = 0): Promise<void> {
     nativePlaybackActive = false
     nativeQueueDelegated = false
     stopVisualizationPolling(true)
+    if (options?.allowSourceRecovery === false) throw err
   }
 }
+
+const { changeQuality: changePlaybackQuality } = createPlaybackQualityController({
+  getTrack: () => currentTrack.value,
+  getProvider: (track) => useMediaProviders().getForTrack(track),
+  captureOwner: (track, provider) => {
+    const loadToken = activeLoadToken
+    const index = queueIndex.value
+    const entryId = track.queueEntryId
+    const source = getTrackSource(track)
+    const providers = useMediaProviders()
+    const generation = providers.getGeneration(provider.id)
+    return () =>
+      isActiveLoad(loadToken, track) &&
+      queueIndex.value === index &&
+      currentTrack.value?.queueEntryId === entryId &&
+      currentTrack.value !== null &&
+      getTrackSource(currentTrack.value) === source &&
+      providers.getGeneration(provider.id) === generation
+  },
+  canReload: () => !isLoading.value && !castTargetUsn.value,
+  getPosition: getLatestPlaybackTime,
+  isPlaying: () => isPlaying.value,
+  reload: (track, target, position, playing) => {
+    const providers = useMediaProviders()
+    const provider = providers.getForTrack(track)
+    const generation = provider ? providers.getGeneration(provider.id) : -1
+    const index = queueIndex.value
+    return loadAndPlay(track, position, {
+      target,
+      autoplay: playing,
+      allowSourceRecovery: false,
+      isCurrent: () =>
+        currentTrack.value?.queueEntryId === track.queueEntryId &&
+        queueIndex.value === index &&
+        currentTrack.value !== null &&
+        getTrackSource(currentTrack.value) === getTrackSource(track) &&
+        !!provider &&
+        providers.getGeneration(provider.id) === generation
+    })
+  }
+})
 
 function playQueueTrack(track: Track): void {
   activateCurrentTrack(track, { resetUi: true, position: 0 })
@@ -3363,6 +3453,12 @@ const nativePlaybackToggleController = createNativePlaybackToggleController({
 async function togglePlayState(): Promise<void> {
   const track = currentTrack.value
   if (!track) return
+  if (isLoading.value && sourceRecoveryDisabledLoadToken === activeLoadToken) {
+    const playing = !(playbackToggleIntent?.playing ?? isPlaying.value)
+    setPlaybackToggleIntent(playing)
+    isPlaying.value = playing
+    return
+  }
   if (loadedTrackId !== track.id) {
     await loadAndPlay(track, restoredPlaybackPending ? restoredPlaybackPosition : 0)
     return
@@ -3861,6 +3957,7 @@ export function usePlayerStore() {
     saveQueueAsPlaylist,
     playTrack,
     playTrackFromPosition,
+    changePlaybackQuality,
     togglePlay,
     next,
     prev,

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { NativeQueueSelection } from '../../shared/nativeQueue.ts'
 import type {
   AudioEnginePlayResult,
+  AudioEnginePlayOptions,
   AudioEngineQueueItem,
   AudioEngineScheduler,
   AudioEngineServiceNativeBinding,
@@ -322,9 +323,14 @@ export class PlaybackController {
     this.nativeConfigRevisionEpochPending = true
   }
 
-  async play(source: string, startTime = 0): Promise<AudioEnginePlayResult> {
+  async play(
+    source: string,
+    startTime = 0,
+    options: AudioEnginePlayOptions = {}
+  ): Promise<AudioEnginePlayResult> {
     if (!source) throw audioEngineError('audio.source_empty', 'playback source is empty')
     const revision = ++this.transportRevision
+    const paused = options.paused === true
     const isCurrent = () => !this.destroyed && revision === this.transportRevision
     const superseded: AudioEnginePlayResult = {
       nativeStarted: false,
@@ -415,13 +421,78 @@ export class PlaybackController {
         ''
       throw nativeAudioError('audio.play_failed', 'native playback failed', detail)
     }
-    this.nativePlaybackActive = nativeStarted
+    // A paused-start transaction is not ready for polling publication until
+    // its pause acknowledgement is confirmed below. Keep native tick/getInfo
+    // from adopting an intermediate playing sample during that awaited step.
+    this.nativePlaybackActive = nativeStarted && !paused
     this.pendingNativeSource = nativeStarted ? source : null
-    const nativeInfo = nativeStarted ? await this.readNativePlaybackInfoAsync() : null
+    const nativeBinding = this.native
+    let nativeInfo = nativeStarted ? await this.readNativePlaybackInfoAsync() : null
     if (!isCurrent()) return superseded
+    if (nativeStarted && paused) {
+      const stopOwnedStart = async (): Promise<void> => {
+        if (!isCurrent() || !nativeBinding || nativeBinding !== this.native) return
+        const currentInfo = await this.readNativePlaybackInfoAsync()
+        if (!isCurrent() || nativeBinding !== this.native || currentInfo?.source !== source) return
+        // A failed paused start must not leave its own new source running.
+        // This internal cleanup retains the same transport owner; a newer
+        // play/next/stop must never be stopped by this failed transaction.
+        try {
+          if (typeof nativeBinding.callAsync === 'function')
+            await nativeBinding.callAsync('Stop', [])
+          else nativeBinding.Stop()
+        } catch {
+          return
+        }
+        if (!isCurrent() || nativeBinding !== this.native) return
+        this.nativePlaybackActive = false
+        this.pendingNativeSource = null
+        this.pendingNativePositionTarget = null
+        this.lastNativeReportedPosition = Number.NaN
+        this.playbackInfo.state = 'stopped'
+        this.publishProperty('pause', true)
+        this.publishPlaybackInfo()
+      }
+      // Pause belongs to this play transaction, not a separate public toggle.
+      // Service calls fence their native-process generation; also retain this
+      // binding, source and transport owner across every awaited confirmation.
+      if (!nativeBinding || nativeBinding !== this.native || nativeInfo?.source !== source) {
+        throw nativeAudioError(
+          'audio.pause_failed',
+          'native paused start could not confirm its source'
+        )
+      }
+      if (nativeInfo.state === 'playing') {
+        try {
+          if (typeof nativeBinding.callAsync === 'function') {
+            await nativeBinding.callAsync('Pause', [])
+          } else {
+            nativeBinding.Pause()
+          }
+        } catch (error) {
+          if (!isCurrent()) return superseded
+          await stopOwnedStart()
+          if (!isCurrent()) return superseded
+          throw nativeAudioError(
+            'audio.pause_failed',
+            'native paused start failed',
+            error instanceof Error ? error.message : String(error)
+          )
+        }
+        if (!isCurrent() || nativeBinding !== this.native) return superseded
+        nativeInfo = await this.readNativePlaybackInfoAsync()
+        if (!isCurrent() || nativeBinding !== this.native) return superseded
+      }
+      if (nativeInfo?.source !== source || nativeInfo.state !== 'paused') {
+        await stopOwnedStart()
+        if (!isCurrent()) return superseded
+        throw nativeAudioError('audio.pause_failed', 'native paused start was not confirmed')
+      }
+    }
     if (nativeInfo?.source === source) {
       this.pendingNativeSource = null
     }
+    this.nativePlaybackActive = nativeStarted
     const isDsd = sourceLooksDsd(source)
     const nativeDsd = nativeInfo ? normalizeDsdState(nativeInfo.outputInfo, nativeInfo) : null
     const playbackIsDsd = isDsd || nativeDsd?.isDsd === true
@@ -443,7 +514,7 @@ export class PlaybackController {
     this.playbackInfo = {
       ...this.playbackInfo,
       ...nativeInfo,
-      state: 'playing',
+      state: paused ? 'paused' : 'playing',
       position: boundedStartTime,
       duration:
         nativeInfo?.source === source && nativeInfo.duration > 0 ? nativeInfo.duration : duration,
@@ -491,7 +562,7 @@ export class PlaybackController {
     this.pendingNativePositionTarget = nativePositionConfirmed ? null : boundedStartTime
     this.emit('start-file')
     this.publishDuration(this.playbackInfo.duration, { force: true })
-    this.publishProperty('pause', false)
+    this.publishProperty('pause', paused)
     this.publishPlaybackInfo()
     return {
       nativeStarted,
@@ -633,11 +704,12 @@ export class PlaybackController {
     if (
       this.playbackInfo.state === 'stopped' &&
       this.playbackInfo.position === 0 &&
-      !this.nativePlaybackActive
+      !this.nativePlaybackActive &&
+      this.pendingNativeSource === null
     ) {
       return
     }
-    if (this.nativePlaybackActive) {
+    if (this.nativePlaybackActive || this.pendingNativeSource !== null) {
       const stopped = await this.callNativeMaybeAsync('停止', 'Stop')
       if (!stopped) {
         const nativeInfo = await this.readNativePlaybackInfoAsync()

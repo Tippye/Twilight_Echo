@@ -107,6 +107,98 @@ test('album search registration follows advertised methods and forwards cancella
   assert.equal(registry.get('album-test')?.searchAlbums, undefined)
 })
 
+test('optional playback quality bridge forwards provider values and refreshes added or removed handlers', async (t) => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  const { syncPluginProviders, useMediaProviders } = await import('./index.ts')
+  let supportedMethods: string[] | undefined
+  let capabilities = ['playbackUrl']
+  let listed = true
+  let quality = 'public-default'
+  let rejectCall = false
+  const calls: Array<{ id: string; method: string; args: unknown[] }> = []
+  const dto = () => ({
+    quality,
+    options: [
+      { value: 'public-default', label: 'Default' },
+      { value: 'public-alternative', label: 'Alternative' }
+    ]
+  })
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      api: {
+        providers: {
+          list: async () =>
+            listed ? [{ id: 'quality-test', name: 'Quality', capabilities, supportedMethods }] : [],
+          call: async (id: string, method: string, args: unknown[]) => {
+            calls.push({ id, method, args })
+            if (rejectCall) throw new Error('Public quality rejection')
+            if (method === 'setPlaybackQuality') quality = args[0] as string
+            return dto()
+          }
+        }
+      }
+    }
+  })
+  const registry = useMediaProviders()
+  t.after(async () => {
+    listed = false
+    await syncPluginProviders()
+    registry.unregister('quality-test')
+    if (previous) Object.defineProperty(globalThis, 'window', previous)
+    else Reflect.deleteProperty(globalThis, 'window')
+  })
+  await syncPluginProviders()
+  assert.equal(registry.get('quality-test')?.getPlaybackQuality, undefined)
+  assert.equal(registry.get('quality-test')?.setPlaybackQuality, undefined)
+  assert.equal(typeof registry.get('quality-test')?.getPlaybackUrl, 'function')
+  supportedMethods = ['getPlaybackQuality']
+  await syncPluginProviders()
+  assert.deepEqual(await registry.get('quality-test')?.getPlaybackQuality?.(), dto())
+  assert.equal(registry.get('quality-test')?.setPlaybackQuality, undefined)
+  supportedMethods = ['getPlaybackQuality', 'setPlaybackQuality']
+  await syncPluginProviders()
+  assert.deepEqual(
+    await registry.get('quality-test')?.setPlaybackQuality?.('public-alternative'),
+    dto()
+  )
+  assert.deepEqual(
+    calls.map((call) => [call.id, call.method, call.args]),
+    [
+      ['quality-test', 'getPlaybackQuality', []],
+      ['quality-test', 'setPlaybackQuality', ['public-alternative']]
+    ]
+  )
+  rejectCall = true
+  await assert.rejects(
+    registry.get('quality-test')!.getPlaybackQuality!(),
+    /Public quality rejection/
+  )
+  rejectCall = false
+  capabilities = []
+  await syncPluginProviders()
+  assert.equal(registry.get('quality-test')?.getPlaybackQuality, undefined)
+  assert.equal(registry.get('quality-test')?.setPlaybackQuality, undefined)
+  capabilities = ['playbackUrl']
+  supportedMethods = ['setPlaybackQuality']
+  await syncPluginProviders()
+  assert.equal(registry.get('quality-test')?.getPlaybackQuality, undefined)
+  assert.equal(typeof registry.get('quality-test')?.setPlaybackQuality, 'function')
+  supportedMethods = []
+  await syncPluginProviders()
+  assert.equal(registry.get('quality-test')?.setPlaybackQuality, undefined)
+  listed = false
+  await syncPluginProviders()
+  assert.equal(registry.get('quality-test'), null)
+  listed = true
+  supportedMethods = ['getPlaybackQuality', 'setPlaybackQuality']
+  await syncPluginProviders()
+  assert.equal(
+    (await registry.get('quality-test')?.getPlaybackQuality?.())?.quality,
+    'public-alternative'
+  )
+})
+
 test('resolveLyricsAcrossProviders fans out to NCM for local tracks', async () => {
   const registry = new MediaProviderRegistry()
   let ncmSearchCalls = 0
@@ -679,6 +771,34 @@ test('renderer provider sync carries host health into registered providers', () 
   assert.match(source, /mediaProviders\.update\(provider\.id/)
   assert.match(source, /fetchDiscoveryPlaylists: supports\('fetchDiscoveryPlaylists'\)/)
   assert.match(source, /fetchHighQualityPlaylists: supports\('fetchHighQualityPlaylists'\)/)
+})
+
+test('replacing the plugin behind one provider ID invalidates its outstanding owner while health refreshes do not', () => {
+  const registry = new MediaProviderRegistry()
+  const health = {
+    providerId: 'fake',
+    pluginId: 'plugin-a',
+    pluginStatus: 'enabled',
+    available: true,
+    totalCalls: 0,
+    successfulCalls: 0,
+    failedCalls: 0,
+    successRate: 1,
+    lastError: null,
+    lastCheckedAt: null
+  }
+  registry.register({
+    id: 'fake',
+    name: 'Fixture',
+    source: 'plugin',
+    capabilities: ['playbackUrl'],
+    health
+  })
+  const generation = registry.getGeneration('fake')
+  registry.update('fake', { health: { ...health, totalCalls: 1 } })
+  assert.equal(registry.getGeneration('fake'), generation)
+  registry.update('fake', { health: { ...health, pluginId: 'plugin-b' } })
+  assert.equal(registry.getGeneration('fake'), generation + 1)
 })
 
 test('renderer provider calls refresh host health snapshots after IPC settles', () => {

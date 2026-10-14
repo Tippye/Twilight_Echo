@@ -60,6 +60,74 @@ test('audio engine cold start passes persisted software volume into the manager'
   assert.match(source, /volume: runtime\.appSettings\.softwareVolume/)
 })
 
+test('audioEngine play IPC forwards validated paused options and preserves the omitted option', async () => {
+  const helperStart = source.indexOf('function normalizePlayOptions(')
+  const helper = source.slice(
+    helperStart,
+    source.indexOf('\nexport function toQueueItem', helperStart)
+  )
+  const channel = source.indexOf('IPC.audioEngine.play,')
+  const start = source.lastIndexOf('ipcMain.handle(', channel)
+  assert.ok(channel >= 0 && start >= 0)
+  const declaration = source.slice(start, source.indexOf('\n  ipcMain.handle(', start + 1))
+  let handler!: (
+    event: unknown,
+    source: string,
+    time?: number,
+    options?: unknown
+  ) => Promise<unknown>
+  const plays: unknown[][] = []
+  let authorized = 0
+  runInNewContext(stripTypeScriptTypes(`${helper}\n${declaration}`), {
+    IPC: { audioEngine: { play: 'play' } },
+    ipcMain: {
+      handle: (_channel: string, callback: typeof handler) => {
+        handler = callback
+      }
+    },
+    assertTrustedIpcSender: () => {},
+    normalizeIpcString: (value: string) => value,
+    normalizeFiniteNumber: (value: number | undefined) => value ?? 0,
+    MAX_AUDIO_SOURCE_LENGTH: 4096,
+    resolveAuthorizedPlaybackSource: async (value: string) => {
+      authorized++
+      return value
+    },
+    audioDiagnosticRecorder: null,
+    outputTest: { stop: async () => {} },
+    ensureAudioEngineRuntime: async () => ({
+      play: async (...args: unknown[]) => {
+        plays.push(args)
+        return { nativeStarted: true, fallbackReason: '' }
+      }
+    })
+  })
+  await handler({}, 'public.flac', 12, { paused: true })
+  await handler({}, 'legacy.flac')
+  assert.deepEqual(JSON.parse(JSON.stringify(plays)), [
+    ['public.flac', 12, { paused: true }],
+    ['legacy.flac', 0, {}]
+  ])
+  for (const invalid of [
+    null,
+    [],
+    true,
+    { paused: 'true' },
+    { paused: 1 },
+    { paused: null },
+    { paused: false, unknown: 1 }
+  ]) {
+    await assert.rejects(handler({}, 'invalid.flac', 0, invalid), /Invalid playback options/)
+  }
+  assert.equal(authorized, 2)
+  assert.equal(plays.length, 2)
+  assert.match(
+    preloadSource,
+    /ipcRenderer\.invoke\(IPC\.audioEngine\.play, filePath, startTime, options\)/
+  )
+  assert.match(preloadDeclaration, /options\?: AudioEnginePlayOptions/)
+})
+
 test('audioEngine IPC normalizes untrusted renderer parameters', () => {
   assert.match(source, /const MAX_AUDIO_QUEUE_ITEMS = MAX_NATIVE_QUEUE_ITEMS/)
   assert.match(

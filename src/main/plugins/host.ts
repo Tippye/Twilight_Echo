@@ -142,6 +142,8 @@ interface TwilightPluginContext {
 const INTERNAL_NCM_PLUGIN_ID = 'com.twilightecho.provider.ncm'
 const PROVIDER_METHODS: TwilightMediaProviderMethod[] = [
   'getPlaybackUrl',
+  'getPlaybackQuality',
+  'setPlaybackQuality',
   'getLyrics',
   'searchSongs',
   'searchAlbums',

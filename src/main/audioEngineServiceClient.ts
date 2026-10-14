@@ -73,6 +73,9 @@ const DEFAULT_MAX_IN_FLIGHT_REQUESTS = 128
 const DEFAULT_TOPOLOGY_REQUEST_TIMEOUT_MS = 20_000
 const AUDIO_SERVICE_BUSY_CODE = 'ERR_AUDIO_SERVICE_BUSY'
 const AUDIO_SERVICE_TIMEOUT_CODE = 'ERR_AUDIO_SERVICE_TIMEOUT'
+// Only this binding's request timers own timeout policy. An external error
+// with the same public code must retain the existing fatal-error behavior.
+const ownedAudioServiceTimeouts = new WeakSet<Error>()
 const MAX_AUDIO_SERVICE_DEFAULT_RESPONSE_BYTES = 1024 * 1024
 const MAX_AUDIO_SERVICE_VISUALIZATION_RESPONSE_BYTES = 8 * 1024 * 1024
 // Embedded cover art is base64 in metadata; ordinary album covers routinely
@@ -807,7 +810,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
 
   private fireAndForget(method: keyof NativeAudioBinding, args: unknown[]): void {
     void this.call(method, args).catch((error) => {
-      if (isAudioServiceBusyError(error)) {
+      if (isAudioServiceBusyError(error) || isOwnedAudioServiceTimeout(error)) {
         this.recordTransientFailure(error.message)
         return
       }
@@ -838,7 +841,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     const args = request.args
     void this.call(method, args)
       .catch((error) => {
-        if (isAudioServiceBusyError(error)) {
+        if (isAudioServiceBusyError(error) || isOwnedAudioServiceTimeout(error)) {
           this.recordTransientFailure(error.message)
           return
         }
@@ -1142,7 +1145,12 @@ function createAudioServiceBusyError(method: keyof NativeAudioBinding): AudioSer
 function createAudioServiceTimeoutError(method: keyof NativeAudioBinding): AudioServiceError {
   const error = new Error(`音频服务调用超时：${String(method)}`) as AudioServiceError
   error.code = AUDIO_SERVICE_TIMEOUT_CODE
+  ownedAudioServiceTimeouts.add(error)
   return error
+}
+
+function isOwnedAudioServiceTimeout(error: unknown): error is AudioServiceError {
+  return error instanceof Error && ownedAudioServiceTimeouts.has(error)
 }
 
 function isAudioServiceBusyError(error: unknown): error is AudioServiceError {

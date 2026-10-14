@@ -13,6 +13,7 @@ import type {
   MediaProviderPlaylistCatalogue,
   MediaProviderPlaylistSummary,
   MediaProviderPlaylistTracksPage,
+  MediaProviderPlaybackQuality,
   MediaProviderProfile,
   MediaProviderSearchResult,
   MediaProviderUserSummary
@@ -136,13 +137,24 @@ export async function syncPluginProviders(): Promise<void> {
                   options
                 )
             : undefined
+        const getPlaybackQuality: MediaProvider['getPlaybackQuality'] =
+          provider.capabilities.includes('playbackUrl') && supports('getPlaybackQuality')
+            ? () => callProvider<MediaProviderPlaybackQuality>('getPlaybackQuality')
+            : undefined
+        const setPlaybackQuality: MediaProvider['setPlaybackQuality'] =
+          provider.capabilities.includes('playbackUrl') && supports('setPlaybackQuality')
+            ? (quality) =>
+                callProvider<MediaProviderPlaybackQuality>('setPlaybackQuality', [quality])
+            : undefined
         if (mediaProviders.get(provider.id)) {
           mediaProviders.update(provider.id, {
             name: provider.name,
             capabilities: provider.capabilities,
             health: provider.health as MediaProviderHealth | undefined,
             isEnabled: () => isPluginProviderEnabled(provider.health),
-            searchAlbums
+            searchAlbums,
+            getPlaybackQuality,
+            setPlaybackQuality
           })
           continue
         }
@@ -156,6 +168,8 @@ export async function syncPluginProviders(): Promise<void> {
           getPlaybackUrl: provider.capabilities.includes('playbackUrl')
             ? (track, options) => callProvider<string | null>('getPlaybackUrl', [track, options])
             : undefined,
+          getPlaybackQuality,
+          setPlaybackQuality,
           getLyrics: provider.capabilities.includes('lyrics')
             ? (track, options) =>
                 callProvider<{

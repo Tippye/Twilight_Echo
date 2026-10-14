@@ -3,6 +3,9 @@ import type { Track } from '../types/music'
 import { getNcmSongId } from './ncmTrack.ts'
 import { unifiedSearchSongs, type UnifiedSearchResult } from '../utils/unifiedMusicSearch.ts'
 import type { NetworkEntry } from '../../../shared/networkSources.ts'
+import type { ProviderPlaybackQuality } from '../../../shared/mediaProviderMethods.ts'
+
+export type MediaProviderPlaybackQuality = ProviderPlaybackQuality
 
 export type MediaProviderCapability =
   | 'search'
@@ -180,6 +183,8 @@ export interface MediaProvider {
   health?: MediaProviderHealth
   isEnabled?: () => boolean | Promise<boolean>
   getPlaybackUrl?: (track: Track, options?: PlaybackUrlOptions) => Promise<string | null>
+  getPlaybackQuality?: () => Promise<MediaProviderPlaybackQuality>
+  setPlaybackQuality?: (quality: string) => Promise<MediaProviderPlaybackQuality>
   getLyrics?: (track: Track, options?: MediaProviderCallOptions) => Promise<MediaProviderLyrics>
   searchSongs?: (
     keywords: string,
@@ -316,7 +321,8 @@ export class MediaProviderRegistry {
     if (!current) return false
     if (
       patch.health &&
-      isPluginProviderEnabled(current.health) !== isPluginProviderEnabled(patch.health)
+      (current.health?.pluginId !== patch.health.pluginId ||
+        isPluginProviderEnabled(current.health) !== isPluginProviderEnabled(patch.health))
     ) {
       this.invalidate(normalizedId)
     }

@@ -68,6 +68,43 @@ test('album search is an optional routed search method with the standard search 
   assert.equal(getProviderCallTimeoutMs('searchAlbums'), getProviderCallTimeoutMs('searchSongs'))
 })
 
+test('playback preferences require an advertised quality handler and playback capability', () => {
+  const provider = {
+    id: 'quality-test',
+    name: 'Quality',
+    capabilities: ['playbackUrl' as const],
+    supportedMethods: ['getPlaybackQuality' as const, 'setPlaybackQuality' as const]
+  }
+  for (const method of ['getPlaybackQuality', 'setPlaybackQuality'] as const) {
+    assert.equal(isTwilightMediaProviderMethod(method), true)
+    assert.equal(providerSupportsMethod(provider, method), true)
+    assert.equal(providerSupportsMethod({ ...provider, capabilities: [] }, method), false)
+    assert.equal(providerSupportsMethod({ ...provider, supportedMethods: [] }, method), false)
+    assert.equal(
+      providerSupportsMethod({ ...provider, supportedMethods: undefined }, method),
+      false
+    )
+    assert.equal(getProviderCallTimeoutMs(method), 15000)
+    assert.equal(
+      findProviderRoute([{ pluginId: 'public-test', providers: [provider] }], provider.id, method)
+        ?.pluginId,
+      'public-test'
+    )
+  }
+  assert.equal(
+    providerSupportsMethod(
+      { ...provider, supportedMethods: ['getPlaybackQuality'] },
+      'setPlaybackQuality'
+    ),
+    false
+  )
+  // Legacy playback providers remain routable for their existing URL method.
+  assert.equal(
+    providerSupportsMethod({ ...provider, supportedMethods: undefined }, 'getPlaybackUrl'),
+    true
+  )
+})
+
 test('playlist paging requires an advertised handler and playlist capability through host routing', () => {
   const provider: TestRunningProvider['providers'][number] = {
     id: 'bili',
@@ -329,6 +366,8 @@ test('plugin host exposes account login methods and reports its actual handler s
   assert.match(source, /'loginByPhonePassword'/)
   assert.match(source, /'loginByPhoneCaptcha'/)
   assert.match(source, /'loginByEmailPassword'/)
+  assert.match(source, /'getPlaybackQuality'/)
+  assert.match(source, /'setPlaybackQuality'/)
   assert.match(source, /supportedMethods: Object\.keys\(handlers\)/)
 })
 

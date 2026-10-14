@@ -34,6 +34,7 @@ import {
   type AudioProcessingSettings,
   type AudioOutputId,
   type AudioEngineQueueItem,
+  type AudioEnginePlayOptions,
   type PlayMode,
   type EqMode,
   type EqualizerBand
@@ -218,6 +219,21 @@ function requireVst3Catalog(): Vst3CatalogService {
     throw audioEngineError('audio.vst3_catalog_not_initialized', 'VST3 catalog not initialised')
   }
   return runtime.vst3Catalog
+}
+
+function normalizePlayOptions(value: unknown): AudioEnginePlayOptions {
+  if (value === undefined) return {}
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Invalid playback options')
+  }
+  if (Object.keys(value).some((key) => key !== 'paused')) {
+    throw new Error('Invalid playback options')
+  }
+  const paused = (value as Record<string, unknown>).paused
+  if (paused !== undefined && typeof paused !== 'boolean') {
+    throw new Error('Invalid playback options')
+  }
+  return paused === undefined ? {} : { paused }
 }
 
 export function toQueueItem(raw: unknown): AudioEngineQueueItem | null {
@@ -996,42 +1012,46 @@ function registerAudioEngineIpcHandlers(): void {
     ).selectQueueItem({ queueToken, index, id, source })
   })
 
-  ipcMain.handle(IPC.audioEngine.play, async (_event, source: string, startTime?: number) => {
-    assertTrustedIpcSender(_event, 'audio engine IPC')
-    const authorizedSource = await resolveAuthorizedPlaybackSource(
-      normalizeIpcString(source, 'audio source', MAX_AUDIO_SOURCE_LENGTH)
-    )
-    const normalizedStartTime = normalizeFiniteNumber(
-      startTime,
-      'start time',
-      0,
-      0,
-      Number.MAX_SAFE_INTEGER
-    )
-    audioDiagnosticRecorder?.record('play-requested', {
-      source: authorizedSource,
-      startTime: normalizedStartTime
-    })
-    try {
-      await outputTest.stop()
-      const result = await (
-        await ensureAudioEngineRuntime()
-      ).play(authorizedSource, normalizedStartTime)
-      audioDiagnosticRecorder?.record(
-        'play-result',
-        result,
-        result.nativeStarted ? 'info' : 'warning'
+  ipcMain.handle(
+    IPC.audioEngine.play,
+    async (_event, source: string, startTime?: number, options?: unknown) => {
+      assertTrustedIpcSender(_event, 'audio engine IPC')
+      const playOptions = normalizePlayOptions(options)
+      const authorizedSource = await resolveAuthorizedPlaybackSource(
+        normalizeIpcString(source, 'audio source', MAX_AUDIO_SOURCE_LENGTH)
       )
-      return result
-    } catch (error) {
-      audioDiagnosticRecorder?.record(
-        'play-failed',
-        { message: error instanceof Error ? error.message : String(error) },
-        'error'
+      const normalizedStartTime = normalizeFiniteNumber(
+        startTime,
+        'start time',
+        0,
+        0,
+        Number.MAX_SAFE_INTEGER
       )
-      throw error
+      audioDiagnosticRecorder?.record('play-requested', {
+        source: authorizedSource,
+        startTime: normalizedStartTime
+      })
+      try {
+        await outputTest.stop()
+        const result = await (
+          await ensureAudioEngineRuntime()
+        ).play(authorizedSource, normalizedStartTime, playOptions)
+        audioDiagnosticRecorder?.record(
+          'play-result',
+          result,
+          result.nativeStarted ? 'info' : 'warning'
+        )
+        return result
+      } catch (error) {
+        audioDiagnosticRecorder?.record(
+          'play-failed',
+          { message: error instanceof Error ? error.message : String(error) },
+          'error'
+        )
+        throw error
+      }
     }
-  })
+  )
 
   ipcMain.handle(IPC.audioEngine.isHtmlAudioFallbackAllowed, async (event) => {
     assertTrustedIpcSender(event, 'audio engine IPC')

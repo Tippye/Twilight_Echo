@@ -257,6 +257,11 @@ export interface AudioEngineQueueItem {
   cueRange?: CueRange
 }
 
+export interface AudioEnginePlayOptions {
+  /** Load this source at the requested position and return with playback paused. */
+  paused?: boolean
+}
+
 export interface AudioEnginePlayResult {
   nativeStarted: boolean
   fallbackReason: string

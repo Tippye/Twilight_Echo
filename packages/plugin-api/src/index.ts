@@ -409,6 +409,12 @@ export interface TwilightMediaProviderRegistration {
     options?: PlaybackUrlOptions,
     context?: TwilightProviderRequestContext
   ): Promise<string | null>
+  /** Optional provider-owned playback preference; hosts must detect method support. */
+  getPlaybackQuality?(context?: TwilightProviderRequestContext): Promise<ProviderPlaybackQuality>
+  setPlaybackQuality?(
+    quality: string,
+    context?: TwilightProviderRequestContext
+  ): Promise<ProviderPlaybackQuality>
   getLyrics?(
     track: Track,
     context?: TwilightProviderRequestContext
@@ -671,6 +677,12 @@ export interface TwilightMediaProviderRegistration {
 export interface PlaybackUrlOptions {
   force?: boolean
   quality?: string
+}
+
+/** Provider-defined stable values and display labels; no shared quality enum is assumed. */
+export interface ProviderPlaybackQuality {
+  quality: string
+  options: Array<{ value: string; label: string }>
 }
 
 export type TwilightMediaProviderMethod = Exclude<

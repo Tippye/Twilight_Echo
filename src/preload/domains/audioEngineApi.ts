@@ -18,6 +18,7 @@ import type {
   AudioEngineEventCallback,
   AudioEnginePlaybackInfoCallback,
   AudioEnginePlayResult,
+  AudioEnginePlayOptions,
   AudioEngineQueueItem,
   AudioEngineServiceCrashCallback,
   AudioEngineServiceReadyCallback,
@@ -198,8 +199,12 @@ export const audioEngineApi = {
     selectQueueItem: (
       selection: import('../../shared/nativeQueue.ts').NativeQueueSelection
     ): Promise<boolean> => ipcRenderer.invoke(IPC.audioEngine.selectQueueItem, selection),
-    play: (filePath: string, startTime?: number): Promise<AudioEnginePlayResult> =>
-      ipcRenderer.invoke(IPC.audioEngine.play, filePath, startTime),
+    play: (
+      filePath: string,
+      startTime?: number,
+      options?: AudioEnginePlayOptions
+    ): Promise<AudioEnginePlayResult> =>
+      ipcRenderer.invoke(IPC.audioEngine.play, filePath, startTime, options),
     isHtmlAudioFallbackAllowed: (): Promise<boolean> =>
       ipcRenderer.invoke(IPC.audioEngine.isHtmlAudioFallbackAllowed),
     togglePause: (): Promise<void> => ipcRenderer.invoke(IPC.audioEngine.togglePause),

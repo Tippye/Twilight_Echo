@@ -38,6 +38,7 @@ import type {
   AudioEngineQueueItem,
   PlaybackInfo,
   AudioEnginePlayResult,
+  AudioEnginePlayOptions,
   VisualizationOptions,
   VisualizationData,
   ConvolverInfo,
@@ -207,7 +208,11 @@ interface AudioEngineAPI {
   selectQueueItem?: (
     selection: import('../shared/nativeQueue').NativeQueueSelection
   ) => Promise<boolean>
-  play: (filePath: string, startTime?: number) => Promise<AudioEnginePlayResult>
+  play: (
+    filePath: string,
+    startTime?: number,
+    options?: AudioEnginePlayOptions
+  ) => Promise<AudioEnginePlayResult>
   isHtmlAudioFallbackAllowed: () => Promise<boolean>
   togglePause: () => Promise<void>
   seek: (time: number) => Promise<void>

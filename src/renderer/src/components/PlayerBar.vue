@@ -23,6 +23,7 @@ import { useMediaProviders } from '../providers'
 import { normalizeAccentColor } from '../utils/colorExtractor'
 import SmoothedProgressFill from './SmoothedProgressFill.vue'
 import PlayerSeekProgress from './player-bar/PlayerSeekProgress.vue'
+import PlayerQualitySelect from './player-bar/PlayerQualitySelect.vue'
 import { HIFI_STATUS_COPY } from '../../../shared/audioProcessingOptions.ts'
 import { resolveReasonCode } from '../../../shared/audio/reasonCodes.ts'
 import { useLocale } from '../app/useLocale.ts'
@@ -105,6 +106,7 @@ const {
   currentTrack: playbackCurrentTrack,
   dominantColor,
   isPlaying: playbackIsPlaying,
+  isLoading: playbackIsLoading,
   isStreamBuffering: playbackStreamBuffering,
   streamNowPlaying,
   currentTime: playbackCurrentTime,
@@ -1733,6 +1735,11 @@ onBeforeUnmount(() => {
         :class="region.className"
         :data-te-playbar-region="region.name"
       >
+        <PlayerQualitySelect
+          v-if="region.name === 'right' && !preview"
+          :track="currentTrack"
+          :disabled="playbackIsLoading || !!castTargetName"
+        />
         <template v-for="control in region.items" :key="control">
           <div
             v-if="control === 'cover'"

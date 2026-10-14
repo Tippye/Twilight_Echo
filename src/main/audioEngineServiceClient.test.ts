@@ -661,6 +661,156 @@ test('playback polling never kills the service while a slow native operation is 
   }
 })
 
+async function waitForControlFailure(
+  binding: AudioEngineServiceBinding,
+  method: string
+): Promise<void> {
+  const deadline = Date.now() + 1000
+  while (!binding.GetLastError().includes(method)) {
+    if (Date.now() >= deadline)
+      throw new Error('Expected synthetic control failure was not observed')
+    await new Promise((resolve) => setTimeout(resolve, 1))
+  }
+  // Include the fire-and-forget rejection microtask, not merely timer expiry.
+  await new Promise((resolve) => setImmediate(resolve))
+}
+
+test('owned fast setter timeout cannot reject a held slow LoadQueue in either fire-and-forget path', async () => {
+  for (const method of ['SetLoopRange', 'SetAutoMixMode']) {
+    const child = new ManualUtilityProcess()
+    const binding = new AudioEngineServiceBinding({
+      serviceEntry: 'unused-public-test.js',
+      requestTimeoutMs: 20,
+      topologyRequestTimeoutMs: 1000,
+      restartDelayMs: 1000,
+      electron: { utilityProcess: { fork: () => child } }
+    })
+    try {
+      let settled = false
+      const pending = binding.callAsync('LoadQueue', ['[]', 0]).then(
+        (value) => {
+          settled = true
+          return value
+        },
+        (error) => {
+          settled = true
+          throw error
+        }
+      )
+      // Attach immediately so the old implementation's expected rejection is observed.
+      const result = pending.then(
+        (value) => ({ value }),
+        (error) => ({ error })
+      )
+      if (method === 'SetLoopRange') binding.SetLoopRange(-1, -1)
+      else binding.SetAutoMixMode('off')
+      await waitForControlFailure(binding, method)
+      assert.equal(settled, false, 'Collateral control timeout must not reject the slow request')
+      assert.equal(child.killCount, 0)
+      const request = child.messages.find(
+        (message) => (message as { method?: string }).method === 'LoadQueue'
+      ) as { requestId: string }
+      child.emit('message', {
+        kind: 'response',
+        requestId: request.requestId,
+        ok: true,
+        value: 'public queue ACK'
+      })
+      assert.deepEqual(await result, { value: 'public queue ACK' })
+    } finally {
+      binding.destroy()
+    }
+  }
+})
+
+test('a timed out coalesced setter still delivers its latest value and accepts a fresh slow ACK', async () => {
+  const child = new ManualUtilityProcess()
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'unused-public-test.js',
+    requestTimeoutMs: 20,
+    topologyRequestTimeoutMs: 1000,
+    restartDelayMs: 1000,
+    electron: { utilityProcess: { fork: () => child } }
+  })
+  try {
+    const pending = binding.callAsync('LoadQueue', ['[]', 0])
+    const result = pending.then(
+      (value) => ({ value }),
+      (error) => ({ error })
+    )
+    binding.SetLoopRange(-1, -1)
+    await new Promise((resolve) => setImmediate(resolve))
+    binding.SetLoopRange(4, 6)
+    await waitForControlFailure(binding, 'SetLoopRange')
+    const controls = child.messages.filter(
+      (message) => (message as { method?: string }).method === 'SetLoopRange'
+    ) as Array<{ requestId: string; args: unknown[] }>
+    assert.equal(controls.length, 2)
+    assert.deepEqual(controls[1].args, [4, 6])
+    // A late ACK for the timed-out old control cannot consume the new request.
+    child.emit('message', { kind: 'response', requestId: controls[0].requestId, ok: true })
+    child.emit('message', { kind: 'response', requestId: controls[1].requestId, ok: true })
+    const queue = child.messages.find(
+      (message) => (message as { method?: string }).method === 'LoadQueue'
+    ) as { requestId: string }
+    child.emit('message', {
+      kind: 'response',
+      requestId: queue.requestId,
+      ok: true,
+      value: 'public fresh ACK'
+    })
+    assert.deepEqual(await result, { value: 'public fresh ACK' })
+    assert.equal(child.killCount, 0)
+  } finally {
+    binding.destroy()
+  }
+})
+
+test('non-timeout errors and externally spoofed timeout codes retain fatal pending-request rejection', async () => {
+  for (const mode of ['native-rejection', 'spoofed-timeout-code']) {
+    const child = new ManualUtilityProcess()
+    const binding = new AudioEngineServiceBinding({
+      serviceEntry: 'unused-public-test.js',
+      requestTimeoutMs: 100,
+      topologyRequestTimeoutMs: 1000,
+      restartDelayMs: 1000,
+      electron: { utilityProcess: { fork: () => child } }
+    })
+    try {
+      const pending = binding.callAsync('LoadQueue', ['[]', 0])
+      const rejection = assert.rejects(pending, /public genuine control failure/)
+      if (mode === 'spoofed-timeout-code') {
+        const post = child.postMessage.bind(child)
+        child.postMessage = (message) => {
+          if ((message as { method?: string }).method === 'SetLoopRange') {
+            throw Object.assign(new Error('public genuine control failure'), {
+              code: 'ERR_AUDIO_SERVICE_TIMEOUT'
+            })
+          }
+          post(message)
+        }
+      }
+      binding.SetLoopRange(-1, -1)
+      await new Promise((resolve) => setImmediate(resolve))
+      if (mode === 'native-rejection') {
+        const control = child.messages.find(
+          (message) => (message as { method?: string }).method === 'SetLoopRange'
+        ) as { requestId: string }
+        child.emit('message', {
+          kind: 'response',
+          requestId: control.requestId,
+          ok: false,
+          error: 'public genuine control failure'
+        })
+      }
+      await rejection
+      assert.match(binding.GetLastError(), /public genuine control failure/)
+    } finally {
+      binding.destroy()
+    }
+  }
+})
+
 test('topology RPC outlives the normal control deadline and resolves in the same generation', async () => {
   const child = new ManualUtilityProcess()
   const binding = new AudioEngineServiceBinding({

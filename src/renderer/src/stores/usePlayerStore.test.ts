@@ -12,6 +12,10 @@ import { ZH_CN_MESSAGES } from '../../../shared/i18n/messages/zh-CN.ts'
 import { EN_US_MESSAGES } from '../../../shared/i18n/messages/en-US.ts'
 import type { Track } from '../types/music'
 import {
+  isTrackPlaybackSupported,
+  UNSUPPORTED_TRACK_PLAYBACK_MESSAGE
+} from '../utils/trackPlaybackSupport.ts'
+import {
   prepareNativeQueue,
   preparedNativePlayMode,
   stripStaleNcmStreamUrls,
@@ -47,22 +51,15 @@ function extractFunctionBody(source: string, functionName: string): string {
 }
 
 function extractInternalFunctionBody(source: string, functionName: string): string {
-  const signature = new RegExp(
-    `(?:async\\s+)?function ${functionName}\\([^)]*\\)[:\\w\\s<>\\[\\]'|]*\\s*\\{`
-  )
-  const match = source.match(signature)
-  assert.ok(match?.index != null, `${functionName} function should exist`)
-  const bodyStart = match.index + match[0].length - 1
-
-  let depth = 0
-  for (let index = bodyStart; index < source.length; index += 1) {
-    const char = source[index]
-    if (char === '{') depth += 1
-    if (char === '}') depth -= 1
-    if (depth === 0) return source.slice(bodyStart + 1, index)
+  const file = ts.createSourceFile('store.ts', source, ts.ScriptTarget.Latest, true)
+  let declaration: ts.FunctionDeclaration | undefined
+  function visit(node: ts.Node): void {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === functionName) declaration ??= node
+    ts.forEachChild(node, visit)
   }
-
-  assert.fail(`${functionName} body should close`)
+  visit(file)
+  assert.ok(declaration?.body, `${functionName} function should exist`)
+  return source.slice(declaration.body.getStart(file) + 1, declaration.body.end - 1)
 }
 
 test('native output-perfect facts stay canonical from store normalization to PlayerBar', () => {
@@ -508,7 +505,7 @@ test('renderer streaming resume seeks only after media metadata is available', (
   assert.match(source, /audio\.addEventListener\('loadedmetadata', applySeek, \{ once: true \}\)/)
   assert.match(
     playWithRendererAudio,
-    /seekRendererAudioWhenReady\(audio, startTime, track, loadToken\)/
+    /seekRendererAudioWhenReady\(audio, startTime, track, loadToken, isCurrentPlayback\)/
   )
   assert.equal(
     playWithRendererAudio.includes('audio.currentTime = Math.max(0, startTime)'),
@@ -566,13 +563,19 @@ test('only the active streaming load commits its resolved target into shared tra
   const source = readFileSync(new URL('./usePlayerStore.ts', import.meta.url), 'utf8')
   const resolvePlayTarget = extractInternalFunctionBody(source, 'resolvePlayTarget')
   const loadAndPlay = extractInternalFunctionBody(source, 'loadAndPlay')
-  const resolvedAt = loadAndPlay.indexOf('const playTarget = await resolvePlayTarget(track)')
-  const activeCheckAt = loadAndPlay.indexOf('if (!isActiveLoad(loadToken, track))', resolvedAt)
+  const resolvedAt = loadAndPlay.indexOf(
+    'const playTarget = options?.target ?? (await resolvePlayTarget(track))'
+  )
+  const activeCheckAt = loadAndPlay.indexOf('if (!isOwnedLoad())', resolvedAt)
   const commitAt = loadAndPlay.indexOf('track.streamUrl = playTarget', resolvedAt)
   const patchAt = loadAndPlay.indexOf('patchTrackInQueues(track)', resolvedAt)
 
   assert.doesNotMatch(resolvePlayTarget, /track\.streamUrl\s*=/)
   assert.doesNotMatch(resolvePlayTarget, /track\.streamQuality\s*=(?!=)/)
+  assert.match(
+    loadAndPlay,
+    /isActiveLoad\(loadToken, track\) && \(options\?\.isCurrent\?\.\(\) \?\? true\)/
+  )
   assert.ok(resolvedAt >= 0, 'stream URL resolution should remain in loadAndPlay')
   assert.ok(
     activeCheckAt > resolvedAt,
@@ -657,6 +660,8 @@ function ncmPlaybackResolutionFixture(
     'getTrackSource',
     'isLikelyLocalFilePath',
     'shouldReuseResolvedStreamUrl',
+    'isTrackPlaybackSupported',
+    'UNSUPPORTED_TRACK_PLAYBACK_MESSAGE',
     `${implementation}\nreturn resolvePlayTarget`
   )(
     { api: { fs: { isAudioFileAuthorized: isAuthorized } } },
@@ -673,7 +678,9 @@ function ncmPlaybackResolutionFixture(
     async () => {},
     getTrackSource,
     isLikelyLocalFilePath,
-    shouldReuseResolvedStreamUrl
+    shouldReuseResolvedStreamUrl,
+    isTrackPlaybackSupported,
+    UNSUPPORTED_TRACK_PLAYBACK_MESSAGE
   ) as (track: Track) => Promise<string>
   return {
     track: {
@@ -1135,7 +1142,7 @@ test('player store prepares native queues before loading or synchronizing them',
   assert.match(loadAndPlay, /areAudioFilesAuthorized: window\.api\.fs\.areAudioFilesAuthorized/)
   assert.match(
     loadAndPlay,
-    /isCurrent: \(\) => isActiveLoad\(loadToken, track\)/,
+    /isCurrent: \(\) => isOwnedLoad\(\)/,
     'an old async queue preparation must not reach native LoadQueue'
   )
   assert.match(loadAndPlay, /nativeQueueDelegated = preparedQueue\.delegated/)

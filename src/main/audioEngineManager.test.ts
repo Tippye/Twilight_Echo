@@ -4273,6 +4273,187 @@ test('a delayed startup play cannot replace the song selected by next', async (t
   assert.equal((await manager.getPlaybackInfo()).source, 'second.flac')
 })
 
+test('paused play confirms native pause before publishing and keeps normal callers playing', async (t) => {
+  for (const serviceMode of [false, true]) {
+    const native = serviceMode ? new FakeAudioServiceBinding() : new FakeNativeBinding()
+    const manager = makeManager({ exclusiveMode: false }, native)
+    t.after(() => manager.destroy())
+    if (native instanceof FakeAudioServiceBinding) {
+      native.Play = (source = '', position = 0) => {
+        native.playbackInfo = makePlaybackInfo({
+          source,
+          position,
+          state: 'playing',
+          nativePlaybackActive: true
+        })
+      }
+    }
+    const published: PlaybackInfo[] = []
+    const pauseProperties: unknown[] = []
+    manager.on('playback-info', (info) => published.push(info))
+    manager.on('property-change', ({ name, data }) => {
+      if (name === 'pause') pauseProperties.push(data)
+    })
+    const result = await manager.play('paused.flac', 12, { paused: true })
+    assert.equal(result.nativeStarted, true)
+    assert.equal(native.playbackInfo.state, 'paused')
+    assert.equal((await manager.getPlaybackInfo()).position, 12)
+    assert.equal(published.at(-1)?.state, 'paused')
+    assert.ok(published.every((info) => info.state !== 'playing'))
+    assert.deepEqual(pauseProperties, [true])
+    await manager.play('normal.flac', 3)
+    assert.equal(native.playbackInfo.state, 'playing')
+    assert.equal(published.at(-1)?.state, 'playing')
+    assert.equal(pauseProperties.at(-1), false)
+  }
+})
+
+test('paused play does not toggle an already paused native source or pause a different source', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  const play = native.Play
+  const pause = native.Pause
+  let pauseCalls = 0
+  native.Pause = () => {
+    pauseCalls++
+    pause()
+  }
+  native.Play = (source, position) => {
+    play(source, position)
+    native.playbackInfo.state = 'paused'
+  }
+  await manager.play('paused.flac', 5, { paused: true })
+  assert.equal(pauseCalls, 0)
+  assert.equal(native.playbackInfo.state, 'paused')
+  native.Play = (_source, position) => {
+    play('different.flac', position)
+  }
+  await assert.rejects(
+    manager.play('requested.flac', 5, { paused: true }),
+    /paused start could not confirm its source/
+  )
+  assert.equal(pauseCalls, 0)
+  assert.equal(native.playbackInfo.source, 'different.flac')
+})
+
+test('a failed paused start stops only its current owned source without publishing playing', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  native.Pause = () => {
+    throw new Error('public synthetic pause failure')
+  }
+  const published: PlaybackInfo[] = []
+  manager.on('playback-info', (info) => published.push(info))
+  await assert.rejects(
+    manager.play('paused.flac', 6, { paused: true }),
+    /native paused start failed/
+  )
+  assert.equal(native.stopCalls, 1)
+  assert.equal(native.playbackInfo.state, 'stopped')
+  assert.equal((await manager.getPlaybackInfo()).nativePlaybackActive, false)
+  assert.ok(published.every((info) => info.state !== 'playing'))
+})
+
+test('a superseded paused play cannot pause the newer source after delayed Play or info acknowledgement', async (t) => {
+  for (const phase of ['Play', 'GetPlaybackInfo']) {
+    const service = new FakeAudioServiceBinding()
+    const manager = makeManager({ exclusiveMode: false }, service)
+    t.after(() => manager.destroy())
+    service.Play = (source = '', position = 0) => {
+      service.playbackInfo = makePlaybackInfo({
+        source,
+        position,
+        state: 'playing',
+        nativePlaybackActive: true
+      })
+    }
+    let release!: () => void,
+      announce!: () => void,
+      held = false
+    const wait = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const started = new Promise<void>((resolve) => {
+      announce = resolve
+    })
+    const original = service.callAsync.bind(service)
+    service.callAsync = async (method, args) => {
+      const result = await original(method, args)
+      if (!held && method === phase && service.playbackInfo.source === 'old.flac') {
+        held = true
+        announce()
+        await wait
+      }
+      return result
+    }
+    const pending = manager.play('old.flac', 4, { paused: true })
+    await started
+    if (phase === 'GetPlaybackInfo') {
+      const intermediate = await manager.getPlaybackInfo()
+      assert.equal(intermediate.nativePlaybackActive, false)
+      assert.notEqual(intermediate.source, 'old.flac')
+    }
+    await manager.play('new.flac', 9)
+    release()
+    assert.equal((await pending).superseded, true)
+    assert.equal(service.playbackInfo.source, 'new.flac')
+    assert.equal(service.playbackInfo.state, 'playing')
+    assert.equal(service.callOrder.includes('Pause'), false)
+    assert.equal((await manager.getPlaybackInfo()).source, 'new.flac')
+  }
+})
+
+test('a paused Play with delayed Pause acknowledgement cannot overwrite a newer play, next or stop', async (t) => {
+  for (const action of ['play', 'next', 'stop']) {
+    const service = new FakeAudioServiceBinding()
+    const manager = makeManager({ exclusiveMode: false }, service)
+    t.after(() => manager.destroy())
+    await manager.loadQueue(
+      [
+        { id: 'old', source: 'old.flac' },
+        { id: 'new', source: 'new.flac' }
+      ],
+      0
+    )
+    service.Play = (source = '', position = 0) => {
+      service.playbackInfo = makePlaybackInfo({
+        source,
+        position,
+        state: 'playing',
+        nativePlaybackActive: true
+      })
+    }
+    let release!: () => void, announce!: () => void
+    const wait = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const started = new Promise<void>((resolve) => {
+      announce = resolve
+    })
+    const original = service.callAsync.bind(service)
+    service.callAsync = async (method, args) => {
+      const result = await original(method, args)
+      if (method === 'Pause') {
+        announce()
+        await wait
+      }
+      return result
+    }
+    const pending = manager.play('old.flac', 4, { paused: true })
+    await started
+    if (action === 'play') await manager.play('new.flac', 9)
+    else if (action === 'next') await manager.next()
+    else await manager.stop()
+    release()
+    assert.equal((await pending).superseded, true)
+    assert.equal(service.playbackInfo.state, action === 'stop' ? 'stopped' : 'playing')
+    if (action !== 'stop') assert.equal(service.playbackInfo.source, 'new.flac')
+    assert.equal((await manager.getPlaybackInfo()).state, service.playbackInfo.state)
+  }
+})
+
 test('a delayed Play acknowledgement cannot publish the previous song after next', async (t) => {
   const service = new FakeAudioServiceBinding()
   const manager = new AudioEngineManager(

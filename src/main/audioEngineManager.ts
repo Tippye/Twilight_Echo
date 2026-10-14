@@ -18,6 +18,7 @@ import type {
   AudioEngineConfig,
   AudioEngineManagerDependencies,
   AudioEnginePlayResult,
+  AudioEnginePlayOptions,
   AudioEngineQueueItem,
   AudioEngineScheduler,
   AudioEngineServiceNativeBinding,
@@ -77,6 +78,7 @@ export type {
   AudioEngineConfig,
   AudioEngineManagerDependencies,
   AudioEnginePlayResult,
+  AudioEnginePlayOptions,
   AudioEngineQueueItem,
   AudioEngineScheduler,
   AudioEngineServiceNativeBinding,
@@ -1242,9 +1244,13 @@ export class AudioEngineManager extends EventEmitter {
     return this.outputRouter.createDeviceCapabilityRefreshSignature(info)
   }
 
-  async play(source: string, startTime = 0): Promise<AudioEnginePlayResult> {
+  async play(
+    source: string,
+    startTime = 0,
+    options: AudioEnginePlayOptions = {}
+  ): Promise<AudioEnginePlayResult> {
     this.autoMixCoordinator?.invalidate('playback_changed')
-    return this.playback.play(source, startTime)
+    return this.playback.play(source, startTime, options)
   }
 
   async togglePause(): Promise<void> {

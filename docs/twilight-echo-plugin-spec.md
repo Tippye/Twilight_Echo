@@ -158,6 +158,13 @@ bridge 会在失败后保留该 key，payload 改变或上一次调用成功后�
 | 主题            | theme    | CSS 变量、样式表与宿主托管布局；**仅声明式，不执行脚本** |
 | DSP 节点        | dsp      | 挂入引擎 DSP 链（见第 5 节）                             |
 
+支持音质选择的 provider 可在 `playbackUrl` 能力下声明可选 `getPlaybackQuality()` 与
+`setPlaybackQuality(quality)`，两者返回 `{ quality, options: [{ value, label }] }`。
+provider 是选项和首选品质持久化的唯一 owner；宿主不内置来源专有枚举。两个方法均已声明时，
+播放条右侧显示音质选择；选择后为当前曲目明确传递 `getPlaybackUrl(track, { quality, force: true })`，
+沿用当前播放入口、进度与暂停状态。这里展示首选音质，实际解码／输出格式仍由 HiFi 信息提供。
+未声明这两个方法的现有插件保持原行为。此可选扩展从任务构建 `1.3.1-qq.2` 提供，API 主版本仍为3。
+
 Phase 3 的受控 UI 注入只渲染宿主批准的 DTO：`sidebarPage`、`playerBarButton`
 和 `settingsPanel` 均通过 command 回到插件宿主进程执行业务逻辑，不向插件开放
 任意 DOM 权限。主题插件由用户在外观设置中显式选择后生效；宿主一次只应用一个

@@ -60,6 +60,7 @@ export type {
   PlaybackInfo,
   OutputInfo,
   AudioEnginePlayResult,
+  AudioEnginePlayOptions,
   VisualizationOptions,
   VisualizationData,
   VisualizationTapStatus,
