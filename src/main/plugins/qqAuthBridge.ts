@@ -342,9 +342,17 @@ export class QqAuthBridge {
       .catch(() => this.finish(attempt, 'closed', 'QQ 官方登录网页加载失败'))
     const initializedFrames = new WeakSet<QqAuthFrame>()
     while (this.current === attempt && attempt.status === 'waiting' && !win.isDestroyed()) {
-      for (const frame of win.webContents.mainFrame.framesInSubtree) {
-        if (!isQqLoginFrame(frame.url)) continue
+      let frames: QqAuthFrame[]
+      try {
+        frames = win.webContents.mainFrame.framesInSubtree
+      } catch {
+        // WebFrameMain getters can throw between disposal and the next navigation.
+        await this.sleep(150)
+        continue
+      }
+      for (const frame of frames) {
         try {
+          if (!isQqLoginFrame(frame.url)) continue
           if (!initializedFrames.has(frame)) {
             if (await frame.executeJavaScript(SHOW_QR_PANEL)) initializedFrames.add(frame)
           }

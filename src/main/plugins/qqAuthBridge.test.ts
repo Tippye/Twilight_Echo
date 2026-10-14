@@ -19,6 +19,30 @@ const turn = (): Promise<void> => new Promise((done) => setImmediate(done))
 const callbackUrl = (code = 'official_code', state = KEY): string =>
   `https://y.qq.com/wk_v17/common_login.html?type=QQ&code=${code}&state=${state}`
 
+test('QR retrieval survives disposed frame-tree and frame-URL getters during navigation', async () => {
+  let executedDisposed = false
+  const disposed = {
+    get url(): string { throw new Error('Render frame was disposed before WebFrameMain could be accessed') },
+    async executeJavaScript(): Promise<unknown> { executedDisposed = true; return null }
+  }
+  const live = frame()
+  const f = fixture([disposed, live])
+  const mainFrame = f.win.webContents.mainFrame
+  let reads = 0
+  Object.defineProperty(f.win.webContents, 'mainFrame', {
+    get() {
+      if (reads++ === 0) throw new Error('Render frame was disposed before WebFrameMain could be accessed')
+      return mainFrame
+    }
+  })
+  const result = await f.bridge.getQrLogin(ROOT)
+  assert.equal(result.imageDataUrl, PNG)
+  assert.equal(executedDisposed, false)
+  assert.equal(live.scripts.length, 2)
+  assert.ok(reads >= 2)
+  await f.bridge.clear(ROOT)
+})
+
 class FakeContents extends EventEmitter {
   mainFrame: { framesInSubtree: QqAuthFrame[] }
   openHandler?: () => { action: 'deny' }
