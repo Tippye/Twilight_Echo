@@ -1,0 +1,85 @@
+{
+  "schema": "qq-commonfunction-media-leaf-findings-v1",
+  "scope": "Three new static dossiers, bounded ordinary PE byte/constants sidecar and review of existing same-hash key-derivation/encryption dossiers. Public oracle preparation only. No DLL execution, user media/cache, production or Git changes.",
+  "target": {
+    "path": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\CommonFunction.dll",
+    "sha256": "a28ebdd9eda2d3dfbfc540578681bc71425136858e29bc07a22ead142510187d",
+    "architecture": "x86",
+    "imagebase": "0x10000000"
+  },
+  "method": {
+    "provider": "Ghidra12.1.4 through standalone REA CLI",
+    "launcher": "C:\\Users\\Payne\\AppData\\Local\\npm-cache\\_npx\\af752b90495482d7\\node_modules\\rea-agents\\scripts\\rea.mjs",
+    "command_template": "node <launcher> function <target> <address> --provider ghidra --snapshot <snapshot> --format json --full-output 1> <dossier> 2> <stderr>",
+    "GHIDRA_INSTALL_DIR": "E:\\PycharmProjects\\MusicAnyClient\\tools\\ghidra_12.1.4_PUBLIC",
+    "JAVA_HOME": "E:\\PycharmProjects\\MusicAnyClient\\tools\\jdk-21.0.12.1+1",
+    "snapshots": ["qq-commonfunction-media-key-leaf-snapshot.json","qq-commonfunction-media-stream-leaf-snapshot.json"],
+    "all_exit_codes": 0,
+    "all_stderr_bytes": 0,
+    "all_native_value_flow_truncated": false,
+    "all_omitted_operations_lower_bound": 0,
+    "ordinary_pe_sidecar": "qq-commonfunction-media-leaf-pe.json",
+    "ordinary_pe_script": "qq-commonfunction-media-leaf-pe.py",
+    "oracle_preparation": "qq-commonfunction-media-oracle-preparation.json"
+  },
+  "dossiers": [
+    {"address":"0x100053c0","body_bytes":811,"file":"qq-commonfunction-media-key-intake.json","sha256":"53f9485fc273af1365c5cacf99cb02ab242c6bce88003f4d25976c4b8e858968","evidence_id":"ev_7e525199f2aab5f0b4fe1a4bc8ab250f77e928a010ce25b0f2a8343ff304693f"},
+    {"address":"0x100097a0","body_bytes":249,"file":"qq-commonfunction-media-key-handoff.json","sha256":"2901cbd94d92e9844804f4597fe820d739a542a0ab04ce74eef84d3063fe30bf","evidence_id":"ev_fddcb7e546dfcb12429c5f3af55f3e70554c81aa572f3b30a1ccec2cd9e3de7a"},
+    {"address":"0x10009a20","body_bytes":51,"file":"qq-commonfunction-media-read-leaf.json","sha256":"b3f72e2e19132241a04c3a88b8df575a0484282a3e800fcb6d8ae182a84d4c06","evidence_id":"ev_97557fa9d2dca279a342473177e7698a90c825b2f726db84d8785bf6bbcefcf6"}
+  ],
+  "reused_same_target_evidence": [
+    {"file":"qq-sign-next-key-derive.json","address":"0x10009f40","evidence_id":"ev_5aa8b063362ea5e6375a99bcc1adf079b5e07ccc71d0b5fa39b0e6cdb47e35c4","role":"Actual callee of KeyDec EncV2 branch. Existing source proves XOR-word skip/LE serialization derivation, not crypto cipher itself."},
+    {"file":"qq-sign-next-mask-transform.json","address":"0x1000a45a","evidence_id":"ev_f4834485d26c090509fc661f9babeb36f3cca3f8ab61249da29d3c4891ecf4ab","role":"Original framing encryption primitive for future public-input generation; this does not substitute for unexpanded decrypt helpera695."}
+  ],
+  "observations": [
+    {
+      "topic":"EKey scan and initial decode",
+      "evidence":"KeyDec slot0 retains ECX receiver, takes pointer/int length and RET8. length==0 skips processing; other values free previous key pointer and set key length0. It scans input until scanner_table[byte]>63, rather than obeying explicit length. The first128 original table bytes map standard Base64 alphabet chars to0..63 and NUL/'=' to64. It allocates/zeros a scan-derived buffer then calls FUN10001370 with ECX output/EDX input; EAX is the decoded length used later. Decoder helper is unexpanded.",
+      "addresses":["0x100053e5","0x100053f7","0x10005410","0x10005414","0x10005435","0x1000544c","0x100056e8"]
+    },
+    {
+      "topic":"EncV2 conditional layers",
+      "evidence":"The decoded buffer is strstr-searched for exact ASCII 'QQMusic EncV2,Key:' (18 bytes). If found anywhere, it derives key1 using FUN10009f40(words1,7,&ptr), calls FUN1000a695(decoded+18,decodedLength-18,key1,out,&outlen), then derives key2 with words2, calls a695 on the first result, and calls initial decode helper1370 on the second result. Note the decrypt input is decoded+18, not strstr's returned address. The branch does not validate that the marker starts at offset0 or inspect a695's return.",
+      "words1_hex":["c2d276e4","08cf43f9","98e44ed7","82f32fae","e7f65cc7","eafb50ba","ca1d350d"],
+      "words2_hex":["ec19bb35","cd3a911f","a9ec7bac","c93d981d","dd78e513","b835e156","45f5c0a9"],
+      "addresses":["0x10005463","0x100054b8","0x100054f0","0x100054f3","0x10005548","0x1000557a","0x100055b0"]
+    },
+    {
+      "topic":"Final seed/key assembly and stored key layout",
+      "evidence":"For i0..7, native SSE code forms 106.0+0.1*i, calls CRT libm_sse2_tan_precise, applies an absolute-value mask, multiplies100.0, converts through FUN1000cab1 and retains AL. It interleaves these8 bytes with decoded first8 bytes to construct16 bytes. It allocates2*decodedLength bytes at object+4, copies decoded first8 unchanged to this buffer, calls a695 on decoded+8/decodedLength-8 with the16-byte assembled key and output buffer+8, then stores outlen+8 at object+8. The int cast and cipher/failure policy remain unexpanded; Ghidra pointer-typed puStack_c+2 corresponds to assembly integer ADD EAX,8.",
+      "addresses":["0x100055d5","0x100055eb","0x100055f3","0x100055fb","0x10005600","0x10005607","0x1000560f","0x10005627","0x1000564b","0x10005657","0x10005674","0x100056ab","0x100056b6","0x100056b9"]
+    },
+    {
+      "topic":"Key intake bounds and semantics",
+      "evidence":"The body only tests length==0, does not reject negative length, null pointer, unterminated input or decoded length<8. Its final decrypt return is ignored. object+8 is computed from the outlen variable regardless result. Zero length leaves existing key fields unchanged and skips VMProtectEnd after the begin marker. This is native behavior, not a recommended public JS contract; a future adapter should define safe rejection rather than reproduce unsafe memory behavior."
+    },
+    {
+      "topic":"Stream key handoff copies ownership",
+      "evidence":"Under critical section at stream+0x10, handoff frees/zeros previous stream+4 data and stream+0x2c auxiliary pointer, resets stream+8 length. When key pointer is nonnull, signed key+8>0 and key+4 nonnull, it allocates exactly key length, calls FUN100052b0(dest,keyLength,source,keyLength), and stores the length. It only invokes FUN10009a60 when signed length>300. Thus stream owns a separate allocation; it does not retain the KeyDec pointer. Copy helper52b0 and initializer9a60 are unexpanded.",
+      "addresses":["0x100097dc","0x100097f7","0x10009814","0x1000983b","0x10009849","0x10009859","0x10009864","0x10009867","0x10009870","0x10009879","0x10009896"]
+    },
+    {
+      "topic":"Read wrapper forwards full position",
+      "evidence":"Stream+0x10 method9a20 is a VMProtect-bracketed wrapper: preserves receiver, pushes four original DWORDs in reverse and invokes vtable+0xc, forwards EAX, RET16. Prior PE vtable byte evidence resolves that actual callee to100098a0. Prior QQMusicCommon Read callsite push analysis supplies offset low/high,buffer,length; wrapper does not truncate either position DWORD or itself apply header bias. Actual uint64 use and transformation are deferred to98a0.",
+      "addresses":["0x10009a31","0x10009a38","0x10009a3b","0x10009a3e","0x10009a41","0x10009a4c","0x10009a50","QQMusicCommon:0x10013944","QQMusicCommon:0x10013946","QQMusicCommon:0x1001394c","QQMusicCommon:0x10013950"]
+    }
+  ],
+  "derived_inferences": [
+    {"claim":"EKey intake includes a Base64 stage and recognizes an explicit EncV2 wrapper, followed by cipher processing.","basis":"Original scanner mapping, decode helper calls, real strstr conditional and subsequent call/data flow.","limit":"Full decoder1370 and decrypta695 are unexpanded. Do not label the cipher solely from upstream open-source QMC similarity."},
+    {"claim":"Internal key length is the current selector for additional stream initialization (>300), rather than a filename/format argument in this handoff.","basis":"Actual signed length comparison and initializer call.","limit":"Initializer algorithm and actual short/long key data transform remain unknown; no proven RC4 or map implementation yet."},
+    {"claim":"The retained decrypted key object's fields are buffer pointer+4 and integer length+8, and the stream copy allows original key object release after handoff.","basis":"Actual SetKey writes, handoff reads/new allocation/copy and prior SetEkey release sequence.","limit":"Allocator/copier failure and arbitrary corrupted-object behavior are not established."}
+  ],
+  "unknowns":[
+    "Actual a695 decrypt algorithm, accepted ciphertext framing, return/failure/outlen behavior and bounds.",
+    "Actual 98a0 transform, its short/long key branches, offset64 arithmetic, periodic/boundary behavior and return meaning.",
+    "Actual 9a60 initialization: RC4 or map remains a hypothesis, not a result.",
+    "Exact Base64 helper1370 acceptance/error policy and native tangent-to-integer conversioncab1 details.",
+    "GetDownloadEKey source and link to runtime GetEVkey response remain unresolved.",
+    "No named media format compatibility, actual media header/body, decoder/playback, original-DLL method execution or native side-effect evidence in this slice."
+  ],
+  "next_exact_entries_if_authorized":[
+    {"address":"0x1000a695","reason":"Actual EKey cipher decryption and output-length bounds."},
+    {"address":"0x100098a0","reason":"Actual stream read transform and offset64."},
+    {"address":"0x10009a60","reason":"Actual >300 key initialization/selection."}
+  ]
+}

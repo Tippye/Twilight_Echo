@@ -1,0 +1,680 @@
+{
+  "kind": "root-static-normal-rc4-archive-audit",
+  "package": "E:\\PycharmProjects\\MusicAnyClient\\Twilight-Echo-plugins\\packages\\com.twilightecho.provider.qqmusic-0.4.0-rc.4.tep",
+  "bytes": 233762,
+  "sha256": "b32d016c56abc328444421b7eba7a58a26ca76435bf19f099e10360cee773322",
+  "memberCount": 32,
+  "manifest": {
+    "id": "com.twilightecho.provider.qqmusic",
+    "name": "QQ 音乐 Windows 音源",
+    "version": "0.4.0-rc.4",
+    "description": "Windows QQ 音乐音源：官方扫码、资料库、歌手与专辑、每日推荐与分类歌单、同步歌词，支持 MP3、FLAC、Hi-Res 与杜比音频。",
+    "author": "Px-asen",
+    "license": "Apache-2.0",
+    "type": [
+      "provider",
+      "ui"
+    ],
+    "main": "windows-index.mjs",
+    "engines": {
+      "twilightEcho": ">=1.3.1-qq.4"
+    },
+    "apiVersion": 3,
+    "permissions": [
+      "network",
+      "settings",
+      "ui:inject",
+      "library:read"
+    ],
+    "runtimeFiles": [
+      "lib/windows/client.mjs",
+      "lib/windows/comm.mjs",
+      "lib/windows/json-integer.mjs",
+      "lib/windows/login-request.mjs",
+      "lib/windows/response.mjs",
+      "lib/windows/wire.mjs",
+      "lib/windows/signature.mjs",
+      "lib/windows/tea.mjs",
+      "lib/windows/search-call.mjs",
+      "lib/windows/song-detail-call.mjs",
+      "lib/windows/album-call.mjs",
+      "lib/windows/artist-call.mjs",
+      "lib/windows/home-call.mjs",
+      "lib/windows/discovery-call.mjs",
+      "lib/windows/lyric-call.mjs",
+      "lib/windows/settings.mjs",
+      "lib/windows/quality.mjs",
+      "lib/windows/playlist-data.mjs",
+      "lib/windows/playlist-call.mjs",
+      "lib/windows/playlist-binding.mjs",
+      "lib/windows/search-catalog.mjs",
+      "lib/windows/tracks.mjs",
+      "lib/windows/filename.mjs",
+      "lib/windows/vkey-request.mjs",
+      "lib/windows/media-source.mjs",
+      "lib/windows/audio-proxy.mjs",
+      "lib/windows/media-stream.mjs",
+      "lib/windows/container.mjs",
+      "lib/windows/ekey.mjs"
+    ],
+    "repository": "https://github.com/Px-asen/Twilight-Echo-plugins",
+    "homepage": "https://github.com/Px-asen/Twilight-Echo-plugins"
+  },
+  "entries": [
+    {
+      "name": "lib/windows/album-call.mjs",
+      "bytes": 7976,
+      "sha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/artist-call.mjs",
+      "bytes": 12972,
+      "sha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/audio-proxy.mjs",
+      "bytes": 20047,
+      "sha256": "d5e5542f8f1822bbbf33ca7f2e66015ba877333488b9fa4cce87c6352dae060b",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/client.mjs",
+      "bytes": 18404,
+      "sha256": "cfc0f7e6f5a6fbca83a9643fdd4f12bf2dea3017938e0f393b29b6261c76c316",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/comm.mjs",
+      "bytes": 3463,
+      "sha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/container.mjs",
+      "bytes": 4407,
+      "sha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/discovery-call.mjs",
+      "bytes": 19351,
+      "sha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/ekey.mjs",
+      "bytes": 2574,
+      "sha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/filename.mjs",
+      "bytes": 3961,
+      "sha256": "b7cf013824f4691979f04358ce83d48c9b4021b748dc271108b9b168f6b50ec3",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/home-call.mjs",
+      "bytes": 15864,
+      "sha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/json-integer.mjs",
+      "bytes": 602,
+      "sha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/login-request.mjs",
+      "bytes": 3818,
+      "sha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/lyric-call.mjs",
+      "bytes": 3876,
+      "sha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/media-source.mjs",
+      "bytes": 18292,
+      "sha256": "eb0cb74166aaca757a849b3c4e86aa81a56e3633a72c4efc9fa42c1d155ba063",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/media-stream.mjs",
+      "bytes": 5714,
+      "sha256": "a348877e5cc4ee33d75856693e1c8176e4013eaeaf57791014e5651e4ce43ff6",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/playlist-binding.mjs",
+      "bytes": 4485,
+      "sha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/playlist-call.mjs",
+      "bytes": 3895,
+      "sha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/playlist-data.mjs",
+      "bytes": 10732,
+      "sha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/quality.mjs",
+      "bytes": 3591,
+      "sha256": "f398ec173fc816a77a3afc5b8664afbf4832702611b66f5f7f3886f435a73c67",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/response.mjs",
+      "bytes": 3268,
+      "sha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/search-call.mjs",
+      "bytes": 1523,
+      "sha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/search-catalog.mjs",
+      "bytes": 8025,
+      "sha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/settings.mjs",
+      "bytes": 3170,
+      "sha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/signature.mjs",
+      "bytes": 1676,
+      "sha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/song-detail-call.mjs",
+      "bytes": 1523,
+      "sha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/tea.mjs",
+      "bytes": 4535,
+      "sha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/tracks.mjs",
+      "bytes": 6373,
+      "sha256": "ada1d085c4aa79f6e09aa54d280699086acef57d79886ed0a184fc4bc63e1dba",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/vkey-request.mjs",
+      "bytes": 4008,
+      "sha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "sourceExact": true
+    },
+    {
+      "name": "lib/windows/wire.mjs",
+      "bytes": 680,
+      "sha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "sourceExact": true
+    },
+    {
+      "name": "plugin.json",
+      "bytes": 1738,
+      "sha256": "4c3ab0af9527c6ead4b0a289f1e9ba138303a163428d03ecf10ef3580b162e01",
+      "sourceExact": true
+    },
+    {
+      "name": "THIRD_PARTY_NOTICES.md",
+      "bytes": 3115,
+      "sha256": "c2bd1f24c38c4e83d25cecfb3a857d7bd8f41ed762878ad86ec771abe0726525",
+      "sourceExact": true
+    },
+    {
+      "name": "windows-index.mjs",
+      "bytes": 26052,
+      "sha256": "4ad463a7a42662987746c674944474e3f8e800172dbcccbe97c2288bb64eb6bf",
+      "sourceExact": true
+    }
+  ],
+  "closure": {
+    "parser": "acorn",
+    "parserVersion": "8.16.0",
+    "archiveMain": "windows-index.mjs",
+    "runtimeFiles": 29,
+    "archiveModules": 30,
+    "reachableModules": 30,
+    "builtins": [
+      "node:crypto",
+      "node:http",
+      "node:os"
+    ],
+    "missingDeclared": [],
+    "unusedDeclared": [],
+    "unusedArchiveModules": [],
+    "featureCalls": [],
+    "importGraph": {
+      "lib/windows/album-call.mjs": [
+        {
+          "specifier": "./tracks.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tracks.mjs"
+        },
+        {
+          "specifier": "./search-catalog.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/search-catalog.mjs"
+        },
+        {
+          "specifier": "./response.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/response.mjs"
+        }
+      ],
+      "lib/windows/artist-call.mjs": [
+        {
+          "specifier": "./search-catalog.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/search-catalog.mjs"
+        },
+        {
+          "specifier": "./tracks.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tracks.mjs"
+        },
+        {
+          "specifier": "./response.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/response.mjs"
+        }
+      ],
+      "lib/windows/audio-proxy.mjs": [
+        {
+          "specifier": "node:http",
+          "kind": "ImportDeclaration",
+          "builtin": true
+        },
+        {
+          "specifier": "node:crypto",
+          "kind": "ImportDeclaration",
+          "builtin": true
+        },
+        {
+          "specifier": "./media-stream.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/media-stream.mjs"
+        }
+      ],
+      "lib/windows/client.mjs": [
+        {
+          "specifier": "./comm.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/comm.mjs"
+        },
+        {
+          "specifier": "./json-integer.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/json-integer.mjs"
+        },
+        {
+          "specifier": "./login-request.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/login-request.mjs"
+        },
+        {
+          "specifier": "./response.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/response.mjs"
+        },
+        {
+          "specifier": "./wire.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/wire.mjs"
+        },
+        {
+          "specifier": "./comm.mjs",
+          "kind": "ExportNamedDeclaration",
+          "resolved": "lib/windows/comm.mjs"
+        }
+      ],
+      "lib/windows/comm.mjs": [
+        {
+          "specifier": "./json-integer.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/json-integer.mjs"
+        }
+      ],
+      "lib/windows/container.mjs": [
+        {
+          "specifier": "node:crypto",
+          "kind": "ImportDeclaration",
+          "builtin": true
+        },
+        {
+          "specifier": "./ekey.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/ekey.mjs"
+        }
+      ],
+      "lib/windows/discovery-call.mjs": [
+        {
+          "specifier": "./search-catalog.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/search-catalog.mjs"
+        },
+        {
+          "specifier": "./response.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/response.mjs"
+        }
+      ],
+      "lib/windows/ekey.mjs": [
+        {
+          "specifier": "./tea.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tea.mjs"
+        }
+      ],
+      "lib/windows/filename.mjs": [],
+      "lib/windows/home-call.mjs": [
+        {
+          "specifier": "./tracks.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tracks.mjs"
+        },
+        {
+          "specifier": "./search-catalog.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/search-catalog.mjs"
+        },
+        {
+          "specifier": "./response.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/response.mjs"
+        },
+        {
+          "specifier": "./json-integer.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/json-integer.mjs"
+        },
+        {
+          "specifier": "./playlist-binding.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-binding.mjs"
+        },
+        {
+          "specifier": "./playlist-data.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-data.mjs"
+        }
+      ],
+      "lib/windows/json-integer.mjs": [],
+      "lib/windows/login-request.mjs": [
+        {
+          "specifier": "./json-integer.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/json-integer.mjs"
+        }
+      ],
+      "lib/windows/lyric-call.mjs": [],
+      "lib/windows/media-source.mjs": [
+        {
+          "specifier": "node:crypto",
+          "kind": "ImportDeclaration",
+          "builtin": true
+        },
+        {
+          "specifier": "./filename.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/filename.mjs"
+        },
+        {
+          "specifier": "./vkey-request.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/vkey-request.mjs"
+        },
+        {
+          "specifier": "./container.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/container.mjs"
+        },
+        {
+          "specifier": "./media-stream.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/media-stream.mjs"
+        },
+        {
+          "specifier": "./client.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/client.mjs"
+        },
+        {
+          "specifier": "./quality.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/quality.mjs"
+        }
+      ],
+      "lib/windows/media-stream.mjs": [],
+      "lib/windows/playlist-binding.mjs": [
+        {
+          "specifier": "./playlist-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-call.mjs"
+        },
+        {
+          "specifier": "./playlist-data.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-data.mjs"
+        },
+        {
+          "specifier": "./response.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/response.mjs"
+        }
+      ],
+      "lib/windows/playlist-call.mjs": [
+        {
+          "specifier": "./json-integer.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/json-integer.mjs"
+        }
+      ],
+      "lib/windows/playlist-data.mjs": [
+        {
+          "specifier": "./tracks.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tracks.mjs"
+        }
+      ],
+      "lib/windows/quality.mjs": [],
+      "lib/windows/response.mjs": [
+        {
+          "specifier": "./json-integer.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/json-integer.mjs"
+        }
+      ],
+      "lib/windows/search-call.mjs": [],
+      "lib/windows/search-catalog.mjs": [
+        {
+          "specifier": "./search-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/search-call.mjs"
+        },
+        {
+          "specifier": "./tracks.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tracks.mjs"
+        },
+        {
+          "specifier": "./playlist-data.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-data.mjs"
+        },
+        {
+          "specifier": "./response.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/response.mjs"
+        },
+        {
+          "specifier": "./playlist-data.mjs",
+          "kind": "ExportNamedDeclaration",
+          "resolved": "lib/windows/playlist-data.mjs"
+        }
+      ],
+      "lib/windows/settings.mjs": [
+        {
+          "specifier": "./quality.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/quality.mjs"
+        }
+      ],
+      "lib/windows/signature.mjs": [
+        {
+          "specifier": "node:crypto",
+          "kind": "ImportDeclaration",
+          "builtin": true
+        },
+        {
+          "specifier": "./tea.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tea.mjs"
+        }
+      ],
+      "lib/windows/song-detail-call.mjs": [],
+      "lib/windows/tea.mjs": [],
+      "lib/windows/tracks.mjs": [
+        {
+          "specifier": "./quality.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/quality.mjs"
+        }
+      ],
+      "lib/windows/vkey-request.mjs": [],
+      "lib/windows/wire.mjs": [
+        {
+          "specifier": "./signature.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/signature.mjs"
+        }
+      ],
+      "windows-index.mjs": [
+        {
+          "specifier": "node:os",
+          "kind": "ImportDeclaration",
+          "builtin": true
+        },
+        {
+          "specifier": "node:crypto",
+          "kind": "ImportDeclaration",
+          "builtin": true
+        },
+        {
+          "specifier": "./lib/windows/client.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/client.mjs"
+        },
+        {
+          "specifier": "./lib/windows/search-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/search-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/tracks.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/tracks.mjs"
+        },
+        {
+          "specifier": "./lib/windows/song-detail-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/song-detail-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/media-source.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/media-source.mjs"
+        },
+        {
+          "specifier": "./lib/windows/quality.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/quality.mjs"
+        },
+        {
+          "specifier": "./lib/windows/audio-proxy.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/audio-proxy.mjs"
+        },
+        {
+          "specifier": "./lib/windows/lyric-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/lyric-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/search-catalog.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/search-catalog.mjs"
+        },
+        {
+          "specifier": "./lib/windows/album-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/album-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/artist-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/artist-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/home-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/home-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/playlist-binding.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-binding.mjs"
+        },
+        {
+          "specifier": "./lib/windows/discovery-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/discovery-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/playlist-call.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-call.mjs"
+        },
+        {
+          "specifier": "./lib/windows/playlist-data.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/playlist-data.mjs"
+        },
+        {
+          "specifier": "./lib/windows/settings.mjs",
+          "kind": "ImportDeclaration",
+          "resolved": "lib/windows/settings.mjs"
+        }
+      ]
+    },
+    "issues": []
+  },
+  "issues": [],
+  "limits": "Only ZIP/source bytes and AST were inspected; modules were not imported/executed. No install, real Electron/account/profile/network/window or Git operation."
+}

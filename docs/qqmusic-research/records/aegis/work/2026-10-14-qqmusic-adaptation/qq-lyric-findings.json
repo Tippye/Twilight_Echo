@@ -1,0 +1,96 @@
+{
+  "schema": "qq-windows-playlyric-native-findings-v1",
+  "recorded_at_utc": "2026-10-14T09:43:34.172514+00:00",
+  "scope": "Exactly2new native function dossiers, existing source/runtime request shapes, one anonymous official Windows plaintext-mode probe, two new pure production files. No account/native DLL execution or complete lyric text persisted.",
+  "checkpoint": "20-checkpoint.md latest Windows provider activation/media integration section read; complete Windows adaptation/login/media/playback/queue goal remains open.",
+  "dossiers": [
+    {
+      "file": "qq-lyric-native-builder.json",
+      "sha256": "0014f8f55b714021875c5be273c538c180ee4b1df5eb08b50757fb3c43d29388",
+      "target_sha256": "ba66aa248b885227179f1676fbc54576a036f46b9d096fea33131c4f30fa6476",
+      "evidence_id": "ev_2ff28628a4c4562bdb278b14f5e8a7c86da6d030a67202b4bb7ed2764f546a93",
+      "procedure": "0x1002d750",
+      "body_bytes": 1347,
+      "cli_exit": 0,
+      "stderr_bytes": 0
+    },
+    {
+      "file": "qq-lyric-native-name-encoding.json",
+      "sha256": "187ff1baee183a4b7c8f901c2775b4efba3d31dc84d47c26ed82526f960b1fd0",
+      "target_sha256": "4267e1c27f7251a31460613a97f5787fd7d9d0be3664e5e615251aba2780471f",
+      "evidence_id": "ev_5658504914121bd7068136cd2731f5c7a0d7b6c509ed479fc3e6bbd18b371267",
+      "procedure": "0x1004a57d",
+      "body_bytes": 301,
+      "cli_exit": 0,
+      "stderr_bytes": 0
+    }
+  ],
+  "bounded_source": {
+    "file": "qq-lyric-bounded-native-source.json",
+    "sha256": "9121e15e27d418ddad97af6c7d0e7919004e84506898ebf1188d5357b822788e"
+  },
+  "request_shapes": {
+    "source": "qq-runtime-user-actions-v2-shapes.jsonl",
+    "filtered": "qq-lyric-request-shapes.json",
+    "filtered_sha256": "9b480612e2186b0177dc27b2684c9ecacd4e0a98a6bb0555b688b7d28b6faa9e",
+    "matching_shape_count": 3,
+    "fields": "songID/songName/singerName/albumName/qrc/trans/roma/lrc_t/qrc_t/trans_t/roma_t/interval/type/crypt/ct/cv",
+    "types": "Three metadata strings; songID,flags,timestamps,interval,type,innerct/cv numbers. Outercomm ct/cv/patch strings19/2271/118.",
+    "limit": "Sanitized signing-input observations prove shape, not transport success/default caller values/account rights."
+  },
+  "native_contract": {
+    "key": "music.musichallSong.PlayLyricInfo.GetPlayLyricInfo",
+    "module": "music.musichallSong.PlayLyricInfo",
+    "method": "GetPlayLyricInfo",
+    "locator": "Qualified/module/method literal initialization at1ee4/1f0b/1f32 constructs CString globals101a4e20/38/50. Actual builder references all3 at2dc55..5f then passes to existing envelope73e50. Literal/initializer alone was not treated as behavior.",
+    "producer": "1002d750 (1347bytes), ECXowner,11caller stackparams, RET44. songID param1 unsigned32; mode param11. Ghidra EH injection warnings preserved; native pcode complete without truncation.",
+    "names": "Three original wide CString args pass through Common EncodeBase641004a57d then QM::t2a into Jsonstdstring fields. Wide helper301bytes uses t2a\u2192AnsiToUtf8\u2192binary Base644a6aa; UTF8 target established. Specific internal ANSI/codepage replacement and binary alphabet/helper failure behavior not independently recovered.",
+    "flags": "Mode0 or3 chooses localformat1 and emits qrc/trans/roma/crypt all0. Modes1/2/4 and every other mode choose localformat4 and emit all1. No real caller default inferred.",
+    "signed_fields": "lrc_t/qrc_t/trans_t/roma_t/interval are caller-supplied signedint32 JsonValueH. ct literal19 signedint; cv unsigned main22*100+sub71=2271.",
+    "type_boundary": "Native type is ClientSongType2ServerSongType(param2-1), export Common1002dc8e/IATProtocol101235cc; mapping body unexpanded. New pure API receives already-server wire type, not a claimed local enum conversion."
+  },
+  "public_probe": {
+    "file": "qq-lyric-anonymous-probe.json",
+    "sha256": "c0319f28117c84914f63772914b126a14655b21e570423f0b6ce5255d331d2ad",
+    "script": "qq-lyric-anonymous-probe.mjs",
+    "script_sha256": "5183286b7b185129052f0076d7b5e621b803fee20920de76cb7d445959acc2cb",
+    "command": "node E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-lyric-anonymous-probe.mjs",
+    "http": "One HTTP200 official /cgi-bin/musics.fcg, signed Windows profile; itemRPC success through existing client parser.",
+    "input": "Public songID97773/title\u6674\u5929/singer\u5468\u6770\u4f26/album\u53f6\u60e0\u7f8e/interval269/type0; explicitly native mode0 plaintext branch, timestamp0coldcompatchoice, public fixed probe device and session:null.",
+    "response": "crypt0/qrc0. lyric canonicalBase64 string3400chars decoded2548bytes, strictUTF8 LRCtimestamptrue; metadata tag names ti/ar/al/by/offset only. trans/roma empty.",
+    "lyric_encoded_sha256": "a964f7bda2eac89f7c9d81852f533c50f436fa09f126ecd50853edd18aa0cd38",
+    "lyric_decoded_sha256": "8227c4d37a689f3d49aaf965f38c3187b4995753f0741e51610ae7d2861c9ed0",
+    "copyright_boundary": "Original response/decoded strings existed transiently to inspect structure and digest, then only type/length/hash/marker summaries serialized. No complete encoded lyrics, decoded text, line excerpts, QRC or introduction contents stored.",
+    "limits": "One plaintext example proves response branch and accepted Unicode request, not original account, nonempty translation, enhancedcrypt1/QRC, word lyrics or full playback."
+  },
+  "production": {
+    "files": {
+      "lib/windows/lyric-call.mjs": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "windows-lyric-call.test.mjs": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7"
+    },
+    "builder": "buildWindowsPlayLyricInfoCall({songID,songName,singerName,albumName,interval,type,requestMode,lrc_t=0,qrc_t=0,trans_t=0,roma_t=0}); UInt32songID, Int32mode/type/times; metadata encodedUTF8Base64, numericinnerct19/cv2271, couplednative flags.",
+    "decoder": "decodeWindowsPlayLyricResponse(data)\u2192{lyrics,translatedLyrics,wordLyrics:null}; requires responsecrypt0/qrc0. Plain lyric/trans decode canonical standardBase64 (unpadded accepted) and fatalUTF8 with BOMpreserved/NULrejected. Empty/missing fields null; errors generic without source text. Enhanced response explicitly needs-source/rejected.",
+    "adapter_policy": "4096UTF16unit metadata bound, well-formedUnicode/NUL rejection and directUnicodeUTF8 avoid guessing native ANSI lossiness; decoded field encodedcap4MiB, stricter canonicalBase64. Timestamp defaults0 coldrequest choice. No Android/Web request or decoding fallback.",
+    "test_command": "node --test plugins/qqmusic-provider/windows-lyric-call.test.mjs",
+    "observed_tests": 9,
+    "observed_pass": 9,
+    "observed_fail": 0,
+    "test_authority": "Native static branches and recorded public request shape; only self-authored synthetic LRC/translation text for decoder tests, no copyrighted lyric fixture. Actual probe format inspection is independent of production decoder and does not claim that decoder was replayed against retained live text.",
+    "recorded_request_comparison": "Independent no-network probe compared new builder mode0 output to all16 fields/module/method of the already accepted anonymous requestCall; exact object equality passed.",
+    "test_setup_corrections": "First test omitted required Commdevice inputs, then mistakenly used string Commversion input; both were test-only setup errors corrected after reading current Commcontract. Lyric9tests freshpassed with numerical22/71 and channel0/OSversion.",
+    "scope_preserved": "Only specified2production files written. Noindex/manifest/core/Git changes; root independent review/integration remains."
+  },
+  "unknowns": [
+    "Native ClientSongType mapping and meaning/default of all caller mode/timestamp values.",
+    "Exact native ANSI intermediary/codepage/nonrepresentable Unicode replacement and binaryBase64 helper error/linewrap policy.",
+    "Encryptedcrypt1/QRC algorithms, framing, compression and SDK wordLyrics conversion; not guessed from other versions/open-source recipes.",
+    "Nonempty trans field live plaintext framing/translation request flags; decoder structural contract tested only with authored synthetictext.",
+    "Authenticated requests, real account, lyric rights/caller cache variations or complete modern media/playback acceptance."
+  ],
+  "procedure_index": {
+    "file": "qq-lyric-native-procedure-index.json",
+    "sha256": "812194f5f523e81c2f49caec12ff6158349b281c823249d4be2254b9eda3c63d",
+    "observed": "Lyric-named index matched4exported interfaceconstructors only; actual unnamed builder selected through bounded ordinary PE CString global operands/EHentry and confirmed by new dossier."
+  },
+  "no_private_reads_or_full_lyrics": true
+}

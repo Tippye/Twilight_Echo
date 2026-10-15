@@ -1,0 +1,69 @@
+{
+  "schema": "qq-commonfunction-media-transform-findings-v1",
+  "scope": "Three exact static dossiers a695/98a0/9a60; bounded normalized source saved separately. No native execution, private cache/media, production or Git changes.",
+  "target": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\CommonFunction.dll",
+  "target_sha256": "a28ebdd9eda2d3dfbfc540578681bc71425136858e29bc07a22ead142510187d",
+  "source_file": "qq-commonfunction-media-transform-source.json",
+  "source_sha256": "30c3256e609a9e7a07a6ffe2f4fc773a0a78d248ee03038cca75dc19d5e05ca6",
+  "dossiers": [
+    {"address":"0x1000a695","body_bytes":570,"file":"qq-commonfunction-media-transform-decrypt.json","sha256":"38e1a1ac4b8128670ad20d00783a1a7e11ba651f55e8195a5accb0635b7863a1","evidence_id":"ev_5f6b61590cedd48e8c065f00adce4bfb1b1a5c269c834e67168e550d3d1947f3"},
+    {"address":"0x100098a0","body_bytes":371,"file":"qq-commonfunction-media-transform-stream.json","sha256":"84481348d0d3daf6f93703daf0d673e79c598f8b2bf7d8d6be5adfbda19844e6","evidence_id":"ev_d2b4f603583399ddcde74c29245e81a7c6d27154f4a3eb4c0413837106ee513b"},
+    {"address":"0x10009a60","body_bytes":212,"file":"qq-commonfunction-media-transform-init.json","sha256":"72ea2b3344b927d71a34fe1af4564387a86579ef5273598dc273e17255764701","evidence_id":"ev_67c312536fa24a3b657fa4b16995fcc031c47646caa26dfbb23a4b534971f1c8"}
+  ],
+  "method": {
+    "provider":"Ghidra12.1.4 via standalone REA CLI",
+    "command_template":"node <installed rea.mjs> function <target> <address> --provider ghidra --snapshot <private snapshot> --format json --full-output 1> <dossier> 2> <stderr>",
+    "snapshots":["qq-commonfunction-media-transform-decrypt-snapshot.json","qq-commonfunction-media-transform-stream-snapshot.json","qq-commonfunction-media-transform-init-snapshot.json"],
+    "all_exit_codes":0,"all_stderr_bytes":0,"all_native_value_flow_truncated":false,"all_omitted_operations_lower_bound":0
+  },
+  "observations": [
+    {
+      "topic":"a695 decryption framing and actual status",
+      "evidence":"ECX cipher pointer, EDX signed length, stack key16/output/int*outlen; plain RET, caller pops12. Signed length must be>=16 and divisible8. It calls actual block helper1000a37a, obtains padding from first plaintext byte&7, computes candidate=len-padding-10 and requires0<=candidate<=supplied capacity. It writes candidate into outlen before processing all blocks. It skips the padding/header and2 salt bytes, emits candidate payload bytes with inverse chaining, and requires the final7 decrypted bytes to bezero. On normal success EAX is explicitly1 at a8b3/a8b5; all failure paths set EAX0 at a8b8. Ghidra's recovered void signature omits this assembly result.",
+      "addresses":["0x1000a6ce","0x1000a6d4","0x1000a6e5","0x1000a6f1","0x1000a6f6","0x1000a709","0x1000a70b","0x1000a751","0x1000a775","0x1000a85b","0x1000a8ae","0x1000a8b3","0x1000a8b8","0x1000a8c8"]
+    },
+    {
+      "topic":"Relation to prior signing primitive",
+      "evidence":"Signing framing encrypt1000a45a calls block1000a2bc; this decrypt1000a695 instead calls block1000a37a. Thus they do not call the same block entry. Their8-byte blocks, padding low3bits, total overhead pad+10,2 salt bytes,7 trailing zeros and XOR chaining are complementary QQ-style framing. Actual inverse block algorithm/round count/endian at a37a is still a separate proof obligation in this slice; it was selected for the next bounded query.",
+      "basis":"Existing same-hash qq-sign-next-mask-transform.json and new a695 source; no open-source QMC substitution."
+    },
+    {
+      "topic":"a695 output failure boundary",
+      "evidence":"Length/alignment/capacity failures before outlen assignment leave it unchanged. Later block-bounds or trailing-zero failures may leave the candidate outlen and partially written output. There is no output rollback or failure reset. KeyDec previously ignores EAX and stores outlen+8, so arbitrary short/corrupt Ekey inputs are excluded from the proposed successful-decode oracle."
+    },
+    {
+      "topic":"Short-key stream selector and return",
+      "evidence":"98a0 holds stream critical section. Signed key lengthN>300 calls10009cb0 with original offsetLow/offsetHigh/buffer/length, ignores that helper EAX and returns original length viaEBX. N==0 returns DWORD0xffffffff. With nonzero N<=300, buffer loop only runs when signed length>0 and returns original DWORD length. No header/filename/container branch occurs here.",
+      "addresses":["0x100098f3","0x10009909","0x10009917","0x10009927","0x100099e8","0x100099fd"]
+    },
+    {
+      "topic":"Short-key map full64 position/index contract",
+      "formula":"For signed i=0..length-1, x=uint64(offset+signextend(i)) with ADD/ADC wrap. If highDWORD!=0 or lowDWORD>32767, x=x-unsignedQuotient(x/32767)*32767. Strict x==32767 is not reduced. idx=uint64(x*x+0x1162e)%positiveN; 0x1162e=71214. Both offset DWORDs and remainder helper are unsigned64. For valid positiveN<=300 the post-reduction x is at most32767, so square+constant fits below2^31.",
+      "addresses":["0x10009930","0x10009932","0x10009937","0x1000993f","0x10009948","0x1000994c","0x10009952","0x1000995d","0x1000997a","0x10009985","0x10009991","0x1000999f"]
+    },
+    {
+      "topic":"Short-key mask uses the SAME shift count",
+      "formula":"k=key[idx]; r=((idx&7)+4)&7; mask=uint8((k>>r)|(k<<r)); buffer[i]^=mask. This is not generally an8-bit rotate: assembly SHR AL,CL and SHL DL,CL both use r. Do not replace the left count with8-r.",
+      "addresses":["0x100099a7","0x100099aa","0x100099b5","0x100099b7","0x100099b9","0x100099bc","0x100099bf","0x100099ce","0x100099d5","0x100099df"]
+    },
+    {
+      "topic":"Long-key initialization state",
+      "formula":"If stream+0x2c isnull, allocateN bytes there. Set S[i]=uint8(i) for i0..N-1. j starts0; for i0..N-1, j=signedRemainder(j+uint8(S[i])+uint8(key[i%N]),N), then swap S[i],S[j]. In this actual caller N>300, state length isN and values repeat after256. It is an RC4-style swap schedule, not proof of standard256-state RC4 or a completed long-key transform.",
+      "addresses":["0x10009a66","0x10009a72","0x10009a7d","0x10009aa3","0x10009acc","0x10009add","0x10009ade","0x10009aeb","0x10009aef"]
+    },
+    {
+      "topic":"Long-key hash seed",
+      "formula":"h=uint32(1). Walk key bytes in order: zero byte leaves h unchanged; nonzero byte computes candidate=uint32(h*byte). If candidate==0 or candidate<=h, stop without accepting it; otherwise h=candidate. Store h at stream+0x28. Multiplication is low32 IMUL and candidate comparison is unsigned JBE. For valid bounded positiveN, the stored h stays nonzero.",
+      "addresses":["0x10009b02","0x10009b14","0x10009b18","0x10009b1d","0x10009b1f","0x10009b21","0x10009b23","0x10009b2c"]
+    }
+  ],
+  "unknowns":[
+    "Exact inverse block a37a direction/round count/endian requires its actual body, now selected next.",
+    "Full long-key data transform, offset segmentation and keystream require actual10009cb0 and its direct helpers.",
+    "No real media/container sample or GetEVkey Ekey response was inspected; short/long internal key length is not itself proof of format support.",
+    "Base64 helper1370 and tangent conversioncab1 exact edge policy remain unexpanded.",
+    "Runtime ABI/cleanup/oracle and actual playback are not proved by these static results."
+  ],
+  "next_exact_entries_already_requested_by_root":["0x1000a37a","0x10009cb0"],
+  "runtime_results":null
+}

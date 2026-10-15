@@ -1,0 +1,56 @@
+{
+  "schema": "qq-windows-playlist-favorite-findings-v1",
+  "scope": "One authorized new native function dossier, then a strict pure favorite request builder and tests in the assigned existing two files. No Git, main entry/manifest/decoder changes, original DLL execution, account/profile/window access or target/business network requests.",
+  "native": {
+    "artifact": "E:/Program Files (x86)/QQMusic/QQMusic2271.18.09.14/QQMusic_Protocol.dll",
+    "artifactSha256BeforeAndAfter": "ba66aa248b885227179f1676fbc54576a036f46b9d096fea33131c4f30fa6476",
+    "dossier": "qq-playlist-favorite-builder.json",
+    "dossierSha256": "683749d4c3c4ed581b3dacd7413e581860b0ed86042d8c5c7c8311e28a88f3b7",
+    "evidenceId": "ev_de8f3a57aa61cd7eb474d241903e8f16cb423dbc1750879056b32b3bde71f6e6",
+    "entry": "0x1005e2b7",
+    "body": "Complete contiguous inclusive analyzed range 0x1005e2b7 through 0x1005e3a8, 242 bytes; RET4 at 0x1005e3a6. Native value-flow result was not truncated.",
+    "provider": "Ghidra12.1.4 through public REA6.4.0 CLI; per-process GHIDRA_INSTALL_DIR/JAVA_HOME, private copied analysis snapshot. CLI owns and closes its ephemeral analysis database; it does not execute the target DLL.",
+    "privateSnapshot": "qq-playlist-favorite-private-snapshot.json; copied from the completed user snapshot, never shared for mutation with another worker",
+    "newDossiers": 1,
+    "cliExitCode": 0,
+    "stderrBytes": 0,
+    "boundedSource": "qq-playlist-favorite-bounded-source.json",
+    "boundedSourceSha256": "c9a7ddff720ee35f25bdd7c3326369febad2e80aba84e7973582e215a67d0ab5"
+  },
+  "observedContract": {
+    "outerRequestKey": "music.musicasset.PlaylistFavRead",
+    "module": "music.musicasset.PlaylistFavRead",
+    "method": "GetPlaylistFavInfo",
+    "param": { "uin": "JSON string containing formatted current-session UIN" },
+    "keyProof": "Assembly 0x1005e33b and 0x1005e34c both reference the same literal 0x10132678 for module and outer key. The outer key is intentionally not module.method.",
+    "uinProof": "Pushes global 0x101b55fc at e2da and 0x101b55f8 at e2e0, calls formatter 0x1005f27c at e2e6, then Json std::string constructor IAT 0x10123594 at e2f5. Only uin is placed in the JSON object.",
+    "currentUserRelation": "Prior qq-windows-client-implementation-evidence.json ties these same global words to login response data.musicid via native event+0x70/+0x74 and on-login stores 0x100ac1de/0x100ac1e6. Caller must supply the verified current session musicid; no arbitrary-user request is established.",
+    "dispatch": "Common envelope dispatcher 0x10073e50 is called at e37b; no paging, count, order or extra mode fields are emitted here.",
+    "nativeChain": "Existing GetPlaylistByUin producer 0x1005e1a1 calls this function at e29e on its normal completion path. Created and favorite requests have distinct outer keys. Responses and their combination are separate concerns."
+  },
+  "production": {
+    "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/playlist-call.mjs",
+    "sourceSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+    "tests": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-playlist-call.test.mjs",
+    "testsSha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+    "exports": ["WINDOWS_FAVORITE_PLAYLISTS_REQUEST_KEY", "buildWindowsFavoritePlaylistsCall"],
+    "signature": "buildWindowsFavoritePlaylistsCall({uin}) returns the observed module/method and one string field",
+    "policies": "Reuses the existing bounded decimal-string UInt64 validator and canonical normalization, without guessing the unexpanded native formatter's edge cases. Errors contain no supplied ID, output does not retain mutable input, no account lookup/cache/log/I/O occurs. Existing detail and created-list behavior is preserved.",
+    "provenance": "WINDOWS_PLAYLIST_PROVENANCE now includes favoriteProducer and favoriteEvidenceId."
+  },
+  "verification": {
+    "command": "node --test windows-playlist-call.test.mjs",
+    "redBeforeImplementation": "The new favorite export contract test failed with missing export against the previous six-test-only implementation.",
+    "freshResult": "8 passed, 0 failed, 0 skipped",
+    "durationMs": 69.0623,
+    "syntax": "node --check lib/windows/playlist-call.mjs passed",
+    "coverage": "Module-only outer key versus qualified key, exact wire serialization, string UInt64MAX and zero, canonical normalization, no caller alias, malformed/missing/NUL/whitespace/negative/overflow rejection and generic error privacy, plus all original detail and created-list tests.",
+    "independentReview": "qq_packaged_resources independently checked new source, tests, full native pseudocode and assembly: module/key same literal and std::string UIN matched; no P1/P2/P3 findings. Its fresh combined playlist-call8 plus playlist-data8 run passed16/16 without new native queries or writes. This receipt's own verification is the focused8/8 run above."
+  },
+  "unknowns": [
+    "Native formatter 0x1005f27c body and noncanonical native formatting/failure behavior remain unexpanded; adapter decimal normalization is not claimed as that implementation.",
+    "The response callback, favorites DTO fields, created/favorite merge rules, rights/empty-list variants and strict SDK response decoding are not recovered by this request dossier.",
+    "Nearby field literals alone were not used as response behavior. Root's authorized shape-only request and separate playlist-data owner must establish the response contract.",
+    "No complete library, arbitrary-user, pagination or favorites ownership guarantee follows merely from this pure builder."
+  ]
+}

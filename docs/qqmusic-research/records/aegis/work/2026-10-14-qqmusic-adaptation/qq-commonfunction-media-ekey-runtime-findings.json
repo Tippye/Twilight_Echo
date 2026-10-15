@@ -1,0 +1,182 @@
+{
+  "schema": "qq-commonfunction-media-ekey-controlled-runtime-findings-v1",
+  "recorded_at_utc": "2026-10-14T08:24:50.113013+00:00",
+  "target": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\CommonFunction.dll",
+  "original_dll_sha256": "a28ebdd9eda2d3dfbfc540578681bc71425136858e29bc07a22ead142510187d",
+  "authority": "User-approved Windows adaptation route1 and original-DLL fixed-public-input oracle; root technical ABI/ownership review authorized this smoke then matrix execution.",
+  "executed_commands": [
+    "pwsh -NoProfile -File 'E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-commonfunction-media-ekey-oracle.ps1' -RunLabel smoke -CaseIds 0",
+    "pwsh -NoProfile -File 'E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-commonfunction-media-ekey-oracle.ps1' -RunLabel matrix"
+  ],
+  "script": {
+    "file": "qq-commonfunction-media-ekey-oracle.py",
+    "sha256": "643497cab011e1b4bc174b483b2e167982f0949b05ad090698bda6e30920f1cc"
+  },
+  "runner": {
+    "file": "qq-commonfunction-media-ekey-oracle.ps1",
+    "sha256": "13c0e23871c37b5c53dfec344a5e546b21b820db173279855f74c071e1afac4d"
+  },
+  "technical_preflight_review": {
+    "file": "qq-commonfunction-media-ekey-harness-review.json",
+    "sha256": "dfc951bb11c80bcd39f0fe83c3fcfce341870c06d5f21e9ba9d80b7ffe4d2364",
+    "note": "Initial stack-slot/span mistakes corrected before any target execution; historical preparation failures preserved in static findings."
+  },
+  "native_evidence": {
+    "smoke": "Case0 succeeded, then independent raw check confirmed native inverse status1, matching positive lengths/public plaintext, guards, two KeyDec exact public key results, release and before/after artifact hash before matrix execution.",
+    "matrix": "Six fresh hidden x86 Python children N16/301/512 \u00d7 V1/V2. All exit0, stderr0, no30s timeout; every positive native cipher inverse preflight/canary check and two native KeyDec checks passed; original SDK release and matching CRT free returned.",
+    "seed_signed64": [
+      105,
+      86,
+      70,
+      56,
+      43,
+      32,
+      21,
+      11
+    ],
+    "seed8_hex": "695646382b20150b",
+    "v2_derived_native_keys_hex_words1_words2": [
+      "3338365a4a592140232a24255e262928",
+      "2a2a232128232425265e6131635a2c54"
+    ],
+    "static_derivation_equality": true,
+    "hash_before_after": "Original absolute-path target SHA256 matched before and after all six case calls.",
+    "encoded_sizes_ascii": [
+      44,
+      120,
+      416,
+      624,
+      704,
+      1008
+    ],
+    "key_lengths": [
+      16,
+      16,
+      301,
+      301,
+      512,
+      512
+    ],
+    "floating_controls": [
+      {
+        "case_id": 0,
+        "before": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        },
+        "after": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        }
+      },
+      {
+        "case_id": 1,
+        "before": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        },
+        "after": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        }
+      },
+      {
+        "case_id": 2,
+        "before": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        },
+        "after": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        }
+      },
+      {
+        "case_id": 3,
+        "before": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        },
+        "after": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        }
+      },
+      {
+        "case_id": 4,
+        "before": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        },
+        "after": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        }
+      },
+      {
+        "case_id": 5,
+        "before": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        },
+        "after": {
+          "mxcsr": 8096,
+          "x87_control": 639
+        }
+      }
+    ],
+    "private_case_files_after_exit": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_independence": "Input plaintext is fixed public key chosen before native calls. Cipher/framing forward generation and inverse preflight use original DLL primitives only. Fixture expected bytes are copied from original KeyDec first output, not calculated from a port/table."
+  },
+  "artifacts": {
+    "qq-commonfunction-media-ekey-oracle-smoke-process.json": "1e1e0ae4dc7e64cbb2b0a5bd33e8dd9b143902e1a6639aac60455f26d3768c62",
+    "qq-commonfunction-media-ekey-oracle-smoke-vectors.json": "62b7bc35391e9882c0333fb6248c4a730908813220b18dba28edb9e172b6332a",
+    "qq-commonfunction-media-ekey-oracle-matrix-process.json": "2385e75745cb0ddb7efc958cae9f92fa612d7a80a5e1e8f1af6f7255131b18f5",
+    "qq-commonfunction-media-ekey-oracle-matrix-vectors.json": "6ec8f33768b90b898e2038b4ee828ff4a3a222a2b96b44550d34350c67cfa41e",
+    "qq-commonfunction-media-ekey-native-v1.json": "6bd984365bcd17c92b4237b598da625c2293317c5374bafc9167d9a4ef5ec360",
+    "qq-commonfunction-media-ekey-oracle-verification.json": "eec8b2714105587c4de664e0a7418e01e537e4086e255df2f7041281a1a58e20",
+    "qq-commonfunction-media-ekey-abi-pe.json": "cae60d1f0efbaa6539d9abe65b067a1f9456886a7bd2e89499a4da736ba4e828",
+    "qq-commonfunction-media-ekey-base64.json": "2988d481ad0fb0e2022e01811877c572e5bb5c4ea58a71b92878398f85032132"
+  },
+  "raw_captures": "qq-commonfunction-media-ekey-oracle-runtime-smoke/case-00.stdout.jsonl and runtime-matrix/case-00..05.stdout.jsonl, corresponding stderr files and per-child complete commands/paths/module inventory/phase records preserved. Process metadata records raw SHA256.",
+  "fixture_schema": {
+    "schema": "qq-commonfunction-media-ekey-native-fixture-v1",
+    "file": "qq-commonfunction-media-ekey-native-v1.json",
+    "vector_fields": [
+      "case_id",
+      "version",
+      "key_length",
+      "encoded_ekey_hex",
+      "internal_key_hex"
+    ],
+    "top_level_provenance": [
+      "authority",
+      "source_file",
+      "source_sha256",
+      "original_dll_sha256",
+      "native_seed_signed64",
+      "native_seed_hex",
+      "static_and_native_v2_keys_hex"
+    ]
+  },
+  "observations_vs_inference": {
+    "observed": "The original KeyDec decodes these six original-generated well-formed public V1/V2 Ekeys to the chosen internal key; seed bytes and V2 keys come from original code. Native Base64 decoder writes correct owned raw bytes/NUL on these cases.",
+    "supported_inference": "A bounded pure V1/V2 decoder using the recovered seed, key derivation, Base64 and TEA inverse has an independent native-output oracle for these tested cases.",
+    "unknown": "Real response Ekey ownership, GetDownloadEKey linkage, named format/container boundaries, actual authorized media data and player decode/playback remain outside this experiment."
+  },
+  "runtime_limits": [
+    "Original DLL initialization and process detach inevitably execute. Public calls/owned buffer bounds/timeout limit requested work; no native OS containment is provided.",
+    "No OS I/O, registry, network or child-process trace collected. Empty private profile/cwd folders after exit do not prove absence of side effects elsewhere.",
+    "Module inventory interval includes Python/psapi imports; loaded-module differences do not attribute every module solely to target.",
+    "Only fixed bounded original-generated positive V1/V2 inputs. No malformed, short, private Ekey, account, cache, real media, or QQ executable was used.",
+    "Native KeyDec failure/allocator/corrupt-input contracts are not established by valid success cases; a safe port should reject failed framing before exposing output.",
+    "No production or Git changes. Prior stream V1 script/vectors remain SHA-pinned unchanged."
+  ]
+}

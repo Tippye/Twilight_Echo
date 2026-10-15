@@ -1,0 +1,432 @@
+{
+  "schema": "qq-windows-discovery-findings-v1",
+  "generatedAtUtc": "2026-10-14T14:44:31.066382+00:00",
+  "owner": "/root/qq_qr_resources",
+  "status": "Exact configured embedded-web discovery entry and category list builders/consumers recovered; nativect19 acceptance/DTO/identity compatibility needs Root actual sanitized probes.",
+  "authority": {
+    "installedArtifact": "E:/Program Files (x86)/QQMusic/QQMusic2271.18.09.14/QQMusicResource.dll",
+    "artifactSha256": "f635b213a60fad43f46dd8c49c913904420a4f9f480be952984955ccc2186e89",
+    "resource": "JSON/2009/2052",
+    "evidenceId": "ev_a5b17e227de5bb3b46adbb1b35ee846a68a3f2d708f7fc6a23805cf0b9975ae1",
+    "pipeline": "Windows22.71 shipped musichall_v20_url -> current public wk_v20 module620/565 navigation -> exact linked wk_v17 category route -> already cached wk_v17 index/runtime/common -> precisely2 public category business assets. This is Windows-configured embedded-web behavior, not a native C++ producer or original-process runtime request."
+  },
+  "entryChain": [
+    "Configured https://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/recommend",
+    "wk_v20 module565 base route {path:/category,title:分类歌单,match:https://y.qq.com/wk_v17/#/musicroom}",
+    "module565 NavLink to=((props.match?.path)||route.match)+route.path; module620 uses createElement(U.a,null,...), U=n(565), so no match override.",
+    "Exact linked full URL https://y.qq.com/wk_v17/#/musicroom/category",
+    "Existing wk_v17 index musicroom parent + /category componentCe -> chunk47/module441",
+    "Existing runtime b.p=//y.qq.com/wk_v17/, chunk47 hash6310a49dce36f4f651de -> category asset",
+    "module441 tag click SDK1.j(category,TagID,...,{source:TagType===5?1:0}); existing common module1 exportj=J.a/J=n(109), module109 category branch -> /category_detail?category_id=<tag>.",
+    "Existing wk_v17 index category_detail componentit -> chunk46/module435; runtime46 hash a108f7ad3f3fed083d1e -> detail asset."
+  ],
+  "assetBudget": {
+    "firstScope": "wk_v20-only existing local index/runtime/musicroom inventory; no assets fetched there.",
+    "secondRootAuthorization": "Exact linked wk_v17 category route, reuse cached index/runtime/common, at most2 new precise JS assets (category producer + direct category detail consumer).",
+    "newJsLimit": 2,
+    "newJsUsed": 2,
+    "fetches": [
+      {
+        "requestedUrl": "https://y.qq.com/wk_v17/47_6310a49dce36f4f651de.js?max_age=2592000",
+        "finalUrl": "https://y.qq.com/wk_v17/47_6310a49dce36f4f651de.js?max_age=2592000",
+        "status": 200,
+        "contentType": "application/x-javascript",
+        "bytes": 3160,
+        "sha256": "eb436f0ad043d43fe502de213d8ab974d41fe410c2db128f317f9d49b278b615",
+        "observedUtc": "2026-10-14T14:33:04.135756+00:00",
+        "cookiesUsed": false,
+        "authUsed": false,
+        "businessRpc": false,
+        "scopeNewJsUsed": 1,
+        "scopeNewJsLimit": 2
+      },
+      {
+        "requestedUrl": "https://y.qq.com/wk_v17/46_a108f7ad3f3fed083d1e.js?max_age=2592000",
+        "finalUrl": "https://y.qq.com/wk_v17/46_a108f7ad3f3fed083d1e.js?max_age=2592000",
+        "status": 200,
+        "contentType": "application/x-javascript",
+        "bytes": 7047,
+        "sha256": "a6931d41e6a2540263e2f2d315640bf9baa58b61604f31cf18bddacb369b2312",
+        "observedUtc": "2026-10-14T14:35:52.064567+00:00",
+        "cookiesUsed": false,
+        "authUsed": false,
+        "businessRpc": false,
+        "scopeNewJsUsed": 2,
+        "scopeNewJsLimit": 2
+      }
+    ],
+    "diagnosticMistake": {
+      "requestedUrl": "https://y.qq.com/wk_v17/46_f3b6c373239e10c2adea.js?max_age=2592000",
+      "status": 404,
+      "cause": "Transcribed neighboring chunk45 hash for46. No JavaScript asset returned/saved. Corrected by exact runtime regex46 key; both CSS andJS hash maps agree a108f7ad3f3fed083d1e. No generalized URL guessing/retry enumeration."
+    },
+    "privacyBoundary": "Public stateless GET, no CookieJar/Cookie/Authorization, default TLS, bounded2MiB, HTTPS exact y.qq.com redirect guard; no business RPC, profile, account or window.",
+    "noFurtherFetches": true
+  },
+  "initialDiscoveryCalls": [
+    {
+      "sourceModule": 441,
+      "module": "music.playlist.PlaylistSquare",
+      "method": "GetRecommendWhole",
+      "exactParam": {
+        "IsReqHead": false,
+        "IsReqFeed": true,
+        "FeedReq": {
+          "From": 0,
+          "Size": 60
+        }
+      },
+      "types": {
+        "IsReqHead": "boolean",
+        "IsReqFeed": "boolean",
+        "FeedReq.From": "number",
+        "FeedReq.Size": "number"
+      },
+      "sourceState": "sin0/size60; order5 exists in state but is not sent by this method. No entry scroll/paging handler or total consumer in441.",
+      "recordPath": "response[0].data.FeedRsp.List[].Playlist.basic",
+      "mapping": {
+        "picurl": "basic.cover.medium_url -> SDK.u.fixUrl",
+        "creator.nick": "basic.creator.nick",
+        "creator.uin": "basic.creator.uin",
+        "updatetime": "1000*parseInt(basic.modify_time)",
+        "listeners": "basic.play_cnt",
+        "id": "basic.tid without parseInt",
+        "title": "basic.title"
+      },
+      "notes": "Source mutates and retains outer FeedRsp.List record while adding mapped public card fields. Strict adapter should choose validated DTO fields; no total/pagination or all-record playlist namespace claim from source alone."
+    },
+    {
+      "sourceModule": 441,
+      "module": "music.playlist.PlaylistSquare",
+      "method": "GetSquareTab",
+      "exactParam": {},
+      "recordPath": "response[1].data.List[]",
+      "fieldsConsumed": [
+        "TagID",
+        "TagName",
+        "TagType"
+      ],
+      "localSyntheticItem": {
+        "TagID": 0,
+        "TagName": "全部",
+        "TagType": 0
+      },
+      "localSyntheticItemBoundary": "Source appends UI navigation item0 after nonempty tab response; it navigates to category_tags, not a get_category_content request with category_id0.",
+      "loginBoundary": "Render suppresses TagType5 unless SDK.t.isLogin(). Tags of this type navigate with source1 (AI category service). Other tags navigate with source0. Do not merge login-dependent AI branch into anonymous ordinary list."
+    }
+  ],
+  "categoryNavigation": {
+    "normalTag": "SDK1.j(category,record.TagID,empty,empty,empty,empty,{source:record.TagType===5?1:0})",
+    "knownAllTag0": "SDK1.j(category_tags)",
+    "officialMore": "wk_v20 module620 SDK490.i(category,3317), mirrored cached wk_v17 index R.j(category,3317). Literal3317 is a navigation argument, not a recovered named category enum.",
+    "commonModule109": "category -> /category_detail?category_id=<ID>; u/l add from/ext/source metadata to URL then native togglePage. Only category route literals were inspected; unrelated open/login cookie branches not executed."
+  },
+  "ordinaryCategory": {
+    "source": "module435 source0/default branch",
+    "constructor": {
+      "categoryId": "parseInt(query.category_id ||query.id ||3204)",
+      "titleId": "parseInt(query.titleid ||categoryId)",
+      "source": "parseInt(query.source,10)||0",
+      "size": 60,
+      "order": 5,
+      "last_id": "",
+      "page": 0
+    },
+    "constructorBoundaries": "Default3204 is a source literal only; no named All/hot semantic or native UInt32 enum proof. JS parseInt on query input is not strict type/range validation; production caller must validate explicit category references.",
+    "initialContent": {
+      "module": "playlist.PlayListCategoryServer",
+      "method": "get_category_content",
+      "paramExpression": {
+        "caller": "SDK.t.getUin()||string0",
+        "category_id": "categoryId(number)",
+        "page": 0,
+        "use_page": 1,
+        "size": 60
+      },
+      "paramTypes": {
+        "caller": "SDK current UIN or string0 fallback",
+        "category_id": "number",
+        "page": "number",
+        "use_page": "number",
+        "size": "number"
+      }
+    },
+    "initialBasic": {
+      "module": "playlist.PlayListCategoryServer",
+      "method": "get_category_basic",
+      "paramExpression": {
+        "caller": "SDK.t.getUin()||number0",
+        "category_id": "parseInt(titleId)"
+      },
+      "callerTypeBoundary": "The source fallback is number0 here, whereas initialContent/cursor fallback is string0. This difference is preserved rather than silently normalized."
+    },
+    "cursorContent": {
+      "module": "playlist.PlayListCategoryServer",
+      "method": "get_category_content",
+      "paramExpression": {
+        "last_id": "last returned basic.tid.toString()",
+        "size": 60,
+        "order": 5,
+        "is_parent": 0,
+        "caller": "SDK.t.getUin()||string0",
+        "titleid": "titleId(number)",
+        "category_id": "categoryId(number)"
+      },
+      "omitted": [
+        "page",
+        "use_page"
+      ],
+      "orderBoundary": "Default order5 is transmitted by cursor builder, with no source label/sort-control explaining it in435. Do not give it a guessed hot/new name."
+    },
+    "responseConsumer": {
+      "contentRecords": "response[0].data.content.v_item[].basic",
+      "mapping": {
+        "picurlInitial": "cover.medium_url ||cover.default_url -> SDK.u.fixUrl",
+        "picurlCursor": "cover.medium_url ||cover.default_url ||cover.big_url ||cover.pic_url2 -> SDK.u.fixUrl",
+        "creator.nick": "creator.nick",
+        "creator.uin": "creator.encrypt_uin",
+        "updatetime": "1000*parseInt(create_time)",
+        "listeners": "play_cnt",
+        "id": "tid unchanged",
+        "title": "title"
+      },
+      "total": "data.content.total_cnt",
+      "endPredicate": "(existing playlist length + returned item count)>=total_cnt",
+      "cursor": "last mapped item id.toString(); increment local page counter; scroll appends and stops when end predicate true or an empty page occurs.",
+      "basicRecords": "response[1].data.category",
+      "basicFields": [
+        "v_child[].id",
+        "v_child[].name",
+        "v_child[].tag",
+        "desc",
+        "name"
+      ]
+    }
+  },
+  "aiCategorySeparateBranch": {
+    "predicate": "query source===1, introduced by known TagType5 UI navigation",
+    "module": "music.playlist.AiPlCategory",
+    "method": "get_ai_category_content",
+    "size": 12,
+    "initial": "Same page0/use_page1 content fields, size12; get_category_basic remains ordinary PlayListCategoryServer with titleId.",
+    "cursor": "Same cursor fields, size12 plus use_page0.",
+    "authorityBoundary": "A login-gated embedded-web branch, not evidence of anonymous availability or native rights acceptance. Root ordinary discovery scope should not accidentally switch to it."
+  },
+  "identityAndTransportBoundaries": [
+    "Discovery FeedRsp basic.creator.uin and category-detail basic.creator.encrypt_uin are different source fields. Neither mapping alone proves lossless native GetDetail hostUin compatibility or authorizes owner0 substitution.",
+    "Source preserves basic.tid without numeric conversion; public replay verifies a beyond-MAX_SAFE_INTEGER decimal string remains exact. Actual nativect19 server DTO may be number/string and requires lossless validation.",
+    "Configured embedded-web requests use SDK1.s (cached transport export module48/79); this is not a native C++ request proof or nativect19 default comm/header/signing guarantee. Root must probe actual native transport independently.",
+    "Source uses loose0==code and partial setState/loaded behavior; production strict decoder/error policy should not silently expose malformed or failed records.",
+    "Source playAll calls separate get_category_playtrack/get_ai_category_playtrack then playSong; these were read statically but deliberately excluded from read-only list integration and isolated execution.",
+    "Pagination termination and cursor demonstrated for synthetic public valid responses; server cursor stability/accepted enum/ranges/total semantics remain actual-probe scope."
+  ],
+  "nextPointedMissingConsumer": {
+    "route": "https://y.qq.com/wk_v17/#/category_tags",
+    "purpose": "Known UI All0 entry; full categories screen, not same as GetSquareTab abbreviated tabs.",
+    "cachedIndex": "st loader n.e(48).then(n.bind(null,436))",
+    "cachedRuntime": "chunk48 hash c239a904d5fd430ccb28",
+    "exactJsUrl": "https://y.qq.com/wk_v17/48_c239a904d5fd430ccb28.js?max_age=2592000",
+    "status": "Not fetched under current2-new-JS cap; no GetPlaylistTag/PlazaPage or full-tag response contract claim."
+  },
+  "isolatedReplay": {
+    "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-discovery-replay.json",
+    "passed": 7,
+    "failed": 0,
+    "scope": "Only exact isolated methods/constructor from two pinned public static JS assets; inert chained request/VDOM/query/analytics fixtures. No entire module, account, cookie, profile, network, window, real playback or business RPC.",
+    "fragments": [
+      {
+        "file": "qq-windows-discovery-category-47_6310a49dce36f4f651de.js",
+        "module": 441,
+        "name": "componentDidMount",
+        "startChar": 909,
+        "startByte": 909,
+        "endChar": 1891,
+        "sha256": "700129f3a833b5bed95b00b1bf726f956b9289bf1fed0bb0037e62ddedb8fc79"
+      },
+      {
+        "file": "qq-windows-discovery-category-47_6310a49dce36f4f651de.js",
+        "module": 441,
+        "name": "render",
+        "startChar": 1913,
+        "startByte": 1917,
+        "endChar": 3104,
+        "sha256": "a878f0faf4de42c7c96f54e17a636123970dec79f79ca6587f7bec9f3352f783"
+      },
+      {
+        "file": "qq-windows-discovery-detail-46_a108f7ad3f3fed083d1e.js",
+        "module": 435,
+        "name": "constructor",
+        "startChar": 797,
+        "startByte": 797,
+        "endChar": 1378,
+        "sha256": "ef2df895ee04b1a5611ea392443e48442ca547bfdbb10b9b279ea433e208769a"
+      },
+      {
+        "file": "qq-windows-discovery-detail-46_a108f7ad3f3fed083d1e.js",
+        "module": 435,
+        "name": "componentDidMount",
+        "startChar": 1423,
+        "startByte": 1423,
+        "endChar": 2880,
+        "sha256": "78adcab255afc98a56d8c84df106712a1cc6ef84d0752d5f19c03768781ad5c2"
+      },
+      {
+        "file": "qq-windows-discovery-detail-46_a108f7ad3f3fed083d1e.js",
+        "module": 435,
+        "name": "getData",
+        "startChar": 2903,
+        "startByte": 2903,
+        "endChar": 3799,
+        "sha256": "5dad1f666df64e81199dbeec10fc7eb58610e4a32457a8c059345f880a1e001f"
+      },
+      {
+        "file": "qq-windows-discovery-detail-46_a108f7ad3f3fed083d1e.js",
+        "module": 435,
+        "name": "scrollLoad",
+        "startChar": 3825,
+        "startByte": 3825,
+        "endChar": 4232,
+        "sha256": "aacd82aa87a57e9a5058ff6930742e168ad3c0bb441ced224b910d2c1d9f1b10"
+      }
+    ],
+    "limits": [
+      "Root nativect19 DTO/ID host compatibility and actual business acceptance need independent own-session sanitized probes.",
+      "JS parseInt on query category IDs is not a native enum/range authority; response string tid fixtures only establish no coercion in these mapping functions.",
+      "order5, default3204 and official-more3317 literal meanings are not established enum names.",
+      "Full category_tags route chunk48/module436 was not fetched under two-new-JS budget."
+    ]
+  },
+  "boundedSourceEvidence": [
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "wk_v20 navigation component565 -> exact linked category page",
+      "startChar": 13700,
+      "startByte": 13756,
+      "endChar": 15600,
+      "text": "eader__cont layout_cont\",ref:\"layoutHeader\"},a.a.createElement(\"h1\",{className:\"nav_title\",ref:\"navTitle\"},i),a.a.createElement(\"nav\",{className:\"mod_tab mod_top_nav\"},n.map((function(t,n){return\"openurl\"===t.type?a.a.createElement(\"a\",{key:n,style:{marginRight:\"30px\"},className:\"tab__item c_tx_normal\",onClick:function(){e.goPageTop(),Object(l.a)(\"url\",t.url)}},a.a.createElement(\"span\",{className:\"tab__label\"},t.title)):a.a.createElement(o.NavLink,{key:n,to:((null==r?void 0:r.path)||t.match)+t.path,style:{marginRight:\"30px\"},className:function(e){var t=e.isActive;return c()(\"tab__item c_tx_normal\",{c_tx_current:t})},onClick:function(){e.goPageTop(),t.clikreportid&&Object(s.a)(t.clikreportid)}},a.a.createElement(\"span\",{className:\"tab__label\"},t.title))}))))),a.a.createElement(\"div\",{className:\"layout_page_cont\",ref:u.a.setPageScrollElement},this.props.children))},t}(r.Component),m=n(496);function h(){return h=Object.assign?Object.assign.bind():function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var r in n)({}).hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e},h.apply(null,arguments)}var v=[{path:\"/recommend\",title:\"精选\",match:\"/musicroom\",clikreportid:1017151},{path:\"/toplist\",title:\"排行\",match:\"https://y.qq.com/wk_v17/#/musicroom\",clikreportid:1017153},{path:\"/singer\",title:\"歌手\",match:\"https://y.qq.com/wk_v17/#/musicroom\",clikreportid:1017155},{path:\"/category\",title:\"分类歌单\",match:\"https://y.qq.com/wk_v17/#/musicroom\",clikreportid:1017156},{path:\"/album\",title:\"数字专辑\",match:\"https://y.qq.com/wk_v17/#/musicroom\",clikreportid:1017157},{path:\"/quality_area\",title:\"音质专区\",match:\"/musicroom\"}];function y(e){return a.a.createElement(d,h({title:\"乐馆\",routes:v},e))}m.o||v.splice(1,0,{path:\"/voice\",title:\"听书\",match:\"https://y.qq.com/wk_v17/#/musicroom\",clikreportid:1017152}),m.w&&v.push({path:\"/wechat_game\",title:\"边听边玩\",match:\"/musicroom\",clikreportid:1017159}),m.r"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "wk_v20 module620 layout565 no match override and official more literal3317",
+      "startChar": 154600,
+      "startByte": 155554,
+      "endChar": 156130,
+      "text": ",y=t.adInfo,g=t.areaList,_=t.amsAd,w=\"\";return i&&(w=i.map((function(t,n){return o.a.createElement(\"a\",{onClick:function(){e.selectArea(t.type)},key:\"albumTag\"+n,className:\"tab_sub__item\"+(t.type==f?\" c_tx_current\":\" c_tx_thin\")},t.lan)}))),o.a.createElement(U.a,null,o.a.createElement(a.Fragment,null,o.a.createElement(\"div\",{className:\"layout_cont\"},n&&1!=l.a.get(\"qqmusic_version_type\")?o.a.createElement(O.a,{ref:function(t){e.swipe=t},swipeLength:n.length,swipeIndex:!0,isAuto:h,className:\"swipe_action_banner mod_adapter_2-3\",onSwipeResize:function(){e.swipeResize()},onChangeSwipe:function(t){e.bannerReport(t)}},o.a.createElement(p.a,{ref:function(t){e.bannerIn=t},report:\"pc.v17.first_banner\",content:n,amsAd:_,className:\"mod_adapter_2-3 mod_adapter_single\",clickEvent:this.handleBannerClick,handleAdClose:this.handleAdBannerClose})):\"\",v&&1!==parseInt(l.a.get(\"qqmusic_version_type\"),10)?o.a.createElement(N,{content:y,clickEvent:this.handleBannerClick,hideEvent:this.handleAdBigBannerHide,swipeSelector:\".swipe_action_banner\",bannerSelector:\".banner__link\"}):\"\"),r?o.a.createElement(\"div\",{className:\"layout_cont\"},o.a.createElement(\"div\",{className:\"mod_title\"},o.a.createElement(\"h2\",{className:\"c_tx_title\"},\"官方歌单\"),o.a.createElement(\"div\",{className:\"c_tx_thin\"},\"官方甄选订阅歌单\"),o.a.createElement(\"a\",{className:\"more c_tx_thin\",onClick:function(){m.i(\"category\",3317)}},\"更多\",o.a.createElement(\"i\",{className:\"icon_skin more__icon\"}))),o.a.createElement(O.a,{className:\"mod_adapter_4-6\"},o.a.createElement(u.b,{report:\""
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index_077e164667b177696512.js",
+      "label": "wk_v17 category componentCe -> chunk47/module441",
+      "startChar": 28079,
+      "startByte": 28367,
+      "endChar": 28615,
+      "text": "Ce=k()({loader:function(){return n.e(47).then(n.bind(null,441))},loading:function(){return h.a.createElement(\"div\",{className:\"layout_cont\"},h.a.createElement(\"div\",{className:\"mod_title\"},h.a.createElement(\"h2\",{className:\"c_tx_title\"},\"热门分类\")),h.a.createElement(O.i,{number:\"14\"}),h.a.createElement(\"div\",{className:\"mod_title\"},h.a.createElement(\"h2\",{className:\"c_tx_title\"},\"精选歌单\")),h.a.createElement(O.f,{className:\"mod_adapter_4-6\",number:\"20\"}))}}),qe=k()({loader:function(){return Promise.all([n.e(1),n.e(0),n.e(14)]).then(n.bi"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index_077e164667b177696512.js",
+      "label": "wk_v17 musicroom parent and category route",
+      "startChar": 29000,
+      "startByte": 29320,
+      "endChar": 30000,
+      "text": "s://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/recommend\",component:ye,title:\"精选\",clikreportid:1017151},{path:\"/toplist\",component:xe,title:\"排行\",clikreportid:1017153},{path:\"/singer\",component:Oe,title:\"歌手\",clikreportid:1017155},{path:\"/category\",component:Ce,title:\"分类歌单\",clikreportid:1017156},{path:\"/album\",component:Pe,title:\"数字专辑\",clikreportid:1017157},ce.n?{url:\"https://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/quality_area\",title:\"音质专区\"}:je];ce.w&&Se.push({url:\"https://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/wechat_game\",title:\"边听边玩\"}),ce.q&&(Se.push({url:\"https://y.qq.com/wk_v17/#/mv/recommend\",title:\"视频\",newpage:1}),Se.push({url:\"https://i2.y.qq.com/n3/wk_v20/entry/index/radio\",title:\"频道\",newpage:1})),ce.m||Se.splice(1,0,{path:\"/voice\",component:qe,title:\"听书\",clikreportid:1017152});var Re=[{path:\"/musicroom\",exact:!1,component:we,routes:Se}];if(1==U.a.get(\"qqmusic_version_type\")){var Ae=Re[0].routes.findIndex((function(e){return\"数字专辑\"==e.title}));-1!==Ae&&Re[0].routes.spl"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index_077e164667b177696512.js",
+      "label": "wk_v17 category_detail46/435 and All48/436 loader",
+      "startChar": 37210,
+      "startByte": 37602,
+      "endChar": 37900,
+      "text": "it=k()({loader:function(){return Promise.all([n.e(0),n.e(46)]).then(n.bind(null,435))},loading:function(){return h.a.createElement(\"div\",{className:\"layout_cont\"},h.a.createElement(\"div\",{className:\"mod_title\"},h.a.createElement(\"h2\",{className:\"sub_hd__sub_txt\"},\"歌单\")),h.a.createElement(O.f,{className:\"mod_adapter_4-6\",number:\"20\"}))}}),st=k()({loader:function(){return n.e(48).then(n.bind(null,436))},loading:function(){return h.a.createElement(\"div\",{className:\"layout_cont\"},h.a.createElement(O.b,{className:\"mod_adapter_2-3 mod_adapter_single\",number:\"6\"}),h.a.createElement(O.f,{className:\"mod_adapter_4-6\",number:\"20\"}),h.a.createElement(O.e,{className:\"mod_adapter_3-5\",number:\"20"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "label": "Existing common1 exportj delegates navigation to109",
+      "startChar": 11080,
+      "startByte": 11084,
+      "endChar": 11200,
+      "text": "40,height:459,isFloor:!0,needLogin:!0,withskin:!0}),!1}},J=n(109),K=n(60),Z=n(73),X=function(e){var t=e.data,n=t.tabId,a"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "label": "Existing common109 exact category/category_tags switch only",
+      "startChar": 44260,
+      "startByte": 44310,
+      "endChar": 44480,
+      "text": "(t.period||\"\"));break;case\"category\":u(\"/category_detail?category_id=\".concat(t),p,d,f);break;case\"category_tags\":u(\"/category_tags\");break;case\"area_detail\":u(\"area_detail?encArea=\".concat(t),p,d,f);break;case\"url\":loca"
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-qr-resources-pe-json-2009.json",
+      "bytes": 10065,
+      "sha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-index.chunk.20f80323e.js",
+      "bytes": 133979,
+      "sha256": "5dac18c580b6232c1c574522671d684bac0511489232a7fdc8596d30a084deae"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-runtime.d807a2801c869ee2f901.bundle.js",
+      "bytes": 7137,
+      "sha256": "cc6376982015c2993245b16c9792d13be18e751be8184534d52863dcb6cdad1e"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "bytes": 158254,
+      "sha256": "16fd3b01c23cc97921988d260a20c0135801976527fe974529c6be0c94d981c4"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index_077e164667b177696512.js",
+      "bytes": 46728,
+      "sha256": "0ff99de9e5afee6f434e97713788a5b809877a647a8db467d1fe9b98e28fdbd6"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-runtime.42d3fec943b9435c8a6d.js",
+      "bytes": 6071,
+      "sha256": "c1b39ba20ee61dd703cc428d52941663652ae6d315dd1eeefb03ef5dce2f68ec"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "bytes": 438061,
+      "sha256": "093d7213faa8c99e95b5acea2132860619c0a4eb8f64d339c08e385cb571d1e1"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-discovery-category-47_6310a49dce36f4f651de.js",
+      "bytes": 3160,
+      "sha256": "eb436f0ad043d43fe502de213d8ab974d41fe410c2db128f317f9d49b278b615"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-discovery-detail-46_a108f7ad3f3fed083d1e.js",
+      "bytes": 7047,
+      "sha256": "a6931d41e6a2540263e2f2d315640bf9baa58b61604f31cf18bddacb369b2312"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-discovery-category-fetch.json",
+      "bytes": 517,
+      "sha256": "dc3aa275554b4e01c60faa4f4cc4d34897e5998fd2506b9d2352b0bfd096e9f4"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-discovery-detail-fetch.json",
+      "bytes": 517,
+      "sha256": "c99733a7f7f5460a41ae3e0678134f01b90d224ab68bf4f78aab737e1ef9cfc0"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-discovery-replay.mjs",
+      "bytes": 12326,
+      "sha256": "41f2d8f04b5362660f1b46e545508c72ef2ba8d1ec73ef306f1be44c06958816"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-discovery-replay.json",
+      "bytes": 3821,
+      "sha256": "f074d458b44af4980bcbc1a841a9cfcb7cb470f8e3281ffcc95bb325dbf22332"
+    }
+  ],
+  "productionChanges": [],
+  "prohibitedOperationsPerformed": false,
+  "unknown": [
+    "Actual nativect19 acceptance and response DTO schema for all recovered discovery/category requests.",
+    "Full-tag provider contract behind unacquired category_tags module436.",
+    "Actual lossless native playlist creator-host/tid compatibility for both source response variants.",
+    "Native enum meaning for numeric order5/category default3204/official-more3317."
+  ]
+}

@@ -1,0 +1,130 @@
+const { createHash } = require('node:crypto')
+const fs = require('node:fs/promises')
+const path = require('node:path')
+
+const DEFAULT_TWILIGHT_ROOT = path.resolve(__dirname, '..', '..', 'Twilight_Echo-main')
+
+function readArg(name) {
+  const index = process.argv.indexOf(name)
+  return index >= 0 ? process.argv[index + 1] : undefined
+}
+
+async function readJson(filePath) {
+  return JSON.parse(await fs.readFile(filePath, 'utf-8'))
+}
+
+async function main() {
+  const pluginName = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : null
+  if (!pluginName) throw new Error('Usage: node scripts/pack-plugin.cjs <plugin-directory-name>')
+
+  const repoRoot = path.resolve(__dirname, '..')
+  const pluginRoot = path.join(repoRoot, 'plugins', pluginName)
+  const twilightRoot = path.resolve(
+    process.env.TWILIGHT_ECHO_ROOT || readArg('--twilight-root') || DEFAULT_TWILIGHT_ROOT
+  )
+  const { createZip } = require(
+    path.join(twilightRoot, 'packages', 'create-twilight-plugin', 'lib', 'zip.cjs')
+  )
+  const { validatePluginManifest } = require(
+    path.join(twilightRoot, 'packages', 'create-twilight-plugin', 'lib', 'manifest.cjs')
+  )
+
+  const manifestPath = path.join(pluginRoot, 'plugin.json')
+  const rawManifest = await readJson(manifestPath)
+  const manifest = validatePluginManifest(rawManifest)
+  const packageName = `${manifest.id}-${manifest.version}.tep`
+  const packagesDir = path.join(repoRoot, 'packages')
+  const stagingDir = path.join(repoRoot, '.cache', `${manifest.id}-${manifest.version}`)
+  const packagePath = path.join(packagesDir, packageName)
+
+  await fs.rm(stagingDir, { recursive: true, force: true })
+  await fs.mkdir(stagingDir, { recursive: true })
+  await fs.copyFile(manifestPath, path.join(stagingDir, 'plugin.json'))
+  if (manifest.main) {
+    await fs.copyFile(path.join(pluginRoot, manifest.main), path.join(stagingDir, manifest.main))
+  }
+  if (manifest.binary) {
+    for (const binaryPath of Object.values(manifest.binary)) {
+      await fs.mkdir(path.dirname(path.join(stagingDir, binaryPath)), {
+        recursive: true
+      })
+      await fs.copyFile(path.join(pluginRoot, binaryPath), path.join(stagingDir, binaryPath))
+    }
+  }
+  // Some providers ship a host-side runtime helper that is intentionally not
+  // imported by the utility-process entry. Keep those files in the package
+  // without including tests or development-only files.
+  const runtimeFiles = rawManifest.runtimeFiles ?? []
+  if (!Array.isArray(runtimeFiles)) {
+    throw new Error('plugin.json runtimeFiles must be an array')
+  }
+  const themeFiles = (rawManifest.contributes?.themes ?? [])
+    .map((theme) => theme.stylesheet)
+    .filter(Boolean)
+  const packageFiles = new Set([
+    ...runtimeFiles,
+    ...themeFiles,
+    ...(rawManifest.icon ? [rawManifest.icon] : [])
+  ])
+  for (const runtimePath of packageFiles) {
+    if (typeof runtimePath !== 'string' || !runtimePath.trim()) {
+      throw new Error('plugin.json runtimeFiles must contain non-empty relative paths')
+    }
+    const normalized = runtimePath.trim().replace(/\\/g, '/')
+    const relative = path.posix.normalize(normalized)
+    if (
+      relative === '.' ||
+      relative === '..' ||
+      relative.startsWith('../') ||
+      path.posix.isAbsolute(relative) ||
+      path.win32.isAbsolute(normalized)
+    ) {
+      throw new Error(`plugin.json runtimeFiles path escapes the plugin root: ${runtimePath}`)
+    }
+    const sourcePath = path.join(pluginRoot, ...relative.split('/'))
+    const targetPath = path.join(stagingDir, ...relative.split('/'))
+    const sourceStats = await fs.stat(sourcePath)
+    if (sourceStats.isDirectory()) await fs.cp(sourcePath, targetPath, { recursive: true })
+    else {
+      await fs.mkdir(path.dirname(targetPath), { recursive: true })
+      await fs.copyFile(sourcePath, targetPath)
+    }
+  }
+  for (const supplementalFile of ['THIRD_PARTY_NOTICES.md']) {
+    try {
+      await fs.copyFile(
+        path.join(pluginRoot, supplementalFile),
+        path.join(stagingDir, supplementalFile)
+      )
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error
+    }
+  }
+  // vendor/ 目录（如内嵌的上游 bundle）随包分发
+  const vendorDir = path.join(pluginRoot, 'vendor')
+  try {
+    const vendorStat = await fs.stat(vendorDir)
+    if (vendorStat.isDirectory()) {
+      await fs.cp(vendorDir, path.join(stagingDir, 'vendor'), {
+        recursive: true
+      })
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error
+  }
+
+  await createZip(stagingDir, packagePath)
+  await fs.rm(stagingDir, { recursive: true, force: true })
+
+  const buffer = await fs.readFile(packagePath)
+  const checksumSha256 = createHash('sha256').update(buffer).digest('hex')
+
+  console.log(`Packed ${packagePath}`)
+  console.log(`sha256 ${checksumSha256}`)
+  console.log('Run node scripts/generate-index.mjs to refresh plugins.json')
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exitCode = 1
+})

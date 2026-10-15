@@ -1,0 +1,567 @@
+{
+  "schema": "qq-http-backend-findings-v1",
+  "scope": "Three new private REA Ghidra dossiers plus bounded ordinary PE/Capstone supplements; no account/auth expansion or actual requests.",
+  "target": {
+    "path": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\QMNetwork.dll",
+    "sha256": "ce160adb08e0bbf76d667f9528d89d03d33bbbce0e09bd7059fe81ba5f4702c4",
+    "imagebase": "0x10000000"
+  },
+  "dossiers": [
+    {
+      "role": "task-start",
+      "raw": "qq-http-backend-task-start-function.json",
+      "raw_sha256": "e7cd616ad4896f9b04aff12696d8af21736c6c99a6eb75529f92d08e92d9872a",
+      "evidence_id": "ev_cdcd9f8e8e9b36d36906f399c2c126beb3b86c24208cffbcc17f455713a1e21e",
+      "address": "0x1005caa7",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x1005caa7",
+            "end": "0x1005cbb2"
+          }
+        ],
+        "total_bytes": 268,
+        "span_bytes": 268,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "callees": [
+        {
+          "address": "EXTERNAL:0x62",
+          "name": "QQMUSICCOMMON.DLL::AnsiToUtf16"
+        },
+        {
+          "address": "EXTERNAL:0x6e",
+          "name": "QQMUSICCOMMON.DLL::qqmusic::WriteLog"
+        },
+        {
+          "address": "EXTERNAL:0xae",
+          "name": "KERNEL32.DLL::GetTickCount"
+        },
+        {
+          "address": "0x10014f5d",
+          "name": "FUN_10014f5d"
+        },
+        {
+          "address": "0x1005c879",
+          "name": "FUN_1005c879"
+        },
+        {
+          "address": "0x1005cbb3",
+          "name": "FUN_1005cbb3"
+        },
+        {
+          "address": "0x1005cd24",
+          "name": "FUN_1005cd24"
+        },
+        {
+          "address": "0x1005e044",
+          "name": "FUN_1005e044"
+        },
+        {
+          "address": "0x1005e43a",
+          "name": "FUN_1005e43a"
+        },
+        {
+          "address": "0x101a4224",
+          "name": "__EH_epilog3"
+        },
+        {
+          "address": "0x101a425b",
+          "name": "__EH_prolog3"
+        }
+      ],
+      "native_value_flow_truncated": false,
+      "limitations": [
+        "Unresolved computed or indirect flows without target addresses are not represented as reference edges.",
+        "Thunk and external classifications are Ghidra FunctionManager observations; they do not resolve targetless calls.",
+        "Pseudocode and assembly are Ghidra-specific representations, not original source or Hopper-equivalent text.",
+        "Synthetic Ghidra entry-point references without actionable memory sources are omitted."
+      ],
+      "ok": true
+    },
+    {
+      "role": "connection-setup",
+      "raw": "qq-http-backend-connection-setup-function.json",
+      "raw_sha256": "ac0f6fed9f495a8c2ec428a2dd384ab5cc1db7f3dedc024bb5e77df113d4d63c",
+      "evidence_id": "ev_8000aeada9dbb70a095b47ec77ee27c94186aa7f65fe5ee04bc6d778fa98eac1",
+      "address": "0x1005cd24",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x1005cd24",
+            "end": "0x1005d00b"
+          }
+        ],
+        "total_bytes": 744,
+        "span_bytes": 744,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "callees": [
+        {
+          "address": "EXTERNAL:0x62",
+          "name": "QQMUSICCOMMON.DLL::AnsiToUtf16"
+        },
+        {
+          "address": "EXTERNAL:0x6e",
+          "name": "QQMUSICCOMMON.DLL::qqmusic::WriteLog"
+        },
+        {
+          "address": "0x10003acd",
+          "name": "std::basic_string<char,std::char_traits<char>,std::allocator<char>_>::operator="
+        },
+        {
+          "address": "0x10003b66",
+          "name": "FUN_10003b66"
+        },
+        {
+          "address": "0x10003b96",
+          "name": "FUN_10003b96"
+        },
+        {
+          "address": "0x100043b2",
+          "name": "FUN_100043b2"
+        },
+        {
+          "address": "0x10014f5d",
+          "name": "FUN_10014f5d"
+        },
+        {
+          "address": "0x10019cb5",
+          "name": "FUN_10019cb5"
+        },
+        {
+          "address": "0x10019d0c",
+          "name": "FUN_10019d0c"
+        },
+        {
+          "address": "0x1001a3f9",
+          "name": "FUN_1001a3f9"
+        },
+        {
+          "address": "0x1001aafe",
+          "name": "FUN_1001aafe"
+        },
+        {
+          "address": "0x1001abd1",
+          "name": "FUN_1001abd1"
+        },
+        {
+          "address": "0x1005cce0",
+          "name": "FUN_1005cce0"
+        },
+        {
+          "address": "0x1006106a",
+          "name": "FUN_1006106a"
+        },
+        {
+          "address": "0x10096b1e",
+          "name": "FUN_10096b1e"
+        },
+        {
+          "address": "0x10096b61",
+          "name": "FUN_10096b61"
+        },
+        {
+          "address": "0x10096bc8",
+          "name": "FUN_10096bc8"
+        },
+        {
+          "address": "0x10096c2d",
+          "name": "FUN_10096c2d"
+        },
+        {
+          "address": "0x10096d17",
+          "name": "FUN_10096d17"
+        },
+        {
+          "address": "0x100980a2",
+          "name": "FUN_100980a2"
+        },
+        {
+          "address": "0x1019d4b6",
+          "name": "VCRUNTIME140.DLL::_CxxThrowException"
+        },
+        {
+          "address": "0x101a4239",
+          "name": "FUN_101a4239"
+        },
+        {
+          "address": "0x101a428f",
+          "name": "__EH_prolog3_GS"
+        }
+      ],
+      "native_value_flow_truncated": false,
+      "limitations": [
+        "Unresolved computed or indirect flows without target addresses are not represented as reference edges.",
+        "Thunk and external classifications are Ghidra FunctionManager observations; they do not resolve targetless calls.",
+        "Pseudocode and assembly are Ghidra-specific representations, not original source or Hopper-equivalent text.",
+        "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+        "Ghidra Listing reports a terminal call at 0x1005d007 to 0x1019d4b6 VCRUNTIME140.DLL::_CxxThrowException (external=false, thunk=true, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+      ],
+      "ok": true
+    },
+    {
+      "role": "request-build",
+      "raw": "qq-http-backend-request-build-function.json",
+      "raw_sha256": "d421c86cf5fed93b872128715d7db95b2185dc466844b86595e60cacd62d82eb",
+      "evidence_id": "ev_92544435afd88226d82dcb6b32f5b780eab2e3edc510e156bb74e1db69257f7e",
+      "address": "0x10096d17",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x10096d17",
+            "end": "0x1009759d"
+          }
+        ],
+        "total_bytes": 2183,
+        "span_bytes": 2183,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "callees": [
+        {
+          "address": "EXTERNAL:0x61",
+          "name": "QQMUSICCOMMON.DLL::CUtil::IsIPAddressA"
+        },
+        {
+          "address": "EXTERNAL:0x62",
+          "name": "QQMUSICCOMMON.DLL::AnsiToUtf16"
+        },
+        {
+          "address": "EXTERNAL:0x6e",
+          "name": "QQMUSICCOMMON.DLL::qqmusic::WriteLog"
+        },
+        {
+          "address": "EXTERNAL:0xae",
+          "name": "KERNEL32.DLL::GetTickCount"
+        },
+        {
+          "address": "EXTERNAL:0xc5",
+          "name": "KERNEL32.DLL::EnterCriticalSection"
+        },
+        {
+          "address": "EXTERNAL:0x147",
+          "name": "MSVCP140.DLL::std::basic_ios<char,std::char_traits<char>_>::~basic_ios<char,std::char_traits<char>_>"
+        },
+        {
+          "address": "EXTERNAL:0x154",
+          "name": "MSVCP140.DLL::std::basic_ostream<char,std::char_traits<char>_>::operator<<"
+        },
+        {
+          "address": "EXTERNAL:0x19c",
+          "name": "WS2_32.DLL::inet_ntoa"
+        },
+        {
+          "address": "EXTERNAL:0x1af",
+          "name": "WS2_32.DLL::htons"
+        },
+        {
+          "address": "EXTERNAL:0x1d0",
+          "name": "API-MS-WIN-CRT-STRING-L1-1-0.DLL::strlen"
+        },
+        {
+          "address": "EXTERNAL:0x1d5",
+          "name": "API-MS-WIN-CRT-STRING-L1-1-0.DLL::strnlen"
+        },
+        {
+          "address": "0x10003acd",
+          "name": "std::basic_string<char,std::char_traits<char>,std::allocator<char>_>::operator="
+        },
+        {
+          "address": "0x10003afb",
+          "name": "FUN_10003afb"
+        },
+        {
+          "address": "0x10003b66",
+          "name": "FUN_10003b66"
+        },
+        {
+          "address": "0x10003b96",
+          "name": "FUN_10003b96"
+        },
+        {
+          "address": "0x100043b2",
+          "name": "FUN_100043b2"
+        },
+        {
+          "address": "0x100145f8",
+          "name": "FUN_100145f8"
+        },
+        {
+          "address": "0x10014f5d",
+          "name": "FUN_10014f5d"
+        },
+        {
+          "address": "0x10015450",
+          "name": "FUN_10015450"
+        },
+        {
+          "address": "0x100180a3",
+          "name": "FUN_100180a3"
+        },
+        {
+          "address": "0x10018a20",
+          "name": "FUN_10018a20"
+        },
+        {
+          "address": "0x1001ae57",
+          "name": "FUN_1001ae57"
+        },
+        {
+          "address": "0x10036934",
+          "name": "FUN_10036934"
+        },
+        {
+          "address": "0x1003ff49",
+          "name": "FUN_1003ff49"
+        },
+        {
+          "address": "0x100570e8",
+          "name": "FUN_100570e8"
+        },
+        {
+          "address": "0x1005769a",
+          "name": "FUN_1005769a"
+        },
+        {
+          "address": "0x10057cc9",
+          "name": "FUN_10057cc9"
+        },
+        {
+          "address": "0x10057d4c",
+          "name": "FUN_10057d4c"
+        },
+        {
+          "address": "0x10059653",
+          "name": "FUN_10059653"
+        },
+        {
+          "address": "0x1006075b",
+          "name": "FUN_1006075b"
+        },
+        {
+          "address": "0x10060921",
+          "name": "FUN_10060921"
+        },
+        {
+          "address": "0x10060a03",
+          "name": "FUN_10060a03"
+        },
+        {
+          "address": "0x100613da",
+          "name": "FUN_100613da"
+        },
+        {
+          "address": "0x1006a713",
+          "name": "FUN_1006a713"
+        },
+        {
+          "address": "0x1006b6a6",
+          "name": "FUN_1006b6a6"
+        },
+        {
+          "address": "0x1009679f",
+          "name": "FUN_1009679f"
+        },
+        {
+          "address": "0x100975c3",
+          "name": "FUN_100975c3"
+        },
+        {
+          "address": "0x10097ece",
+          "name": "FUN_10097ece"
+        },
+        {
+          "address": "0x10097f79",
+          "name": "FUN_10097f79"
+        },
+        {
+          "address": "0x100982a5",
+          "name": "FUN_100982a5"
+        },
+        {
+          "address": "0x100982d5",
+          "name": "FUN_100982d5"
+        },
+        {
+          "address": "0x10098428",
+          "name": "FUN_10098428"
+        },
+        {
+          "address": "0x100984d3",
+          "name": "FUN_100984d3"
+        },
+        {
+          "address": "0x101a4239",
+          "name": "FUN_101a4239"
+        },
+        {
+          "address": "0x101a428f",
+          "name": "__EH_prolog3_GS"
+        }
+      ],
+      "native_value_flow_truncated": false,
+      "limitations": [
+        "Unresolved computed or indirect flows without target addresses are not represented as reference edges.",
+        "Thunk and external classifications are Ghidra FunctionManager observations; they do not resolve targetless calls.",
+        "Pseudocode and assembly are Ghidra-specific representations, not original source or Hopper-equivalent text.",
+        "Synthetic Ghidra entry-point references without actionable memory sources are omitted."
+      ],
+      "ok": true
+    }
+  ],
+  "queue_chain": {
+    "authority": "Ordinary static byte supplement, corroborating prior manager Evidence ev_ad6de0ab83db9d767388939c4bbd73f9baf208aa6e8ba7cc21cf7b99b9c89409",
+    "observed": [
+      "0x10080538 waits for manager+0x2b8 at0x10080590/0x10080596, consumes queue+0x2c4 under lock+0x108 at0x100806c3.",
+      "Command1 selects branch0x1008080c and direct call0x10080815 ->0x100847bc with descriptor queue-item+0x18 and taskID queue-item+0x10.",
+      "0x100847bc retrieves task from manager+0x14, sets proxy, logs begin request, calls0x1005caa7 at0x10084898.",
+      "REA task-start0x1005caa7 parses URL then directly calls0x1005cd24 at0x1005cb89.",
+      "REA connection-setup0x1005cd24 creates connection via0x1006106a at0x1005cd89 and calls0x10096d17 at0x1005cf0e.",
+      "Ordinary factory0x1006106a allocates0x198 bytes and calls0x1009683c at0x1006110c; ctor assigns vtable0x10231158 at0x10096858."
+    ]
+  },
+  "headers": {
+    "evidence_id": "ev_92544435afd88226d82dcb6b32f5b780eab2e3edc510e156bb74e1db69257f7e",
+    "ordinary_constants": "qq-http-backend-details.json",
+    "observed": [
+      "Request builder0x10096d17 emits method + space + path + HTTP/1.1 CRLF; proxy-type4 uses an absolute http/https target.",
+      "Accept: */* CRLF and Accept-Language: zh-CN CRLF are unconditionally appended at0x10097339/0x10097349.",
+      "Host: host CRLF is inserted when lower header search for host: returns-1 at0x10097360/0x1009736b.",
+      "User-Agent default is inserted when lower header search for user-agent: returns-1 at0x100973a9/0x100973b1. Exact default is User-Agent: Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0).",
+      "Caller header string connection+0x104 is appended at0x100973d7; input headers are retained rather than reconstructed from a cookie owner.",
+      "Content-Type is appended after input headers iff0x100975c3(type) is nonnull; no existing Content-Type check occurs in the covered builder.",
+      "Content-Length is decimal body byte-vector length and is added only for nonzero body size at0x1009741f/0x1009743d.",
+      "Connection: Keep-Alive CRLF and final CRLF are appended at0x1009744f/0x1009745f.",
+      "Connection-setup appends Accept-Encoding: gzip, deflate or br, gzip, deflate through0x100980a2 based on0x1005cce0 at0x1005ce4f. Which branch the actual vkey takes remains unestablished."
+    ],
+    "content_type": {
+      "mapping": {
+        "1": "application/x-www-form-urlencoded",
+        "2": "application/octet-stream",
+        "4": "application/json",
+        "0, 3, other": null
+      },
+      "source": "Raw helper0x100975c3; exact constants0x1023130c/0x10229cfc/0x10229c9c.",
+      "constructor_default": {
+        "value": 1,
+        "observed": "worker constructor0x1004d0ee: XOR ECX at0x1004d196, INC ECX at0x1004d198, MOV [worker+0x6c],ECX at0x1004d19b."
+      },
+      "source_field": "RequestInternal reads worker+0x6c at0x1004dae9 into local EBP-0xa4. Optional multipart branch sets this local0; this does not prove ordinary JSON sets4.",
+      "stream_bridge": "CgiPost descriptor begins EBP-0xa8. Body vector is descriptor+0x48. At0x10095bf4, first4 vector bytes are copied into descriptor+0x54; if stream flag is nonzero those4 bytes are erased at0x10095c11. Copy helper0x1005cbb3 propagates descriptor+0x54 to task+0xd4 at0x1005cbf2/0x1005cbf5. Connection-setup pushes task+0xd4 as the2nd argument to0x10096d17 at0x1005ce99/0x1005cefe.",
+      "override": "CHttpHost vtable+0x18 points0x1005061d. Its SetOption-like command4 writes host+0x70 = embedded worker+0x6c at0x1005063b. Separate worker setter0x1004f7c4 also writes worker+0x6c from its argument.",
+      "actual_json_vkey_type": "UNKNOWN: the recorded default is1; no covered Protocol caller establishes a command4 override to4. Do not derive enum4 from the fact that the body is JSON."
+    },
+    "cookie_origin_referer": {
+      "observed": "No default Cookie, Origin or Referer write is present in the three new dossiers or exact request-builder body. Incoming header text is passed through.",
+      "unknown": "Earlier RequestInternal header helpers0x1004f341/0x1004f98f and conditional helpers remain unexpanded, so this bounded result does not establish absence from the final request or cookie construction ownership."
+    }
+  },
+  "body": {
+    "observed": "0x10096d17 allocates connection+0xa4 vector for header bytes plus body bytes. Raw copies occur0x100974b4 and0x100974d1; the latter copies the provided byte vector directly. Send kick is0x100974e9 ->0x10097ece.",
+    "unknown": "Source serialization/transcoding and conditional multipart decisions upstream remain prior-slice unknowns. Native decompiler call signatures are not ABI proof."
+  },
+  "backend": {
+    "observed": [
+      "Covered CGI send chain is0x10096d17 ->0x10097ece ->0x10060b12 at0x10097f2e ->0x10063ca0 at0x10060b4a; last entry is an internal transport helper and remains unexpanded.",
+      "No libcurl or WnsSDK callee occurs in the3 new REA dossiers. Request builder uses WS2_32 inet_ntoa/htons and an internal connection manager.",
+      "Ordinary import xrefs locate WnsSDK::sendRequest at0x1003c3f5 with CP2PTP2PAchieve::OnSendWNSRequest diagnostics.",
+      "Ordinary import xrefs locate curl_easy_init/setopt/perform/getinfo/cleanup in0x1009d5xx-0x1009d7xx with blockhttp diagnostics elsewhere. Import and nearby diagnostics identify candidates, not runtime attribution."
+    ],
+    "inference": "The recovered CGI layer manually constructs HTTP and hands bytes to its connection manager. These observations do not support implementing its HTTP request as a WNS RPC or claiming that this call directly uses libcurl.",
+    "unknown": "The lower socket/TLS backend under0x10063ca0 and full queue-manager/connection event source are not expanded. QoS and unrelated download behavior intentionally excluded."
+  },
+  "response": {
+    "authority": "Ordinary exact callback sites plus reused5d150 REA Evidence ev_36f897b06bb561fad6cf6709ba28154ca814c807d117c55847ae5f39483cdae3 and prior CCgiTask vtable.",
+    "observed": [
+      "Connection0x10097835 invokes callback vtable+4 at0x100978d1 with connectionID/header descriptor; prior task vtable resolves this to0x1005d150.",
+      "Existing header callback0x1005d150 checks HTTP status200, redirect301/302 and location; redirect re-parses URL and re-calls0x1005cd24.",
+      "Connection byte receive path invokes callback+8 at0x10097df4 with connectionID, count/aux fields and body data; task vtable resolves0x1005d981. It appends bytes to task+0x130 at0x1005da32, bounded by0x1070800.",
+      "Connection completion sites invoke callback+0xc, e.g0x10097e57; task vtable resolves0x1005db8c.",
+      "Completion examines content-encoding. Exact strings gzip/deflate/br map to conditional decode paths; gzip/deflate call0x1005da41 at0x1005de36 whose imports are InflateInit2Common/InflateCommon/InflateEndCommon. br has distinct internal calls0x10011667/0x100103eb; algorithm identity not independently proved from this supplement.",
+      "Completion accepts status200/204, reports error0x6c for other statuses, then0x1005df18 ->0x1005c879. This serializes taskID/state/error/status/body into StreamParam and calls0x1007f098 at0x1005ca73."
+    ],
+    "unknown": "The upper0x1007f098 -> CDownload callback -> Protocol final parsing bridge remains unexpanded. This is a static path, not an observed response or proof of endpoint acceptance."
+  },
+  "validation": {
+    "successful_new_dossiers": 3,
+    "failed_queries": 0,
+    "repeated_dossiers": 0,
+    "all_ok": true,
+    "all_native_value_flow_truncated": false,
+    "all_stderr_empty": true,
+    "all_exit_codes": 0,
+    "source_sha256_unchanged": true,
+    "target_modified": false,
+    "production_or_git_modified": false,
+    "target_execution": false,
+    "requests_sent": false,
+    "account_values_or_private_media_read": false,
+    "global_native_mcp": false
+  },
+  "artifacts": [
+    {
+      "name": "qq-http-backend-connection-seed.json",
+      "bytes": 31298,
+      "sha256": "08677bc90c36ee780496dddf7c7a7d9d90e76ef4d4be2fdcbf904a49ea14f75e"
+    },
+    {
+      "name": "qq-http-backend-connection-setup-function.json",
+      "bytes": 608691,
+      "sha256": "ac0f6fed9f495a8c2ec428a2dd384ab5cc1db7f3dedc024bb5e77df113d4d63c"
+    },
+    {
+      "name": "qq-http-backend-details.json",
+      "bytes": 401121,
+      "sha256": "bfaca72eef31b314fddd6b29c7781995897240f99781c128015e8af5593cbff8"
+    },
+    {
+      "name": "qq-http-backend-host-options.json",
+      "bytes": 12004,
+      "sha256": "94a4b844fb2e8ea6ef48d310fed88e09a20b0774125fea898e8ea7faccadcc9e"
+    },
+    {
+      "name": "qq-http-backend-request-build-function.json",
+      "bytes": 3483942,
+      "sha256": "d421c86cf5fed93b872128715d7db95b2185dc466844b86595e60cacd62d82eb"
+    },
+    {
+      "name": "qq-http-backend-seeds.json",
+      "bytes": 87077,
+      "sha256": "91cc6ddca6e3dd62964db27624dc7fd2fa5eadbf4bcfa92165d4051195a6c6a2"
+    },
+    {
+      "name": "qq-http-backend-seeds2.json",
+      "bytes": 93758,
+      "sha256": "303a7b232e7dd31a4bf1c46fc26a9ae89ab7aa67dc4166a3c55fda5cd5c554d8"
+    },
+    {
+      "name": "qq-http-backend-snapshot.json",
+      "bytes": 30383592,
+      "sha256": "4764962b01070c879bd5d0049980039e569e3b8f106655ab5ade8d59b06c3409"
+    },
+    {
+      "name": "qq-http-backend-static.json",
+      "bytes": 3167895,
+      "sha256": "44fd974217408c2d6ca7190b8e9dd47b7e96116ebae728988b47f937b80e7dc4"
+    },
+    {
+      "name": "qq-http-backend-task-start-function.json",
+      "bytes": 215862,
+      "sha256": "e7cd616ad4896f9b04aff12696d8af21736c6c99a6eb75529f92d08e92d9872a"
+    },
+    {
+      "name": "qq-http-backend-type-field-references.json",
+      "bytes": 6499,
+      "sha256": "caed9b5931bcd7ffa5b6a57f3c54690b2a32816d555c4bfd1997ec418829229c"
+    }
+  ]
+}

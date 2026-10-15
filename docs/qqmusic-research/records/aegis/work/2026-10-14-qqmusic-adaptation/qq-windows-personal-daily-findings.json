@@ -1,0 +1,491 @@
+{
+  "schema": "qq-windows-personal-daily-findings-v1",
+  "generatedAtUtc": "2026-10-14T14:30:26.739390+00:00",
+  "owner": "/root/qq_qr_resources",
+  "status": "configured embedded-web source301 preserved; directly observed native-ct19 adapter201 plus exact known Daily title and configured aiDiss30 strict records verified by Root own-session sanitized evidence",
+  "authority": {
+    "installedArtifact": "E:/Program Files (x86)/QQMusic/QQMusic2271.18.09.14/QQMusicResource.dll",
+    "artifactSha256": "f635b213a60fad43f46dd8c49c913904420a4f9f480be952984955ccc2186e89",
+    "resource": "JSON/2009/2052",
+    "resourceEvidenceId": "ev_a5b17e227de5bb3b46adbb1b35ee846a68a3f2d708f7fc6a23805cf0b9975ae1",
+    "resourceSha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7",
+    "pipeline": "Windows22.71 shipped recommend_v20_url -> cached current index/runtime locators -> current public module609 + directly shared module544. Embedded-web static source, not a native C++ producer or original process runtime request."
+  },
+  "configuredUrl": "https://i2.y.qq.com/n3/wk_v20/entry/index/recommend",
+  "routeConsumerChain": [
+    "Resource JSON/2009/2052 recommend_v20_url -> /n3/wk_v20/entry/index/recommend",
+    "Cached index route suffix recommend -> chunk31/module609; loader also declares shared chunk13",
+    "Cached runtime publicPath //y.qq.com/n3/wk_v20/entry// -> recommend.chunk.498dd3a28.js",
+    "module609 Ht/getInitialProps -> m(1,0) -> RecommendFeed -> {firstTabData:{data,reqUin}}",
+    "module609 onPlayDaily30 -> exact number301 shelf / first niche / known daily title -> playPlayList -> v(card.id,card)"
+  ],
+  "assetBudget": {
+    "rootAuthorization": "This separate scope permits exactly1 configured recommend business asset +1 necessary directly pointed shared consumer; no further dependencies.",
+    "newJsLimit": 2,
+    "newJsUsed": 2,
+    "urls": [
+      "https://y.qq.com/n3/wk_v20/entry//recommend.chunk.498dd3a28.js?max_age=6048000",
+      "https://y.qq.com/n3/wk_v20/entry//common~musicroom~recommend~voice~748942c6.chunk.26bd9e519.js?max_age=6048000"
+    ],
+    "sharedSelectionProof": "Both index loaders for620 and609 declare chunk13; both consumers import missing module544; runtime maps13 to joint common~musicroom~recommend~voice name/hash. Actual fetched chunk13 contains544.",
+    "fetchBoundary": "Stateless public GET, no CookieJar/Cookie/Authorization/account/profile; TLS default, redirects restricted to HTTPS official exact origin; no business RPC. No further asset fetches."
+  },
+  "feedRequest": {
+    "module": "music.recommend.RecommendFeed",
+    "method": "get_recommend_feed",
+    "initialExactParam": {
+      "direction": 0,
+      "page": 1,
+      "v_cache": [],
+      "v_uniq": [],
+      "s_num": 0
+    },
+    "types": {
+      "direction": "number",
+      "page": "number",
+      "v_cache": "array",
+      "v_uniq": "array",
+      "s_num": "number"
+    },
+    "defaultProof": "m forwards its second argument directly as s_num with no initializer/default. Ht calls m(1,0); direction is 1===page ?0:1.",
+    "pagination": "Constructor page2; getTabData passes current page and existing v_shelf.length||0 as s_num, appends shelves, advances/reloads while load_mark===0. Initial RPC probe does not need this auto-loop.",
+    "responseConsumer": "response[0].data.v_shelf[]; returns {data:mutatedFeed,reqUin:SDK.q.getUin()}",
+    "reqUinBoundary": "Account-bound diagnostic/context output, not an ID or generic library field; never persisted/logged by this scope."
+  },
+  "shelfEnum": {
+    "SongMenu": 205,
+    "Banner": 206,
+    "RecommendSongs": 207,
+    "DoubleRowSongMenu": 271,
+    "RecommendRadio": 272,
+    "PersonalRadio": 301
+  },
+  "dailySelector": {
+    "sourceModule": 609,
+    "exactPredicate": "shelf.id===301 (number); shelf.v_niche[0].v_card.find(card=>card.title==='每日30首')",
+    "knownSourceLabel": "每日30首",
+    "action": "Only found card calls playPlayList(card), which calls v(card.id,card).",
+    "noFallback": "No string301 coercion, other shelf, later niche, card position, renamed title or guessed enum fallback is established.",
+    "readOnlyBoundary": "playPlayList then invokes native playSong; provider read-only list adapter must stop after data.songlist and must not execute source playback/reporting."
+  },
+  "dailyListRequest": {
+    "module": "music.srfDissInfo.aiDissInfo",
+    "method": "uniform_get_Dissinfo",
+    "paramExpression": {
+      "disstid": "parseInt(card.id,10)",
+      "userinfo": 1,
+      "tag": 1,
+      "guid": "SDK.r.getGuid()"
+    },
+    "types": {
+      "disstid": "number (JS parseInt result)",
+      "userinfo": "number",
+      "tag": "number",
+      "guid": "source SDK device value, implementation not expanded"
+    },
+    "responseConsumer": "response[0].data.songlist -> SDK.h.formatMusic(songlist,{ext:JSON.stringify(card.extra_info)})",
+    "identityBoundary": "No native hostUin field is supplied in module609 v. JS parseInt does not establish lossless uint64 support; valid ID namespace/server DTO requires actual resolver verification. Do not manufacture host0."
+  },
+  "songShelfHydration": {
+    "source": "module609 p -> module512 exportc, both present in existing fetched recommend asset",
+    "selection": "Only shelf207 first3 niches; gather card.id via parseInt(card.id,10) and card.type; replace card with hydrated track by ID, add ext from extra_info, remove missing tracks.",
+    "module": "music.trackInfo.UniformRuleCtrl",
+    "method": "CgiGetTrackInfo",
+    "paramExpression": {
+      "ids": "numeric parsed IDs[]",
+      "types": "card.type[]",
+      "source": "AiNoFree"
+    },
+    "responseConsumer": "response[0].data.tracks ||[] -> SDK.h.formatMusic; source local catch returns[].",
+    "boundary": "Type meaning, DTO/native canonical identity and actual business availability remain separate from this embedded-web static builder."
+  },
+  "officialGridSharedConsumer": {
+    "sourceModule": 544,
+    "module620Use": "he.render passes officialPlaylist (s[1].data.modules[0].grids) to module544 exportb; no aiPlayList or enUin props established by this call.",
+    "module609Use": "SongMenu205/DoubleRowSongMenu271 cards -> module544 exportb, configuration name:true,user:false,listen:true,webview12.",
+    "playBranchesInOrder": [
+      {
+        "predicate": "props.aiPlayList truthy",
+        "module": "IntelligentTagServer",
+        "method": "IntelligentTagSongInfo",
+        "paramExpression": {
+          "onlyAi": 1,
+          "tagids": "[record.tagid]"
+        },
+        "recordPath": "response[0].data.songInfo[0].info"
+      },
+      {
+        "predicate": "record.song truthy",
+        "module": "music.pf_song_detail_svr",
+        "method": "get_song_detail",
+        "paramExpression": {
+          "song_id": "+record.subid"
+        },
+        "recordPath": "response[0].data.track_info"
+      },
+      {
+        "predicate": "otherwise",
+        "module": "music.srfDissInfo.aiDissInfo",
+        "method": "uniform_get_Dissinfo",
+        "paramExpression": {
+          "disstid": "parseInt(record.id)",
+          "userinfo": 1,
+          "tag": 1,
+          "enc_host_uin": "props.enUin||empty string",
+          "guid": "module240.a.getGuid()"
+        },
+        "recordPath": "response[0].data.songlist"
+      }
+    ],
+    "navigation": "record.song -> SDK.i(song,{songid:record.subid,songtypes:this.songtypes},...); otherwise explicit props.jumpFun or SDK.i(playlist,record.id||record.tagid,record.title,props.aiPlayList,record.extra_info,props.from,{hostuin:props.enUin||empty string}).",
+    "creatorUin": "Used only by creator-profile click. It is not passed as ordinary Dissinfo enc_host_uin or playlist navigation hostuin by544. Native GetDetail host compatibility needs separate actual response/probe authority.",
+    "numericEnumBoundary": "No branch interprets record.type/source_type/recomm_type/jmpurl/strjumpurl. isVip triggers reporting, not a playlist kind selector. Widget default branch behavior alone does not prove all raw grids are safe canonical playlists or that creator.uin equals native detail host.",
+    "actualRootProvidedHomeVariant": {
+      "authority": "Root own-session sanitized shape/enum report; this agent did not invoke RPC or read account values.",
+      "accepted": true,
+      "gridsLength": 12,
+      "modulesLength": 0,
+      "fieldTypes": {
+        "creator.uin": "decimal string",
+        "creator.nick": "string",
+        "id": "number (Root reports safe)",
+        "title": "string",
+        "picurl": "string",
+        "type": "number",
+        "recomm_type": "number",
+        "source_type": "number",
+        "jmpurl": "string"
+      },
+      "safeProtocolEnumObservations": {
+        "type": [
+          10014
+        ],
+        "source_type": [
+          2,
+          3,
+          5
+        ],
+        "recomm_type": [
+          0
+        ],
+        "view": [
+          0
+        ]
+      },
+      "jmpurlRootObservation": "invalid or blank, no navigable raw-card identity recovered",
+      "variantBoundary": "Root native-comm request result uses bare data.grids with modules empty; source620 assumes data.modules[0].grids. This does not establish complete equivalence to web default transport/comm contract."
+    }
+  },
+  "actualDailyResponseBoundary": {
+    "authority": "Root own-session sanitized qq-daily-real-response-shapes.json; no private values persisted or inspected by this agent.",
+    "observedUtc": "2026-10-14T14:12:15.187Z",
+    "feedAccepted": true,
+    "vShelfLength": 8,
+    "sampleShelfIdType": "number",
+    "sampleCardIdType": "decimal-string",
+    "dailyCardFound": false,
+    "conclusion": "This original observation does not satisfy the embedded source selector301. It is preserved unchanged as historical false301 evidence; the later native-ct19 adapter variant is recorded separately below, without rewriting source constants."
+  },
+  "nativeCt19AdapterResponseVariant": {
+    "authority": "Root own-session bounded direct observation; source is qq-daily-real-known-selector-checks.json, shapes/safe protocol enums/known-title comparison booleans only.",
+    "observedUtc": "2026-10-14T14:20:06.594Z",
+    "feedAccepted": true,
+    "feedRetcode": 0,
+    "shelfCount": 8,
+    "shelf301Present": false,
+    "safeShelfSummary": [
+      {
+        "shelfKind": 201,
+        "firstNicheCards": 4,
+        "firstNicheExactDailyTitle": true,
+        "anyNicheExactDailyTitle": true
+      },
+      {
+        "shelfKind": 204,
+        "firstNicheCards": 1,
+        "firstNicheExactDailyTitle": false,
+        "anyNicheExactDailyTitle": false
+      },
+      {
+        "shelfKind": 203,
+        "firstNicheCards": 1,
+        "firstNicheExactDailyTitle": false,
+        "anyNicheExactDailyTitle": false
+      },
+      {
+        "shelfKind": 203,
+        "firstNicheCards": 1,
+        "firstNicheExactDailyTitle": false,
+        "anyNicheExactDailyTitle": false
+      },
+      {
+        "shelfKind": 203,
+        "firstNicheCards": 1,
+        "firstNicheExactDailyTitle": false,
+        "anyNicheExactDailyTitle": false
+      },
+      {
+        "shelfKind": 203,
+        "firstNicheCards": 1,
+        "firstNicheExactDailyTitle": false,
+        "anyNicheExactDailyTitle": false
+      },
+      {
+        "shelfKind": 203,
+        "firstNicheCards": 1,
+        "firstNicheExactDailyTitle": false,
+        "anyNicheExactDailyTitle": false
+      },
+      {
+        "shelfKind": 203,
+        "firstNicheCards": 1,
+        "firstNicheExactDailyTitle": false,
+        "anyNicheExactDailyTitle": false
+      }
+    ],
+    "explicitAdapterPredicate": "Under verified native ct19 feed only: shelf.id===201 (number); first niche card.title==='每日30首'. Do not use a general301-to-any-shelf fallback.",
+    "candidateEvidence": "Exactly one observed201 shelf has4 first-niche cards and an exact known-title match; observed204/203 shelf cards do not match this title. Source original301 selector still returnsfalse.",
+    "domainBoundary": "201 here is a recommendation-feed shelf kind, not liked-playlist directory201. This is an actual response variant plus explicit adapter choice, not a recovered native C++ enum or a mutation of embedded-web enum301.",
+    "leafQualification": {
+      "authority": "Root direct own-session configured aiDiss request with selected card disstid and current verified GUID; qq-daily-native-variant-real-detail.json stores shapes/counts/codes/identity booleans only.",
+      "observedUtc": "2026-10-14T14:24:13.738Z",
+      "accepted": true,
+      "nativeCode": 0,
+      "nativeSubcode": 0,
+      "rawSongs": 30,
+      "total": 30,
+      "strictMappingCount": 30,
+      "responseIdMatches": true,
+      "result": "Read-only Daily leaf qualification closed for explicit native-ct19 response variant. Original embedded-web source301 and original false301 observation remain separate. This does not establish a native C++ enum or playback of these30 tracks.",
+      "privacy": "This agent did not invoke RPC, read private card/disstid/GUID values, or access account/profile/window."
+    }
+  },
+  "sdkBoundary": "Current provider SDK has fetchRecommendSongs(context?)->Track[] and fetchRecommendPlaylists->PlaylistSummary[]; ui.streamingSections requires Track[]. No getHomeSections/fetchHomeSection/fetchDailySongs methods. Root explicitly adapts newsong type5 as latest-release song preview first20; this source finding must not silently relabel that as daily or add unsupported generic SDK methods.",
+  "sourceErrorAndLifetimeLimits": [
+    "SDK490 transport/comm/header/auth/signing implementations not expanded under2-asset cap; do not inherit wk_v17, Android or nativeCPP defaults.",
+    "m consumes data without first checking inner business code; transport catch invokes showWebErrorTips1 and resolvesundefined. Strict production error handling remains caller responsibility.",
+    "v wraps a promise and silently catches malformed songlist/format errors without settling; transport rejection also lacks reject handling. Do not copy this hanging behavior into provider.",
+    "Empty-Mac-feed diagnostic source reads document.cookie; no entire module execution or cookie/diagnostic path was performed. Inert PC fixture disables it and forbids cookie getter.",
+    "Request/card output may carry extra_info, trace, AB/reporting/accountcontext. These are not provider persisted identity or authority fields."
+  ],
+  "isolatedReplay": {
+    "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-daily-replay.json",
+    "passed": 16,
+    "failed": 0,
+    "scope": "isolated exact static functions, public inert fixtures only; no whole module execution, account/profile/cookie/network/real playback",
+    "fragments": [
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "f",
+        "startChar": 20141,
+        "endChar": 26643,
+        "sha256": "c2a0e4f5767d64b75c8741fc083aa63b430ae9fe057b8f959539636b21af75c1"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "h",
+        "startChar": 26643,
+        "endChar": 26764,
+        "sha256": "794ed5b2c20b48ae44541687dd361cbc9842fc4dce54ce44d355551b09870565"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "d",
+        "startChar": 26764,
+        "endChar": 26959,
+        "sha256": "3905641d771e39bbf0c970b076bca009960f4137b3e70bef87387acea4d368f9"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "Ut",
+        "startChar": 73564,
+        "endChar": 80068,
+        "sha256": "53c4c5ebad905d5ff8908c7bb0878b6778c07eedbf8c07bace4b9713bf842337"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "Wt",
+        "startChar": 80068,
+        "endChar": 80190,
+        "sha256": "bac7c37f3f113eac7a5b2a3b8ad877587d5ee867d68678f25d9157fbc578d3a4"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "Yt",
+        "startChar": 80190,
+        "endChar": 80388,
+        "sha256": "67c7ee361ce7e6e59b9479cd692748056f72322631d283b6c7dec1014bb91056"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "p",
+        "startChar": 26965,
+        "endChar": 27396,
+        "sha256": "972224e40c3b5fefb6e11711dce5b875bf0e3bd6def6f49089db217df3c91cc0"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "m",
+        "startChar": 27399,
+        "endChar": 29009,
+        "sha256": "65c9fe659082800db25cf54fd405e2f98c3c55c6973e75d85542339db54f3ec9"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "v",
+        "startChar": 29012,
+        "endChar": 29347,
+        "sha256": "ace86576a3f2728da91baede6576406a0139fd474fb122198cd61af69dc48411"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "Ht",
+        "startChar": 80588,
+        "endChar": 80883,
+        "sha256": "98e2d3d5cf185fe7f046f937669a307322783747c63591c23e5012b7906fc3f8"
+      },
+      {
+        "file": "qq-windows-personal-recommend.chunk.498dd3a28.js",
+        "module": 609,
+        "name": "onPlayDaily30",
+        "startChar": 81642,
+        "endChar": 82005,
+        "sha256": "b1658722680f478423c71b1ca3473cd840b0874aa58aea969fea41e585ad6e87"
+      },
+      {
+        "file": "qq-windows-personal-shared-chunk13.26bd9e519.js",
+        "module": 544,
+        "name": "play",
+        "startChar": 44068,
+        "endChar": 45581,
+        "sha256": "e4d7e81f17f77a669d63aca2fb2bbf525ebf4f02556129daa0dd34b334be117a"
+      },
+      {
+        "file": "qq-windows-personal-shared-chunk13.26bd9e519.js",
+        "module": 544,
+        "name": "jumpToPlaylist",
+        "startChar": 45674,
+        "endChar": 46049,
+        "sha256": "2f44ec152efc09ca77671dbde397f9531813b89e1e123a2954d82e60673f2ef7"
+      }
+    ],
+    "limits": [
+      "No transport SDK490 execution or independent auth/header/comm/signing proof.",
+      "Mock ordinary widget branch does not define numeric raw grid enum semantics, all-grid playlist safety or native host ownership.",
+      "Root real accepted feed currently has no exact number301 / first-niche known Daily-title match; mock does not claim real daily availability.",
+      "Source parseInt IDs are only tested with public safe integers and do not establish lossless uint64 handling."
+    ]
+  },
+  "independentReview": {
+    "reviewer": "/root/qq_packaged_resources",
+    "method": "Read existing public raw JS only, no new query/network/production/Git.",
+    "result": "Confirms strict number301/firstniche/known-title, initialm(1,0),620modules0grids,first20albumconverter and544hostfromprops; creator.uin profile-only. No alternateDailyenum or currentavailability inference.",
+    "receipt": {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-home-personal-independent-source-contract-v1.json",
+      "bytes": 5378,
+      "sha256": "438e2fba00bb788e8a51ae0d1c569288d5cb659bab5b9c519da65151c76487a7"
+    },
+    "sourceLocators": {
+      "dailySelector": {
+        "char": 81627,
+        "byte": 81998
+      },
+      "initialHt": {
+        "char": 80721,
+        "byte": 81092
+      },
+      "sharedPlay": {
+        "char": 44061,
+        "byte": 44144
+      },
+      "sharedJump": {
+        "char": 45659,
+        "byte": 45770
+      },
+      "creatorProfile": {
+        "char": 46492,
+        "byte": 46603
+      }
+    }
+  },
+  "sourcePins": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-qr-resources-pe-json-2009.json",
+      "bytes": 10065,
+      "sha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-index.chunk.20f80323e.js",
+      "bytes": 133979,
+      "sha256": "5dac18c580b6232c1c574522671d684bac0511489232a7fdc8596d30a084deae"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-runtime.d807a2801c869ee2f901.bundle.js",
+      "bytes": 7137,
+      "sha256": "cc6376982015c2993245b16c9792d13be18e751be8184534d52863dcb6cdad1e"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-recommend.chunk.498dd3a28.js",
+      "bytes": 88774,
+      "sha256": "0688ab8f5f08b9a7575fb926aa512cbff9711f111266e3d9542d9cf95fbb16e9"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-shared-chunk13.26bd9e519.js",
+      "bytes": 50146,
+      "sha256": "f5af3f11893c80d6c9b7e26eb4afd61cb9df87c00ea51018f251d2a83c220878"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-recommend-consumer-extracts.json",
+      "bytes": 20269,
+      "sha256": "30836cbf61c03a571ad4a64a226b07938d50b5aec377d8a07b6913cfde232521"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-module544-consumer-extracts.json",
+      "bytes": 24997,
+      "sha256": "7a536fd71280fe40fe2ad71d18b724449970bd42914e4adb68a2df806640bf8f"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-daily-replay.mjs",
+      "bytes": 12147,
+      "sha256": "a1d4860e3d776cab9488a855cab68a4f7c69b0345241a0564ea8bad21d0fcd68"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-daily-replay.json",
+      "bytes": 6197,
+      "sha256": "59a10d4af50a00e502c500a6e16f3af2dd250fe605151c6f2f0f7f815db8a91c"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-daily-real-response-shapes.json",
+      "bytes": 7047,
+      "sha256": "4cb6ac780083652c3562b03a56532f9c6b3e962beb4a50f7e0b6d9ed5963cf7b"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-daily-real-known-selector-checks.json",
+      "bytes": 8249,
+      "sha256": "c3bd5a8c6aeedc8225a0b6fd79c2276e7241f5fe0d2cd5955b5b48cf5f3afd90"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-daily-native-variant-real-detail.json",
+      "bytes": 18501,
+      "sha256": "d8830b17836592191ea681867e12f91f3cdd697986bf360e0111816f12697af9"
+    }
+  ],
+  "prohibitedOperationsPerformed": false,
+  "productionChanges": [],
+  "unknown": [
+    "Reason for embedded-web301 vs actual native-ct19 response201 mismatch; no C++ enum derivation or web transport defaults established.",
+    "Raw official grid numeric kind semantics and lossless native canonical owner/tid compatibility.",
+    "SDK490 wire/auth/comm defaults and module240 GUID implementation.",
+    "Daily track playback/rights availability is not established by accepted30-record strict mapping alone."
+  ]
+}

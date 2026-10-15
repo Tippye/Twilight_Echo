@@ -1,0 +1,143 @@
+{
+  "scope": "three static Ghidra dossiers, selected QQ path. No user settings, computer/user names or account fields read, no native invocation, client launch, network, production or Git modifications. Ordinary PE sidecars are not REA Evidence.",
+  "target_sha256": "ba66aa248b885227179f1676fbc54576a036f46b9d096fea33131c4f30fa6476",
+  "evidence": [
+    {
+      "file": "qq-login-context-next-device.json",
+      "evidence_id": "ev_618498783d9381215a52534b0196498d3ef5b514ca53d7964f4cdbd73c77a9c4",
+      "procedure": "0x100c8851",
+      "bytes": 211,
+      "complete_record_sha256": "e4b30f02a075ad528db0b7e2e7991044d5ee9db166c3f15a48e1eb1bed489aca",
+      "stderr_bytes": 0
+    },
+    {
+      "file": "qq-login-context-next-account-ctor.json",
+      "evidence_id": "ev_80c4e876c9558683d97035c23bd02ccbfb9883c05a9e06c4e9d1d56106501f55",
+      "procedure": "0x100a98a7",
+      "bytes": 1612,
+      "complete_record_sha256": "a9a14bb3469b8dfa2f3047c85a40502c5e7c6c7db8c15517eda34def29bd6e3a",
+      "stderr_bytes": 0
+    },
+    {
+      "file": "qq-login-context-next-openid-ctor.json",
+      "evidence_id": "ev_a7a709527d98a68b590e7585aae1ca9d42bcd6ea8df55160b5721db3303e2d26",
+      "procedure": "0x100c8583",
+      "bytes": 579,
+      "complete_record_sha256": "4567fa3017ff06e58a42b20acfce4ed49fc51571791a0e1f351afb22d408478b",
+      "stderr_bytes": 0
+    }
+  ],
+  "owner_layout": {
+    "authority": [
+      "qq-login-owner-next-dispatch.json assembly",
+      "qq-login-context-next-account-ctor.json assembly/pseudocode",
+      "qq-login-context-next-account-rtti.json ordinary PE RTTI"
+    ],
+    "class": "ATL CQQMPAccount",
+    "interface_offsets": {
+      "COL_offset": "0x10",
+      "contained_vtable": "0x10125adc",
+      "object_vtable": "0x10125c04"
+    },
+    "request_owner_class": "QQOpenidLogin",
+    "relative_to_complete_CQQMPAccount": "0x2a4",
+    "relative_to_IQQMPAccount_interface_pointer": "0x294",
+    "constructor_callsite": "100a9a64 LEA ECX,[EBX+2a4];100a9a6e CALL100c8583",
+    "appid_relative_to_QQOpenidLogin": "0x118",
+    "appid_relative_to_IQQMPAccount_pointer": "0x3ac",
+    "appid_relative_to_complete_CQQMPAccount": "0x3bc",
+    "boundary": "auto-recovered function ABI not validated for direct native invocation; layout based on decoded assembly and RTTI offset"
+  },
+  "appid": {
+    "default_for_this_binary": 100497308,
+    "constructor": "0x100c8583",
+    "instructions": [
+      "100c8751 PUSH1014e57c",
+      "100c8756 CALL[10123824] CRT atol",
+      "100c875f MOV[EBX+118],EAX"
+    ],
+    "static_literal": "100497308",
+    "import": "api-ms-win-crt-convert-l1-1-0.dll!atol",
+    "unknowns": [
+      "this proves constructor default, not immutable effective runtime value or server acceptance",
+      "no Android profile value reused"
+    ]
+  },
+  "deviceName": {
+    "producer": "0x100c8851",
+    "initial_buffer_wchar_capacity": "0x101",
+    "flow": [
+      "zero 0x202 bytes of local WCHAR buffer",
+      "GetComputerNameW(buffer,&size), initial size=0x101",
+      "failure: log GetLastError; GetUserNameW(buffer,&same_size_variable) without resetting capacity",
+      "either success: QM::W_2_Utf8 returns std::string output",
+      "both fail: initialize empty std::string output (size0/capacity15/NUL firstbyte)"
+    ],
+    "encoding": "UTF8 via exact QQMusicCommon.dll import ?W_2_Utf8@QM@@...PB_W@Z",
+    "boundary": "no host computer/user name was read; builder can accept parsed UTF8 input; server requiredness not proved"
+  },
+  "registered_response_callbacks": [
+    {
+      "event": "OnLogin",
+      "callee": "0x100ac1b7"
+    },
+    {
+      "event": "OnNTLogin",
+      "callee": "0x100ac122"
+    },
+    {
+      "event": "OnRefreshMusicKey",
+      "callee": "0x100ac398"
+    },
+    {
+      "event": "OnRefreshToken",
+      "callee": "0x100ac57c"
+    },
+    {
+      "event": "OnLogout",
+      "callee": "0x100ab59c"
+    },
+    {
+      "event": "OnAuthorize",
+      "callee": "0x100ac87e"
+    },
+    {
+      "event": "OnGetLoginBuffer",
+      "callee": "0x100ac9af"
+    }
+  ],
+  "callbacks_boundary": "actual ctor stores these callbacks; event names and registration alone do not establish parsing, response acceptance, request production, timing, retries or challenge semantics",
+  "next_exact_entry_candidates": [
+    {
+      "target": "QQMusic_Login.dll",
+      "address": "0x1001aa60",
+      "why": "real CLoginHost vtable slot3 with SEH prologue; qrcode_id literal pointer operands1001ad88/1001adad lie after this entry and before next known slot2 entry1001b2a0",
+      "unknown": "function extent and parsed fields/dispatch still need dossier; QR code origin not recovered"
+    },
+    {
+      "target": "QQMusic_Protocol.dll",
+      "address": "0x100c8dab",
+      "why": "dispatch tag9 selected QQ mode2, payload+4 string; sibling producer to already recovered100c8c37",
+      "unknown": "alternative purpose and QR connection not established"
+    },
+    {
+      "target": "QQMusic_Protocol.dll",
+      "address": "0x100ac1b7",
+      "why": "confirmed CQQMPAccount callback registered to QQOpenidLogin.OnLogin",
+      "unknown": "server payload/error/challenge state transitions need body analysis"
+    }
+  ],
+  "unresolved": [
+    "actual QQ webQR code acquisition and handoff owner",
+    "real refresh request producer and schedule/backoff",
+    "server/challenge/captcha acceptance and failure transitions",
+    "effective runtime appid override possibilities",
+    "direct-native ABI is out of scope"
+  ],
+  "ordinary_sidecars": [
+    "qq-login-context-next-account-rtti.json",
+    "qq-login-context-next-owner-offset-candidates.json",
+    "qq-login-context-next-web-literal-candidates.json",
+    "qq-login-context-next-openid-init-literals.json"
+  ]
+}

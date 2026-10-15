@@ -1,0 +1,383 @@
+{
+  "schema": "qq-windows-embedded-artist-findings-v1",
+  "generatedAtUtc": "2026-10-14T13:25:49.928313+00:00",
+  "owner": "/root/qq_qr_resources",
+  "authority": {
+    "installedArtifact": "E:/Program Files (x86)/QQMusic/QQMusic2271.18.09.14/QQMusicResource.dll",
+    "artifactSha256": "f635b213a60fad43f46dd8c49c913904420a4f9f480be952984955ccc2186e89",
+    "resourceEvidenceId": "ev_a5b17e227de5bb3b46adbb1b35ee846a68a3f2d708f7fc6a23805cf0b9975ae1",
+    "resourcePath": "JSON/2009/2052",
+    "resourceRva": 224864,
+    "resourceFileOffset": 216160,
+    "resourceLength": 10065,
+    "configSha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7",
+    "pipeline": "The shipped Windows22.71 config points to wk_v17 public embedded pages. The currently served page and its exact linked/lazy assets implement these requests. This is Windows-configured embedded-web evidence, not a native C++ producer dossier or proof that original runtime loaded this asset snapshot."
+  },
+  "configuredUrls": {
+    "singer_detail_url": "https://y.qq.com/wk_v17/#/singer_detail",
+    "singer_song_page": "https://y.qq.com/wk_v17/#/singer_detail/song",
+    "singer_album_page": "https://y.qq.com/wk_v17/#/singer_detail/album",
+    "singer_mv_page": "https://y.qq.com/wk_v17/#/singer_detail/mv",
+    "album_detail_url": "https://y.qq.com/wk_v17/#/album_detail"
+  },
+  "assetDerivedRoute": {
+    "detail": "https://y.qq.com/wk_v17/#/singer_detail/detail",
+    "authority": "Not a separate config key; singer module454 parent subroute /detail is directly declared. URL singer identity comes from query parameter singermid, whose getter returns decoded string."
+  },
+  "routeChain": [
+    "JSON2009 singer_song_page -> https://y.qq.com/wk_v17/#/singer_detail/song",
+    "wk_v17 HTML -> index_077e164667b177696512.js + runtime.42d3fec943b9435c8a6d.js + common_05d6a42fa95b1f315e83.js",
+    "index route /singer_detail exact:false -> ct loader n.e(13) -> module454",
+    "runtime chunk13 -> 13_6c88622e06b2269ec5ef.js?max_age=2592000",
+    "module454 /song child -> fe -> he -> P.s -> module1 export s -> common module48 -> browser JSON RPC"
+  ],
+  "songList": {
+    "module": "music.musichallSong.SongListInter",
+    "method": "GetSingerSongList",
+    "requestParamTypes": {
+      "singerMid": "string decoded from singermid URL query",
+      "begin": "number, source initializes0 and increments by num",
+      "num": "number",
+      "order": "number, confirmed labels0=最新/1=最热"
+    },
+    "songPageInitial": {
+      "begin": 0,
+      "num": 30,
+      "order": 1
+    },
+    "overviewPopularSongs": {
+      "begin": 0,
+      "num": 10,
+      "order": 1,
+      "title": "热门歌曲"
+    },
+    "consumerPaths": {
+      "songRecords": "response[0].data.songList[].songInfo -> P.i.formatMusic -> state.songs -> J SongList songList prop",
+      "overviewRecords": "response[1].data.songList[].songInfo -> state.songs -> overview热门歌曲 SongList",
+      "overviewTotal": "response[1].data.totalNum"
+    },
+    "resultGuard": "transport error absent, entry present, entry.code==0, data.songList nonempty before mapping; page returns {} for empty/service-nonzero, does not callback on transport error. These are page behavior, not recommended provider error suppression.",
+    "rankingBoundary": "UI source proves order1 hottest label and initial popular-song selection. No server ranking algorithm, C++ ranking enum, actual response order or native playback result is established.",
+    "limits": "Source contains a public hardcoded fallback singer MID when query is blank; do not silently treat this as provider identity resolution. No explicit wire integer width/server cap is proven."
+  },
+  "artistInfo": {
+    "module": "music.musichallSinger.SingerInfoInter",
+    "method": "GetSingerDetail",
+    "request": {
+      "singer_mids": "string[] with selectedMID",
+      "pic": 1,
+      "group_singer": 1,
+      "wiki_singer": 1,
+      "ex_singer": 1
+    },
+    "consumer": "response[0].data.singer_list[0]",
+    "fieldsRead": [
+      "basic_info.name",
+      "basic_info.singer_mid",
+      "basic_info.singer_id",
+      "basic_info.wikiurl",
+      "ex_info.desc",
+      "pic.pic",
+      "pic.big_white",
+      "pic.big_black",
+      "group_list",
+      "wiki"
+    ],
+    "descriptionPaths": [
+      "ex_info.desc used as info.desc",
+      "wiki parsed by DOMParser application/xml -> info/desc textContent or text, then info.wiki.desc feeds /detail renderer"
+    ],
+    "limits": "No separate Intro RPC found in this asset. Field types/content are consumer expectations, not a live validated server DTO; no account or wiki page was accessed."
+  },
+  "artistAlbums": {
+    "module": "music.musichallAlbum.AlbumListServer",
+    "method": "GetAlbumList",
+    "requestParamTypes": {
+      "singerMid": "string",
+      "order": "number",
+      "num": "number",
+      "begin": "number",
+      "types": "optional number[]; omitted by JSON.stringify when all"
+    },
+    "sourceTypeMap": {
+      "cd": 0,
+      "ep": 11,
+      "live": 1
+    },
+    "albumPageInitial": {
+      "type": "all",
+      "order": 0,
+      "begin": 0,
+      "num": 30
+    },
+    "orderLabels": {
+      "0": "最新",
+      "1": "最热"
+    },
+    "overviewRequest": {
+      "order": 1,
+      "num": 30,
+      "begin": 0
+    },
+    "consumerPaths": [
+      "data.albumList[] -> per-type state albums",
+      "overview response[2].data.albumList",
+      "overview response[2].data.total"
+    ],
+    "rowFieldsConsumed": [
+      "albumName",
+      "albumMid",
+      "publishDate",
+      "pmid"
+    ],
+    "additionalOverviewRequest": {
+      "module": "music.musichallAlbum.SelectedAlbumServer",
+      "method": "SelectedAlbumList",
+      "param": {
+        "singerMid": "string"
+      },
+      "consumer": "response[3].data.albumList"
+    },
+    "limits": "No numeric album id field is proven by this display mapping; native album detail schema and actual album records require independent evidence."
+  },
+  "webTransport": {
+    "exportChain": "P=a(1); P.s -> module1 u.a -> n(48) factory",
+    "endpoint": "https://u6.y.qq.com/cgi-bin/musics.fcg",
+    "verb": "POST",
+    "envelope": "req_0/req_1/... preserve module/method/param, add comm, JSON.stringify",
+    "responseEnvelope": "response.req_i mapped in insertion order to complete callback array",
+    "withCredentials": 1,
+    "timeoutMs": 10000,
+    "retryHostsFromSource": [
+      "shu6.y.qq.com",
+      "szu6.y.qq.com"
+    ],
+    "comm": {
+      "g_tk": "getACSRFToken(true), browser-cookie-derived",
+      "uin": "browser qqmusic_uin cookie or0",
+      "format": "json",
+      "ct": "browser client config: pc default20, Mac6",
+      "cv": "100*qqmusic_version+qqmusic_miniversion browser-cookie values, otherwise1770",
+      "platform": "wk_v17",
+      "uid": "getUid or empty",
+      "guid": "getGuid or empty"
+    },
+    "boundary": "These are embedded-web defaults and cookie-based transport. They are not Windows native C++ ct19/cv2271 comm authority. No cookies were read and no RPC endpoint was invoked.",
+    "lowLevelTransport": "module48 invokes module79 exporta k(); this uses new XMLHttpRequest, script-side module221 signer for musics.fcg/musicu.fcg before XHR.open/send. No native bridge invocation appears in this low-level public AJAX function.",
+    "extraBoundary": "This source mechanism explains why main-process native ProtocolSummary hook coverage does not directly observe browser JS request construction; it does not prove that the human action actually fetched the current bundle or emitted these requests."
+  },
+  "consumerReplay": {
+    "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-song-consumer-replay.json",
+    "casesPassed": 4,
+    "cases": [
+      "success mapping",
+      "empty list",
+      "nonzero service result",
+      "transport error"
+    ],
+    "limits": "Isolated actual he function with mock request/formatter only; no full downloaded module execution/browser/cookies/account/RPC. Confirms consumer transform, not real server schema."
+  },
+  "sourcePins": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-qr-resources-pe-json-2009.json",
+      "bytes": 10065,
+      "sha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index.html",
+      "bytes": 7602,
+      "sha256": "2e860de93734d625edd93347d027720e363fb71207a8663f206efcdb0844c3b4"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-runtime.42d3fec943b9435c8a6d.js",
+      "bytes": 6071,
+      "sha256": "c1b39ba20ee61dd703cc428d52941663652ae6d315dd1eeefb03ef5dce2f68ec"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index_077e164667b177696512.js",
+      "bytes": 46728,
+      "sha256": "0ff99de9e5afee6f434e97713788a5b809877a647a8db467d1fe9b98e28fdbd6"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "bytes": 438061,
+      "sha256": "093d7213faa8c99e95b5acea2132860619c0a4eb8f64d339c08e385cb571d1e1"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "bytes": 44696,
+      "sha256": "2a5fbdfd1a7c7fda4a887481e9a347950b08bea1da1c12988c3e7359b97ea3e3"
+    }
+  ],
+  "boundedSourceEvidence": [
+    {
+      "label": "Song list request and nested songInfo consumer",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 22837,
+      "literal": "he=function",
+      "boundedSource": "vipRemindShowId:5025970,vipRemindClickId:1027274},he=function(e,t){var a=P.u.getParam(\"singermid\")||\"002pUZT93gF4Cu\";P.s().request({module:\"music.musichallSong.SongListInter\",method:\"GetSingerSongList\",param:{singerMid:a,begin:e.begin,num:e.num,order:e.order}}).complete((function(e,a){if(!e){var n={};a&&a[0]&&0==a[0].code&&a[0].data&&a[0].data.songList&&a[0].data.songList.length>0&&(n.songs=P.i.formatMusic(a[0].data.songList.map((function(e){return e.songInfo})))),t(n)}}))},fe=function(e){d()(a,e);var t=le(a);function a(e){var n;return c()(this,a),(n=t.call(this,e)).state={songs:[],order:1,begin:0,num:30},n.scrollLoad=n.scrollLoad.bind(u()(n)),n}return l()(a,[{key:\"componentDidMount\",value:f"
+    },
+    {
+      "label": "Song page initial numeric state",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 23360,
+      "literal": "state={songs:[],order:1,begin:0,num:30}",
+      "boundedSource": "{d()(a,e);var t=le(a);function a(e){var n;return c()(this,a),(n=t.call(this,e)).state={songs:[],order:1,begin:0,num:30},n.scrollLoad=n.scrollLoad.bind(u()(n)),n}return l()(a,[{key:\"componentDidMount\",value:function(){var e=this,t=this.state;document.querySelector(\".layout_detail\")&&document.querySelector(\".layout_detail\").addEve"
+    },
+    {
+      "label": "Song hottest sort label mapping",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 22117,
+      "literal": "e.changeOrder(1)}},\"最热\"",
+      "boundedSource": "\",{className:\"switch__item \".concat(1==i?\" c_tx_current\":\"\"),href:\"javaScript:;\",onClick:function(){e.changeOrder(1)}},\"最热\"))),o)}}]),a}(E.Component);function le(e){var t=function(){if(\"undefined\"==typeof Reflect||!Reflect.construct)return!1;if(Reflect.construct.sham)return!1;if(\"function\"==typeof Proxy)return!0;tr"
+    },
+    {
+      "label": "Overview popular song title",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 15338,
+      "literal": "热门歌曲",
+      "boundedSource": "e:\"mod_media_list\"},s),N.a.createElement(\"div\",{className:\"mod_title\"},N.a.createElement(\"h2\",{className:\"c_tx_title\"},\"热门歌曲\"),N.a.createElement(\"a\",{href:\"javascript:;\",className:\"mod_btn c_btn mod_btn_icon mod_btn_play\",onClick:function(){P.c.playSong({songList:i,listName:\"\",listKey:\"\",playIndex:0,isOnlyAdd:1,bSingle:\"0\",callback:function(){}})}},\"播放全部\"),N.a.createElement(k.b,{to:\"\".concat(e.match.p"
+    },
+    {
+      "label": "Overview request batch with top10 song list",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 35824,
+      "literal": "method:\"GetSingerDetail\"",
+      "boundedSource": "0),P.c.setScrollTop({top:0,height:a}),P.s().request({module:\"music.musichallSinger.SingerInfoInter\",method:\"GetSingerDetail\",param:{singer_mids:[t],pic:1,group_singer:1,wiki_singer:1,ex_singer:1}}).request({module:\"music.musichallSong.SongListInter\",method:\"GetSingerSongList\",param:{singerMid:t,begin:0,num:10,order:1}}).request({module:\"music.musichallAlbum.AlbumListServer\",method:\"GetAlbumList\",param:{singerMid:t,order:1,num:30,begin:0}}).request({module:\"music.musichallAlbum.SelectedAlbumServer\",method:\"SelectedAlbumList\",param:{singerMid:t}}).request({module:\"Concern.ConcernSystemServer\",method:\"cgi_qry_concern_status\",param:{vec_userinfo:[{usertype:1,userid:t}],opertype:5,encrypt_singerid:1}}).request({module:\"music.SimilarSingerSvr\",method:\"GetSimilarSingerList\",param:{singerMid:t,num:6}}).request({module:\"MvService.MvInfoProServer\",method:\"GetSingerMvList\",param:{singerid:0,singermid:t,tagid:0,start:0,count:6,order:1}}).request({module:\"music.sociality.KolFansVIPAccount\",method:\"Singer2PkgUinStr\",param:{SingerMIDs:[t]}}).complete((function(a,n){if(!a){var i=xe(xe({},qe),{},{inf"
+    },
+    {
+      "label": "Overview response songInfo, totalNum and albumList/total",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 39403,
+      "literal": "i.songs=n[1].data.songList",
+      "boundedSource": "g_white&&!r.pic.big_black?i.bgImg=null:c()}if(n&&n[1]&&0==n[1].code&&n[1].data&&n[1].data.songList&&n[1].data.songList.length>0&&(i.songs=n[1].data.songList.map((function(e){return e.songInfo})),i.songNum=n[1].data.totalNum),n&&n[2]&&0==n[2].code&&n[2].data&&n[2].data.albumList&&n[2].data.albumList.length>0&&(i.albums=n[2].data.albumList,i.albumNum=n[2].data.total),n&&n[3]&&0==n[3].code&&n[3].data&&n[3].data.albumList&&n[3].data.albumList.length>0&&(i.albumRecommend=n[3].data.albumList),n&&n[4]&&0==n[4].code&&n[4].data&&n[4].data.map_singer_status&&(i.info.isFocus=!!n[4].data.map_singer_status[t]),n&&n[5]&&0==n[5].code&&n[5].data&&n[5].data.singerlist&&(i.similarSinger=n[5].data.singerlist.map((function(e){return e.singer_mid=e.singerMid,e.picurl=P.u.fixUrl(e.picurl),e}))),n&&n[6]&&0==n[6].code&&n[6"
+    },
+    {
+      "label": "Album page request and types mapping",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 18118,
+      "literal": "re={cd:0,ep:11,live:1}",
+      "boundedSource": "ply(this,arguments);return f()(this,a)}}var ie=!1,re={cd:0,ep:11,live:1};function ce(e,t){var a=P.u.getParam(\"singermid\")||\"002pUZT93gF4Cu\",n=e.type,i=void 0===n?\"all\":n,r=e.order;P.s().request({module:\"music.musichallAlbum.AlbumListServer\",method:\"GetAlbumList\",param:{singerMid:a,order:r,num:e[i].num,begin:e[i].begin,types:\"all\"===i?void 0:[re[i]]}}).complete((function(e,a){if(!e){var n={};a&&a[0]&&0==a[0].code&&a[0].data&&a[0].data.albumList&&a[0].data.albumList.length>0&&(n.albums=a[0].data.albumList),t(n)}}))}var oe=function(e){d()(a,e);var t=ne(a);function a(e){var n;return c()(this,a),(n=t.call(this,e)).state={isLoading:!0,type:\"all\",order:0,all:{albums:[],begin:0,num:30,isOver:!1},cd:{albums:[],begin:0,num:30,isOver:!1},ep:{albums:[]"
+    },
+    {
+      "label": "Album page latest default and typed pagination",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 18685,
+      "literal": "state={isLoading:!0,type:\"all\",order:0",
+      "boundedSource": "var t=ne(a);function a(e){var n;return c()(this,a),(n=t.call(this,e)).state={isLoading:!0,type:\"all\",order:0,all:{albums:[],begin:0,num:30,isOver:!1},cd:{albums:[],begin:0,num:30,isOver:!1},ep:{albums:[],begin:0,num:30,isOver:!1},live:{albums:[],begin:0,num:30,isOver:!1}},n.scrollLoad=n.scrollLoad.bind(u()(n)),n}return l()(a,[{key:\"componentDidMount\",value:function(){var e=this,t=this.state;document.querySelector(\".layout_detail\")&&document.querySelector(\".layout_detail\").addEventListener(\"scroll\",this.sc"
+    },
+    {
+      "label": "Album row display identity fields",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 14187,
+      "literal": "albumName",
+      "boundedSource": "b,i=P.i.formatMusic(t&&t.songs||[]),r=t&&t.albumRecommend,c=t.albums&&t.albums.map((function(e){return{name:e.albumName,mid:e.albumMid,release_time:e.publishDate}})),o=t.similarSinger,l=t.mvlist,s=\"\";return o&&(o=o.map((function(e){return e.name=e.singerName,e.mid=e.singerMid,e.singer_pic=P.u.fixUrl(e.singerPic),e}))),r&&(s=r.map((function(e){var t=P.u.getAlbumPic(e.albumPmid||e.albumMid,300),a=2;return N.a"
+    },
+    {
+      "label": "Artist info description and XML consumer",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 36982,
+      "literal": "i.info.desc=r.ex_info.desc",
+      "boundedSource": "0].data.singer_list[0];i.info={},i.info.name=r.basic_info.name,i.info.member=[],i.info.desc=r.ex_info.desc,i.info.mid=r.basic_info.singer_mid,i.info.id=r.basic_info.singer_id,i.info.img=r.pic&&r.pic.pic,i.info.wiki=function(e){var t=(new DOMParser).parseFromString(e,\"application/xml\").getElementsByTagName(\"info\");if(t&&t.length>0){var a=function(){var e={id:0,desc:\"\",basic:[],group:[],other:[]},a=t[0];if(\"undeifned\"==typeof a)return{v:void 0};(t=a.getElementsByTagName(\"id\")).length>0&&(e.id=t[0].textContent||t[0].text||\"\"),(t=a.getElementsByTagName(\"desc\")).length>0&&(e.desc=t[0].textContent||t[0].text||\"\"),t=(t=a.getElementsByTagName(\"basic\")).length<1?[]:t[0].getElementsByTagName(\"item\");for(var n,i=function(t,a){var n"
+    },
+    {
+      "label": "Detail route from singer parent",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-13_6c88622e06b2269ec5ef.js",
+      "byteOffset": 44216,
+      "literal": "path:\"\".concat(a.match.path,\"/detail\")",
+      "boundedSource": "tch.path,\"/mv\"),render:function(){return N.a.createElement(ve,{config:g})}}),N.a.createElement(S.b,{path:\"\".concat(a.match.path,\"/detail\"),render:function(){return N.a.createElement(Ee,i()({content:n},a,{config:g}))}}))),N.a.createElement(Ne.a,{config:{song:!0}})):N.a.createElement(\"div\",{className:\"layout_detail\"},N.a.createElement(\"div\",{className:\"layout_cont\"},N.a.createElement(ee.d,{className:\"singer\"}),N.a.crea"
+    },
+    {
+      "label": "Registered singer route",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index_077e164667b177696512.js",
+      "byteOffset": 40255,
+      "literal": "path:\"/singer_detail\"",
+      "boundedSource": "面\"},{path:\"/singerList\",component:ot,title:\"歌手详情\"},{path:\"/login\",exact:!1,component:$e},{path:\"/singer_detail\",exact:!1,component:ct},{path:\"/toplist_detail\",exact:!1,component:Ye},{path:\"/playlist_detail\",exact:!1,component:et},{path:\"/playlist_edi"
+    },
+    {
+      "label": "Singer route lazy loader chunk13 module454",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-index_077e164667b177696512.js",
+      "byteOffset": 37227,
+      "literal": "ct=k()",
+      "boundedSource": "i,{number:\"2\"}))}}),ct=k()({loader:function(){return Promise.all([n.e(1),n.e(0),n.e(13)]).then(n.bind(null,454))},loading:function(){return h.a.createElement(\"div\",{className:\"layout_cont\"},h.a.createElement(O.d,{className:\"singer\"}),h.a.createElement(O.i,{number:\"2\"}))}}),ot=k()({loader:function(){return Promise.all([n.e(0),n.e(51)]).then(n.bind(null,434))},loading:f"
+    },
+    {
+      "label": "Chunk13 hashed asset resolution",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-runtime.42d3fec943b9435c8a6d.js",
+      "byteOffset": 847,
+      "literal": "13:\"6c88622e06b2269ec5ef\"",
+      "boundedSource": "\",10:\"c091248d8c72b511f153\",11:\"1fa15ae6edd131a83c2e\",12:\"5963cb183072d39c2659\",13:\"6c88622e06b2269ec5ef\",14:\"f24c7bcc82d72f710b80\",15:\"2410734268ebd254eac9\",16:\"2b82dc36875ee0e7914d\",17:\"e1662744789ec07b5a29\",18:\"b2f0bbd9d512addbeae8\",19:\""
+    },
+    {
+      "label": "Common module1 export s to module48",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "byteOffset": 1017,
+      "literal": "u=n(48)",
+      "boundedSource": "5),n(33),n(127)),r=n(79),c=n(15),s=(n(112),n(175)),l=n(212),u=n(48);n(100);var m,p,d,f,h=function(e,t,n,a){var i=/\\.css(?:\\?|#|$)/i.test(e),o=document.createEle"
+    },
+    {
+      "label": "Public web request transport URL",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "byteOffset": 371674,
+      "literal": "\"u6.y.qq.com\"",
+      "boundedSource": "\"}};t.a=function e(t){var n=[],i=[],c=[],l=[],u=a.a.extend(!0,{type:\"post\",url:\"\".concat(location.protocol,\"//\").concat(\"u6.y.qq.com\",\"/cgi-bin/musics.fcg\"),comm:s(),dataType:\"json\",timeout:1e4,withCredentials:1,retry:!0,report:!0},t),m=/post/i.test(u.type),p={report:0!=u.report,retry:0!=u.retry};if(p.report||p.retry){var d=document.createElement(\"a\");d.href=u.url,p.domain=d.hostname,p.cgi=\"\".concat(d.protocol,\"//\").concat(d.host).concat(d.pathname),p=a.a.extend({},u.report,p),d=null}var f=function(){var e=arguments.length>0&&void 0!="
+    },
+    {
+      "label": "Public web request envelope",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "byteOffset": 372563,
+      "literal": "var o=\"req_\".concat(t)",
+      "boundedSource": "g=function(){var e,t,i=!0,s={},m={};if(n.forEach((function(e,t){var n=e.data;if(n.module&&n.method){var o=\"req_\".concat(t);e.index=t,p.report&&(e.report=a.a.extend({},u.report,{cgi:\"\".concat(n.module,\".\").concat(n.method)})),n.param||(n.param={}),m[o]=e,s[o]=n,i=0}else e.callback&&e.callback()})),n=null,i)return _();h(s),u.success=function(e){p.endTime=+new Date,t=e||{}},u.error=function(t,n){p.endTime=+new Date,e=n},u.complete=function(n){var a;if(p.report&&(p.time=p.endTime-p.startTime,p.totaltime=p.endTime-p._startTime),e)if(n.status&&200!=n.status)a=-n.status;else{a={abort:-601,error:-602,"
+    },
+    {
+      "label": "Public browser platform ct20",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "byteOffset": 45308,
+      "literal": "o=\"pc\",r=20",
+      "boundedSource": "15),i=100*parseInt(a.a.get(\"qqmusic_version\")||0,10)+parseInt(a.a.get(\"qqmusic_miniversion\")||0,10),o=\"pc\",r=20,c=[0,0,0],s=function(){var e=window.navigator.userAgent;if(i=100*parseInt(a.a.get(\"qqmusic_version\")||0,10)+parseInt(a.a.get(\"qqmusic_miniversion\")||0,10),-1!==e.indexOf(\"Electron\"))o=\"electron\";else if(-1!==e.indexOf(\"Mac OS X\")){r=6,o=\"mac\";var t=(a.a.get(\"qqmusic_version_mac\")||\"0\").split(\".\"),n=parseInt(t[0]||0,10),s=parseInt(t[1]||0,10),l=parseInt(t[2]||0,10);i=1e4*n+100*s+l;var u=navigator.userAgent.match(/Ma"
+    },
+    {
+      "label": "URL getParam returns string",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "byteOffset": 388054,
+      "literal": "getParam:function(e,t)",
+      "boundedSource": "ct\"===r()(o)?a(i,e(o)):a(i,o)}return n.join(\"&\").replace(/%20/g,\"+\")},getParam:function(e,t){var n=t||window.location.href;try{n=decodeURIComponent(n)}catch(e){}var a=new RegExp(\"(\\\\?|&|#)\".concat(e,\"=(.*?)(#|&|$)\"),\"i\"),i=n.match(a),o=i?i[2]:\"\";try{o=decodeURIComponent(o)}catch(e){}return o},delParam:function(e,t){var n=new RegExp(\"(\\\\?|#|&)(\".concat(e,\"=.*?)(#|&|$)\")),a=(t=t||window.location.href).match(n);if(a&&a."
+    },
+    {
+      "label": "Low level public AJAX XHR and script signer",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "byteOffset": 429179,
+      "literal": "s=new XMLHttpRequest",
+      "boundedSource": "a]=n[a];if(i=n.dataType.toLowerCase(),n.url=c.a.addParam({_:Date.now()},n.url),n.data,o=!!n.needEnc,s=new XMLHttpRequest,-1!==n.url.indexOf(g)&&(n.url=n.url.replace(g,_)),(-1!==n.url.indexOf(_)||n.sign)&&(l=\"GET\"==n.type.toUpperCase()?Object(m.a)(n.data.data):Object(m.a)(n.data),n.url=c.a.addParam({sign:l},n.url)),!t.data||c.a.isString(n.data)||n.data instanceof FormData||(n.data=c.a.param(n.data)),!o){e.next=19;break}return e.next=14,Object(p.b)(n.data);case 14:n.data=e.sent,n.url=c.a.addParam({encoding:\"ag-1\"},n.url),n.contentType=\"text/plain\",s.responseType=\"arraybuffer\",i=\"arraybuffer\";cas"
+    },
+    {
+      "label": "Low level XHR sends actual body",
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common_05d6a42fa95b1f315e83.js",
+      "byteOffset": 431316,
+      "literal": "s.send(n.data||null)",
+      "boundedSource": ",d)s.setRequestHeader(S,d[S]);return n.timeout>0&&(k=setTimeout((function(){s.abort()}),n.timeout)),s.send(n.data||null),e.abrupt(\"return\",s);case 43:case\"end\":return e.stop()}}),e)})))).apply(this,arguments)}function C(){var e,t=arguments.length>0&&void 0!==arguments[0]?arguments[0]:{};!/^post$/i.test(t.type)&&t.postType&&delete t.postType;var n={data:{g_tk_new_20200303:c.a.getACSRFToken(!0),g_tk:c.a.getACSRFToken(),uin:u.a.get(\"qqmusic_uin\")||0,format:\"json\",inCharset:\"utf-8\",outCharset:\"utf-8\",notice:0,platform:\"wk_v17\",needNewCode:1},timeout:1e4,withCredentials:1,cache:!1};s.a.music&&(n.da"
+    }
+  ],
+  "unknowns": [
+    "Native C++ artist producer is not established. SingerRadio is not an artist TopSongs substitute.",
+    "The prior sanitized runtime prefix had no artist action request; no collector reread, new hook or process/window action was performed.",
+    "Response numeric widths, pagination maximum, live business result and DTO validation remain Root-owned real-session verification.",
+    "These public assets were fetched at current investigation time; no claim that the same dynamic bundle was shipped in2018 or loaded in original current QQ process."
+  ],
+  "actions": {
+    "publicNetwork": "Only configured public wk_v17 HTML and its directly linked/derived runtime JS assets, stateless urllib without CookieJar/Cookie/Authorization; HTTPS default TLS and strict y.qq.com redirect validation. web tool page fetch failed timeout, stateless HTTP fallback succeeded.",
+    "artifactCodeExecution": "Only selected pure he function in constrained Node vm with inert public P mocks. No browser/session/local APIs available.",
+    "coreProductionWrites": false,
+    "pluginProductionWrites": false,
+    "gitCommands": false,
+    "originalProcessProfileOrWindowAccess": false
+  },
+  "derivedSourcePins": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-embedded-artist-common-module79.js",
+      "bytes": 6728,
+      "sha256": "23bf29cf434c8cac27b7368f1455eec2ad77adf508da89a183052934f444d199",
+      "parentSha256": "093d7213faa8c99e95b5acea2132860619c0a4eb8f64d339c08e385cb571d1e1"
+    }
+  ]
+}

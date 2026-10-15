@@ -1,0 +1,202 @@
+{
+  "scope": "three static Ghidra dossiers from runtime-proven interface code owner; no user configuration/credential reads, getter execution, client launch, account requests, production orGit edits",
+  "target_sha256": "ba66aa248b885227179f1676fbc54576a036f46b9d096fea33131c4f30fa6476",
+  "runtime_authority": "qq-runtime-account-owner-shapes.jsonl proves naturally returned IQQMPAccount vtable+0xc code ownerProtocol.dll RVAabeed; it does not prove natural invocation or server acceptance of this method",
+  "evidence": [
+    {
+      "file": "qq-login-owner-next-dispatch.json",
+      "evidence_id": "ev_b76db068c0fe9cbfd681968b6c2ec9757fea74abb1dcf396bb06e8e82494afd3",
+      "procedure": "0x100abeed",
+      "body_bytes": 565
+    },
+    {
+      "file": "qq-login-owner-next-qq-fresh-producer.json",
+      "evidence_id": "ev_11a7460b9842b13644611f67dffa803aa147e3c8ce4d2b825124d5c1d340b067",
+      "procedure": "0x100c8c37",
+      "body_bytes": 372
+    },
+    {
+      "file": "qq-login-owner-next-qq-token-producer.json",
+      "evidence_id": "ev_36c649e62606e43552215027dde4a111c75ccc17c36ce8d8aeeff928b1a56bba",
+      "procedure": "0x100c8f20",
+      "body_bytes": 875
+    }
+  ],
+  "dispatch": {
+    "entry": "0x100abeed",
+    "switch": [
+      {
+        "tag": 0,
+        "global_mode": 2,
+        "when_current_uin_zero": "100c8c37(payload+4)",
+        "otherwise": "logQQAuthorize;100c8924(payload+4,empty)",
+        "path": "QQ authorization-code path"
+      },
+      {
+        "tag": 1,
+        "global_mode": 2,
+        "callee": "100c8f20",
+        "path": "QQ token restoration request"
+      },
+      {
+        "tag": 2,
+        "global_mode": 1,
+        "when_current_uin_zero": "100c9a3b(payload+4)",
+        "otherwise": "logWXAuthorize;100c8924(empty,payload+4)",
+        "path": "WX authorization-code path"
+      },
+      {
+        "tag": 3,
+        "global_mode": 1,
+        "callee": "100c9bdf",
+        "path": "WX token restoration request"
+      },
+      {
+        "tag": 4,
+        "global_mode": 6,
+        "callee": "100c8b01(musicid64,musickey,payload+4)",
+        "path": "unknown"
+      },
+      {
+        "tag": 9,
+        "global_mode": 2,
+        "callee": "100c8dab(payload+4)",
+        "path": "QQ alternative, purpose unknown"
+      },
+      {
+        "tag": 10,
+        "callee": "100ca740(payload+4,+8,+c,+10)",
+        "path": "unknown"
+      }
+    ],
+    "return": "0 after dispatch, not a loggedIn/server success result"
+  },
+  "request_identifiers": {
+    "request_key_global": "0x101a7300",
+    "request_key": "music.login.LoginServer.Login",
+    "module_global": "0x101a5948",
+    "module": "music.login.LoginServer",
+    "method_global": "0x101a5978",
+    "method": "Login",
+    "authority": "exact ordinaryPE initializer opcode/literal association; qq-login-owner-next-static-literals.json"
+  },
+  "request_fields": [
+    {
+      "name": "code",
+      "type": "JSON string",
+      "source": "payload+0x4, UTF16ToUtf8A",
+      "producer": "fresh"
+    },
+    {
+      "name": "openid",
+      "type": "JSON string",
+      "source": "payload+0x8, QM::t2a",
+      "producer": "token"
+    },
+    {
+      "name": "musickey",
+      "type": "JSON string",
+      "source": "payload+0x28, QM::t2a",
+      "producer": "token"
+    },
+    {
+      "name": "expired_in",
+      "type": "JSON signed64 integer",
+      "source": "payload+0x18/+0x1c, Json constructor _J",
+      "producer": "token"
+    },
+    {
+      "name": "musicid",
+      "type": "JSON signed64 integer",
+      "source": "payload+0x20/+0x24, Json constructor _J",
+      "producer": "token"
+    },
+    {
+      "name": "onlyNeedAccessToken",
+      "type": "JSON signed32 integer",
+      "value": 0,
+      "producer": "both"
+    },
+    {
+      "name": "forceRefreshToken",
+      "type": "JSON signed32 integer",
+      "value": 0,
+      "producer": "both"
+    },
+    {
+      "name": "appid",
+      "type": "JSON unsigned32 integer",
+      "source": "protocol account owner+0x118; value not recovered",
+      "producer": "both"
+    },
+    {
+      "name": "deviceName",
+      "type": "JSON string",
+      "source": "FUN_100c8851 return std::string; content/normalization not recovered",
+      "producer": "both"
+    },
+    {
+      "name": "deviceType",
+      "type": "JSON string",
+      "value": "Widnows",
+      "producer": "token"
+    },
+    {
+      "name": "refresh_key",
+      "type": "JSON string",
+      "source": "payload+0x2c, QM::t2a",
+      "producer": "token"
+    },
+    {
+      "name": "access_token",
+      "type": "JSON string",
+      "source": "payload+0xc, QM::t2a",
+      "producer": "token"
+    },
+    {
+      "name": "refresh_token",
+      "type": "JSON string",
+      "source": "payload+0x10, QM::t2a",
+      "producer": "token"
+    }
+  ],
+  "producers": {
+    "fresh": {
+      "entry": "0x100c8c37",
+      "handoff": "FUN_10073e50(owner,requestKey,module,method,params,0,extraContext,0,0,0)",
+      "next_direct_callee": "0x10073e50",
+      "meaning": "constructs new QQ codeLogin params, then hands to shared transport; upstream code production/QR flow not recovered"
+    },
+    "token": {
+      "entry": "0x100c8f20",
+      "handoff": "FUN_10073e50(owner,requestKey,module,method,params,1,extraContext,0,0,0)",
+      "next_direct_callee": "0x10073e50",
+      "meaning": "restored QQ session fields are serialized into actualLogin request, not only inspected locally"
+    }
+  },
+  "type_imports": {
+    "int32": "IAT10123618 ??0Value@Json@@QAE@H@Z",
+    "uint32": "IAT101235f0 ??0Value@Json@@QAE@I@Z",
+    "signed64": "IAT10123578 ??0Value@Json@@QAE@_J@Z",
+    "string": "IAT10123620 PBD or10123594 std::string",
+    "bool_constructor_present_but_not_used_for_these_flags": "IAT10123590 _N"
+  },
+  "updated_prior_interpretation": "LoadToken discriminator1 is now tied by actualdispatch toQQ token path; discriminator3 toWX token path. This updates prior unknown labels without changing GUID equality rejection logic.",
+  "residual_unknowns": [
+    "numeric appid value and constructor initialization",
+    "deviceName producer semantics/valueencoding",
+    "sharedtransport handoff flag0/1 semantics not established in this slice",
+    "authorization code source, QR acquisition/poll andcaptcha/challenge handling",
+    "response schema, explicitserver verification andtoken refresh producer (Login request fieldforceRefreshToken=0 does not prove refresh behavior)",
+    "currentuin globals1b55f8/1b55fc values not observed",
+    "auto ABI signatures/extraout_ECX/unaff_EDI remain suspect; not callable native contracts",
+    "server acceptance/playback not tested"
+  ],
+  "precise_next_entries": [
+    "0x10073e50 shared transport101byte function",
+    "0x100c8851 deviceName producer211byte function",
+    "0x100c8924 QQ/WX existing-accountAuthorize branch477byte function",
+    "0x100c8dab alternativeQQ path373byte function; do not labelQR without analysis",
+    "0x100c9a3b/0x100c9bdf WX equivalents only if requested by selected login path"
+  ]
+}

@@ -1,0 +1,246 @@
+{
+  "authority": "external-service",
+  "purpose": "Public anonymous desktop song DTO mapping",
+  "scriptSha256": "0992a93f0863a62e42d42f1131df26180f22d108c8d18428c66888369110b48d",
+  "limits": [
+    "Search type, placement and search ID suffix are compatibility experiment inputs, not recovered native caller defaults.",
+    "No account rights, login, vkey, encrypted media or playback is validated."
+  ],
+  "calls": [
+    {
+      "status": 200,
+      "path": "/cgi-bin/musics.fcg",
+      "contentType": "text/plain; charset=utf-8;"
+    }
+  ],
+  "success": true,
+  "meta": {
+    "cid": "",
+    "curpage": 1,
+    "dir": "L",
+    "display_order": [],
+    "ein": 2,
+    "estimate_sum": 130654,
+    "expid": ",,,",
+    "feedbackPlaceId": "",
+    "is_filter": 0,
+    "next_page_start": {},
+    "nextpage": 2,
+    "perpage": 2,
+    "query": "晴天",
+    "report_info": {
+      "items": {}
+    },
+    "result_trustworthy": 1,
+    "ret": 0,
+    "safetyType": 0,
+    "safetyUrl": "",
+    "searchid": "0123456789ABCDEF0123456789ABCDEF00000",
+    "sid": "",
+    "sin": 0,
+    "step_rela_syntax_tree": {},
+    "sum": 997,
+    "tab_list": [],
+    "uid": "",
+    "v": 0
+  },
+  "songContainer": {},
+  "publicSongs": [
+    {
+      "id": 97773,
+      "mid": "0039MnYb0qxYhV",
+      "name": "晴天",
+      "title": "晴天",
+      "subtitle": "",
+      "singer": [
+        {
+          "id": 4558,
+          "mid": "0025NhlN2yWrP4",
+          "name": "周杰伦",
+          "pmid": "",
+          "title": "周杰伦",
+          "type": 0,
+          "uin": 0
+        }
+      ],
+      "album": {
+        "id": 8220,
+        "mid": "000MkMni19ClKG",
+        "name": "叶惠美",
+        "pmid": "000MkMni19ClKG_5",
+        "subtitle": "",
+        "time_public": "",
+        "title": "叶惠美"
+      },
+      "file": {
+        "b_30s": 0,
+        "df": [],
+        "e_30s": 60000,
+        "hires_bitdepth": 0,
+        "hires_sample": 0,
+        "media_mid": "003Qui1q2u1Zho",
+        "size_128mp3": 4317292,
+        "size_192aac": 6519764,
+        "size_192ogg": 5860576,
+        "size_24aac": 0,
+        "size_320mp3": 10792943,
+        "size_360ra": [],
+        "size_48aac": 1642440,
+        "size_96aac": 3283546,
+        "size_96ogg": 2927865,
+        "size_ape": 0,
+        "size_dolby": 0,
+        "size_dts": 0,
+        "size_flac": 55397039,
+        "size_hires": 0,
+        "size_new": [
+          186980254,
+          31168013,
+          80437198,
+          10331568,
+          0,
+          23183008,
+          36638639,
+          2563200,
+          58805051,
+          0,
+          0,
+          0,
+          28055659,
+          0,
+          0,
+          0
+        ],
+        "size_try": 960887,
+        "try_begin": 84346,
+        "try_end": 142843,
+        "url": "",
+        "vm": []
+      },
+      "interval": 269,
+      "pay": {
+        "pay_down": 1,
+        "pay_month": 1,
+        "pay_play": 1,
+        "pay_status": 0,
+        "price_album": 0,
+        "price_track": 200,
+        "time_free": 0
+      },
+      "action": {
+        "alert": 41,
+        "icon2": 1030792151040,
+        "icons": 14073854,
+        "msgdown": 0,
+        "msgfav": 0,
+        "msgid": 13,
+        "msgpay": 6,
+        "msgshare": 0,
+        "switch": 16897793,
+        "switch2": 0,
+        "vb": [
+          0
+        ]
+      },
+      "type": 0
+    },
+    {
+      "id": 244115385,
+      "mid": "004Fs2FP1EvZYc",
+      "name": "晴天",
+      "title": "晴天 (Live)",
+      "subtitle": "",
+      "singer": [
+        {
+          "id": 4558,
+          "mid": "0025NhlN2yWrP4",
+          "name": "周杰伦",
+          "pmid": "",
+          "title": "周杰伦",
+          "type": 0,
+          "uin": 0
+        }
+      ],
+      "album": {
+        "id": 9040723,
+        "mid": "004fXSyj3bWTMN",
+        "name": "周杰伦地表最强世界巡回演唱会",
+        "pmid": "004fXSyj3bWTMN_1",
+        "subtitle": "",
+        "time_public": "",
+        "title": "周杰伦地表最强世界巡回演唱会"
+      },
+      "file": {
+        "b_30s": 0,
+        "df": [],
+        "e_30s": 60000,
+        "hires_bitdepth": 0,
+        "hires_sample": 0,
+        "media_mid": "002DMfDx1macLz",
+        "size_128mp3": 3997575,
+        "size_192aac": 6051053,
+        "size_192ogg": 5447636,
+        "size_24aac": 0,
+        "size_320mp3": 9993618,
+        "size_360ra": [],
+        "size_48aac": 1520767,
+        "size_96aac": 3042719,
+        "size_96ogg": 2789256,
+        "size_ape": 0,
+        "size_dolby": 13997445,
+        "size_dts": 0,
+        "size_flac": 54393782,
+        "size_hires": 0,
+        "size_new": [
+          169477025,
+          0,
+          0,
+          9387289,
+          0,
+          19478996,
+          0,
+          2374452,
+          55794271,
+          0,
+          14028904,
+          46890410,
+          25978667,
+          0,
+          0,
+          0
+        ],
+        "size_try": 960887,
+        "try_begin": 79623,
+        "try_end": 135110,
+        "url": "",
+        "vm": []
+      },
+      "interval": 249,
+      "pay": {
+        "pay_down": 1,
+        "pay_month": 1,
+        "pay_play": 1,
+        "pay_status": 0,
+        "price_album": 0,
+        "price_track": 200,
+        "time_free": 0
+      },
+      "action": {
+        "alert": 21,
+        "icon2": 1030792151040,
+        "icons": 14073854,
+        "msgdown": 0,
+        "msgfav": 0,
+        "msgid": 13,
+        "msgpay": 6,
+        "msgshare": 0,
+        "switch": 16897793,
+        "switch2": 0,
+        "vb": [
+          0
+        ]
+      },
+      "type": 0
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "schema": "qq-common-media-format-findings-v1",
+  "scope": "Three static dossiers for GetEncType, ReadFileExtension(handle), and SetEkey. No media/cache execution, user-state read, production change, or Git operation.",
+  "target": {
+    "path": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\QQMusicCommon.dll",
+    "sha256": "4267e1c27f7251a31460613a97f5787fd7d9d0be3664e5e615251aba2780471f",
+    "architecture": "x86",
+    "imagebase": "0x10000000"
+  },
+  "method": {
+    "provider": "Ghidra 12.1.4 via standalone REA CLI",
+    "launcher": "C:\\Users\\Payne\\AppData\\Local\\npm-cache\\_npx\\af752b90495482d7\\node_modules\\rea-agents\\scripts\\rea.mjs",
+    "command_template": "node <launcher> function <target> <address> --provider ghidra --snapshot <snapshot> --format json --full-output 1> <dossier> 2> <stderr>",
+    "GHIDRA_INSTALL_DIR": "E:\\PycharmProjects\\MusicAnyClient\\tools\\ghidra_12.1.4_PUBLIC",
+    "JAVA_HOME": "E:\\PycharmProjects\\MusicAnyClient\\tools\\jdk-21.0.12.1+1",
+    "snapshots": ["qq-common-media-format-snapshot.json", "qq-common-media-format-extension-snapshot.json"],
+    "snapshot_note": "Separate matching target snapshots isolate concurrent queries. No shared native MCP session was used.",
+    "all_exit_codes": 0,
+    "all_stderr_bytes": 0,
+    "all_native_value_flow_truncated": false,
+    "all_omitted_operations_lower_bound": 0,
+    "constant_bytes_script": "qq-common-media-format-constant-bytes.py",
+    "constant_bytes_result": "qq-common-media-format-constant-bytes.json"
+  },
+  "dossiers": [
+    {
+      "procedure": "EncAndDesMediaFile::GetEncType",
+      "address": "0x10013c52",
+      "body_bytes": 310,
+      "file": "qq-common-media-format-type.json",
+      "sha256": "e6d10fabdd85e0af9807eaffcef5b46879d1940e1b494c19f1a0244101b88e2e",
+      "evidence_id": "ev_e6b1ccb1d517420ebd56dc017a66b6ae811305a7a6d90196be736a7b14ac6483"
+    },
+    {
+      "procedure": "qqmusic::ReadFileExtension(void*,MFileExtension_1&)",
+      "address": "0x1001e056",
+      "body_bytes": 342,
+      "file": "qq-common-media-format-extension.json",
+      "sha256": "24f535472097dffa5e962bfb2f39049c7ff393b38580d0f849cd6f6e98170ff1",
+      "evidence_id": "ev_1bda93590e48c0a6b02e921f773f166d2e1a7344c1806c63f683c38d5df0cb5f"
+    },
+    {
+      "procedure": "EncAndDesMediaFile::SetEkey(char const*,int)",
+      "address": "0x100136dd",
+      "body_bytes": 90,
+      "file": "qq-common-media-format-set-ekey.json",
+      "sha256": "8377b85d54692d8a98802b2c4f9a343efacaaacc578ca5fcb7f54725a0793425",
+      "evidence_id": "ev_89772990d47af09dd5cce1d4041d37fb0cdc4d06667aecb29571c897f84cbafe"
+    }
+  ],
+  "correction_to_previous_summary": {
+    "file": "qq-common-media-contract-findings.json",
+    "topic": "ReadExtend parsed-structure offset 0x48 length units",
+    "previous_statement": "50 bytes at parsed-structure offset 0x48",
+    "corrected_statement": "ReadExtend passes pointer to structure+0x48 and count argument 0x32 to FUN_100061f2. ReadFileExtension proves this field is a UTF16 filename buffer with a forced terminator at offset 0xaa, spanning 50 UTF16 units including the terminator. The helper count must not be called 50 bytes; its implementation remains unexpanded.",
+    "reason": "New direct ReadFileExtension assembly and wchar_t CString constructor establish the field encoding. The previous summary inferred a byte unit without sufficient evidence. Original summary retained for audit; this correction supersedes its units claim."
+  },
+  "observations": [
+    {
+      "topic": "Type selection uses extension processing and actual comparison branches",
+      "evidence": "GetEncType constructs two static CString lists. It wraps the supplied filename in CString and calls GetFileExtension with flag 1, then for nonempty output calls FUN_10013d88. FUN_10005d1e(list1, processed_extension, 0) result >=0 sets ESI=1; otherwise FUN_10005d1e(list2, processed_extension, 0) result >=0 sets ESI=2. Empty output or negative results retain ESI=0. EAX receives ESI at return. This proves list strings feed selection behavior, rather than merely existing in the binary.",
+      "addresses": ["0x10013c90", "0x10013cdf", "0x10013d23", "0x10013d45", "0x10013d53", "0x10013d5e", "0x10013d6a", "0x10013d73", "0x10013d80"]
+    },
+    {
+      "topic": "Classification list constants",
+      "mode1_list": ".qmc0.qmc3.qmcflac.qmcogg.qmc2.qmc4.qmc8.qmc6.kgm.krc.kgma.kgmv.enc.tkm",
+      "mode2_list": ".mflac.mgg.mmp4",
+      "addresses": ["0x100d8968", "0x100d89f8"],
+      "limit": "The extraction, normalization and comparison helper bodies were not expanded. Exact case sensitivity, token equality versus substring matching, handling of unknown suffixes that overlap a list token, and malformed filenames remain unproven."
+    },
+    {
+      "topic": "Tail metadata layout and magic comparison",
+      "evidence": "ReadFileExtension seeks EOF-16 and requires ReadFile success with exactly16 bytes. The tail's DWORD at +0 is used as a distance to metadata from EOF; DWORD at +4 must equal1; 8 bytes at +8 are memcmp-compared with musicex plus NUL. Original PE constant bytes at address100bba5c are 6d75736963657800, file offset0xbac5c, SHA256 5b728916183e99e8944308ae3906404d2547d2775ce4bbad6cc1f1305f96fcb9. DWORDs are directly read on x86, thus serialized little endian.",
+      "addresses": ["0x1001e078", "0x1001e0a6", "0x1001e0b4", "0x1001e0c9", "0x1001e0e0"]
+    },
+    {
+      "topic": "Metadata body and filename validation",
+      "evidence": "After tail validation, the function negates the tail distance DWORD and calls SetFilePointer with FILE_END and null high pointer. It reads exactly176 bytes into the caller MFileExtension_1 struct, requiring ReadFile success and bytesRead176. It writes UTF16 NUL words at struct+0x46 and struct+0xaa. A wide CString constructor receives struct+0x48. Its character count must be at least4 and FUN_10005d1e(filename,wide_dot,0) must return a value other than-1; otherwise BL is cleared. AL receives BL before the EH epilog; other errors set AL=0.",
+      "addresses": ["0x1001e0fd", "0x1001e104", "0x1001e108", "0x1001e11b", "0x1001e125", "0x1001e133", "0x1001e13a", "0x1001e142", "0x1001e14e", "0x1001e15e", "0x1001e17c", "0x1001e189", "0x1001e1a4"]
+    },
+    {
+      "topic": "Metadata validation boundary",
+      "evidence": "This function does not explicitly compare the tail distance to192, bound it against file size, test SetFilePointer results, or compare additional header magic. The prior Open always deducts192 after ReadExtend success. Thus a successful native parser does not itself prove a canonical contiguous176+16-byte trailer or robust malformed-file handling."
+    },
+    {
+      "topic": "SetEkey input and mode-2 interface contract",
+      "evidence": "SetEkey returns false if this+0x14 stream is null or signed int length<=0. Otherwise it obtains ordinal8 from HMODULE this+0x18, creates a key object with &status, invokes that key object's vtable slot0 with supplied pointer and explicit int length, invokes stream vtable+8 with the key object, resolves ordinal9 and releases the key object, then sets AL=1. It does not update this+0x10 mode or inspect key/stream return values. The only direct callee is GetProcAddress; three actual business calls are indirect.",
+      "addresses": ["0x100136e4", "0x100136ea", "0x100136f6", "0x10013704", "0x10013712", "0x1001371a", "0x10013722", "0x10013729", "0x1001372b"]
+    },
+    {
+      "topic": "SetEkey validation and success boundary",
+      "evidence": "The body has no explicit guard for null input pointer, loaded module handle, GetProcAddress result, factory status/result, or key parse/setup success. Local AL=1 confirms completion of this call sequence when it returns normally, not successful key decoding or media decryption. Pointer validity and key encoding belong to the unexpanded indirect callees."
+    }
+  ],
+  "derived_inferences": [
+    {
+      "claim": "Canonical extensions named in list1 are the intended mode1 family; canonical .mflac/.mgg/.mmp4 extensions are the intended mode2 family.",
+      "basis": "The list constants participate directly in branches assigning1/2, and prior Open/Read prove mode1 invokes the fixed-table full64 XOR helper whereas mode2 initializes and invokes a CommonFunction stream.",
+      "limit": "Exact classification policy requires GetFileExtension, FUN_10013d88 and FUN_10005d1e bodies. Named suffix mapping is not proof that all variants or real files decode correctly."
+    },
+    {
+      "claim": "A canonical extension footer is consistent with176-byte metadata followed by the16-byte tail, for a192-byte total.",
+      "basis": "ReadFileExtension reads176 bytes from EOF-distance and16 bytes at EOF-16, while Open trims192.",
+      "limit": "Only when the tail distance equals192 do those ranges line up contiguously. Native parser does not enforce that equality; no real media file was inspected."
+    },
+    {
+      "claim": "The extension-derived EKey lookup receives a filename rather than an embedded EKey string.",
+      "basis": "ReadFileExtension logs and validates the wchar_t field at+0x48 as filename; prior ReadExtend copies that same field into the CString argument passed to GetDownloadEKey.",
+      "limit": "Actual GetDownloadEKey storage/network lookup, and the connection between runtime GetEVkey replies and this lookup, remain unproven."
+    },
+    {
+      "claim": "Mode2 uses the same key-object intake sequence for the extension-obtained EKey and the EOF-embedded key bytes.",
+      "basis": "SetEkey sequence matches prior Open fallback ord8→key slot0(pointer,length)→stream+8→ord9.",
+      "limit": "No proof that both inputs have equal encoding, that key objects accept them, or of the stream's decoding algorithm."
+    }
+  ],
+  "unknowns": [
+    "Actual filenames/suffixes, Ekey replies, media body format or magic from the user's GetEVkey capture were not inspected by this slice.",
+    "GetDownloadEKey body and concrete key owner/source are unexpanded.",
+    "CommonFunction ordinal8 key factory, ordinal9 release, key vtable slot0 and stream vtable+8/+0x10 implementations remain unexpanded.",
+    "No complete QMC/MFLAC/MGG codec compatibility claim follows from type strings, footer parsing or SetEkey AL=1.",
+    "Exact mode1 extension policy and full64 helper API port remain unimplemented here.",
+    "No runtime validation of valid/corrupt footer, key parsing, actual media decryption, cache behavior, playback or account/network success."
+  ],
+  "bounded_next_candidates_if_authorized": [
+    {"procedure": "GetDownloadEKey", "address": "0x1001dc47", "reason": "Concrete extension-filename→EKey lookup owner."},
+    {"procedure": "CommonFunction ordinal8", "address_from_previous_export_inventory": "0x100017a0", "reason": "Actual key-object factory and vtable initialization; must rebind to that DLL hash/snapshot."},
+    {"procedure": "Key object slot0", "address": "not_yet_resolved", "reason": "Only choose after factory provides a concrete vtable target."}
+  ]
+}

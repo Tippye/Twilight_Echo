@@ -1,0 +1,182 @@
+{
+  "schema": "qq-favorite-manager-final-visibility-findings-v1",
+  "recordedAtUTC": "2026-10-14T12:20:11.503814+00:00",
+  "scope": "Read-only original static PE/Capstone and exactly one private-snapshot REA attempt. No original execution/account/window/network/profile/Git or production writes.",
+  "budget": {
+    "newDossierAttempts": 1,
+    "procedure": "0x106544b0",
+    "selection": "Exact directcalleeof boundIQMCatMgr+b8 wrapper106511a0; earlier106c3920dossiernotrepeated",
+    "retried": false
+  },
+  "existingAuthority": {
+    "favoriteFindings": {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-visibility-findings.json",
+      "sha256": "1a1437c6aabfcdea541f45221391b106852c73484095f24a4bbd4f319a2f21cd",
+      "bytes": 8022
+    },
+    "consumerDossier": {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-visibility-main-reconcile.json",
+      "sha256": "c25c4219f04179c5cf7928a60de6b64aa4a9a857f98147a36b68b66adeca12d5",
+      "bytes": 3823916
+    },
+    "consumerEvidenceId": "ev_f7b62909e00031070b0c43d0d246a3f3f5926a7fb85e862efac0c4bdc4032877"
+  },
+  "interfaceBinding": {
+    "authority": "Exact installedPE export/import/table bytes and small complete stubs; no observed runtimeobject or new canonical REA procedure",
+    "mainOwnerCatMgr": "Main106c13fe LEAEBXowner+c8;106c1405CALL[IAT109c1204]",
+    "namedExport": "Common symbol?GetICatMgr@@YAJPAPAUIQMCatMgr@@@Z ordinal888/address1000f18a;12bytewrapperJMP1000db21",
+    "service": "1000db21 fetchesCommonglobal1012b814;servicevirtual+40returnsIUnknown;QIusesexactIIDat100bafd0",
+    "iidBytes": "f435ed45b2d77c46becfba5c723b0cd1",
+    "mainQI": "SameIID10b4603c, QImap10b46050 triple{IID,thisOffset14,handler1};QIfunction106577d0 loads thattableandcalls10048c60",
+    "vtable": "Original10b45c4c, field+14writeat10657977;thisclassreset/deletionpathisnotclaimedfactoryruntimeobservation",
+    "qiThunk": "table+0=1065809f subtractsstackthis14 andJMP106577d0, agreeingwithQImapoffset",
+    "actualB8": "table10b45c4c+b8(10b45d04)=106511a0;complete124byteboundedwrapperendsRET18at10651216",
+    "actualDirectCallee": "106511a0 ordinarycall1065120a→106544b0 afterstateinitialization/rangeguard",
+    "excludedWrongInterfaces": [
+      "DBexportQMCatMgrReal100b0420+B8landsinadjacentSinktable;notactualCOMtable",
+      "Common1000c8a3previousGetLocalSonghelperusesanotherIIDc9fa41e31f4158489c128a50b797c070 andservice+7c;notnamedGetICatMgr"
+    ]
+  },
+  "queryOutcome": {
+    "command": "node rea.mjs function <originalQQMusic.dll> 0x106544b0 --provider ghidra --snapshot qq-favorite-manager-main-private-snapshot.json --format json --full-output",
+    "perProcessEnv": {
+      "GHIDRA_INSTALL_DIR": "E:\\PycharmProjects\\MusicAnyClient\\tools\\ghidra_12.1.4_PUBLIC",
+      "JAVA_HOME": "E:\\PycharmProjects\\MusicAnyClient\\tools\\jdk-21.0.12.1+1",
+      "PATH": "JavaHome/bin prepended only within child shell"
+    },
+    "exitCode": 1,
+    "rawResult": {
+      "ok": true,
+      "data": {
+        "error": "Analysis failed",
+        "code": "provider_timeout",
+        "category": "timeout",
+        "message": "Analysis took too long. Try a smaller request, then run `rea doctor` if it continues.",
+        "retryable": true,
+        "remediation": {
+          "action": "Analysis took too long. Try a smaller request, then run `rea doctor` if it continues."
+        },
+        "details": {
+          "operation": "analyze_function",
+          "timeout_ms": 330000
+        }
+      },
+      "meta": {
+        "command": "function",
+        "duration": "332654ms"
+      }
+    },
+    "stdoutArtifact": {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-update.json",
+      "sha256": "51fcf4ab1c9358c9d4d0afbf361c2ac941ef7909f81bd1fbaf52540ff97f79b8",
+      "bytes": 437
+    },
+    "stderrArtifact": {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-update.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "evidenceId": null,
+    "limit": "Timeout330000ms; no successful normalized/nativevalueflow/pseudocode/canonicalbody result; no retry or second query"
+  },
+  "observedBoundaries": [
+    "ReusedMain106c3920consumerprovesopType5→native3→statusvaluecopiedunderCatItemmask8;allrowsappended;no dirShow or directdeletedIDread/skip there",
+    "CorrectactualCOMinterfaceand+b8callabletargetareidentified;thisprogressdoesnotprovefinalvisibility",
+    "Ordinary106544b0boundedbytescall10644540/10644900 to prepareexistingcategorycontainers then mergeincomingrecords andlater persist/publish; these generic maps do not themselves establishvisiblefavoritepredicate",
+    "No proof status0 implies hidden/deleted/notfavorited, no proofv_delTidsintersectrowshouldberemoved bythisnativepath",
+    "No provenexact visible-favoritegetter readback or mask8→storedstatus→getter membershipflow; targeted canonicalquerytimedout"
+  ],
+  "answer": {
+    "nativeFinalVisibility": "unknown",
+    "currentStatus0IntersectingRowActuallyDisplayed": "not proved bythisboundedstatic slice",
+    "notClaimed": [
+      "nativefinalvisiblefullsnapshot",
+      "status0asdeletion",
+      "v_delTidsasfullsnapshotremoval",
+      "dirShowasrecoverednativepredicate",
+      "emptyhostuinmapszero"
+    ]
+  },
+  "adapterDecisionRecommendation": {
+    "decision": "UseexplicitadaptervisibleOnlypolicybasedonlyonserverdirShow===1 ifRootconfirmsmalformed-ownerrowhasdirShow0; do notintroduceunsupportedPlaylistorfakeownerzero",
+    "evidenceStatus": "Adapter designchoiceusingexplicitserverdisplayfield; nativeequivalenceunproved",
+    "preflightAllRows": [
+      "RequireeverydirShow numericexact0or1;missing/unknownvaluesreject",
+      "ValidateboundedwellformednonNUL strings, signed64tid, nonnegativesafecounts, containers/duplicateidentities asapplicable beforefilter",
+      "Visible1mustpasscurrentstrict ownerU64canonical+summarymapper",
+      "Hidden0mayhaveboundedempty ownerstring orvaliddecimalU64; noPlaylistSummary/lookupidentityisconstructed fromunknownowner",
+      "Visible1emptyowner, malformedhiddenpublicfield, unknownshowenumcontinuewholedecoderreject",
+      "Keepnativetotal/reportedCountdistinctfromvisiblearraylength;returnhiddenCount; do notinferdeletedcausefromhiddenflag"
+    ],
+    "currentRuntimeRelationNeeded": "Rootthin sanitized booleanmustbindemptyuinrowtodirShow0; agenthasnotreadrealaccountresponse orrunanotherprobe",
+    "rootOwnsImplementation": true
+  },
+  "supportingArtifacts": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-static.py",
+      "sha256": "386af522fd0472544d27fbd05cc334ccb29d9cc32e348d01cca1d5a436070f53",
+      "bytes": 5465
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-static.json",
+      "sha256": "2f94f8661442226d011f041926b21015ebd5d53002851aef7170a27c3009b9fa",
+      "bytes": 34164
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-common-export.json",
+      "sha256": "18963833e237d2ee92863e7cf8f15278bf3aa872f0e7354e5c7946cb9efc65f6",
+      "bytes": 8714
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-common-factory-source.json",
+      "sha256": "b3dfbc122cef10840f656408ba954e5fda3cc53e1d755e89b9f874715e325917",
+      "bytes": 6761
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-catmgr-qimap.json",
+      "sha256": "ae34cc7c724b235648afa4486b213143bb66e9de4cae117e73755cbc4a235546",
+      "bytes": 6585
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-interface-binding.json",
+      "sha256": "b8974da782ce717cbb50947342130508334343fccba0bc7519a61b46a6547b27",
+      "bytes": 44379
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-slot-b8-seed.json",
+      "sha256": "1d2d46eb63ae6ab1e1ed46f97cc72e34c2b7e5704a0f2f33ed042731d7f6c130",
+      "bytes": 11667
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-concrete-vtable-source.json",
+      "sha256": "0a444847c8bfd770b02d07a0a2fd57e2a2f461ea7acbfd6b771b716d75f113c0",
+      "bytes": 20317
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-update-ordinary.json",
+      "sha256": "052c90e23a1156ec9f2e464e181815846e507b4152195a1469ec49ba76bbd63d",
+      "bytes": 103519
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-existing-getter-source.json",
+      "sha256": "f1458882fd3639266fa1a401e443423415a776430b54ad7c2150c8282e0836bf",
+      "bytes": 91286
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-persist-source.json",
+      "sha256": "5b25e30196001e1df10aa14bd1076394bcbd9012e063892f951c9f73bf58d944",
+      "bytes": 71069
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-favorite-manager-native-row-update-source.json",
+      "sha256": "00323e50e54a8b94f866142c9383408b906536d2a3b35c99e0a705cb7e17937a",
+      "bytes": 27746
+    }
+  ],
+  "nativeArtifactSha256": {
+    "QQMusic.dll": "0108e68beda8b0af61a71911519fa4feb5df02417d32f4a0993868e5157624be",
+    "QQMusicCommon.dll": "4267e1c27f7251a31460613a97f5787fd7d9d0be3664e5e615251aba2780471f",
+    "QQMusic_DataBaseMgr.dll": "aba7eb604c5f348dccc1d2af0ddbf2018d571f33edf8497402a26c3ee6bf91a0"
+  },
+  "productionChanges": []
+}

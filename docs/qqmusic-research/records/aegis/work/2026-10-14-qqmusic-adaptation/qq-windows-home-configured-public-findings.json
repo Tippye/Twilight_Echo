@@ -1,0 +1,566 @@
+{
+  "schema": "qq-windows-home-configured-public-findings-v1",
+  "generatedAtUtc": "2026-10-14T14:30:26.739390+00:00",
+  "owner": "/root/qq_qr_resources",
+  "status": "homepage public consumer recovered; root observed native-comm response variant; daily embedded-source301 and direct native-ct19 adapter201 kept distinct with Root actual30-record leaf qualification",
+  "authority": {
+    "installedArtifact": "E:/Program Files (x86)/QQMusic/QQMusic2271.18.09.14/QQMusicResource.dll",
+    "artifactSha256": "f635b213a60fad43f46dd8c49c913904420a4f9f480be952984955ccc2186e89",
+    "resource": "JSON/2009/2052",
+    "resourceEvidenceId": "ev_a5b17e227de5bb3b46adbb1b35ee846a68a3f2d708f7fc6a23805cf0b9975ae1",
+    "resourceSha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7",
+    "pipeline": "Windows22.71 shipped URL configuration -> currently served public wk_v20 page/assets. This is configured embedded-web behavior, not a native C++ producer or original process runtime request."
+  },
+  "configuredUrls": {
+    "recommend_v20_url": "https://i2.y.qq.com/n3/wk_v20/entry/index/recommend",
+    "musichall_v20_url": "https://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/recommend",
+    "musichall_url": "https://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/recommend",
+    "guess_fav_url": "https://c.y.qq.com/node/pc/wk_v15/guesslike.html",
+    "main_page": "https://y.qq.com",
+    "playlist_detail_v20_url": "https://i2.y.qq.com/n3/wk_v20/entry/index/playlist_detail/index",
+    "dir_detail_url": "https://i2.y.qq.com/n3/wk_v20/entry/index/playlist_detail/index"
+  },
+  "configuredPageExistence": {
+    "requestedUrl": "https://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/recommend",
+    "status": 200,
+    "finalUrl": "https://i2.y.qq.com/n3/wk_v20/entry/index/musicroom/recommend",
+    "ssrFirstPageData": "{}",
+    "renderMode": 1
+  },
+  "exactAssetUrls": [
+    "https://y.qq.com/n3/wk_v20/entry/index.chunk.20f80323e.js?max_age=6048000",
+    "https://y.qq.com/n3/wk_v20/entry/runtime.d807a2801c869ee2f901.bundle.js?max_age=6048000",
+    "https://y.qq.com/n3/wk_v20/entry//musicroom.chunk.8c94a3ab5.js?max_age=6048000"
+  ],
+  "assetBudget": {
+    "initialLimit": 2,
+    "usedInitialAssets": [
+      "index",
+      "runtime"
+    ],
+    "additionalRootAuthorization": "Initial home scope allowed exactly1 business chunk28 asset, total3. Shared dependencies were not fetched in that original scope.",
+    "usedTotalJsAssets": 3,
+    "scope": "Historical initial home investigation scope only; later independent2-asset authorization is recorded in supplementAssetScope.",
+    "noFurtherAssetsFetchedInOriginalScope": true
+  },
+  "routeConsumerChain": [
+    "Resource musichall_v20_url/musichall_url -> /n3/wk_v20/entry/index/musicroom/recommend",
+    "HTML active script index.chunk.20f80323e.js + runtime.d807a2801c869ee2f901.bundle.js",
+    "index route /musicroom/recommend -> chunk28 + module620, delegate getInitialProps to620",
+    "runtime publicPath //y.qq.com/n3/wk_v20/entry// + musicroom.chunk.8c94a3ab5.js?max_age=6048000",
+    "module620 getInitialProps de -> J() -> five-call request array -> {firstData:{data,errFlag}} -> he.componentDidMount.renderData -> standard source list views"
+  ],
+  "requestAndConsumerContracts": [
+    {
+      "position": 0,
+      "module": "music.musicHall.MusicHallPlatformSvr",
+      "method": "GetFocus",
+      "param": {
+        "Device": {
+          "OS": "3",
+          "AppName": "QQ音乐"
+        }
+      },
+      "paramTypes": {
+        "Device": "object",
+        "Device.OS": "string",
+        "Device.AppName": "string"
+      },
+      "responseConsumer": "data.shelf.v_niche[0].v_card[]",
+      "output": "banner",
+      "fieldsRead": [
+        "cover",
+        "jumptype",
+        "miscellany.CfgID",
+        "subid or id",
+        "miscellany.clickurl/exposeurl/tag",
+        "title",
+        "miscellany"
+      ],
+      "sdkReadOnlyCandidate": "Banner metadata only; navigation/ads/reporting not part of requested standard list contract."
+    },
+    {
+      "position": 1,
+      "module": "playlist.HotRecommendServer",
+      "method": "get_new_hot_recommend",
+      "param": {
+        "cmd": 0,
+        "page": 0,
+        "daily_page": 0,
+        "size": 12
+      },
+      "paramTypes": {
+        "cmd": "number",
+        "page": "number",
+        "daily_page": "number",
+        "size": "number"
+      },
+      "responseConsumer": "data.modules[0].grids[]",
+      "output": "officialPlaylist",
+      "uiTitle": "官方歌单",
+      "uiSubtitle": "官方甄选订阅歌单",
+      "renderTarget": "module620 he.render -> u.b(content:officialPlaylist), where u=n(544)",
+      "sdkReadOnlyCandidate": "Existing fetchRecommendPlaylists->PlaylistSummary[] candidate. module544 has ordinary Dissinfo/playlist widget branch, but no numeric type/source_type/recomm_type semantics or native creator-host proof. Root real data.grids12/modules[]0 variant requires strict explicit adapter and independent native detail compatibility verification; no owner0 guess.",
+      "dailyBoundary": "The sole daily_page:0 literal does not establish daily recommendations. No 每日/猜你喜欢/个性 labels or daily producer were found in this business asset.",
+      "responseVariant": {
+        "authority": "Root own-session sanitized shape/enum report; this agent did not invoke RPC or read account values.",
+        "accepted": true,
+        "gridsLength": 12,
+        "modulesLength": 0,
+        "fieldTypes": {
+          "creator.uin": "decimal string",
+          "creator.nick": "string",
+          "id": "number (Root reports safe)",
+          "title": "string",
+          "picurl": "string",
+          "type": "number",
+          "recomm_type": "number",
+          "source_type": "number",
+          "jmpurl": "string"
+        },
+        "safeProtocolEnumObservations": {
+          "type": [
+            10014
+          ],
+          "source_type": [
+            2,
+            3,
+            5
+          ],
+          "recomm_type": [
+            0
+          ],
+          "view": [
+            0
+          ]
+        },
+        "jmpurlRootObservation": "invalid or blank, no navigable raw-card identity recovered",
+        "variantBoundary": "Root native-comm request result uses bare data.grids with modules empty; source620 assumes data.modules[0].grids. This does not establish complete equivalence to web default transport/comm contract."
+      },
+      "sharedConsumer": {
+        "sourceModule": 544,
+        "module620Use": "he.render passes officialPlaylist (s[1].data.modules[0].grids) to module544 exportb; no aiPlayList or enUin props established by this call.",
+        "module609Use": "SongMenu205/DoubleRowSongMenu271 cards -> module544 exportb, configuration name:true,user:false,listen:true,webview12.",
+        "playBranchesInOrder": [
+          {
+            "predicate": "props.aiPlayList truthy",
+            "module": "IntelligentTagServer",
+            "method": "IntelligentTagSongInfo",
+            "paramExpression": {
+              "onlyAi": 1,
+              "tagids": "[record.tagid]"
+            },
+            "recordPath": "response[0].data.songInfo[0].info"
+          },
+          {
+            "predicate": "record.song truthy",
+            "module": "music.pf_song_detail_svr",
+            "method": "get_song_detail",
+            "paramExpression": {
+              "song_id": "+record.subid"
+            },
+            "recordPath": "response[0].data.track_info"
+          },
+          {
+            "predicate": "otherwise",
+            "module": "music.srfDissInfo.aiDissInfo",
+            "method": "uniform_get_Dissinfo",
+            "paramExpression": {
+              "disstid": "parseInt(record.id)",
+              "userinfo": 1,
+              "tag": 1,
+              "enc_host_uin": "props.enUin||empty string",
+              "guid": "module240.a.getGuid()"
+            },
+            "recordPath": "response[0].data.songlist"
+          }
+        ],
+        "navigation": "record.song -> SDK.i(song,{songid:record.subid,songtypes:this.songtypes},...); otherwise explicit props.jumpFun or SDK.i(playlist,record.id||record.tagid,record.title,props.aiPlayList,record.extra_info,props.from,{hostuin:props.enUin||empty string}).",
+        "creatorUin": "Used only by creator-profile click. It is not passed as ordinary Dissinfo enc_host_uin or playlist navigation hostuin by544. Native GetDetail host compatibility needs separate actual response/probe authority.",
+        "numericEnumBoundary": "No branch interprets record.type/source_type/recomm_type/jmpurl/strjumpurl. isVip triggers reporting, not a playlist kind selector. Widget default branch behavior alone does not prove all raw grids are safe canonical playlists or that creator.uin equals native detail host.",
+        "actualRootProvidedHomeVariant": {
+          "authority": "Root own-session sanitized shape/enum report; this agent did not invoke RPC or read account values.",
+          "accepted": true,
+          "gridsLength": 12,
+          "modulesLength": 0,
+          "fieldTypes": {
+            "creator.uin": "decimal string",
+            "creator.nick": "string",
+            "id": "number (Root reports safe)",
+            "title": "string",
+            "picurl": "string",
+            "type": "number",
+            "recomm_type": "number",
+            "source_type": "number",
+            "jmpurl": "string"
+          },
+          "safeProtocolEnumObservations": {
+            "type": [
+              10014
+            ],
+            "source_type": [
+              2,
+              3,
+              5
+            ],
+            "recomm_type": [
+              0
+            ],
+            "view": [
+              0
+            ]
+          },
+          "jmpurlRootObservation": "invalid or blank, no navigable raw-card identity recovered",
+          "variantBoundary": "Root native-comm request result uses bare data.grids with modules empty; source620 assumes data.modules[0].grids. This does not establish complete equivalence to web default transport/comm contract."
+        }
+      }
+    },
+    {
+      "position": 2,
+      "module": "newsong.NewSongServer",
+      "method": "get_new_song_info",
+      "param": {
+        "type": 5
+      },
+      "paramTypes": {
+        "type": "number"
+      },
+      "responseConsumer": "data.songlist[] + data.songTagInfoList[] + data.lanlist[]",
+      "output": "albumlist/albumTag/tag",
+      "uiTitle": "最新发行",
+      "conversion": "Y takes first20 rows, reuses row.album, adds singers=row.singer, release_time=row.time_public, name=row.title||row.name, index_album=row.index_album||0, rcmd_reason=tag lookup from songTagInfoList[id].tag.",
+      "fieldsRead": [
+        "album",
+        "singer",
+        "time_public",
+        "title",
+        "name",
+        "index_album",
+        "rcmd_reason",
+        "songTagInfoList[].id/tag",
+        "lanlist[].type/lan"
+      ],
+      "sdkReadOnlyCandidate": "Public source Y builds album cards from first20 rows. Root real accepted data.songlist43 independently supports fullSongInfo strict map43; Root explicitly chooses latest-release song preview first20 via existing fetchRecommendSongs->Track[]. This is an adapter choice; no Daily or web album-to-Track equivalence claim."
+    },
+    {
+      "position": 3,
+      "module": "music.longRadio.recommend",
+      "method": "GetPCHotRecommend",
+      "param": {
+        "id": 2
+      },
+      "paramTypes": {
+        "id": "number"
+      },
+      "responseConsumer": "data.Shelfs[0] -> z.a(...).data, z=n(558)",
+      "output": "radioList",
+      "uiTitle": "专属热门节目",
+      "sdkReadOnlyCandidate": "Program/radio content; not artist TopSongs, daily songs, or playlist discovery. Shared converter outside fetched assets."
+    },
+    {
+      "position": 4,
+      "module": "music.area.CategoryArea",
+      "method": "getCategoryAreaInCategoryPlaylist",
+      "param": {},
+      "paramTypes": {},
+      "responseConsumer": "data.shelf.v_niche[0].v_card[]; parse URL(card.id).searchParams.encArea -> encAreaId",
+      "output": "areaList",
+      "fieldsRead": [
+        "shelf.title_template",
+        "shelf.v_niche[].v_card",
+        "card.id",
+        "card.title",
+        "card.subtitle",
+        "card.cover",
+        "card.miscellany.icon",
+        "encAreaId"
+      ],
+      "sdkReadOnlyCandidate": "Named area cards (source renders dynamic shelf.title_template). Not a proven standard playlist-tag enumeration. Current code gates one area via Dolby-support check; semantic area/category enum is not expanded."
+    }
+  ],
+  "loaderErrorBehavior": "J returns per-request errFlag array. Nonzero service code produces corresponding flag; all-nonzero returns data{} + five true flags. Advertised code0 with missing modules field can throw TypeError; transport rejection propagates. These are source expectations, not a recommendation to suppress provider business errors.",
+  "sdkMappingBoundary": "Current provider SDK has fetchRecommendSongs(context?)->Track[] and fetchRecommendPlaylists->PlaylistSummary[]; ui.streamingSections requires Track[]. No getHomeSections/fetchHomeSection/fetchDailySongs methods. Root explicitly adapts newsong type5 as latest-release song preview first20; this source finding must not silently relabel that as daily or add unsupported generic SDK methods.",
+  "dailyRecommendation": {
+    "status": "embedded-source301 misses; direct observed native-ct19 adapter201 plus exact known title has actual30-record read-only qualification",
+    "findingsPath": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-personal-daily-findings.json",
+    "findingsSha256": "3e0b492fc02ad207e7d1e4c238bc954dc1ab4a4d347276a6794792b1ff44a9f7",
+    "initialParam": {
+      "direction": 0,
+      "page": 1,
+      "v_cache": [],
+      "v_uniq": [],
+      "s_num": 0
+    },
+    "embeddedSourceSelector": "shelf.id===301 (number); shelf.v_niche[0].v_card.find(card=>card.title==='每日30首')",
+    "originalFalse301Boundary": {
+      "authority": "Root own-session sanitized qq-daily-real-response-shapes.json; no private values persisted or inspected by this agent.",
+      "observedUtc": "2026-10-14T14:12:15.187Z",
+      "feedAccepted": true,
+      "vShelfLength": 8,
+      "sampleShelfIdType": "number",
+      "sampleCardIdType": "decimal-string",
+      "dailyCardFound": false,
+      "conclusion": "This original observation does not satisfy the embedded source selector301. It is preserved unchanged as historical false301 evidence; the later native-ct19 adapter variant is recorded separately below, without rewriting source constants."
+    },
+    "nativeCt19AdapterResponseVariant": {
+      "authority": "Root own-session bounded direct observation; source is qq-daily-real-known-selector-checks.json, shapes/safe protocol enums/known-title comparison booleans only.",
+      "observedUtc": "2026-10-14T14:20:06.594Z",
+      "feedAccepted": true,
+      "feedRetcode": 0,
+      "shelfCount": 8,
+      "shelf301Present": false,
+      "safeShelfSummary": [
+        {
+          "shelfKind": 201,
+          "firstNicheCards": 4,
+          "firstNicheExactDailyTitle": true,
+          "anyNicheExactDailyTitle": true
+        },
+        {
+          "shelfKind": 204,
+          "firstNicheCards": 1,
+          "firstNicheExactDailyTitle": false,
+          "anyNicheExactDailyTitle": false
+        },
+        {
+          "shelfKind": 203,
+          "firstNicheCards": 1,
+          "firstNicheExactDailyTitle": false,
+          "anyNicheExactDailyTitle": false
+        },
+        {
+          "shelfKind": 203,
+          "firstNicheCards": 1,
+          "firstNicheExactDailyTitle": false,
+          "anyNicheExactDailyTitle": false
+        },
+        {
+          "shelfKind": 203,
+          "firstNicheCards": 1,
+          "firstNicheExactDailyTitle": false,
+          "anyNicheExactDailyTitle": false
+        },
+        {
+          "shelfKind": 203,
+          "firstNicheCards": 1,
+          "firstNicheExactDailyTitle": false,
+          "anyNicheExactDailyTitle": false
+        },
+        {
+          "shelfKind": 203,
+          "firstNicheCards": 1,
+          "firstNicheExactDailyTitle": false,
+          "anyNicheExactDailyTitle": false
+        },
+        {
+          "shelfKind": 203,
+          "firstNicheCards": 1,
+          "firstNicheExactDailyTitle": false,
+          "anyNicheExactDailyTitle": false
+        }
+      ],
+      "explicitAdapterPredicate": "Under verified native ct19 feed only: shelf.id===201 (number); first niche card.title==='每日30首'. Do not use a general301-to-any-shelf fallback.",
+      "candidateEvidence": "Exactly one observed201 shelf has4 first-niche cards and an exact known-title match; observed204/203 shelf cards do not match this title. Source original301 selector still returnsfalse.",
+      "domainBoundary": "201 here is a recommendation-feed shelf kind, not liked-playlist directory201. This is an actual response variant plus explicit adapter choice, not a recovered native C++ enum or a mutation of embedded-web enum301.",
+      "leafQualification": {
+        "authority": "Root direct own-session configured aiDiss request with selected card disstid and current verified GUID; qq-daily-native-variant-real-detail.json stores shapes/counts/codes/identity booleans only.",
+        "observedUtc": "2026-10-14T14:24:13.738Z",
+        "accepted": true,
+        "nativeCode": 0,
+        "nativeSubcode": 0,
+        "rawSongs": 30,
+        "total": 30,
+        "strictMappingCount": 30,
+        "responseIdMatches": true,
+        "result": "Read-only Daily leaf qualification closed for explicit native-ct19 response variant. Original embedded-web source301 and original false301 observation remain separate. This does not establish a native C++ enum or playback of these30 tracks.",
+        "privacy": "This agent did not invoke RPC, read private card/disstid/GUID values, or access account/profile/window."
+      }
+    }
+  },
+  "transportBoundary": "module620 m=n(490), m.p().request expects array/Promise response array. Actual shared SDK490 implementation, comm/header/auth defaults and wire envelope are outside fetched assets and not expanded. Do not inherit previous wk_v17 transport or Android defaults as this wk_v20/native authority.",
+  "isolatedReplay": {
+    "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-loader-replay.json",
+    "actualLoader": "J + local pure generator V/Z/W/Y from module620",
+    "casesPassed": 4,
+    "cases": [
+      "success with all5 source paths",
+      "all5 service nonzero",
+      "malformed advertised success",
+      "transport rejection"
+    ],
+    "limits": "Mock request/radio converter, no entire module/browser/script runtime/API/account/private profile/cookie or network execution; proves source construction/consumer paths only."
+  },
+  "sourcePins": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-qr-resources-pe-json-2009.json",
+      "bytes": 10065,
+      "sha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-configured-musicroom.html",
+      "bytes": 23580,
+      "sha256": "5ee4544ec764dfcf512e8f0859839ee09ed570ebe859a2bb0634e22ac7d0a7d2"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-index.chunk.20f80323e.js",
+      "bytes": 133979,
+      "sha256": "5dac18c580b6232c1c574522671d684bac0511489232a7fdc8596d30a084deae"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-runtime.d807a2801c869ee2f901.bundle.js",
+      "bytes": 7137,
+      "sha256": "cc6376982015c2993245b16c9792d13be18e751be8184534d52863dcb6cdad1e"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "bytes": 158254,
+      "sha256": "16fd3b01c23cc97921988d260a20c0135801976527fe974529c6be0c94d981c4"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-loader-replay.json",
+      "bytes": 5435,
+      "sha256": "afefbcc53c8dda77609df35c58298efa39ade0e7e9752b954f1e685432b472f6"
+    }
+  ],
+  "boundedSourceEvidence": [
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-configured-musicroom.html",
+      "label": "HTML current empty SSR first data",
+      "byteOffset": 7201,
+      "literal": "window.__ssrFirstPageData__=\"{}\"",
+      "boundedSource": "         })();\n        </script><script>window.__ssrFirstPageData__=\"{}\"</script><script>window.__renderMode__= 1</script></head>\n        \n    <body>\n"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-configured-musicroom.html",
+      "label": "Actual linked index asset",
+      "byteOffset": 23274,
+      "literal": "index.chunk.20f80323e.js",
+      "boundedSource": "></script><script src=\"//y.qq.com/n3/wk_v20/entry/index.chunk.20f80323e.js?max_age=6048000\"></script>\n\n<script>window.__SSR_SPD_MARK__={\"serverBundleFetch\":\"0.08\",\"generateDocument\":\"1.62\",\"getInitialProps\":\"0.02\",\"rende"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-index.chunk.20f80323e.js",
+      "label": "Configured musicroom route and module620 lazy loader",
+      "byteOffset": 7148,
+      "literal": "path:\"/musicroom/recommend\"",
+      "boundedSource": "d r(t)}c.done?e(u):Promise.resolve(u).then(n,o)}var p,d,m=[{path:\"/musicroom/recommend\",chunkName:l.a.MUSICROOM,Component:function(){return u()({loader:function(){return Promise.all([r.e(0),r.e(1),r.e(5),r.e(2),r.e(6),r.e(7),r.e(4),r.e(3),r.e(10),r.e(8),r.e(9),r.e(11),r.e(13),r.e(12),r.e(16),r.e(28)]).then(r.bind(null,620))},loading:function(){return o.a.createElement(\"div\")}})},getInitialProps:(p=f().mark((function t(e){var n,o;return f().wrap((function(t){for(;;)switch(t.prev=t.next){case 0:return t.next=2,Promise.all([r.e(0),r.e(1),r.e(5),r.e(2),r.e(6),r.e(7),r.e(4),r.e(3),r.e(10),r.e(8),r.e(9),r.e(11),r.e(13),r.e(12),r.e(16),r.e(28)]).then(r.bind(null,620));case 2:return n=t.sent,o=n.getInitialProps,t.abrupt(\"return\",null==o?void 0:o(e));case 5:case\"end\":return t.stop()}}),t)})),d=function(){var t=this,e=arguments;return new Promise((function(r,n){var o=p.apply(t,e);function i(t){h(o,r,n,i,a,\"next\",t)}function a(t){h(o,r,n,i,a,\"throw\",t)}i(void 0)}))},function(t){return d.apply(this,arguments)}),PageLoading:o.a.createElement(s.b,null)},{pat"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-runtime.d807a2801c869ee2f901.bundle.js",
+      "label": "Runtime literal publicPath, including double slash",
+      "byteOffset": 6919,
+      "literal": "n.p=\"//y.qq.com/n3/wk_v20/entry//\"",
+      "boundedSource": "ype.hasOwnProperty.call(e,o)},n.p=\"//y.qq.com/n3/wk_v20/entry//\",n.oe=function(e){throw console.error(e),e};var c=window.webpackJsonp=window.webpackJsonp||[],m=c.push.bind(c);c.pus"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-runtime.d807a2801c869ee2f901.bundle.js",
+      "label": "Runtime chunk28 basename",
+      "byteOffset": 2182,
+      "literal": "28:\"musicroom\"",
+      "boundedSource": "mo2\",24:\"frame_page\",25:\"iframe_dialog\",28:\"musicroom\",29:\"radio\",31:\"recommend\",32:\"skin\",33:\"song_detail\",34:\"venus\",35:\"voice\"}[e]||e)+\".\"+{2:\"31d6cfe0d\",3:\"31d6cfe0d\",4:\"31d6cfe0d\",5:\"31d6cfe0d\",6:\"31d6cfe0d\",7:\"31d6cfe0d\",8:\"0a7187a22\""
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-runtime.d807a2801c869ee2f901.bundle.js",
+      "label": "Runtime chunk28 JS hash",
+      "byteOffset": 5615,
+      "literal": "28:\"8c94a3ab5\"",
+      "boundedSource": "e4b45702\",24:\"ccf02e184\",25:\"18fa175d0\",28:\"8c94a3ab5\",29:\"c360955a7\",31:\"498dd3a28\",32:\"ea09e39b7\",33:\"a6193265f\",34:\"6383abe95\",35:\"4df87bd9d\"}[e]+\".js?max_age=6048000\"}(e);var m=new Error;d=function(o){c.onerror=c.onl"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Business consumer module620 export getInitialProps",
+      "byteOffset": 119571,
+      "literal": "620:function",
+      "boundedSource": "nt:F,selectedQuality:j.a.vinyl}))))))}},620:function(e,t,n){\"use strict\";n.r(t),n.d(t,\"getInitialProps\",(function(){return de})),n.d(t,\"PageLoading\",(function(){return me}));n(26),n(27),n(49),n(33),n(130),n(43),n(46),n(169),n(12),n(201),n(11),n(116),n(144),n(41),n(17),n(202),n(131),n(32),n(44),n(45),n(117),n(38),n(36),n(5),n(58),n(14),n(16),n(15),n(13),n(18),n(123);var r,a=n(0),o=n.n(a),i=n(104),c=n.n(i),l=n(48),u=n(544),s=n(538),p=n(564),f=(n(59),n(240)),d=n(584),m=(n(64),n(65),n(490)),h=n(50),v=n(506),y=n(503),g=\"301404\",_=\"TME_UNISDK_ad_banner_\"+g,w=void 0;function b(e){var t=func"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Five requests in actual J loader",
+      "byteOffset": 135732,
+      "literal": "Object(m.p)().request([{module:\"music.musicHall.MusicHallPlatformSvr\"",
+      "boundedSource": ",h,v,y,g,_,w,b,E,x;return V().wrap((function(e){for(;;)switch(e.prev=e.next){case 0:return e.next=2,Object(m.p)().request([{module:\"music.musicHall.MusicHallPlatformSvr\",method:\"GetFocus\",param:{Device:{OS:\"3\",AppName:\"QQ音乐\"}}},{module:\"playlist.HotRecommendServer\",method:\"get_new_hot_recommend\",param:{cmd:0,page:0,daily_page:0,size:12}},{module:\"newsong.NewSongServer\",method:\"get_new_song_info\",param:{type:5}},{module:\"music.longRadio.recommend\",method:\"GetPCHotRecommend\",param:{id:2}},{module:\"music.area.CategoryArea\",method:\"getCategoryAreaInCategoryPlaylist\",param:{}}]);case 2:if(s=e.sent,p={},f=[],Array.isArray(s)&&(f=new Array(s.length).fill(!1)),0==(null===(t=s[0])||void 0===t?void 0:t.code)&&(null===(n=s[0])||void 0===n||null===(r=n.data)||void 0===r||null===(a=r.shelf)||void 0===a||null===(o=a.v_niche)||void 0===o||null===(i=o[0])||void 0===i||null===(c=i.v_card)||void 0===c?void 0:c.length)>0?(d=s[0].data.shelf.v_niche[0].v_card.map((function(e){var t,n,r;return{img:e.cover,type:e.jumptype,id:e.miscellany.CfgID,target:e.subid||e.id,miaozhen:{clickurl:null===(t=e.miscellany)||void 0===t?void 0:t.clickurl,exposeurl:null="
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Focus shelf/card banner fields",
+      "byteOffset": 136553,
+      "literal": "d=s[0].data.shelf.v_niche[0].v_card",
+      "boundedSource": "ull===(i=o[0])||void 0===i||null===(c=i.v_card)||void 0===c?void 0:c.length)>0?(d=s[0].data.shelf.v_niche[0].v_card.map((function(e){var t,n,r;return{img:e.cover,type:e.jumptype,id:e.miscellany.CfgID,target:e.subid||e.id,miaozhen:{clickurl:null===(t=e.miscellany)||void 0===t?void 0:t.clickurl,exposeurl:null===(n=e.miscellany)||void 0===n?void 0:n.exposeurl},tag:(null===(r=e.miscellany)||void 0===r?void 0:r.tag)||\"\",title:e.title||\"\",miscellany:e.miscellany}})),p.banner=d):f[0]=!0,0==(null===(l=s[1])||void 0===l?void 0:l.code)&&s[1].data?(h=s[1].data.modules[0].grids,p.officialPlaylist=h):f[1]=!0,s[2]&&0==s[2].code&&s[2].data?(g={},null===(v=s[2].data.songTagInfoList)||void 0===v||v.forEach((function(e){g[e.id]=e.tag})),p.albumTag=s[2].data.lanlist,p.albumlist=null===(y=s[2].data.songlist)||void 0===y?void 0:y.map((func"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Official playlist path and latest-release conversion",
+      "byteOffset": 137017,
+      "literal": "h=s[1].data.modules[0].grids",
+      "boundedSource": "any:e.miscellany}})),p.banner=d):f[0]=!0,0==(null===(l=s[1])||void 0===l?void 0:l.code)&&s[1].data?(h=s[1].data.modules[0].grids,p.officialPlaylist=h):f[1]=!0,s[2]&&0==s[2].code&&s[2].data?(g={},null===(v=s[2].data.songTagInfoList)||void 0===v||v.forEach((function(e){g[e.id]=e.tag})),p.albumTag=s[2].data.lanlist,p.albumlist=null===(y=s[2].data.songlist)||void 0===y?void 0:y.map((function(e){return Object.assign({},e,{rcmd_reason:g[e.id]})})),p.albumlist=Y(p.albumlist),p.tag=5):f[2]=!0,s[3]&&0===s[3].code&&s[3].data?p.radioList=Object(z.a)(null===(_=s[3])||void 0===_||null===(w=_.data)||void 0===w||null===(b=w.Shelfs)||void 0===b?void 0:b[0]).data:f[3]=!0,0===(null==s||null===(u=s[4])||void 0===u?void 0:u.code)&&s[4].data)try{(null===(E=s[4].data.shelf)||void 0===E||null===(x=E.v_niche)||void 0===x?void 0:x[0]).v_card.forEach((function(e){try{var t=new URL(e.id).searchParams.get(\"encArea\""
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Y album transformation",
+      "byteOffset": 135338,
+      "literal": "function Y(e)",
+      "boundedSource": "unction c(e){Z(o,r,a,i,c,\"throw\",e)}i(void 0)}))}}function Y(e){if(e)return e.slice(0,20).map((function(e){var t={};return(t=e.album).singers=e.singer,t.release_time=e.time_public,t.name=e.title||e.name,t.index_album=e.index_album||0,t.rcmd_reason=e.rcmd_reason,t}))}var J=function(){var e=W(V().mark((function e(){var t,n,r,a,o,i,c,l,u,s,p,f,d,h,v,y,g,_,w,b,E,x;return V().wrap((function(e){for(;;)switch(e.prev=e.next){case 0:return e.next=2,Object(m.p)().request([{mo"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Radio and area result paths",
+      "byteOffset": 137438,
+      "literal": "p.radioList=Object(z.a)",
+      "boundedSource": "rcmd_reason:g[e.id]})})),p.albumlist=Y(p.albumlist),p.tag=5):f[2]=!0,s[3]&&0===s[3].code&&s[3].data?p.radioList=Object(z.a)(null===(_=s[3])||void 0===_||null===(w=_.data)||void 0===w||null===(b=w.Shelfs)||void 0===b?void 0:b[0]).data:f[3]=!0,0===(null==s||null===(u=s[4])||void 0===u?void 0:u.code)&&s[4].data)try{(null===(E=s[4].data.shelf)||void 0===E||null===(x=E.v_niche)||void 0===x?void 0:x[0]).v_card.forEach((function(e){try{var t=new URL(e.id).searchParams.get(\"encArea\");e.encAreaId=t}catch(e){}return e})),p.areaList=s[4].data}catch(e){}else f[4]=!0;return e.abrupt(\"return\",{data:p,errFlag:f});case 12:case\"end\":return e.stop()}}),e)})));return function(){return e.apply(this,arguments)}}(),Q=n(511),K=n(60),X=n(521),$=n(508),ee=n(491),te=n(507);function ne(){var e=Object(a.useState)([])"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Initial props invokes J",
+      "byteOffset": 147421,
+      "literal": "de=function(){var e=ue",
+      "boundedSource": "0},pe={name:!0,singer:!0,time:!0},fe={name:!0,listen:!0,rec_label:!0},de=function(){var e=ue(ce().mark((function e(t){var n;return ce().wrap((function(e){for(;;)switch(e.prev=e.next){case 0:return e.next=2,J();case 2:return n=e.sent,e.abrupt(\"return\",{firstData:n});case 4:case\"end\":return e.stop()}}),e)})));return function(t){return e.apply(this,arguments)}}(),me=function(){return o.a.createElement(U.a,null,o.a.createElement(\"div\",{className:\"layout_cont\"},o.a.createElement(T.a,{className:\"mod_adapter_2-3 mod_adapter_single\",number:\"6\"}),o.a.createElement(T.f,{cla"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Render official playlist label",
+      "byteOffset": 156777,
+      "literal": "官方歌单",
+      "boundedSource": ",r?o.a.createElement(\"div\",{className:\"layout_cont\"},o.a.createElement(\"div\",{className:\"mod_title\"},o.a.createElement(\"h2\",{className:\"c_tx_title\"},\"官方歌单\"),o.a.createElement(\"div\",{className:\"c_tx_thin\"},\"官方甄选订阅歌单\"),o.a.createElement(\"a\",{className:\"more c_tx_thin\",onClick:function(){m.i(\"category\",3317)}},\"更多\",o.a.createElement(\"i\",{className:\"icon_skin more__icon\"}))),o.a.createElement(O.a,{className:\"mod_adapter_4-6\"},o.a.createElement(u.b,{report:\"pc.v17.first_offcial_playlist\",config:se,content:r,className:\"mod_adapter_4-6\"}))):\"\",P.w?o.a.createElement(ne,null):null,d?o.a.createElement(\"div\",{className:\"layou"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Render latest release label",
+      "byteOffset": 157761,
+      "literal": "最新发行",
+      "boundedSource": ",c?o.a.createElement(\"div\",{className:\"layout_cont\"},o.a.createElement(\"div\",{className:\"mod_title\"},o.a.createElement(\"h2\",{className:\"c_tx_title\"},\"最新发行\"),o.a.createElement(\"div\",{className:\"c_tx_thin\"},w),o.a.createElement(\"a\",{onClick:this.handleMoreClick,className:\"more c_tx_thin\"},\"更多\",o.a.createElement(\"i\",{className:\"icon_skin more__icon\"}))),o.a.createElement(O.a,{ref:\"albumSwipe\",className:\"mod_adapter_4-6\"},o.a.createElemen"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Dynamic shelf title and area card rendering",
+      "byteOffset": 127892,
+      "literal": "c=null===(e=i.shelf)||void 0===e?void 0:e.title_template",
+      "boundedSource": "),t.prototype.render=function(){var e,t,n,r,a=this.props.data,i=void 0===a?{}:a,c=null===(e=i.shelf)||void 0===e?void 0:e.title_template,l=(null===(t=i.shelf)||void 0===t||null===(n=t.v_niche)||void 0===n||null===(r=n[0])||void 0===r?void 0:r.v_card)||[];return 0===l.length?null:o.a.createElement(\"div\",{className:\"layout_cont\"},o.a.createElement(\"div\",{className:\"mod_title\"},o.a.createElement(\"h2\",{className:\"c_tx_title\"},c)),o.a.createElement(O.a,{className:\"mod_adapter_4-6\"},o.a.createElement(\"ul\",{className:\"mod_playlist\"},l.map((function(e,t){if(e)return o.a.createElement(M,{useLazyImg:!0,key:e.id||t,content:e})})))))},t}(a.Component),B=R,H=n(552),U=n(565),z=(n(474),n(173),n(174),n(143),n(553));function V(){V=function(){return t};var e,t={},n=Object.prototype,r=n.hasOwnProperty,a=Object.defineProperty||function(e,t"
+    },
+    {
+      "source": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-windows-home-musicroom.chunk.8c94a3ab5.js",
+      "label": "Area identity comes from encArea",
+      "byteOffset": 137791,
+      "literal": "searchParams.get(\"encArea\")",
+      "boundedSource": "||null===(x=E.v_niche)||void 0===x?void 0:x[0]).v_card.forEach((function(e){try{var t=new URL(e.id).searchParams.get(\"encArea\");e.encAreaId=t}catch(e){}return e})),p.areaList=s[4].data}catch(e){}else f[4]=!0;return e.abrupt(\"return\",{data:p,errFlag:f});case 12:case\"end\":return e.stop()}}),e)})));return function(){return e.apply(this,arguments)}}(),Q=n(511),K=n(60),X=n(521),$=n(508),ee=n(491),te=n(507);function ne(){var e=Object(a.useState)([]),t="
+    }
+  ],
+  "excludedSameAssetHelpers": "Same chunk also includes quality-area AreaShelf/getShelfContent and SearchClassHubSrv/GetClassDetail and song detail/relation helpers. They are not this home J request batch and were not treated as standard discovery/daily services.",
+  "safetyAndScope": {
+    "publicNetworkOnly": "Stateless HTTPS GET of exact configured HTML plus3 directly linked/derived JS assets, no CookieJar/Cookie/Authorization. Strict official y.qq.com redirects, default TLS. web parser timed out; local stateless GET succeeded.",
+    "noRpc": true,
+    "noCookieAccountProfileWindowOriginalProcessAccess": true,
+    "noInstrumentation": true,
+    "noCorePluginProductionWrites": true,
+    "noGitCommands": true
+  },
+  "supplementAssetScope": {
+    "rootAuthorization": "This separate scope permits exactly1 configured recommend business asset +1 necessary directly pointed shared consumer; no further dependencies.",
+    "newJsLimit": 2,
+    "newJsUsed": 2,
+    "urls": [
+      "https://y.qq.com/n3/wk_v20/entry//recommend.chunk.498dd3a28.js?max_age=6048000",
+      "https://y.qq.com/n3/wk_v20/entry//common~musicroom~recommend~voice~748942c6.chunk.26bd9e519.js?max_age=6048000"
+    ],
+    "sharedSelectionProof": "Both index loaders for620 and609 declare chunk13; both consumers import missing module544; runtime maps13 to joint common~musicroom~recommend~voice name/hash. Actual fetched chunk13 contains544.",
+    "fetchBoundary": "Stateless public GET, no CookieJar/Cookie/Authorization/account/profile; TLS default, redirects restricted to HTTPS official exact origin; no business RPC. No further asset fetches."
+  }
+}

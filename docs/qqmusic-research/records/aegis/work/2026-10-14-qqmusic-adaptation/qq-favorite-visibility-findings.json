@@ -1,0 +1,85 @@
+{
+  "schema": "qq-favorite-visibility-native-findings-v1",
+  "recordedAtUTC": "2026-10-14T12:00:55.152228+00:00",
+  "status": "Completed bounded static downstream trace; no final native display/tombstone filter proved",
+  "scope": "Installed native binaries, own ordinary evidence and one private-snapshot REA function dossier only. No production/Git changes, account/profile/window access, native original execution or target-business network.",
+  "budget": {
+    "newDossiers": 1,
+    "requestedEntry": "0x106c3920",
+    "notRepeated": "Root failed NoProcedure1005e53d was read and not retried."
+  },
+  "dossier": {
+    "evidenceId": "ev_f7b62909e00031070b0c43d0d246a3f3f5926a7fb85e862efac0c4bdc4032877",
+    "dossierSha256": "c25c4219f04179c5cf7928a60de6b64aa4a9a857f98147a36b68b66adeca12d5",
+    "procedure": "0x106c3920",
+    "body": {
+      "available": true,
+      "provenance": "ghidra-function-body-address-set",
+      "ranges": [
+        {
+          "start": "0x106c3920",
+          "end": "0x106c423b"
+        }
+      ],
+      "total_bytes": 2332,
+      "span_bytes": 2332,
+      "non_contiguous": false,
+      "contains_entry": true
+    },
+    "nativeValueFlowTruncated": true,
+    "limitations": [
+      "Unresolved computed or indirect flows without target addresses are not represented as reference edges.",
+      "Thunk and external classifications are Ghidra FunctionManager observations; they do not resolve targetless calls.",
+      "Pseudocode and assembly are Ghidra-specific representations, not original source or Hopper-equivalent text.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "Ghidra Listing reports a terminal call at 0x106c410a to EXTERNAL:0x87c API-MS-WIN-CRT-RUNTIME-L1-1-0.DLL::_invalid_parameter_noinfo_noreturn (external=true, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+    ],
+    "typing": "Default signature; WPARAM pointer and in_ECX recovered types low-confidence, not SDK DTO names."
+  },
+  "observed": {
+    "observerRegistration": "Protocol TypeDescriptor101b3918 from _handler_OnParsePlaylist<CQQMPUserlist> →COL101737f8→vtable101519dc. Generic10052e9f calls node slot1. Slot1 100ae0e3 adds storedowner+adjustment then jumps storedmember+10. Ctor100d606d sets member100d6f0b at100d615f, links node atowner+9c; embeddedPlaylistUnion object startsowner+30, so its listener list+6c equalsowner+9c.",
+    "protocolComEvent": "100d6f0b adjusts ECX+4 and tail-jumps100d7d6e. That loop builds two VT_I4 args and IDispatch::Invoke DISPID0xe77; it forwards arguments and does not inspect the row list. Original eventIID bytes84e25eecbfd1c14eae6680b260695409 match Main sinkmap.",
+    "mainEventConsumer": "Main sinkentry10aa31b0 has eventIID10a1e504, DISPID0xe77, adapter1005b328 and functioninfo10c5487c. Adapter dispatches event-object virtual+20. References to genericIDispatch implementation102e3f30 identify concrete vtable10b580e4 slot+20=106c4240 (other slots share default handlers). 106c4240 checks incoming parcel fields+10/+14 then directlycalls106c3920. This is a static concrete callback path, not a runtime account observation.",
+    "operationMapping": "Protocol parser1005e8a0 at1005e929 loads originalopType from unguardedDWORDtable101a4034 and storesrecord+8. First8 tablevalues [1,2,2,2,2,3,2,-1]; exact observedopType5→native3,opType0→native1. Full domain bounds and malformedtable indexes not proved; adapter should explicitly reject unsupported enum values.",
+    "statusUpdateBranch": "Main106c3920 iterates combined104byte records. For nativeoperation3, asm106c3e64/3e69 sets generatedCatItem fieldstack-a0=0, then106c3e73 readsrecord+4 status;106c3e76 ORsCatItemupdate-maskstack-54 with8;106c3f08 storesstatusstack-a4. Every iteration still appendsCatItem96bytes at106c3f11..3f36. No status0/100/400 skip occurs in this consumer. Operation1 takes a different local-category lookup/current-list cleanup branch; operation2 additionally updates a local map, but branch names are not asserted as final server tombstone meanings.",
+    "downstreamBoundary": "After all generatedCatItems,106c3f97 calls current ownerCatMgr virtual+b8 with currentUIN, generatedCatItemvector and an outputIDvector; then publishesUIrefresh via PostMessage0x34b4. Exact CatMgr+b8 implementation/state-mask/display behavior is not recovered in this bounded slice.",
+    "dirShowAndDeletedIds": "Ordinary literal searches over Main/Protocol/Common/Api found dirShow only atProtocol101621b0 with consumer100f7995, outside GetPlaylistFavInfo parser/event/reconcile chain. No v_delTids literal was found in those4 artifacts. That supports absence of direct named JSON handling in this observed chain, not universal absence of deletion semantics."
+  },
+  "unknown": [
+    "No proof that dirShow0 is the native display filter; rawdirShow was not consumed by the recovered favorite parser and reconcile path.",
+    "No proof that v_delTids is an authoritative removal list for a full favorite snapshot when it intersects v_list.",
+    "No proof that status0 implies deletion, invalid metadata or not-favorited; nativeoperation3 forwards that value toCatMgr state update rather than dropping the record.",
+    "The actual native display-membership predicate is downstream of CatMgr+b8, its storedcategory flags or UIreadback. No additional dossier requested for that boundary."
+  ],
+  "minimalFaithfulContract": {
+    "nativeFacts": "Preserve parsed candidate identities and status/opType as separate data. Apply only explicitly recovered operation-domain translation; do not equate arbitrary status, array position or overlap to deletion. The rawfavorite response is an input to native category reconciliation, not proved a final UIvisible snapshot.",
+    "providerBoundary": "Current direct HTTP adapter cannot claim native-equivalent tombstone filtering from these facts alone. Complete-library candidates can be mapped with strict identity validation; any dirShow-based visible-only rule must be disclosed as an adapter design choice until a downstream predicate is independently proved. Do not label such a choice recovered native behavior.",
+    "nextPreciseEntry": "Resolve Main owner+c8 IQMCatMgr virtual+b8 and its CategoryItemupdate-mask8/status field handling, then read the resulting visible-category getter. The selected QQMusic_DataBaseMgr.dll static inventory exposes QMCatMgrReal/CreateQMCatMgr but does not bind this COM slot to that concrete implementation."
+  },
+  "supportingFiles": [
+    "qq-favorite-visibility-com-dispatch-locators.json",
+    "qq-favorite-visibility-database-candidates.json",
+    "qq-favorite-visibility-main-bounded-source.json",
+    "qq-favorite-visibility-main-dispatch-handler.json",
+    "qq-favorite-visibility-main-library-reconcile-seed.json",
+    "qq-favorite-visibility-main-listener-vtable.json",
+    "qq-favorite-visibility-main-onparse-candidate.json",
+    "qq-favorite-visibility-main-reconcile-bytes.json",
+    "qq-favorite-visibility-main-reconcile.json",
+    "qq-favorite-visibility-main-sinkmap-refs.json",
+    "qq-favorite-visibility-native-operation-map.json",
+    "qq-favorite-visibility-observer-handler.json",
+    "qq-favorite-visibility-observer-rtti.json",
+    "qq-favorite-visibility-protocol-seeds.json",
+    "qq-favorite-visibility-static-inventory.json",
+    "qq-favorite-visibility-userlist-consumer-bytes.json",
+    "qq-favorite-visibility-userlist-onparse-bytes.json"
+  ],
+  "verification": {
+    "nativeArtifactHashesAfter": {
+      "QQMusic.dll": "0108e68beda8b0af61a71911519fa4feb5df02417d32f4a0993868e5157624be",
+      "QQMusic_Protocol.dll": "ba66aa248b885227179f1676fbc54576a036f46b9d096fea33131c4f30fa6476",
+      "QQMusic_DataBaseMgr.dll": "aba7eb604c5f348dccc1d2af0ddbf2018d571f33edf8497402a26c3ee6bf91a0"
+    }
+  }
+}

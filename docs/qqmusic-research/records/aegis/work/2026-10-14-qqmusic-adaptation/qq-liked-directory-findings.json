@@ -1,0 +1,56 @@
+{
+  "schema": "qq-windows-liked-directory-static-findings-v1",
+  "status": "Completed sole requested native consumer dossier; server category constant proved, DTO field binding remains unknown",
+  "scope": "Only installed native binary bytes, existing native evidence and static Capstone analysis; own findings/supporting evidence. No production, Git, account/profile/window access or target/business network requests.",
+  "target": {
+    "path": "E:/Program Files (x86)/QQMusic/QQMusic2271.18.09.14/QQMusic.dll",
+    "sha256": "0108e68beda8b0af61a71911519fa4feb5df02417d32f4a0993868e5157624be"
+  },
+  "observed": {
+    "compiledOperation": "Native ilikelogic.cpp assertion at 0x10b01728 names m_pCatMgr->GetCatIDFromSvrID(qqmusic::GetQQUinEx(), ATL::CComBSTR(L\"201\"), &nILikeCatID). This is a binary-embedded operation description, not an account playlist name or array-position inference.",
+    "actualArgumentBytes": "UTF16 literal at 0x10a5cc70 is 201. The actual Capstone consumer at 0x104e6c40 pushes that address at 0x104e6c84, allocates a BSTR using OLEAUT32 ordinal2, reads current UIN via Common GetQQUinEx IAT0x109c1474 (unsigned64 return), and passes the string plus current UIN to category-manager virtual slot+0xc0 at 0x104e6cbc.",
+    "predicate": "After the call succeeds, it compares incoming native event/record+0x18 to the returned local category ID at 0x104e6cea. Only equality and event/record+4>0 trigger 0x104e6bb0. Field source and event type have not been reconstructed, so these offsets are not named as server DTO fields.",
+    "corroboratingConsumers": "The same compiled operation and 201 argument also appear at candidate 0x104e6d50 and the CMyMusicFrameMgr::CheckILikeListOK-labeled candidate 0x1066fe30. Separate GetSongsOfCat assertions name the resolved nILikeCatID. No extra dossier was requested for these candidates.",
+    "boundedConclusion": "Native liked-category logic uses a fixed server-category string 201 scoped to the current UIN, then resolves a local category identity before comparison. The value is established from native operands and operation labels, not guessed from a response item or a common online value."
+  },
+  "canonicalQuery": {
+    "allowedNewDossiers": 1,
+    "requestedEntry": "0x104e6c40",
+    "privateSnapshot": "qq-liked-directory-main-private-snapshot.json",
+    "output": "qq-liked-directory-consumer.json",
+    "state": "completed",
+    "evidenceId": "ev_04e17a1d7f107baa9925ce5fb0ceca814440203cdaa11b4b8fbf6fa631d3814f",
+    "dossierSha256": "e6a6d5c85ab36eefe0ec20b17a718a4e19d2964ff868d306289f614ebefc84c3",
+    "body": {
+      "available": true,
+      "provenance": "ghidra-function-body-address-set",
+      "ranges": [
+        {
+          "start": "0x104e6c40",
+          "end": "0x104e6d4a"
+        }
+      ],
+      "total_bytes": 267,
+      "span_bytes": 267,
+      "non_contiguous": false,
+      "contains_entry": true
+    },
+    "nativeValueFlowTruncated": false,
+    "limitations": [
+      "Unresolved computed or indirect flows without target addresses are not represented as reference edges.",
+      "Thunk and external classifications are Ghidra FunctionManager observations; they do not resolve targetless calls.",
+      "Pseudocode and assembly are Ghidra-specific representations, not original source or Hopper-equivalent text.",
+      "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+      "Ghidra Listing reports a terminal call at 0x104e6d46 to 0x1002ba10 FUN_1002ba10 (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+    ]
+  },
+  "supportingStaticFiles": [
+    "qq-liked-directory-static.py",
+    "qq-liked-directory-static.json",
+    "qq-liked-directory-consumer-locators.py",
+    "qq-liked-directory-consumer-locators.json",
+    "qq-liked-directory-protocol-dirid-locators.json"
+  ],
+  "fieldBindingUnknown": "No response.dirId-to-category-SvrID binding was proved in this slice. Ordinary Protocol refs locate dirId at candidate 0x1005e675/0x1005e8a0 and v_playlist at candidate 0x1005e3a9, but string references alone do not prove the mapping. Do not silently equate an arbitrary SDK or response field to the native server-category string.",
+  "integrationLimit": "A final likedPlaylist/fetchLikedTracks rule needs that binding plus verified current-user ownership. Default category201 is independent of localized playlist title, array order and track count. No production heuristic was added."
+}

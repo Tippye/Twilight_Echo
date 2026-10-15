@@ -1,0 +1,103 @@
+{
+  "schema": "qq-windows-artist-native-bounded-findings-v1",
+  "recordedAtUTC": "2026-10-14T12:37:22.733484+00:00",
+  "scope": "Original pinned Protocol PE exports/selected strings/ordinary Capstone, prior extracted shipped CPP resource and existing dossiers; no target execution, account/cache/profile/window/network, production or Git writes. Artist expansion was paused for Root startup debugging and album-pagination implementation.",
+  "newDossiers": 0,
+  "workerBusinessRequests": 0,
+  "targets": [
+    {
+      "path": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\QQMusic_Protocol.dll",
+      "sha256": "ba66aa248b885227179f1676fbc54576a036f46b9d096fea33131c4f30fa6476"
+    },
+    {
+      "name": "QQMusicResource.dll",
+      "sha256": "f635b213a60fad43f46dd8c49c913904420a4f9f480be952984955ccc2186e89",
+      "payloadOffset": 216160,
+      "payloadBytes": 10065,
+      "payloadSha256": "fc58467fa8900c227f514a063fe90240301cc6e55f72e3776934024b78050da7",
+      "exactExtractedBytesEqual": true
+    }
+  ],
+  "observed": {
+    "namedExports": {
+      "count": 217,
+      "matchingArtistSongInfoAlbumNames": [],
+      "meaning": "No corresponding named exported procedure in this EAT; this is not whole-program absence evidence."
+    },
+    "callbackMetadata": [
+      "OnGetSingerInfoCallback@101c1ca7",
+      "lpOnGetSingerInfoResult@101c1ccc",
+      "GetSingerList@101c35f4"
+    ],
+    "callbackBoundary": "Names are compiled metadata and did not yield a direct request producer; no presumed vtable slot or browser callback was executed.",
+    "singerListConsumer": {
+      "entry": "10026f13",
+      "endExclusive": "10027a89",
+      "fields": [
+        "area",
+        "genre",
+        "index",
+        "sex",
+        "total",
+        "singerlist",
+        "singer_id",
+        "singer_mid",
+        "singer_name",
+        "singer_pic",
+        "tags"
+      ],
+      "meaning": "Public singer directory/tag/filter list response, not an artist song-list request."
+    },
+    "actualNativeRadioNearNeighbor": {
+      "producer": "1004ce32..1004cf9a exclusive",
+      "bytes": 360,
+      "authority": "Ordinary exact EH-prolog/RET span plus PE imported Json constructor symbols, no new REA dossier.",
+      "module": "music.recommend.SingerRadioServer",
+      "method": "GetSongList",
+      "requestKey": "music.recommend.SingerRadioServer.GetSongList",
+      "keyProof": "Initializer1000342e passes module global101a6ad0 through38dcd (appendmodule then literal dot@10128844), then38e9c appends method global101a6fb0 and assigns global101b58e0. Method initializer10003407 literal1012ed1c isGetSongList.",
+      "params": {
+        "secretUin": "Fixed Json::Value(int)0, not a read of any original account value.",
+        "singerId": "Signed-int32 native inputparam1; if signed comparison input>50000000, subtract50000000 before Json::Value(int). Original input stored receiver+9c.",
+        "vecSong": "Optional int32 array: if receiver+98 pointer is non-null and its vector has records of stride0xa0, fetch each record and append its first32-bit word as Json::Value(int). Record semantics/prior-history behavior are not asserted."
+      },
+      "context": "Native inputparam2 stored receiver+74; no additional JSON context field observed in this producer.",
+      "response": "Callback1004d167..1004d473: code0 -> data.vecSong[].track -> existing native SongItem parser10045c05 (ev_4ab3a3641457f82d9a272bdf8717c183a54a19d7ba0cab20d20b8ff7ebaf9679); trace read separately.",
+      "boundary": "Radio request and playable track parser are real native neighbors. ArtistTopSongs semantics, artist-membership guarantees, order and relation to the artist detail page are not proved; not reclassified or exposed as TopSongs."
+    },
+    "shippedWindowsArtistRoutes": {
+      "treeEvidenceId": "ev_a5b17e227de5bb3b46adbb1b35ee846a68a3f2d708f7fc6a23805cf0b9975ae1",
+      "resource": "QQMusicResource.dll namedJSON2009/lang2052",
+      "exactPayloadByteComparison": true,
+      "routes": {
+        "singer_song_page": "https://y.qq.com/wk_v17/#/singer_detail/song",
+        "singer_album_page": "https://y.qq.com/wk_v17/#/singer_detail/album",
+        "singer_detail_url": "https://y.qq.com/wk_v17/#/singer_detail"
+      },
+      "boundary": "Configured Windows web-page routes, not RPC producers. Existing resource worker confirms no prior matching page script extraction or actual native route-consumer chain."
+    }
+  },
+  "unknown": [
+    "Native/Windows-page SingerSongList, SingerInfo or SingerAlbum direct request producer/fields/response are not closed in this bounded source family.",
+    "No artist TopSongs order/complete set, membership or current service acceptance is inferred from the native radio endpoint.",
+    "No web route active configuration/runtime routing or remote-page API implementation is established by compiled URL defaults.",
+    "COM callback pointer/typed signature and indirect actual caller were not guessed.",
+    "No full-program absence claim; scan does not inspect runtime-generated request modules or unextracted remote page scripts."
+  ],
+  "productionDecision": "No new artist-call module: the native radio neighbor does not establish the requested TopSongs contract; no Android/external-service substitution.",
+  "relatedCompletedWork": {
+    "startupReceipt": "qq-windows-startup-review.json",
+    "albumPagingReceipt": "qq-album-native-findings.json",
+    "albumNativeDossierRequeries": 0
+  },
+  "supportingEvidence": {
+    "qq-artist-native-seeds.json": "910f7692113e6d1dc159dab93e01289d21e8788f6b02da8aa1f7a94c2b967a30",
+    "qq-artist-native-mid-consumer-ordinary.json": "0730fa55c9f15dfedb9f45118634bc495230b3e457bf17c3414ee1238a0b621c",
+    "qq-artist-radio-consumer-ordinary.json": "9386334a333951beb5218d6ac48fec8988af081b3e55545fd385cd490ae2d5e0",
+    "qq-artist-radio-producer-ordinary.json": "7d0d8681bf13ddaffac3c5431fcd613393e1250a52094d630c45c324f54c9408",
+    "qq-artist-radio-key-xrefs.json": "f6d9af62d08eae366223768faf231956f7eababa0ce1bf799f5020457a12e196",
+    "qq-artist-radio-key-initializer.json": "b910075323c024878dc254c72a86bde92a71e591976b10180cd435977c47241c",
+    "qq-artist-radio-key-helpers.json": "bf643176aa35ca7f38d2a24d588336601c3724150934838043eb2b4eba0b443a",
+    "qq-artist-native-route-verification.json": "c7ae53179322e2946c06a9561a055bf3850d4c6efcca73501af592ac6f4b0228"
+  }
+}

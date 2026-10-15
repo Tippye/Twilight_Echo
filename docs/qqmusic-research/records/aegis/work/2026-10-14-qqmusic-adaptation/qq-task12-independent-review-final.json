@@ -1,0 +1,198 @@
+{
+  "status": "no-unresolved-P1-P2-current-files-match-reviewed-pins",
+  "reviewer": "/root/qq_task12_independent_review",
+  "utc": "2026-10-15T04:50:07.928Z",
+  "scope": "Advisory read-only review of Task12 host and provider working-tree diffs, current runtime contracts, production-function VM execution, independent isolated regressions, and artifact hash. No production source edits or existing user app/profile access.",
+  "bases": {
+    "Twilight_Echo": "64dbfd37031f294fe21abe22bc960e0edfedc505",
+    "Twilight-Echo-plugins": "512a15ee81dd17e100306c979241b66a0c7e9d1d"
+  },
+  "findings": [
+    {
+      "severity": "P2",
+      "classification": "Implementation Drift",
+      "scope": "architecture",
+      "summary": "Same musicid with replaced credentials could continue or publish the prior quality transaction.",
+      "resolution": "Fixed by pinning the complete canonical session fingerprint only in the playback owner; independently repeated original public fixture now stops after Dolby with terminal AbortError.",
+      "evidence": [
+        "qq-task12-independent-review-session-recheck.json",
+        "qq-task12-independent-review-source-tests.txt"
+      ]
+    },
+    {
+      "severity": "P2",
+      "classification": "Implementation Drift",
+      "scope": "both",
+      "summary": "The 30-second host deadline could preempt a multi-quality request with an unmarked error and re-enter generic song rematching.",
+      "resolution": "Fixed by locally typed lifecycle failures and safe terminal wrapping at manager getPlaybackUrl boundary. Repeated actual manager+coordinator+public QQ resolver counterexample now returns provider.playbackUnavailable, sends one cancellation, suppresses the late utility result, and leaves zero pending calls.",
+      "evidence": [
+        "qq-task12-independent-review-timeout-counterexample.json",
+        "qq-task12-independent-review-timeout-recheck.json",
+        "qq-task12-independent-review-host-final-tests.txt"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "scope": "Full Windows provider tests",
+      "passed": 428,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": "qq-task12-independent-review-source-tests.txt"
+    },
+    {
+      "scope": "Host coordinator, manager class VM, lifecycle queue, contracts, idle/persistence, routing, production player VM, quality controller, compiled Vue quality selector, provider registry and error codec/presentation",
+      "passed": 147,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": "qq-task12-independent-review-host-final-tests.txt"
+    },
+    {
+      "scope": "Whole manager module VM and real Windows Electron hosts using independent temporary profiles",
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": "qq-task12-independent-review-manager-module-vm.txt",
+      "note": "Despite the requested negative test-name pattern, the real Windows host test executed and passed; STARTUP_PROOF is present in the log. Existing user applications/profiles were not read or modified."
+    },
+    {
+      "scope": "Both repository diff --check",
+      "exitCode": 0
+    },
+    {
+      "scope": "All 20 reviewed source/test/docs/manifest pins plus coordinator version file",
+      "matched": 21
+    }
+  ],
+  "boundaries": [
+    "Provider alone owns QQ finite same-track fallback order and persisted preference; same exact TrackInfo/queue identity retained",
+    "Explicit missing flag skips; unknown may verify; each candidate at most once; no upgrade or cross-spatial fallback",
+    "Only per-run privately attributed missing/empty/observed22 errors continue; auth/network/unknown/key/header/container failures terminal",
+    "Full session, epoch and AbortSignal ownership checked before next candidate and publication; failed or late opened leases revoked",
+    "Successful lease remains on one resolver and actualQuality/bytes envelope; Range refresh cannot change format",
+    "Terminal code is checked before queue search, cross-source fallback, rematch or library replacement; stable flags settle",
+    "Local RPC active/queued timeout, cancellation, host stop/wake failure, overload/circuit and dispatch errors use a typed local boundary with fixed safe reason",
+    "Remote provider business errors cannot forge local lifecycle type; old unmarked remote failures and non-playback message behavior remain compatible",
+    "Latest progress/pause and cancellation/owner guards retained; unresolved quality leaves existing stream intact"
+  ],
+  "retirement": "Removed the host controller catalogue veto now superseded by provider same-track downgrade; original cross-source recovery remains only for unmarked business failures. No second preference or QQ-specific host fallback chain was added.",
+  "confidence": "B",
+  "uncovered": "Live Same Blue/Dolby UI, cold startup, normal plugin installation and final build are coordinator evidence and were not independently repeated here. Test formats/accounts are public synthetic fixtures; isolated Electron startup is not real QQ authorization/playback proof.",
+  "files": [
+    {
+      "path": "src/renderer/src/stores/usePlayerStore.ts",
+      "sha256": "2af73fa340dd30c8f39d559de509c57ab17bbceb5242370142bf9a5efb5da3d0",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/renderer/src/stores/nativePlaybackAdvance.test.mjs",
+      "sha256": "a0ffc6367a1b0013b85fe87b2cd7f12cde1f11f49a7fc3ad4a93c0608f4ecec8",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/renderer/src/stores/player/playbackQualityController.ts",
+      "sha256": "75c67c868fbcb761573ab8f8bb555004946c0c10c9842b4deba09f17564bd89a",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/renderer/src/stores/player/playbackQualityController.test.ts",
+      "sha256": "3536ad7c5ccf3a7fe6aacb4581cfa589969e73bf0d66215f43e26ba3d126bb5d",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/main/plugins/rpcCoordinator.ts",
+      "sha256": "9132928cf4f1f71d5f75611bfe1baef79508db8f5d36f7f0506acd621c37467b",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/main/plugins/rpcCoordinator.test.ts",
+      "sha256": "b95d7c1189238b76d193950ab3c5b6afae391cc77dc4db1f0e3f232cac1b8d8a",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/main/plugins/manager.ts",
+      "sha256": "3a91a99945d9251f94a480791336dec89eb4a1909c3db216e0c0cb2e04e88db5",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/main/plugins/managerWake.test.ts",
+      "sha256": "781bdd7fa737e7dde6ccafbd6f542d744b0f4aab57e5a7f4b9bd1d58299e4eaf",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/main/plugins/managerWake.test.cjs",
+      "sha256": "5a29d44616b0eeef5b8c8681df8ebcaac3c420c83720430d84b35f21792bf1c2",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/shared/i18n/messages/zh-CN.ts",
+      "sha256": "b7f2f83249cbf8b06c50f1b0a0ba64c910cc24b91a28f295f5359ccc43190fae",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "src/shared/i18n/messages/en-US.ts",
+      "sha256": "1ae39f7d8fb515b3b7729d3d233b1d5bf08c9f910f395101679c751d360c521e",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "path": "docs/twilight-echo-plugin-spec.md",
+      "sha256": "f4f937ddb12fb3b1085385af6693c72cd031d5e94a9adbc1eb29b6c2422838d6",
+      "repository": "Twilight_Echo"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/README.md",
+      "sha256": "e6093c38b2ae08ccfbed92a378e834540903c109cc4c8fac878606627dc6db72"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/plugin.json",
+      "sha256": "4c3ab0af9527c6ead4b0a289f1e9ba138303a163428d03ecf10ef3580b162e01"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/lib/windows/quality.mjs",
+      "sha256": "f398ec173fc816a77a3afc5b8664afbf4832702611b66f5f7f3886f435a73c67"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/lib/windows/media-source.mjs",
+      "sha256": "eb0cb74166aaca757a849b3c4e86aa81a56e3633a72c4efc9fa42c1d155ba063"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/windows-index.mjs",
+      "sha256": "4ad463a7a42662987746c674944474e3f8e800172dbcccbe97c2288bb64eb6bf"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/windows-index.test.mjs",
+      "sha256": "647e1f39f36d537318aba31992a549caf288b3ac030002b1fd9d9ac0ab541a18"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/windows-media-source.test.mjs",
+      "sha256": "a16da95d43cba3d6cb1667703b8d6e0ac32fc0f1034b64c3f0bd7c14b48e5867"
+    },
+    {
+      "repository": "Twilight-Echo-plugins",
+      "path": "plugins/qqmusic-provider/windows-tracks.test.mjs",
+      "sha256": "1d1ea6174b32879018fc73121b8e90b2f917973f64711527b7387d3019990f91"
+    },
+    {
+      "repository": "Twilight_Echo",
+      "path": "package.json",
+      "sha256": "47e514132af6b12263974ae9af4fcfdf0abaebab0e0c9b169476a8373bd5648a"
+    }
+  ],
+  "artifact": {
+    "path": "Twilight-Echo-plugins/packages/com.twilightecho.provider.qqmusic-0.4.0-rc.4.tep",
+    "sha256": "b32d016c56abc328444421b7eba7a58a26ca76435bf19f099e10360cee773322"
+  },
+  "destructiveActions": "none",
+  "gitActions": "none",
+  "reviewIsCompletionAuthority": false
+}

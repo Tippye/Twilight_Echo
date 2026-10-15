@@ -1,0 +1,11 @@
+{
+  "processId": 645960,
+  "coreVersionFromLauncher": "1.3.1-qq.4",
+  "providerVersionObservedOnPrecedingColdStart": "0.4.0-rc.4",
+  "inspectSwitchPresent": false,
+  "installHookPresent": false,
+  "debugListenerPresent": false,
+  "originalQQStillRunning": true,
+  "otherTwilightStillRunning": true,
+  "preferencePreservedOnColdStart": "flac"
+}

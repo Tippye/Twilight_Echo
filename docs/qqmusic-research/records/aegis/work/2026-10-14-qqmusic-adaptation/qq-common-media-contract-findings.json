@@ -1,0 +1,134 @@
+{
+  "schema": "qq-common-media-contract-findings-v1",
+  "scope": "Three new static dossiers plus read-only PE export parsing; no media/cache execution, production changes, or Git operations.",
+  "target": {
+    "path": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\QQMusicCommon.dll",
+    "sha256": "4267e1c27f7251a31460613a97f5787fd7d9d0be3664e5e615251aba2780471f",
+    "architecture": "x86",
+    "imagebase": "0x10000000"
+  },
+  "method": {
+    "provider": "Ghidra 12.1.4 via REA standalone CLI",
+    "launcher": "C:\\Users\\Payne\\AppData\\Local\\npm-cache\\_npx\\af752b90495482d7\\node_modules\\rea-agents\\scripts\\rea.mjs",
+    "command_template": "node <launcher> function <target> <address> --provider ghidra --snapshot <snapshot> --format json --full-output 1> <dossier> 2> <stderr>",
+    "GHIDRA_INSTALL_DIR": "E:\\PycharmProjects\\MusicAnyClient\\tools\\ghidra_12.1.4_PUBLIC",
+    "JAVA_HOME": "E:\\PycharmProjects\\MusicAnyClient\\tools\\jdk-21.0.12.1+1",
+    "snapshot": "qq-common-media-contract-snapshot.json",
+    "snapshot_note": "Cloned matching QQMusicCommon target snapshot. Each query used a separate ephemeral CLI process, not the shared native MCP session.",
+    "all_exit_codes": 0,
+    "all_stderr_bytes": 0,
+    "all_native_value_flow_truncated": false,
+    "all_omitted_operations_lower_bound": 0
+  },
+  "dossiers": [
+    {
+      "procedure": "EncAndDesMediaFile::GetCurPosition",
+      "address": "0x10013ab6",
+      "body_bytes": 47,
+      "file": "qq-common-media-contract-position.json",
+      "sha256": "8ddc4969f2db3e252aab183a1760a684558d79817e0f2c4da1e159d59e8e61d8",
+      "evidence_id": "ev_a3bf8e8bacd9109e31543d6e9f6e89057bd7f5e403c1f8a169ae9a9ee25d52d7"
+    },
+    {
+      "procedure": "EncAndDesMediaFile::Open(wchar_t const*,ulong,ulong,ulong)",
+      "address": "0x1001304f",
+      "body_bytes": 1085,
+      "file": "qq-common-media-contract-open.json",
+      "sha256": "c60d761cae6f413a715f8d17dfb9a2ced89cbe2c84c25abca384cc011ac8b8dc",
+      "evidence_id": "ev_e661a2aa6bbe8960a5899e5bc2611addceb0cedb1bb3761692f04aa09f004d15"
+    },
+    {
+      "procedure": "EncAndDesMediaFile::ReadExtend",
+      "address": "0x100135d4",
+      "body_bytes": 265,
+      "file": "qq-common-media-contract-read-extend.json",
+      "sha256": "5c281287f44cbc2999c7ef8520a0fb11246a98fa8919a8e53d0bef92eb882255",
+      "evidence_id": "ev_6dbb9cd0a22fdddee9073fdd1d2bc3139a46456e26e96c5f8dc31a64be518d77"
+    }
+  ],
+  "export_inventory": {
+    "script": "qq-common-media-contract-pe-inventory.py",
+    "result": "qq-common-media-contract-pe-exports.json",
+    "method": "Python reads PE bytes and parses export directory; never loads the target.",
+    "named_exports_count": 2207,
+    "actual_entry_points": {
+      "Open": "0x1001304f",
+      "Open_bool_overload": "0x10013737",
+      "GetEncType": "0x10013c52",
+      "ReadExtend": "0x100135d4",
+      "ReadEncKey": "0x1001348c",
+      "SetEkey": "0x100136dd",
+      "ReadFileExtension_handle_overload": "0x1001e056",
+      "GetDownloadEKey": "0x1001dc47"
+    }
+  },
+  "observations": [
+    {
+      "topic": "Physical file position",
+      "evidence": "GetCurPosition calls SetFilePointer(handle,0,&high,FILE_CURRENT) and returns EDX:EAX high:low unchanged. Invalid handle returns UINT64_MAX. No header subtraction occurs in this function.",
+      "addresses": ["0x10013ada"]
+    },
+    {
+      "topic": "Mode selection",
+      "evidence": "Open stores the CreateFileW handle at this+4 and GetFileSize64 at this+0x20/+0x24. If byte this+8 is nonzero, it calls GetEncType(filename) and stores that result at this+0x10. The stream initialization branch is gated on value 2. GetEncType itself is not expanded in this batch.",
+      "addresses": ["0x100130ad", "0x100130e4", "0x10013107", "0x10013110"]
+    },
+    {
+      "topic": "Actual mode-2 stream creation",
+      "evidence": "When this+0x14 is null, Open builds the executable-folder CommonFunction.dll path, LoadLibraryW stores HMODULE at this+0x18, resolves ordinal 3 and calls it with 0,0,&status. The returned object is stored at this+0x14. Error paths contain QQMusic.dll beacon_report lookup and logging; these calls were not executed.",
+      "addresses": ["0x10013175", "0x100131cc", "0x100131d9", "0x100131e5"]
+    },
+    {
+      "topic": "Extended metadata branch and key handoff",
+      "evidence": "ReadExtend calls ReadFileExtension(handle,&MFileExtension_1) and immediately seeks to FILE_BEGIN offset zero. When the parser result is true, it passes 50 bytes at parsed-structure offset 0x48 through FUN_100061f2 to a CString. That CString is the input to the exported CString-returning GetDownloadEKey function. The returned wide CString is passed through W_2_Utf8, and the resulting bytes and explicit string length are passed to SetEkey. It sets this+0x1c to 0xc0 (192). The encoding semantics of FUN_100061f2 and key lookup body remain unexpanded.",
+      "addresses": ["0x10013603", "0x10013613", "0x10013627", "0x10013629", "0x10013636", "0x10013660", "0x10013673", "0x10013690", "0x100136ad"]
+    },
+    {
+      "topic": "ReadExtend return semantics",
+      "evidence": "The original assembly saves ReadFileExtension AL in BL, and returns MOV AL,BL. SetEkey false only causes a log call; it does not change BL. Open saves ReadExtend AL in BL and skips its EOF key branch when BL is nonzero. Thus parsed extension success suppresses the EOF key branch even if SetEkey fails. The Ghidra pseudocode's EH epilog return is less informative than the assembly here.",
+      "addresses": ["0x1001360b", "0x10013695", "0x10013697", "0x100136d5", "0x10013353", "0x10013357"]
+    },
+    {
+      "topic": "EOF key branch",
+      "evidence": "When ReadExtend is false, Open reads the final 4 bytes into an x86 DWORD L and accepts unsigned L in 5..1023. It seeks -4-L from EOF and reads L bytes into a zeroed 1024-byte buffer. CommonFunction ordinal 8 creates a key object; its vtable slot 0 receives buffer,L. The stream object's vtable +8 receives the key object, then ordinal 9 releases it. Open sets this+0x1c=L+4 and seeks to byte zero. Neither media nor key routines were executed.",
+      "addresses": ["0x1001336f", "0x10013391", "0x100133a0", "0x100133a5", "0x100133e9", "0x10013404", "0x1001340f", "0x1001341f", "0x10013434", "0x1001343c", "0x1001344b", "0x10013456", "0x10013461"]
+    },
+    {
+      "topic": "Logical end bound and Open result",
+      "evidence": "After extension/EOF key processing, Open subtracts sign-extended DWORD this+0x1c from the saved 64-bit size using CDQ, SUB, SBB. Previous Read dossier uses this+0x20/+0x24 as its mode-2 end bound. In this Open assembly, a valid extension returns true even after SetEkey false; valid-range EOF key branch sets BL=1 without testing key/stream call results; invalid L sets BL=0. Initial invalid input/handle/load and object-creation errors reach AL=0; regular file-open paths retain CreateFileW success BL. All returns pass through the shared EH epilog, which was not separately expanded.",
+      "addresses": ["0x100130b9", "0x100131bf", "0x10013463", "0x10013479", "0x1001347b", "0x1001347e", "0x1001347f", "0x10013482", "0x10013485"]
+    }
+  ],
+  "derived_inferences": [
+    {
+      "claim": "The previous Read mode-1 helper first parameter is a physical file read start, with no GetCurPosition header bias.",
+      "basis": "Previous qq-common-media-read-analysis.json ev_fcdf274e2852e2931d8d7f34f41791d14234d387f5abe7510840024d64129d97 computes GetCurPosition after ReadFile minus bytesRead64; this batch proves GetCurPosition returns the OS cursor directly.",
+      "limit": "This caller uses a full unsigned 64-bit position. It is not equivalent to all values of the exported signed-int32 wrapper API."
+    },
+    {
+      "claim": "Two distinct mode-2 key intake paths are present: an EKey obtained from a parsed metadata-derived lookup string, and key bytes stored before a trailing length DWORD.",
+      "basis": "Open and ReadExtend original control/data flow.",
+      "limit": "This does not prove key encoding, remote key acquisition, exact media format names, the complete extension structure, or the mode-2 decoder algorithm."
+    },
+    {
+      "claim": "Successful extended metadata processing reduces the logical read end by 192 bytes; the fallback reduces it by key length plus 4.",
+      "basis": "this+0x1c writes followed by Open size subtraction and previous Read mode-2 clipping.",
+      "limit": "Physical placement and magic of the 192-byte metadata are not proven until ReadFileExtension is expanded."
+    }
+  ],
+  "unknowns": [
+    "Exact filename/format-to-mode mapping: GetEncType body is unexpanded.",
+    "MFileExtension_1 layout, magic, version checks and physical location: ReadFileExtension body is unexpanded.",
+    "GetDownloadEKey lookup/storage/provider/network source and input CString semantics: body and conversion helper are unexpanded.",
+    "SetEkey key encoding/validation and stream setup: body is unexpanded.",
+    "CommonFunction ordinal 3/8/9 and mode-2 stream vtable +0x10 algorithm are not analyzed in this batch.",
+    "No proof of QMC, MFLAC, MGG or any named media format from these three functions alone.",
+    "No runtime validation of real media/cache files, corruption handling, successful decode or playback."
+  ],
+  "next_candidates_if_authorized": [
+    {"procedure": "GetEncType", "address": "0x10013c52", "reason": "Exact enum mapping and filename/content rules."},
+    {"procedure": "ReadFileExtension(handle,struct&)", "address": "0x1001e056", "reason": "Exact metadata magic/layout/location and validation."},
+    {"procedure": "SetEkey", "address": "0x100136dd", "reason": "Explicit EKey-to-key-object and stream configuration flow."},
+    {"procedure": "GetDownloadEKey", "address": "0x1001dc47", "reason": "Actual source of the metadata-derived EKey lookup, as a later separate question."}
+  ]
+}

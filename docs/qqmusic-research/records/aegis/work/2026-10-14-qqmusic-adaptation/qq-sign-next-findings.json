@@ -1,0 +1,89 @@
+{
+  "scope": "three initial CommonFunction.dll complete records; no DLL SDK execution or account inputs",
+  "target_sha256": "a28ebdd9eda2d3dfbfc540578681bc71425136858e29bc07a22ead142510187d",
+  "evidence": [
+    {
+      "file": "qq-sign-next-factory.json",
+      "evidence_id": "ev_02fe162a0ac4836396be53352a786dced3175b70df09854853dbf03948c4b0fd",
+      "procedure": "0x10001730",
+      "static_body_bytes": 57
+    },
+    {
+      "file": "qq-sign-next-vtable0.json",
+      "evidence_id": "ev_6d2e701ae46421ef3152faa3040c36ed109d66863ec503a4b62282b1f0c91cbe",
+      "procedure": "0x10007b70",
+      "static_body_bytes": 1203
+    },
+    {
+      "file": "qq-sign-next-mask-transform.json",
+      "evidence_id": "ev_f4834485d26c090509fc661f9babeb36f3cca3f8ab61249da29d3c4891ecf4ab",
+      "procedure": "0x1000a45a",
+      "static_body_bytes": 571
+    }
+  ],
+  "factory": {
+    "ordinal": 5,
+    "entry": "0x10001730",
+    "static_observation": "allocates4 bytes, writes vtable1000e97c, seeds CRT srand with time64, VMProtectBeginMutation(CreateSummerMake)/End",
+    "abi_boundary": "real RET0xc despite auto no-argument signature; caller pushes3 words; their runtime meaning is not established by factory body"
+  },
+  "vtable": [
+    "0x10007b70",
+    "0x10008030",
+    "0x10007b40"
+  ],
+  "method_contract": {
+    "entry": "0x10007b70",
+    "stack_cleanup": "RET0x20",
+    "stack_arguments": [
+      "body pointer",
+      "body length",
+      "metadata pointer",
+      "metadata length",
+      "out Sign pointer",
+      "out Sign length",
+      "out Mask pointer",
+      "out Mask length"
+    ],
+    "receiver": "Protocol caller sets ECX to object; this concrete body does not read incoming receiver before overwriting ECX; runtime calling convention not yet verified",
+    "output_ownership": "caller frees Sign and Mask via vtable+4; cleanup body10008030 not analyzed in this slice"
+  },
+  "sign_chain": {
+    "observed": "base64-like encode raw body via014b0; reverse encoded bytes via c623; 12-byte derived key; 64-byte xor36/xor5c pads; SHA1 IV and20-byte digest; prefix12 uppercase random ASCII +digest20 then base64-like encode32 bytes",
+    "algorithm_class": "HMAC-SHA1 structural inference, exact helper algorithms/key bytes pending",
+    "fixed_words": [
+      "e152795e",
+      "d0143f67",
+      "d7164068",
+      "66e29653",
+      "d2134f6a",
+      "87b0ef19"
+    ],
+    "key_derivation_entry": "0x10009f40",
+    "raw_body_mutation": "not observed; body is summarized, temporary encoding is reversed then freed"
+  },
+  "mask_chain": {
+    "key": "16 ASCII bytes = first8 plus last8 of encoded Sign",
+    "input": "metadata pointer and length, not raw request body",
+    "wrapper_entry": "0x1000a45a",
+    "padding": "pad=(8-(metadataLength+10)%8)%8",
+    "framing": "first byte(rand&f8)|pad, pad random bytes,2 random salt bytes,metadata,7 zero bytes",
+    "mode": "X_i=P_i XOR C_previous; C_i=block_core(X_i,key) XOR X_previous; initial previous blocks zero",
+    "block_core_entry": "0x1000a2bc",
+    "algorithm_class": "QQ-TEA framing strong inference, block primitive/round count/endian pending",
+    "output": "raw cipher length increments8/block, base64-like encode cipher as Mask"
+  },
+  "caller_formats_file": "qq-sign-next-caller-formats.json",
+  "header_implemented": false,
+  "next_static_entries": [
+    "0x10009f40",
+    "0x1000a2bc"
+  ],
+  "residual_unknowns": [
+    "exact 12-byte HMAC key",
+    "block primitive/rounds/endian",
+    "base64 helper014b0 and SHA1 update/final implementations not separately decompiled",
+    "runtime prototype and output ownership/cleanup",
+    "randomness reproducibility and exact ciphertext test vectors"
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "scope": "exactly 3 new Ghidra analyze_function complete records; execution-free DLL inspection; no UI/client/configuration/credentials reads; no production or Git changes",
+  "evidence": [
+    {
+      "kind": "refresh-token",
+      "file": "qq-login-next-handler-refresh-token.json",
+      "evidence_id": "ev_6923bb31f922886e019b55d85c6d85eebfaff9176240a79b61809a4740edcd0b",
+      "procedure": "0x10019c50",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x10019c50",
+            "end": "0x10019d0e"
+          }
+        ],
+        "total_bytes": 191,
+        "span_bytes": 191,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "incoming_direct_caller": "0x10002d70"
+    },
+    {
+      "kind": "refresh-musickey",
+      "file": "qq-login-next-handler-refresh-musickey.json",
+      "evidence_id": "ev_48ba976c2ceaf95f9e5e5ec2c210c6c681ded0b93e8801852abb778ebf2b3bf4",
+      "procedure": "0x10019df0",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x10019df0",
+            "end": "0x10019f15"
+          }
+        ],
+        "total_bytes": 294,
+        "span_bytes": 294,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "incoming_direct_caller": "0x10002d30"
+    },
+    {
+      "kind": "authorize",
+      "file": "qq-login-next-handler-authorize.json",
+      "evidence_id": "ev_d9488bb5abcc1335a1e1d7f32a59539dcfb9e292971d4c82207108704a4c1376",
+      "procedure": "0x10019d10",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x10019d10",
+            "end": "0x10019de8"
+          }
+        ],
+        "total_bytes": 217,
+        "span_bytes": 217,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "incoming_direct_caller": "0x10002d50"
+    }
+  ],
+  "payload_observation": "All three read payload pointer from *(event_argument + 0x18). They read native struct offsets, not JSON keys; serializer/deserializer and network JSON mapping not recovered.",
+  "payload_fields": [
+    {
+      "payload_offset": "0x4",
+      "meaning": "LoginType_login source for MusicKey handler"
+    },
+    {
+      "payload_offset": "0x10",
+      "meaning": "result code used by all three handlers"
+    },
+    {
+      "payload_offset": "0x28",
+      "meaning": "MuskcKey_login string-wrapper source"
+    },
+    {
+      "payload_offset": "0x5c",
+      "meaning": "OpenID_login string-wrapper source"
+    },
+    {
+      "payload_offset": "0x60",
+      "meaning": "Refresh_token string-wrapper source"
+    },
+    {
+      "payload_offset": "0x64",
+      "meaning": "Access_token string-wrapper source"
+    },
+    {
+      "payload_offset": "0x68",
+      "meaning": "TokenExpired 64-bit low/high words 0x68/0x6c"
+    },
+    {
+      "payload_offset": "0x70",
+      "meaning": "MusicId_login 64-bit low/high words 0x70/0x74"
+    },
+    {
+      "payload_offset": "0x78",
+      "meaning": "MuskcKey_Expired 64-bit low/high words 0x78/0x7c"
+    }
+  ],
+  "handler_transitions": [
+    {
+      "function": "0x10019c50",
+      "event": "Notify_OnRefreshToen",
+      "persistence_allowed_codes": [
+        0,
+        1000,
+        104401,
+        101010
+      ],
+      "allowed_action": [
+        "Access_token <= payload+0x64",
+        "Refresh_token <= payload+0x60",
+        "TokenExpired <= uint64 payload+0x68"
+      ],
+      "other_code_action": "no writes in this handler",
+      "unconditional_action": "WriteLog OnRefreshToken code",
+      "interpretation_limit": "allowed persistence does not establish server authentication success or the meaning of special codes"
+    },
+    {
+      "function": "0x10019df0",
+      "event": "OnRefreshMusicKey",
+      "persistence_allowed_codes": [
+        0
+      ],
+      "allowed_action": [
+        "LoginType_login <= payload+0x4",
+        "Access_token <= payload+0x64",
+        "Refresh_token <= payload+0x60",
+        "TokenExpired <= uint64 payload+0x68",
+        "OpenID_login <= payload+0x5c",
+        "MusicId_login <= uint64 payload+0x70",
+        "MuskcKey_login <= payload+0x28",
+        "MuskcKey_Expired <= uint64 payload+0x78"
+      ],
+      "other_code_action": "no writes; WriteLog RefreshMuskcKey Fail"
+    },
+    {
+      "function": "0x10019d10",
+      "event": "Notify_Authorize",
+      "persistence_allowed_codes": [
+        0
+      ],
+      "allowed_action": [
+        "Access_token <= payload+0x64",
+        "Refresh_token <= payload+0x60",
+        "TokenExpired <= uint64 payload+0x68",
+        "OpenID_login <= payload+0x5c"
+      ],
+      "other_code_action": "no writes",
+      "unconditional_action": [
+        "ISkinMgr vtable+0x300(0)",
+        "ISkinMgr vtable+0x308(1)"
+      ],
+      "interpretation_limit": "flag meanings unresolved; executed regardless of result code, so not proof of authorization success"
+    }
+  ],
+  "observed_storage_dispatches": {
+    "IMMKVConfig+0xc": "string-wrapper setter candidate; source offsets preserved",
+    "IMMKVConfig+0x24": "64-bit setter candidate",
+    "IMMKVConfig+0x2c": "integer setter candidate"
+  },
+  "request_producer_status": "unresolved: no network requests, transport/API call, JSON parse, token refresh schedule, retry, challenge logic or server validation present in the three analyzed handlers; indirect calls shown are MMKV persistence and ISkinMgr setters",
+  "precise_next_boundaries": [
+    {
+      "module": "QQMusic_Login.dll",
+      "location": "IQQMPAccount vtable+0xc called by FUN_1001a580",
+      "role": "payload dispatch boundary; concrete target unresolved, not yet proven network send"
+    },
+    {
+      "module": "QQMusicCommon.dll",
+      "function": "GetIQQMPAccount",
+      "address": "0x1000f214",
+      "role": "exact getter export entry to recover object implementation and vtable; not itself a proven producer"
+    },
+    {
+      "module": "QQMusicCommon.dll",
+      "function": "GetISkinMgr",
+      "address": "0x1000ef30",
+      "role": "exact getter entry to name unconditional flag setters and token getters"
+    },
+    {
+      "module": "QQMusic_Login.dll",
+      "function": "FUN_10019120",
+      "address": "0x10019120",
+      "role": "direct initializer callee with argument0, purpose unresolved"
+    },
+    {
+      "module": "QQMusic_Login.dll",
+      "function": "FUN_10020010",
+      "address": "0x10020010",
+      "role": "direct initializer callee receiving account GUID BSTR, purpose unresolved"
+    }
+  ],
+  "residual_unknowns": [
+    "true login/QR/refresh request producer and Windows JSON fields",
+    "special result code semantics (1000/104401/101010)",
+    "payload ABI, wrapper types, lifetimes and type discriminator meaning",
+    "expiry units, refresh interval and transport cancellation",
+    "challenge handling; no observed challenge branch",
+    "no server validation evidence from these save callbacks",
+    "GUID restore rejection remains equality plus nonempty as previously corrected; not reinterpreted"
+  ],
+  "target_sha256": "857c1a4cc9ea287c11ceb4bc49446f6d3fa05070bb3801e50fe3fc6591242c20",
+  "target": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\QQMusic_Login.dll"
+}

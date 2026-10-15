@@ -1,0 +1,428 @@
+{
+  "scope": "One plain native numeric TrackInfo builder and its tests only; no client/index/manifest edits and no Git operations.",
+  "target": {
+    "artifact": "QQMusic_Protocol.dll",
+    "path": "E:\\Program Files (x86)\\QQMusic\\QQMusic2271.18.09.14\\QQMusic_Protocol.dll",
+    "sha256": "ba66aa248b885227179f1676fbc54576a036f46b9d096fea33131c4f30fa6476"
+  },
+  "native_budget": {
+    "maximum_new_dossiers": 2,
+    "executed": 2,
+    "successful": 2,
+    "relevant_producer_dossiers": 1,
+    "adjacent_unrelated_dossiers": 1,
+    "additional_queries": 0
+  },
+  "rea_evidence": [
+    {
+      "topic": "Native numeric TrackInfo producer",
+      "evidence_id": "ev_15dc69b6ee9f0449839fd5679d1e66cd03b7a1d113f3ef423c8729d987a2255b",
+      "source": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-track-function.json",
+        "sha256": "3ced7b1c38a30ce1bc808268eb56110fada6b1d7bd4f5db932efbde18d1d339a",
+        "bytes": 1598759
+      },
+      "normalized_pseudocode": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-track-pseudocode.txt",
+        "sha256": "f2365c1b7fa6bff67abc0f786bae93d5c76d97e3065cfe91050c9155085338bd",
+        "bytes": 4951
+      },
+      "entry": "0x10044c6a",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x10044c6a",
+            "end": "0x10044fc8"
+          }
+        ],
+        "total_bytes": 863,
+        "span_bytes": 863,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "value_flow_truncated": false,
+      "stderr": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-track-function.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "private_snapshot": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-track-snapshot.json",
+        "sha256": "da35f467e5dcfedfcffcc84e5a1cd7211b9d4b18ed83a937ad95dfcd1ce4fbc0",
+        "bytes": 16103007
+      }
+    },
+    {
+      "topic": "Adjacent biz-empty request producer; not the response callback",
+      "evidence_id": "ev_56afec88153132d95e0b75e80bc146ca0263f9c3ad630a3727d6ac2030e0edb5",
+      "source": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-response-function.json",
+        "sha256": "c75fbdc882efafd84ce5cbad9c2f909ae02a124c7ed81162da4e36c663d3b177",
+        "bytes": 117051
+      },
+      "normalized_pseudocode": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-response-pseudocode.txt",
+        "sha256": "e1fba32684dcc7e815ddabfe9c02c9c86a15167a5b32d0800d22501c82ef556a",
+        "bytes": 966
+      },
+      "entry": "0x10044fcc",
+      "body": {
+        "available": true,
+        "provenance": "ghidra-function-body-address-set",
+        "ranges": [
+          {
+            "start": "0x10044fcc",
+            "end": "0x10045045"
+          }
+        ],
+        "total_bytes": 122,
+        "span_bytes": 122,
+        "non_contiguous": false,
+        "contains_entry": true
+      },
+      "value_flow_truncated": false,
+      "stderr": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-response-function.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "private_snapshot": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-response-snapshot.json",
+        "sha256": "9bb00d1f1491d1dcfe0de66834208f3ebf19bc8b152fea17898ad361053a375d",
+        "bytes": 13139591
+      }
+    }
+  ],
+  "observed_native": {
+    "producer": "0x10044c6a",
+    "source_evidence_id": "ev_15dc69b6ee9f0449839fd5679d1e66cd03b7a1d113f3ef423c8729d987a2255b",
+    "module": "music.trackInfo.UniformRuleCtrl",
+    "method": "CgiGetTrackInfo",
+    "request_key": {
+      "value": "Protocol_UpdateSongInfo",
+      "global": "0x101a5c00",
+      "initializer": "0x10003273",
+      "literal_instruction": "0x10003274",
+      "literal": "0x10128a2c",
+      "authority": "Ordinary static exact initializer supplement; producer dossier passes this same global to10073e50."
+    },
+    "json_fields": {
+      "ids": "UInt32 array: split native input CString, QM::t2u, JsonCpp uint constructor, append; instruction10044d80/10044d8b.",
+      "types": "Int32 array: split paired input CString, QM::t2i, signed-int constructor, append; instruction10044dc7/10044dd2.",
+      "ctx": "Int32 native param5, emitted directly; signed constructor10044ea9, ctx key10044eb7.",
+      "scene": "Int32 native param6==0 emits1, nonzero emits0; source branch10044ed2..10044f05."
+    },
+    "pairing": "Native loop stops when either next parsed token is empty or split cursor becomes negative; provider requires matching nonempty arrays rather than silently dropping unmatched IDs.",
+    "context": "Native param3/4 and param6 also stored in12-byte callback context. Caller100b7fd4 forwards caller IDs/types/context/scene flag, without a fixed UI default in the covered body.",
+    "mid_resolution": "This producer serializes numeric IDs. It does not serialize songmid and does not prove a songmid-to-ID mapping.",
+    "transport": "Producer forwards the constructed param through10073e50; actual anonymous probes use existing WindowsMusicClient Sign/Mask and ct19/cv2271.",
+    "second_dossier_correction": "0x10044fcc is a122-byte producer emitting biz:\"\" to global101a5c30, not the response. It was a bounded adjacent-entry misselection; no third dossier was run."
+  },
+  "observed_external_service": {
+    "endpoint": "https://u6.y.qq.com/cgi-bin/musics.fcg",
+    "scene1": {
+      "record": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-track-anonymous-probe.json",
+        "sha256": "4b383affecbd20a5da363d4ca63ff31419237adaaf47fa4d906208464bf6132f",
+        "bytes": 3580
+      },
+      "call": {
+        "module": "music.trackInfo.UniformRuleCtrl",
+        "method": "CgiGetTrackInfo",
+        "param": {
+          "ids": [
+            97773
+          ],
+          "types": [
+            0
+          ],
+          "ctx": 0,
+          "scene": 1
+        }
+      },
+      "caller_inputs": {
+        "types": [
+          0
+        ],
+        "ctx": 0,
+        "scene": 1,
+        "authority": "compatibility-choice",
+        "reason": "Explicit experiment inputs; UI default/context semantics remain unknown"
+      },
+      "result": [
+        {
+          "status": 200,
+          "path": "/cgi-bin/musics.fcg",
+          "contentType": "text/plain; charset=utf-8;",
+          "responseBytes": 1547,
+          "topCode": 0,
+          "itemCode": 0
+        }
+      ],
+      "data_path": "data.tracks[]",
+      "song_fields": [
+        "id",
+        "type",
+        "mid",
+        "time_public",
+        "status",
+        "fnote",
+        "mv",
+        "file",
+        "pay",
+        "action",
+        "va",
+        "data_type",
+        "sa",
+        "vs",
+        "vi"
+      ],
+      "scope": "Incremental media/rights DTO; lacks name,title,singer,album,interval.",
+      "public_identifiers": {
+        "id": 97773,
+        "mid": "0039MnYb0qxYhV",
+        "type": 0
+      },
+      "media_mid": "003Qui1q2u1Zho"
+    },
+    "scene0": {
+      "record": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-track-scene0-anonymous-probe.json",
+        "sha256": "b9752dc110d788ab61540088b42e8dfdf3b115e90ecbde6f95a278d1102cf3fc",
+        "bytes": 5391
+      },
+      "call": {
+        "module": "music.trackInfo.UniformRuleCtrl",
+        "method": "CgiGetTrackInfo",
+        "param": {
+          "ids": [
+            97773
+          ],
+          "types": [
+            0
+          ],
+          "ctx": 0,
+          "scene": 0
+        }
+      },
+      "caller_inputs": {
+        "types": [
+          0
+        ],
+        "ctx": 0,
+        "scene": 0,
+        "authority": "compatibility-choice",
+        "reason": "Explicit experiment inputs; UI default/context semantics remain unknown"
+      },
+      "result": [
+        {
+          "status": 200,
+          "path": "/cgi-bin/musics.fcg",
+          "contentType": "text/plain; charset=utf-8;",
+          "responseBytes": 2511,
+          "topCode": 0,
+          "itemCode": 0
+        }
+      ],
+      "data_path": "data.tracks[]",
+      "song_fields": [
+        "id",
+        "type",
+        "mid",
+        "name",
+        "title",
+        "subtitle",
+        "singer",
+        "album",
+        "mv",
+        "interval",
+        "isonly",
+        "language",
+        "genre",
+        "index_cd",
+        "index_album",
+        "time_public",
+        "status",
+        "fnote",
+        "file",
+        "pay",
+        "action",
+        "va",
+        "ksong",
+        "volume",
+        "label",
+        "url",
+        "ppurl",
+        "bpm",
+        "version",
+        "trace",
+        "data_type",
+        "modify_stamp",
+        "aid",
+        "tid",
+        "ov",
+        "sa",
+        "es",
+        "vs",
+        "vf",
+        "vi"
+      ],
+      "scope": "Full public song metadata plus media/rights fields in this one observed response.",
+      "public_identifiers": {
+        "id": 97773,
+        "mid": "0039MnYb0qxYhV",
+        "type": 0
+      },
+      "metadata": {
+        "name": "晴天",
+        "title": "晴天",
+        "singer": [
+          {
+            "id": 4558,
+            "mid": "0025NhlN2yWrP4",
+            "name": "周杰伦",
+            "title": "周杰伦",
+            "type": 0,
+            "uin": 0,
+            "pmid": ""
+          }
+        ],
+        "album": {
+          "id": 8220,
+          "mid": "000MkMni19ClKG",
+          "name": "叶惠美",
+          "title": "叶惠美",
+          "subtitle": "",
+          "pmid": "000MkMni19ClKG_5"
+        },
+        "interval": 269
+      },
+      "media_mid": "003Qui1q2u1Zho",
+      "file_fields": [
+        "media_mid",
+        "size_24aac",
+        "size_48aac",
+        "size_96aac",
+        "size_192aac",
+        "size_192ogg",
+        "size_128mp3",
+        "size_320mp3",
+        "size_ape",
+        "size_flac",
+        "size_dts",
+        "size_try",
+        "try_begin",
+        "try_end",
+        "url",
+        "size_hires",
+        "hires_sample",
+        "hires_bitdepth",
+        "b_30s",
+        "e_30s",
+        "size_96ogg",
+        "size_360ra",
+        "size_dolby",
+        "size_new",
+        "vm",
+        "df"
+      ]
+    },
+    "failed_mid_only_hypothesis": {
+      "record": {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-anonymous-probe.json",
+        "sha256": "1549697f7d10e82b3f4e39e4658a53eabed275c92f10b627bd63eb93cc8ab973",
+        "bytes": 1345
+      },
+      "module": "music.pf_song_detail_svr",
+      "method": "get_song_detail",
+      "param": {
+        "song_mid": [
+          "0039MnYb0qxYhV"
+        ],
+        "song_id": []
+      },
+      "status": 200,
+      "top_code": 0,
+      "item_code": 400,
+      "scope": "Only this exact request shape was rejected. Other service shapes are unknown and were not substituted or implemented."
+    },
+    "calls": "Three exact metadata RPC calls: approved mid-only hypothesis1, approved native TrackInfo scene1 baseline1, separately approved changed-input scene0 follow-up1. No additional live RPC calls.",
+    "credential_boundary": "All three use fake public device metadata, session:null, settings.get->null and read-only throw-on-write settings; no original profile, account, cache, OAuth code or native business API was accessed."
+  },
+  "bounded_static_supplements": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-static.json",
+      "sha256": "038f97d2e11c1e42aa59000248dfc3cb9f54dd68542a4651295953e0ba70f7eb",
+      "bytes": 2775684
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-entry-seeds.json",
+      "sha256": "e74960d5a16078a552e701b1ca8b563b8d90b70a4123668bca374a49eb08828c",
+      "bytes": 32832
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-native-caller.json",
+      "sha256": "18f856ac94342d4f70fd92d18334a8393533a3829f066696c90edc48c22558ee",
+      "bytes": 5801
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-static-closeout.json",
+      "sha256": "cc336b66dd628fcceb1e1cf5ce60606794731c4742d6b50a11921920f05aa4b9",
+      "bytes": 35887
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-musicapi-literals.json",
+      "sha256": "350812347761d5db7b49b62ab9b1509ed2e1536599fea68ab4f4a84a71ac3874",
+      "bytes": 500
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\docs\\aegis\\work\\2026-10-14-qqmusic-adaptation\\qq-song-detail-ui-literals.json",
+      "sha256": "52015cd00f37b85729032e60a656b0179aec3708ddbb96257a51e06f0eaad9fb",
+      "bytes": 861
+    }
+  ],
+  "inferences": [
+    "For this tested song, scene0 is sufficient to re-fetch the full public DTO when its numeric ID is already known; scene1 only refreshes media/rights fields.",
+    "A persistent canonical identifier containing both songmid and UInt32 song ID can use this numeric request after restart, without a provider-only mapping cache. Coordinator owns the canonical ID implementation."
+  ],
+  "unknown": [
+    "Native songmid-only producer was not recovered within the Protocol/MusicApi and narrow main-DLL/exe literal scans; this does not prove one cannot exist elsewhere.",
+    "Native types enum meanings and exact UI ctx/scene defaults remain unknown. types:[0],ctx:0 and chosen scene are explicit compatibility caller inputs verified on one public song.",
+    "Native response parser exact semantics were not decompiled. Ordinary candidate10045048 references code at10045065, tracks at10045094 and data at10045099; saved as a future seed only.",
+    "Response availability, removed songs, alternate types, rights and metadata behavior beyond the one public song were not tested.",
+    "No logged-in request, file download, native account authorization, encrypted media or playback was validated in this slice."
+  ],
+  "implementation": {
+    "api": "buildWindowsTrackInfoCall({ids,types,ctx,scene})",
+    "request_key_export": "WINDOWS_TRACK_INFO_REQUEST_KEY",
+    "files": [
+      {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight-Echo-plugins\\plugins\\qqmusic-provider\\lib\\windows\\song-detail-call.mjs",
+        "sha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a"
+      },
+      {
+        "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight-Echo-plugins\\plugins\\qqmusic-provider\\windows-song-detail-call.test.mjs",
+        "sha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e"
+      }
+    ],
+    "policies": [
+      "Caller fields are explicit, no inferred native UI defaults.",
+      "UInt32 IDs and Int32 types/ctx are validated before JSON serialization; scene only0/1.",
+      "Arrays must be nonempty and match in length. Sparse/invalid entries reject. Result owns both arrays.",
+      "No Android profile, MID resolver, alternate service or fallback path is added."
+    ]
+  },
+  "verification": {
+    "command": "node --test windows-song-detail-call.test.mjs windows-wire.test.mjs windows-signature.test.mjs",
+    "cwd": "E:\\PycharmProjects\\MusicAnyClient\\Twilight-Echo-plugins\\plugins\\qqmusic-provider",
+    "exit_code": 0,
+    "tests": 35,
+    "passed": 35,
+    "failed": 0,
+    "builder_tests": 5,
+    "basis": "Fresh builder validation/serialization/ownership checks plus existing native signature and Windows comm/wire regression vectors; native producer dossier plus anonymous service observations.",
+    "confidence": "B: direct native producer and external service evidence, with bounded caller/default/coverage unknowns."
+  }
+}
