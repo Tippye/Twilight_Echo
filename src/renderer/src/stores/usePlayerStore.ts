@@ -2437,6 +2437,9 @@ async function handlePlaybackFallback(
 ): Promise<boolean> {
   if (!isActiveLoad(loadToken, failedTrack)) return false
   if (sourceRecoveryDisabledLoadToken === loadToken) return false
+  // The provider has already exhausted this track's permitted playback choices.
+  // Rematching its title would discard that decision and can cycle between IDs.
+  if (parseAppError(reason).code === 'provider.playbackUnavailable') return false
   const failedSource = getTrackSource(failedTrack)
   const fallback = findPlaybackFallbackTrack({
     failedTrack,

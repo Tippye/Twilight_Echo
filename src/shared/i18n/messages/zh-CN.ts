@@ -527,6 +527,14 @@ export const ZH_CN_MESSAGES: Record<string, string> = {
   'error.audio.play_mode_sync_failed': '播放模式同步失败：{detail}',
   'error.audio.play_mode_switch_failed': '播放模式切换失败：{detail}',
 
+  'error.provider.playbackUnavailable': '{reason}',
+  'error.provider.playbackRpc.timeout': '音源请求超时，当前歌曲已停止，请稍后重试',
+  'error.provider.playbackRpc.cancelled': '音源请求已取消',
+  'error.provider.playbackRpc.host-stopped': '音源插件已停止或无法启动，当前歌曲已停止',
+  'error.provider.playbackRpc.circuit': '音源插件暂时不可用，请稍后重试',
+  'error.provider.playbackRpc.overload': '音源插件请求过多，请稍后重试',
+  'error.provider.playbackRpc.dispatch': '音源请求未能发送，当前歌曲已停止',
+
   // ── 网络错误 ──────────────────────────────────────────────────────────────
   'error.network.timeout': '网络请求超时',
   'error.network.failed': '网络连接失败，请检查网络后重试',

@@ -25,7 +25,7 @@ function fixture() {
   let position = 31
   let playing = true
   let allowed = true
-  const resolves: Array<{ track: Track; options: unknown }> = []
+  const resolves: Array<{ track: Track; options: unknown; signal?: AbortSignal }> = []
   const reloads: Array<{ track: Track; target: string; position: number; playing: boolean }> = []
   const saved: string[] = []
   let save = async (quality: string) => {
@@ -42,8 +42,8 @@ function fixture() {
       await save(quality)
       return { quality, options: [{ value: quality, label: quality }] }
     },
-    getPlaybackUrl: async (copy, options) => {
-      resolves.push({ track: copy, options })
+    getPlaybackUrl: async (copy, options, callOptions) => {
+      resolves.push({ track: copy, options, signal: callOptions?.signal })
       copy.streamUrl = 'provider-mutated-copy'
       return resolveUrl()
     }
@@ -188,112 +188,68 @@ test('loading, casting, or missing optional methods do not mutate a preference',
   assert.deepEqual(f.saved, [])
 })
 
-test('per-track availability is rechecked before persistence; unavailable or missing choices do not write', async () => {
-  for (const missing of [false, true]) {
-    const f = fixture()
-    f.provider.getTrackPlaybackQualities = async (track) => ({
-      trackId: track.id,
-      options: missing
-        ? []
-        : [
-            {
-              value: 'spatial',
-              label: 'Spatial',
-              availability: 'unavailable',
-              reason: '该歌曲暂无此音质'
-            }
-          ]
-    })
-    await assert.rejects(
-      f.controller.changeQuality('spatial'),
-      missing ? /没有所选音质/ : /暂无此音质/
-    )
-    assert.deepEqual(f.saved, [])
-    assert.deepEqual(f.resolves, [])
-    assert.deepEqual(f.reloads, [])
-  }
-})
-
-test('unknown catalogue evidence may be attempted and cancelled calls reach the availability owner', async () => {
+test('provider same-track downgrade preserves the higher preference and the queue identity', async () => {
   const f = fixture()
-  const held =
-    deferred<
-      NonNullable<Awaited<ReturnType<NonNullable<MediaProvider['getTrackPlaybackQualities']>>>>
-    >()
-  let querySignal: AbortSignal | undefined
-  f.provider.getTrackPlaybackQualities = async (_track, options) => {
-    querySignal = options?.signal
-    return held.promise
+  let catalogueReads = 0
+  f.provider.getTrackPlaybackQualities = async (track) => {
+    catalogueReads++
+    return {
+      trackId: track.id,
+      options: [{ value: 'dolby', label: 'Dolby', availability: 'unavailable' }]
+    }
   }
-  const abort = new AbortController()
-  const changing = f.controller.changeQuality('lossless', { signal: abort.signal })
-  await Promise.resolve()
-  assert.deepEqual(f.saved, [])
-  abort.abort()
-  assert.equal(querySignal?.aborted, true)
-  held.resolve({
-    trackId: f.track.id,
-    options: [{ value: 'lossless', label: 'Lossless', availability: 'unknown' }]
-  })
-  await changing
-  assert.deepEqual(f.saved, [])
-  f.provider.getTrackPlaybackQualities = async (track) => ({
-    trackId: track.id,
-    options: [{ value: 'lossless', label: 'Lossless', availability: 'unknown' }]
-  })
-  await f.controller.changeQuality('lossless')
-  assert.deepEqual(f.saved, ['lossless'])
+  const original = { ...f.track }
+  f.holdResolve(async () => 'twilight-media://fixture/same-track-flac')
+  f.setPosition(47.25)
+  f.setPlaying(false)
+  const result = await f.controller.changeQuality('dolby')
+  assert.equal(catalogueReads, 0, 'catalogue hints cannot veto the provider downgrade policy')
+  assert.equal(result.quality, 'dolby')
+  assert.deepEqual(f.saved, ['dolby'])
+  assert.deepEqual(f.resolves[0].options, { quality: 'dolby', force: true })
   assert.equal(f.reloads.length, 1)
+  assert.equal(f.reloads[0].target, 'twilight-media://fixture/same-track-flac')
+  assert.equal(f.reloads[0].track.id, original.id)
+  assert.equal(f.reloads[0].track.queueEntryId, original.queueEntryId)
+  assert.equal(f.reloads[0].position, 47.25)
+  assert.equal(f.reloads[0].playing, false)
+  assert.deepEqual(f.track, original)
 })
 
-test('a changed owner while availability is held cannot write or reload; pre-abort performs no work', async () => {
-  for (const drift of ['entry', 'provider', 'new-selection']) {
-    const f = fixture()
-    const held =
-      deferred<
-        NonNullable<Awaited<ReturnType<NonNullable<MediaProvider['getTrackPlaybackQualities']>>>>
-      >()
-    let queried = 0
-    let firstSignal: AbortSignal | undefined
-    f.provider.getTrackPlaybackQualities = async (track, options) => {
-      if (++queried === 1) {
-        firstSignal = options?.signal
-        return held.promise
-      }
-      return {
-        trackId: track.id,
-        options: [{ value: 'latest', label: 'Latest', availability: 'candidate' }]
-      }
-    }
-    const changing = f.controller.changeQuality('lossless')
-    await Promise.resolve()
-    if (drift === 'entry') f.replaceTrack({ ...f.track, queueEntryId: 'next-copy' })
-    if (drift === 'provider') f.invalidate()
-    if (drift === 'new-selection') {
-      await f.controller.changeQuality('latest')
-      assert.equal(firstSignal?.aborted, true)
-    }
-    held.resolve({
-      trackId: 'fake:song',
-      options: [{ value: 'lossless', label: 'Lossless', availability: 'candidate' }]
-    })
-    await changing
-    assert.deepEqual(f.saved, drift === 'new-selection' ? ['latest'] : [], drift)
-    assert.equal(f.reloads.length, drift === 'new-selection' ? 1 : 0, drift)
-  }
+test('a cancelled provider resolution receives the abort and cannot replace the current stream', async () => {
+  const f = fixture()
+  const held = deferred<string>()
+  f.holdResolve(() => held.promise)
+  const abort = new AbortController()
+  const changing = f.controller.changeQuality('dolby', { signal: abort.signal })
+  await Promise.resolve()
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.equal(f.resolves.length, 1)
+  abort.abort()
+  assert.equal(f.resolves[0].signal?.aborted, true)
+  held.resolve('twilight-media://fixture/cancelled-downgrade')
+  await changing
+  assert.deepEqual(f.saved, ['dolby'])
+  assert.deepEqual(f.reloads, [])
+})
+
+test('pre-abort performs no preference or resolution work', async () => {
   const f = fixture()
   const abort = new AbortController()
   abort.abort()
   await assert.rejects(f.controller.changeQuality('lossless', { signal: abort.signal }), /取消/)
   assert.deepEqual(f.saved, [])
+  assert.deepEqual(f.resolves, [])
 })
 
-test('mismatched catalogue identities and malformed options fail before changing preference', async () => {
+test('malformed persisted preference state is rejected before resolving any stream', async () => {
   const f = fixture()
-  f.provider.getTrackPlaybackQualities = async () => ({
-    trackId: 'fake:other',
-    options: [{ value: 'lossless', label: 'Lossless', availability: 'candidate' }]
+  f.provider.setPlaybackQuality = async () => ({
+    quality: 'dolby',
+    options: [{ value: 'flac', label: 'FLAC' }]
   })
-  await assert.rejects(f.controller.changeQuality('lossless'), /音质列表无效/)
-  assert.deepEqual(f.saved, [])
+  await assert.rejects(f.controller.changeQuality('dolby'), /音质设置无效/)
+  assert.deepEqual(f.resolves, [])
+  assert.deepEqual(f.reloads, [])
 })

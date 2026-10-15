@@ -13,6 +13,9 @@ import { createPlaybackClockController } from './player/playbackClockController.
 import { evaluateNativePlaybackInfoIntent } from '../utils/nativePlaybackInfoIntent.ts'
 import { findNativeQueueTrackIndex } from '../utils/nativeQueueTrackIndex.ts'
 import { NativeQueueLoader } from '../utils/nativeQueueLoader.ts'
+import { isTrackPlaybackSupported } from '../utils/trackPlaybackSupport.ts'
+import { findPlaybackFallbackTrack } from '../utils/playbackFallback.ts'
+import { findProviderRematchCandidate } from '../utils/libraryRepair.ts'
 import {
   NATIVE_PLAYBACK_INFO_INTENT_GRACE_MS,
   NATIVE_PLAYBACK_INFO_POST_CONFIRMATION_GRACE_MS
@@ -146,6 +149,7 @@ function handoffFixture(t) {
     pendingLoadStartTime: 0,
     nativeHistoryRestartPending: false,
     activeLoadToken: 1,
+    sourceRecoveryDisabledLoadToken: null,
     streamNowPlaying: ref(''),
     startFilePlaybackInfoRefreshGeneration: 0,
     NATIVE_PLAYBACK_INFO_INTENT_GRACE_MS,
@@ -250,6 +254,7 @@ test('a missing non-NetEase provider cache is re-resolved with force instead of 
     window: { api: { fs: { isAudioFileAuthorized: async () => false } } },
     getTrackSource,
     isLikelyLocalFilePath,
+    isTrackPlaybackSupported,
     shouldReuseResolvedStreamUrl: () => true,
     syncPluginProviders: async () => {},
     appSettings: ref({ ncmPlaybackQuality: 'lossless' }),
@@ -336,6 +341,117 @@ test('an older failed load cannot clear a newer load after waiting for source re
   assert.deepEqual(f.errors, [])
 })
 
+test('a terminal provider failure across IPC stops the request without rematching or changing identity', async () => {
+  const reason = 'QQ 音乐音频服务器返回 HTTP 403，当前歌曲的候选音质均不可播放'
+  const terminal = ipcError('provider.playbackUnavailable', 'Playback unavailable', { reason })
+  const failure = new Error(
+    `Error invoking remote method 'providers:call': Error: ${terminal.message}`
+  )
+  const f = sourceRecoveryFixture(failure, true)
+  const before = JSON.stringify({
+    current: f.context.currentTrack.value,
+    queue: f.context.queue.value,
+    original: f.context.originalQueue.value,
+    index: f.context.queueIndex.value
+  })
+
+  await f.context.loadAndPlay(f.track)
+
+  assert.deepEqual(f.calls, { resolutions: 1, queueSearches: 0, searches: 0, replacements: 0 })
+  assert.equal(
+    JSON.stringify({
+      current: f.context.currentTrack.value,
+      queue: f.context.queue.value,
+      original: f.context.originalQueue.value,
+      index: f.context.queueIndex.value
+    }),
+    before
+  )
+  assert.equal(f.context.currentTrack.value.queueEntryId, 'selected-entry')
+  assert.equal(f.context.isLoading.value, false)
+  assert.equal(f.context.isPlaying.value, false)
+  assert.equal(f.context.autoAdvanceInFlight, false)
+  assert.equal(f.context.nativePlaybackActive, false)
+  assert.equal(f.context.nativeQueueDelegated, false)
+  assert.deepEqual(f.errors, [reason])
+  assert.doesNotMatch(f.errors[0], /Error invoking|TE-ERR|登录状态已失效/)
+})
+
+test('unmarked legacy provider failures keep the existing source recovery path', async () => {
+  const f = sourceRecoveryFixture(new Error('Legacy source unavailable'))
+  await f.context.loadAndPlay(f.track)
+  assert.deepEqual(f.calls, { resolutions: 1, queueSearches: 1, searches: 1, replacements: 0 })
+  assert.equal(f.context.currentTrack.value.id, f.track.id)
+  assert.equal(f.context.isLoading.value, false)
+  assert.equal(f.context.isPlaying.value, false)
+  assert.equal(f.context.autoAdvanceInFlight, false)
+  assert.deepEqual(f.errors, ['Legacy source unavailable'])
+})
+
+test('terminal provider reasons retain phase details in every locale instead of HTTP login guesses', () => {
+  const reason = 'Audio issuer refused quality 12 (403)'
+  const failure = ipcError('provider.playbackUnavailable', 'Playback unavailable', { reason })
+  for (const locale of ['zh-CN', 'en-US']) assert.equal(presentError(locale, failure), reason)
+})
+
+function sourceRecoveryFixture(failure, matchingVersions = false) {
+  const f = loadFixture()
+  Object.assign(f.track, {
+    id: 'qq:public-a:1',
+    source: 'qq',
+    filePath: 'qq:public-a:1',
+    title: 'Same Blue',
+    artist: 'Official髭男dism',
+    album: 'Same Blue',
+    duration: 237,
+    queueEntryId: 'selected-entry'
+  })
+  const alternative = { ...f.track, id: 'qq:public-b:2', filePath: 'qq:public-b:2' }
+  const calls = { resolutions: 0, queueSearches: 0, searches: 0, replacements: 0 }
+  Object.assign(f.context, {
+    Error,
+    originalQueue: ref([f.track]),
+    sourceRecoveryDisabledLoadToken: null,
+    nativeQueueDelegated: false,
+    currentLocale: () => 'zh-CN',
+    presentError,
+    resolvePlayTarget: async () => {
+      calls.resolutions++
+      throw failure
+    },
+    findPlaybackFallbackTrack: (options) => {
+      calls.queueSearches++
+      return findPlaybackFallbackTrack(options)
+    },
+    findProviderRematchCandidate,
+    getProviderSourceReliability: () => ({}),
+    syncPluginProviders: async () => {},
+    useMediaProviders: () => ({
+      searchAllSongs: async () => {
+        calls.searches++
+        // Bound the fixture's counterexample if a regression reintroduces the
+        // production A -> B -> A rematch cycle. The expected search count is 0.
+        return {
+          items:
+            matchingVersions && calls.searches <= 4
+              ? [{ track: f.track }, { track: alternative }]
+              : []
+        }
+      }
+    }),
+    toPlaybackQueueSnapshot: (track) => ({ ...track }),
+    useMusicStore: () => ({ replaceTrackReference: () => calls.replacements++ }),
+    setAudioEngineError: (error) => f.errors.push(f.context.resolveAudioEngineErrorText(error))
+  })
+  for (const name of [
+    'handlePlaybackFallback',
+    'handleProviderRematchFallback',
+    'resolveAudioEngineErrorText'
+  ])
+    vm.runInContext(productionFunction(name), f.context)
+  return { ...f, calls }
+}
+
 function loadFixture({ fallback = async () => false } = {}) {
   const track = { id: 'local:one', source: 'local', filePath: 'D:\\Music\\one.flac', duration: 180 }
   const errors = [],
@@ -347,6 +463,7 @@ function loadFixture({ fallback = async () => false } = {}) {
     translate,
     currentLocale: () => 'zh-CN',
     getTrackSource,
+    isTrackPlaybackSupported,
     currentTrack: ref(track),
     queue: ref([track]),
     queueIndex: ref(0),

@@ -183,18 +183,31 @@ async function fixture(
   const directory = fs.mkdtempSync(path.join(tmpdir(), 'twilight-plugin-wake-'))
   fs.writeFileSync(path.join(directory, 'index.mjs'), 'export function activate() {}\n')
   const importSource = (name) => import(pathToFileURL(path.join(__dirname, name)).href)
-  const [manifest, routing, queue, rpc, idle, persistence, dependenciesApi, media, identities] =
-    await Promise.all([
-      importSource('manifest.ts'),
-      importSource('providerRouting.ts'),
-      importSource('operationQueue.ts'),
-      importSource('rpcCoordinator.ts'),
-      importSource('hostIdle.ts'),
-      importSource('statePersistence.ts'),
-      importSource('dependencies.ts'),
-      importSource('../security/remoteMediaGrants.ts'),
-      importSource('../audio/providerPlaybackIdentity.ts')
-    ])
+  const [
+    manifest,
+    routing,
+    queue,
+    rpc,
+    idle,
+    persistence,
+    dependenciesApi,
+    media,
+    identities,
+    errors,
+    i18n
+  ] = await Promise.all([
+    importSource('manifest.ts'),
+    importSource('providerRouting.ts'),
+    importSource('operationQueue.ts'),
+    importSource('rpcCoordinator.ts'),
+    importSource('hostIdle.ts'),
+    importSource('statePersistence.ts'),
+    importSource('dependencies.ts'),
+    importSource('../security/remoteMediaGrants.ts'),
+    importSource('../audio/providerPlaybackIdentity.ts'),
+    importSource('../../shared/errors/appError.ts'),
+    importSource('../../shared/i18n/translate.ts')
+  ])
   const children = []
   let notify
   const activationStarted = new Promise((resolve) => {
@@ -243,6 +256,8 @@ async function fixture(
     './providerRouting': routing,
     './operationQueue.ts': queue,
     './rpcCoordinator.ts': rpc,
+    '../core/locale.ts': { mt: (key) => i18n.translate('zh-CN', key) },
+    '../../shared/errors/appError.ts': errors,
     './hostIdle.ts': idle,
     './statePersistence.ts': persistence,
     './dependencies': dependenciesApi,

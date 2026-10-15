@@ -5,6 +5,8 @@ import { existsSync, mkdirSync, statSync } from 'fs'
 import { cp, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, extname, join, resolve } from 'path'
 import { EventEmitter } from 'events'
+import { mt } from '../core/locale.ts'
+import { ipcError } from '../../shared/errors/appError.ts'
 import { planPluginStartup } from './dependencies'
 import {
   compareSemver,
@@ -27,6 +29,7 @@ import { PluginOperationQueue } from './operationQueue.ts'
 import {
   normalizeInternalNcmRequestOptions,
   PluginRpcCoordinator,
+  PluginRpcLifecycleError,
   resolveProviderIdempotencyKey
 } from './rpcCoordinator.ts'
 import { trialStagedPluginCandidate } from './trialActivation.ts'
@@ -745,81 +748,97 @@ export class TwilightPluginManager extends EventEmitter {
     options: TwilightProviderCallOptions = {}
   ): Promise<unknown> {
     const normalizedProviderId = providerId.trim().toLowerCase()
-    const route = findProviderRoute(this.contributingPlugins(), normalizedProviderId, method)
-    const hasProvider = this.contributingPlugins().some((candidate) =>
-      candidate.providers.some((provider) => provider.id === normalizedProviderId)
-    )
-    const running = route ? await this.ensureRunningForCall(route.descriptor.id) : null
-    if (!running) {
-      const isBundledProvider = this.isBundledPluginId(normalizedProviderId)
-      throw new Error(
-        hasProvider
-          ? isBundledProvider
-            ? `Provider ${normalizedProviderId} does not implement ${method}。内置音源插件尚未加载最新代码，请重启应用。`
-            : `Provider ${normalizedProviderId} does not implement ${method}`
-          : `Provider 未启用：${normalizedProviderId}`
+    try {
+      const route = findProviderRoute(this.contributingPlugins(), normalizedProviderId, method)
+      const hasProvider = this.contributingPlugins().some((candidate) =>
+        candidate.providers.some((provider) => provider.id === normalizedProviderId)
       )
-    }
-    this.hostIdle?.touch(running.descriptor.id)
-    const requestId = randomUUID()
-    const idempotencyKey = resolveProviderIdempotencyKey(method, options.idempotencyKey)
-    return this.rpcCalls.request<unknown, ProviderRpcMetadata>({
-      requestId,
-      pluginId: running.descriptor.id,
-      kind: 'provider',
-      timeoutMs: getProviderCallTimeoutMs(method),
-      metadata: {
-        providerId: normalizedProviderId,
+      const running = route ? await this.ensureRunningForCall(route.descriptor.id) : null
+      if (!running) {
+        const isBundledProvider = this.isBundledPluginId(normalizedProviderId)
+        throw new Error(
+          hasProvider
+            ? isBundledProvider
+              ? `Provider ${normalizedProviderId} does not implement ${method}。内置音源插件尚未加载最新代码，请重启应用。`
+              : `Provider ${normalizedProviderId} does not implement ${method}`
+            : `Provider 未启用：${normalizedProviderId}`
+        )
+      }
+      this.hostIdle?.touch(running.descriptor.id)
+      const requestId = randomUUID()
+      const idempotencyKey = resolveProviderIdempotencyKey(method, options.idempotencyKey)
+      return await this.rpcCalls.request<unknown, ProviderRpcMetadata>({
+        requestId,
         pluginId: running.descriptor.id,
-        method,
-        ...(method === 'getPlaybackUrl'
+        kind: 'provider',
+        timeoutMs: getProviderCallTimeoutMs(method),
+        metadata: {
+          providerId: normalizedProviderId,
+          pluginId: running.descriptor.id,
+          method,
+          ...(method === 'getPlaybackUrl'
+            ? {
+                playbackTrackId: String((args[0] as { id?: unknown } | null)?.id ?? ''),
+                playbackQuality: String(
+                  (args[1] as { quality?: unknown } | null)?.quality ?? 'auto'
+                )
+              }
+            : {})
+        },
+        dispatch: () => {
+          this.assertRunningPlugin(running)
+          running.process.postMessage({
+            kind: 'provider-call',
+            requestId,
+            providerId: normalizedProviderId,
+            method,
+            args:
+              method === 'getPlaybackUrl' &&
+              running.descriptor.id === 'com.twilightecho.provider.ncm'
+                ? [
+                    args[0],
+                    {
+                      ...(args[1] && typeof args[1] === 'object' ? args[1] : {}),
+                      _twilightSourceIdentity: true,
+                      _twilightAutoMixPrepare: this.autoMixEnabled?.() === true
+                    }
+                  ]
+                : args,
+            idempotencyKey
+          } satisfies PluginHostRequest)
+        },
+        cancel: (reason) => this.cancelHostRpc(running, requestId, reason),
+        signal: options.signal,
+        onTimeout: () => {
+          this.recordProviderCallFailure(
+            normalizedProviderId,
+            running.descriptor.id,
+            method,
+            `Provider 调用超时：${normalizedProviderId}.${method}`
+          )
+        },
+        ...(idempotencyKey
           ? {
-              playbackTrackId: String((args[0] as { id?: unknown } | null)?.id ?? ''),
-              playbackQuality: String((args[1] as { quality?: unknown } | null)?.quality ?? 'auto')
+              idempotency: {
+                scope: `${running.descriptor.id}:${normalizedProviderId}:${method}`,
+                key: idempotencyKey,
+                fingerprint: JSON.stringify(args)
+              }
             }
           : {})
-      },
-      dispatch: () => {
-        this.assertRunningPlugin(running)
-        running.process.postMessage({
-          kind: 'provider-call',
-          requestId,
-          providerId: normalizedProviderId,
-          method,
-          args:
-            method === 'getPlaybackUrl' && running.descriptor.id === 'com.twilightecho.provider.ncm'
-              ? [
-                  args[0],
-                  {
-                    ...(args[1] && typeof args[1] === 'object' ? args[1] : {}),
-                    _twilightSourceIdentity: true,
-                    _twilightAutoMixPrepare: this.autoMixEnabled?.() === true
-                  }
-                ]
-              : args,
-          idempotencyKey
-        } satisfies PluginHostRequest)
-      },
-      cancel: (reason) => this.cancelHostRpc(running, requestId, reason),
-      signal: options.signal,
-      onTimeout: () => {
-        this.recordProviderCallFailure(
-          normalizedProviderId,
-          running.descriptor.id,
-          method,
-          `Provider 调用超时：${normalizedProviderId}.${method}`
-        )
-      },
-      ...(idempotencyKey
-        ? {
-            idempotency: {
-              scope: `${running.descriptor.id}:${normalizedProviderId}:${method}`,
-              key: idempotencyKey,
-              fingerprint: JSON.stringify(args)
-            }
+      })
+    } catch (error) {
+      if (method === 'getPlaybackUrl' && error instanceof PluginRpcLifecycleError) {
+        throw ipcError(
+          'provider.playbackUnavailable',
+          'Playback provider request did not complete.',
+          {
+            reason: mt(`error.provider.playbackRpc.${error.kind}`)
           }
-        : {})
-    })
+        )
+      }
+      throw error
+    }
   }
 
   async destroy(): Promise<void> {
@@ -840,12 +859,22 @@ export class TwilightPluginManager extends EventEmitter {
    * single process.
    */
   private async ensureRunningForCall(id: string): Promise<RunningPlugin> {
-    const waking = this.wakeOperations.get(id)
-    if (waking) return waking
-    const running = this.running.get(id)
-    if (running) return running
-    if (!this.hibernated.has(id)) throw new Error(`Provider 未启用：${id}`)
-    return this.wakePlugin(id)
+    try {
+      const waking = this.wakeOperations.get(id)
+      if (waking) return await waking
+      const running = this.running.get(id)
+      if (running) return running
+      if (!this.hibernated.has(id)) throw new Error(`Provider 未启用：${id}`)
+      return await this.wakePlugin(id)
+    } catch (error) {
+      // This scope only starts or obtains the local utility host. Remote
+      // provider results are handled later by the RPC coordinator.
+      if (error instanceof PluginRpcLifecycleError) throw error
+      throw new PluginRpcLifecycleError(
+        'host-stopped',
+        error instanceof Error ? error.message : String(error)
+      )
+    }
   }
 
   private wakePlugin(id: string): Promise<RunningPlugin> {

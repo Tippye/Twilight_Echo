@@ -55,6 +55,25 @@ export const DEFAULT_MAX_PLUGIN_RPC_IDEMPOTENCY_RECORDS = 512
 
 export type PluginRpcKind = 'provider' | 'ui-command'
 
+export type PluginRpcLifecycleFailureKind =
+  | 'timeout'
+  | 'cancelled'
+  | 'host-stopped'
+  | 'circuit'
+  | 'overload'
+  | 'dispatch'
+
+/** A local RPC lifecycle failure, distinct from a provider's business rejection. */
+export class PluginRpcLifecycleError extends Error {
+  readonly kind: PluginRpcLifecycleFailureKind
+
+  constructor(kind: PluginRpcLifecycleFailureKind, message: string) {
+    super(message)
+    this.name = 'PluginRpcLifecycleError'
+    this.kind = kind
+  }
+}
+
 export interface PluginRpcIdempotency {
   /** A namespace chosen by the caller, usually plugin/provider/method. */
   scope: string
@@ -242,7 +261,8 @@ export class PluginRpcCoordinator {
     ) {
       this.clearCircuitProbe(state, options.requestId)
       return Promise.reject(
-        new Error(
+        new PluginRpcLifecycleError(
+          'overload',
           `Plugin ${options.pluginId} RPC queue is full (${this.maxQueuePerPlugin} waiting requests).`
         )
       )
@@ -323,7 +343,7 @@ export class PluginRpcCoordinator {
   cancelPlugin(pluginId: string, reason: string): number {
     const state = this.states.get(pluginId)
     if (!state) return 0
-    const error = new Error(reason)
+    const error = new PluginRpcLifecycleError('host-stopped', reason)
     let cancelled = 0
     state.cancelling = true
     try {
@@ -372,7 +392,10 @@ export class PluginRpcCoordinator {
       pending.dispatch()
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      this.settle(state, pending, { kind: 'remote-error', error: new Error(message) })
+      this.settle(state, pending, {
+        kind: 'remote-error',
+        error: new PluginRpcLifecycleError('dispatch', message)
+      })
     }
   }
 
@@ -398,7 +421,8 @@ export class PluginRpcCoordinator {
     const pending = this.pendingById.get(requestId)
     if (!pending || pending.settled) return
     const state = this.stateFor(pending.pluginId)
-    const error = new Error(
+    const error = new PluginRpcLifecycleError(
+      'timeout',
       `Plugin ${pending.pluginId} ${pending.kind} RPC timed out after ${pending.timeoutMs}ms.`
     )
     if (pending.dispatched) {
@@ -529,7 +553,10 @@ export class PluginRpcCoordinator {
     if (openUntil === null) return null
     if (this.now() < openUntil) return this.circuitError(pluginId, openUntil)
     if (state.circuit.probeRequestId) {
-      return new Error('Plugin RPC circuit is half-open; wait for the recovery probe to finish.')
+      return new PluginRpcLifecycleError(
+        'circuit',
+        'Plugin RPC circuit is half-open; wait for the recovery probe to finish.'
+      )
     }
     state.circuit.probeRequestId = requestId
     return null
@@ -547,7 +574,10 @@ export class PluginRpcCoordinator {
 
   private circuitError(pluginId: string, openUntil: number): Error {
     const retryAfterMs = Math.max(0, openUntil - this.now())
-    return new Error(`Plugin ${pluginId} RPC circuit is open; retry after ${retryAfterMs}ms.`)
+    return new PluginRpcLifecycleError(
+      'circuit',
+      `Plugin ${pluginId} RPC circuit is open; retry after ${retryAfterMs}ms.`
+    )
   }
 
   private clearCircuitProbe(state: PluginRpcState, requestId: string): void {
@@ -644,11 +674,15 @@ export class PluginRpcCoordinator {
   }
 }
 
-function abortError(signal: AbortSignal | undefined): Error {
+function abortError(signal: AbortSignal | undefined): PluginRpcLifecycleError {
   const reason = signal?.reason
-  if (reason instanceof Error) return reason
-  if (reason != null) return new Error(String(reason))
-  return new Error('Plugin RPC request was aborted.')
+  const message =
+    reason instanceof Error
+      ? reason.message
+      : reason != null
+        ? String(reason)
+        : 'Plugin RPC request was aborted.'
+  return new PluginRpcLifecycleError('cancelled', message)
 }
 
 function positiveInteger(value: number | undefined, fallback: number, label: string): number {

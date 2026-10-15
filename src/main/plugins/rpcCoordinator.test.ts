@@ -3,8 +3,18 @@ import test from 'node:test'
 import {
   normalizeInternalNcmRequestOptions,
   PluginRpcCoordinator,
+  PluginRpcLifecycleError,
   resolveProviderIdempotencyKey
 } from './rpcCoordinator.ts'
+
+function lifecycleFailure(kind: PluginRpcLifecycleError['kind'], message: RegExp) {
+  return (error: unknown): boolean => {
+    assert.ok(error instanceof PluginRpcLifecycleError)
+    assert.equal(error.kind, kind)
+    assert.match(error.message, message)
+    return true
+  }
+}
 
 function request(
   coordinator: PluginRpcCoordinator,
@@ -40,7 +50,7 @@ test('plugin lifecycle cancellation rejects active RPCs immediately and quaranti
   assert.equal(coordinator.getPendingCount('com.example.provider'), 1)
   assert.equal(coordinator.cancelPlugin('com.example.provider', 'Plugin was disabled.'), 1)
 
-  await assert.rejects(pending, /disabled/)
+  await assert.rejects(pending, lifecycleFailure('host-stopped', /disabled/))
   assert.equal(cancellations.length, 1)
   assert.equal(coordinator.getPendingCount('com.example.provider'), 0)
   assert.deepEqual(
@@ -64,11 +74,11 @@ test('external abort cancels active and queued RPC work promptly', async () => {
   })
 
   queuedController.abort(new Error('queued cancelled'))
-  await assert.rejects(queued, /queued cancelled/)
+  await assert.rejects(queued, lifecycleFailure('cancelled', /queued cancelled/))
   assert.deepEqual(cancellations, [])
 
   activeController.abort(new Error('active cancelled'))
-  await assert.rejects(active, /active cancelled/)
+  await assert.rejects(active, lifecycleFailure('cancelled', /active cancelled/))
   assert.equal(cancellations.length, 1)
   assert.match(cancellations[0], /abort-active:active cancelled/)
   assert.equal(coordinator.getPendingCount('com.example.provider'), 0)
@@ -85,7 +95,7 @@ test('an already aborted signal prevents RPC dispatch', async () => {
   controller.abort(new Error('cancel before request'))
   await assert.rejects(
     request(coordinator, 'already-aborted', { dispatches, signal: controller.signal }),
-    /cancel before request/
+    lifecycleFailure('cancelled', /cancel before request/)
   )
   assert.deepEqual(dispatches, [])
 })
@@ -95,7 +105,7 @@ test('a timed out RPC sends cancellation and late success cannot settle a newer 
   const cancellations: string[] = []
   const pending = request(coordinator, 'provider-timeout', { timeoutMs: 10, cancellations })
 
-  await assert.rejects(pending, /timed out/)
+  await assert.rejects(pending, lifecycleFailure('timeout', /timed out/))
   assert.equal(cancellations.length, 1)
   assert.deepEqual(
     coordinator.complete('com.example.provider', 'provider-timeout', {
@@ -125,19 +135,33 @@ test('per-plugin concurrency, bounded queue, and circuit backoff prevent overloa
   const first = request(coordinator, 'first', { dispatches })
   const queued = request(coordinator, 'queued', { dispatches })
 
-  await assert.rejects(() => request(coordinator, 'overflow', { dispatches }), /queue is full/)
-  const firstRejected = assert.rejects(first, /first failed/)
-  const queuedRejected = assert.rejects(queued, /circuit is open/)
+  await assert.rejects(
+    () => request(coordinator, 'overflow', { dispatches }),
+    lifecycleFailure('overload', /queue is full/)
+  )
+  const firstRejected = assert.rejects(first, (error: unknown) => {
+    assert.ok(error instanceof Error)
+    assert.equal(error instanceof PluginRpcLifecycleError, false)
+    assert.equal(error.message, 'first failed')
+    return true
+  })
+  const queuedRejected = assert.rejects(queued, lifecycleFailure('circuit', /circuit is open/))
   coordinator.complete('com.example.provider', 'first', { ok: false, error: 'first failed' })
   await firstRejected
   await queuedRejected
   assert.deepEqual(dispatches, ['first'])
 
-  await assert.rejects(() => request(coordinator, 'blocked', { dispatches }), /circuit is open/)
+  await assert.rejects(
+    () => request(coordinator, 'blocked', { dispatches }),
+    lifecycleFailure('circuit', /circuit is open/)
+  )
 
   now = 100
   const probe = request(coordinator, 'probe', { dispatches })
-  await assert.rejects(() => request(coordinator, 'while-probing', { dispatches }), /half-open/)
+  await assert.rejects(
+    () => request(coordinator, 'while-probing', { dispatches }),
+    lifecycleFailure('circuit', /half-open/)
+  )
   coordinator.complete('com.example.provider', 'probe', { ok: true, value: 'recovered' })
   await assert.doesNotReject(probe)
 
@@ -259,4 +283,96 @@ test('in-flight idempotency records do not expire or get evicted before their ou
   coordinator.complete('com.example.provider', 'write-pending', { ok: true, value: 'liked' })
   assert.equal(await first, 'liked')
   assert.equal(await retry, 'liked')
+})
+
+test('queued RPC timeout is typed without dispatching or cancelling a request that never started', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const coordinator = new PluginRpcCoordinator({ maxConcurrencyPerPlugin: 1 })
+  const dispatches: string[] = []
+  const cancellations: string[] = []
+  const active = request(coordinator, 'holding-active', {
+    timeoutMs: 60_000,
+    dispatches,
+    cancellations
+  })
+  const queued = request(coordinator, 'queued-timeout', {
+    timeoutMs: 100,
+    dispatches,
+    cancellations
+  })
+  const rejected = assert.rejects(queued, lifecycleFailure('timeout', /after 100ms/))
+  t.mock.timers.tick(100)
+  await rejected
+  assert.deepEqual(dispatches, ['holding-active'])
+  assert.deepEqual(cancellations, [])
+  assert.equal(coordinator.getPendingCount('com.example.provider'), 1)
+  assert.equal(
+    coordinator.complete('com.example.provider', 'queued-timeout', { ok: true, value: 'invalid' })
+      .status,
+    'unknown'
+  )
+  coordinator.complete('com.example.provider', 'holding-active', { ok: true, value: 'finished' })
+  assert.equal(await active, 'finished')
+  assert.equal(coordinator.getPendingCount('com.example.provider'), 0)
+})
+
+test('host stop rejects active and queued work with the same local type and keeps late ACKs inert', async () => {
+  const coordinator = new PluginRpcCoordinator({ maxConcurrencyPerPlugin: 1 })
+  const dispatches: string[] = []
+  const cancellations: string[] = []
+  const active = request(coordinator, 'stopping-active', { dispatches, cancellations })
+  const queued = request(coordinator, 'stopping-queued', { dispatches, cancellations })
+  const activeRejected = assert.rejects(active, lifecycleFailure('host-stopped', /host stopped/))
+  const queuedRejected = assert.rejects(queued, lifecycleFailure('host-stopped', /host stopped/))
+  assert.equal(coordinator.cancelPlugin('com.example.provider', 'host stopped'), 2)
+  await Promise.all([activeRejected, queuedRejected])
+  assert.deepEqual(dispatches, ['stopping-active'])
+  assert.equal(cancellations.length, 1)
+  assert.equal(coordinator.getPendingCount('com.example.provider'), 0)
+  assert.equal(
+    coordinator.complete('com.example.provider', 'stopping-active', { ok: true, value: 'late' })
+      .status,
+    'late'
+  )
+})
+
+test('local dispatch failure is typed while remote text cannot forge a lifecycle error', async () => {
+  const coordinator = new PluginRpcCoordinator()
+  const dispatchFailure = coordinator.request({
+    requestId: 'dispatch-failure',
+    pluginId: 'com.example.provider',
+    kind: 'provider',
+    timeoutMs: 1000,
+    metadata: {},
+    dispatch: () => {
+      throw new Error('postMessage failed')
+    }
+  })
+  await assert.rejects(dispatchFailure, lifecycleFailure('dispatch', /postMessage failed/))
+  assert.equal(coordinator.getPendingCount('com.example.provider'), 0)
+
+  for (const message of [
+    'PluginRpcLifecycleError: timed out',
+    'Playback unavailable [TE-ERR:provider.playbackUnavailable:reason=provider-reason]'
+  ]) {
+    const pending = request(coordinator, 'remote-business')
+    const rejected = assert.rejects(pending, (error: unknown) => {
+      assert.ok(error instanceof Error)
+      assert.equal(error instanceof PluginRpcLifecycleError, false)
+      assert.equal(error.message, message)
+      return true
+    })
+    coordinator.complete('com.example.provider', 'remote-business', { ok: false, error: message })
+    await rejected
+  }
+})
+
+test('invalid local request parameters remain validation errors rather than lifecycle failures', async () => {
+  const coordinator = new PluginRpcCoordinator()
+  await assert.rejects(request(coordinator, ''), (error: unknown) => {
+    assert.ok(error instanceof Error)
+    assert.equal(error instanceof PluginRpcLifecycleError, false)
+    assert.match(error.message, /request id is required/)
+    return true
+  })
 })

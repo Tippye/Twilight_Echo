@@ -171,6 +171,20 @@ provider 是选项和首选品质持久化的唯一 owner；宿主不内置来�
 或 `unknown`（资料不足，可尝试）。`trackId` 必须匹配请求；宿主禁用明确未提供的当前歌曲选项，
 不会据候选标记推断账号权限。全局首选音质仍由原 get/set 方法维护。方法必须实际声明，旧插件不受影响。
 
+Provider 可在同一首歌曲内按自己的音质策略降级；保存的首选品质与实际播放品质分别处理，
+不能因为某曲缺源而改写首选。宿主切质控制器把明确的首选值交给 `getPlaybackUrl`，
+不根据目录候选预先拒绝 provider 的同曲降级。解析成功后仍保留进度、暂停状态和原歌曲身份。
+
+Provider 若已确定当前请求不能继续（例如同曲允许的候选已用尽），可抛出结构化错误
+`provider.playbackUnavailable`，沿用已有 IPC 错误尾标：
+`Playback unavailable [TE-ERR:provider.playbackUnavailable:reason=<URI-encoded safe reason>]`。
+`reason` 必须是已脱敏、可展示的阶段原因，不包含账号、令牌或媒体地址。宿主保留该原因，
+停止当前请求且不启动跨源搜索、同名重匹配或歌曲引用替换；旧 provider 的未标记错误维持原恢复策略。
+本地 RPC 的超时、取消、宿主停止／唤醒失败、熔断、排队过载及派发失败也会终止此次
+`getPlaybackUrl`：协调器用独立的生命周期错误类型标记，manager 仅在播放地址调用边界
+转成同一终止码，并提供固定的本地化安全原因。远端 provider 的普通业务错误保持原样；
+其它方法的调度、超时、取消和错误消息策略不变。候选链不能依赖自己最后的错误先于宿主截止时间送达。
+
 插件侧 `getPlaybackUrl` 还可返回向后兼容的 `{ streamUrl, providerSource? }`，宿主向 renderer
 继续只返回受保护的 URL 字符串。`providerSource.bytes` 是该解析实际媒体的明文字节长度；
 它作为已授权队列的元数据快照绑定，不能用列表的默认音质大小替代。主进程仅在当前队列身份和

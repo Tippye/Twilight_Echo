@@ -1,9 +1,6 @@
 import type { Track } from '../../types/music'
 import type { MediaProvider, MediaProviderPlaybackQuality } from '../../providers/mediaProvider.ts'
-import {
-  validatePlaybackQuality,
-  validateTrackPlaybackQualities
-} from '../../providers/mediaProvider.ts'
+import { validatePlaybackQuality } from '../../providers/mediaProvider.ts'
 
 export function createPlaybackQualityController(deps: {
   getTrack: () => Track | null
@@ -44,24 +41,12 @@ export function createPlaybackQualityController(deps: {
     const isCurrent = (): boolean =>
       !controller.signal.aborted && request === revision && ownsSelection() && deps.canReload()
     try {
-      if (provider.getTrackPlaybackQualities) {
-        const previous = validatePlaybackQuality(await provider.getPlaybackQuality(callOptions))
-        if (!isCurrent()) return previous
-        const available = validateTrackPlaybackQualities(
-          await provider.getTrackPlaybackQualities({ ...track }, callOptions),
-          track.id
-        )
-        if (!isCurrent()) return previous
-        const selected = available.options.find((option) => option.value === quality)
-        if (!selected || selected.availability === 'unavailable')
-          throw new Error(selected?.reason || '当前歌曲没有所选音质，现有播放继续保留')
-      }
       if (!isCurrent()) throw new Error('音质切换已取消')
       const state = validatePlaybackQuality(await provider.setPlaybackQuality(quality, callOptions))
       if (!isCurrent()) return state
 
-      // Acquire the requested quality while the existing stream keeps playing.
-      // The provider remains the only authority for preference and availability.
+      // Acquire this track while the existing stream keeps playing. The provider
+      // owns any same-track downgrade without rewriting the saved preference.
       const target = await provider.getPlaybackUrl(
         { ...track },
         { quality: state.quality, force: true },

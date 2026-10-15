@@ -588,6 +588,18 @@ export const EN_US_MESSAGES: Record<string, string> = {
   'error.audio.play_mode_sync_failed': 'Could not sync the play mode: {detail}',
   'error.audio.play_mode_switch_failed': 'Could not switch the play mode: {detail}',
 
+  'error.provider.playbackUnavailable': '{reason}',
+  'error.provider.playbackRpc.timeout':
+    'The source request timed out. Playback stopped; try again later.',
+  'error.provider.playbackRpc.cancelled': 'The source request was cancelled.',
+  'error.provider.playbackRpc.host-stopped':
+    'The source plugin stopped or could not start. Playback stopped.',
+  'error.provider.playbackRpc.circuit':
+    'The source plugin is temporarily unavailable. Try again later.',
+  'error.provider.playbackRpc.overload':
+    'The source plugin has too many pending requests. Try again later.',
+  'error.provider.playbackRpc.dispatch': 'The source request could not be sent. Playback stopped.',
+
   // ══ Network errors ═══════════════════════════════════════════════════════
   'error.network.timeout': 'The network request timed out',
   'error.network.failed': 'Network connection failed. Check your connection and retry.',
