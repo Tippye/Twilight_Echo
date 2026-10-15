@@ -73,9 +73,17 @@ test('playback preferences require an advertised quality handler and playback ca
     id: 'quality-test',
     name: 'Quality',
     capabilities: ['playbackUrl' as const],
-    supportedMethods: ['getPlaybackQuality' as const, 'setPlaybackQuality' as const]
+    supportedMethods: [
+      'getPlaybackQuality' as const,
+      'setPlaybackQuality' as const,
+      'getTrackPlaybackQualities' as const
+    ]
   }
-  for (const method of ['getPlaybackQuality', 'setPlaybackQuality'] as const) {
+  for (const method of [
+    'getPlaybackQuality',
+    'setPlaybackQuality',
+    'getTrackPlaybackQualities'
+  ] as const) {
     assert.equal(isTwilightMediaProviderMethod(method), true)
     assert.equal(providerSupportsMethod(provider, method), true)
     assert.equal(providerSupportsMethod({ ...provider, capabilities: [] }, method), false)
@@ -84,7 +92,10 @@ test('playback preferences require an advertised quality handler and playback ca
       providerSupportsMethod({ ...provider, supportedMethods: undefined }, method),
       false
     )
-    assert.equal(getProviderCallTimeoutMs(method), 15000)
+    assert.equal(
+      getProviderCallTimeoutMs(method),
+      method === 'getTrackPlaybackQualities' ? 30000 : 15000
+    )
     assert.equal(
       findProviderRoute([{ pluginId: 'public-test', providers: [provider] }], provider.id, method)
         ?.pluginId,

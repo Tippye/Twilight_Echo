@@ -343,6 +343,8 @@ watch(
 watch(
   [
     () => playbackInfo.value?.source,
+    () => playbackInfo.value?.rendererSource,
+    () => playbackInfo.value?.sourceBytes,
     () => playbackInfo.value?.codec,
     () => playbackInfo.value?.sourceSampleRate,
     () => playbackInfo.value?.sourceChannels,

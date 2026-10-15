@@ -4308,6 +4308,192 @@ test('paused play confirms native pause before publishing and keeps normal calle
   }
 })
 
+test('paused play restores the real native position advanced before the pause acknowledgement', async (t) => {
+  for (const serviceMode of [false, true]) {
+    for (const target of [0, 30.2])
+      await t.test(`${serviceMode ? 'service' : 'sync'} at ${target}`, async () => {
+        const native = serviceMode ? new FakeAudioServiceBinding() : new FakeNativeBinding()
+        const manager = makeManager({ exclusiveMode: false }, native)
+        t.after(() => manager.destroy())
+        const sought: number[] = []
+        native.Play = (source = '', position = 0) => {
+          native.playbackInfo = makePlaybackInfo({
+            source,
+            position,
+            state: 'playing',
+            nativePlaybackActive: true
+          })
+        }
+        native.Pause = () => {
+          native.playbackInfo = {
+            ...native.playbackInfo,
+            state: 'paused',
+            position: native.playbackInfo.position + 0.34
+          }
+        }
+        native.Seek = (position = 0) => {
+          sought.push(position)
+          native.playbackInfo = { ...native.playbackInfo, position }
+        }
+        await manager.play('paused.flac', target, { paused: true })
+        assert.equal(
+          native.playbackInfo.position,
+          target,
+          'binding position must not retain the Play-to-Pause drift'
+        )
+        assert.equal(native.playbackInfo.state, 'paused')
+        assert.deepEqual(sought, [target])
+        assert.equal((await manager.getPlaybackInfo()).position, target)
+      })
+  }
+})
+
+test('paused position restore uses the second CUE entry relative boundary and rejects a different same-source entry', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  const source = 'D:/Music/cue.flac'
+  await manager.loadQueue(
+    [
+      { id: 'cue:1', source, cueRange: { startSeconds: 0, endSeconds: 60, pregapSeconds: 0 } },
+      { id: 'cue:2', source, cueRange: { startSeconds: 60, endSeconds: 120, pregapSeconds: 0 } }
+    ],
+    1
+  )
+  const pause = native.Pause
+  native.Pause = () => {
+    native.playbackInfo.position += 0.34
+    pause()
+  }
+  await manager.play(source, 999, { paused: true })
+  assert.equal(native.playbackInfo.position, 60)
+  assert.equal(native.playbackInfo.queueIndex, 1)
+  assert.equal(native.seekCalls, 1)
+  assert.equal((await manager.getPlaybackInfo()).position, 60)
+  native.Pause = () => {
+    native.playbackInfo.position += 0.34
+    native.playbackInfo.queueIndex = 0
+    pause()
+  }
+  await assert.rejects(manager.play(source, 20, { paused: true }), /paused start was not confirmed/)
+  assert.equal(native.seekCalls, 1)
+  assert.equal(native.stopCalls, 0, 'another logical CUE entry must not be stopped')
+  assert.equal(native.playbackInfo.queueIndex, 0)
+})
+
+test('paused position restore accepts only the native timeline frame rounding', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  const pause = native.Pause
+  native.Pause = () => {
+    native.playbackInfo.position += 0.34
+    pause()
+  }
+  const target = 30.200012
+  native.Seek = (position = 0) => {
+    const rate = native.playbackInfo.actualSampleRate
+    native.playbackInfo.position = Math.floor(position * rate) / rate
+  }
+  await manager.play('paused.flac', target, { paused: true })
+  assert.equal(native.playbackInfo.state, 'paused')
+  assert.ok(
+    Math.abs(native.playbackInfo.position - target) <= 1 / native.playbackInfo.actualSampleRate
+  )
+  assert.equal(native.stopCalls, 0)
+})
+
+test('paused position restore rejects failed or unconfirmed seeks and cleans up only its owned source', async (t) => {
+  for (const behavior of ['throw', 'noop', 'playing', 'other-source']) {
+    await t.test(behavior, async () => {
+      const native = new FakeNativeBinding()
+      const manager = makeManager({ exclusiveMode: false }, native)
+      t.after(() => manager.destroy())
+      const pause = native.Pause
+      native.Pause = () => {
+        native.playbackInfo.position += 0.34
+        pause()
+      }
+      native.Seek = (position = 0) => {
+        if (behavior === 'throw') throw new Error('public synthetic seek failure')
+        if (behavior === 'noop') return
+        native.playbackInfo.position = position
+        if (behavior === 'playing') native.playbackInfo.state = 'playing'
+        if (behavior === 'other-source') native.playbackInfo.source = 'other.flac'
+      }
+      await assert.rejects(
+        manager.play('paused.flac', 30.2, { paused: true }),
+        /native paused start position (?:restore failed|was not confirmed)/
+      )
+      assert.equal(native.stopCalls, behavior === 'other-source' ? 0 : 1)
+      assert.equal(native.playbackInfo.state, behavior === 'other-source' ? 'paused' : 'stopped')
+    })
+  }
+})
+
+test('a superseded paused position restore cannot change or stop a newer transport after its seek acknowledgement', async (t) => {
+  for (const phase of ['Seek', 'GetPlaybackInfo'])
+    for (const action of ['play', 'next', 'stop']) {
+      await t.test(`${phase} then ${action}`, async () => {
+        const service = new FakeAudioServiceBinding()
+        const manager = makeManager({ exclusiveMode: false }, service)
+        t.after(() => manager.destroy())
+        await manager.loadQueue(
+          [
+            { id: 'old', source: 'old.flac' },
+            { id: 'new', source: 'new.flac' }
+          ],
+          0
+        )
+        service.Play = (source = '', position = 0) => {
+          service.playbackInfo = makePlaybackInfo({
+            source,
+            position,
+            state: 'playing',
+            nativePlaybackActive: true
+          })
+        }
+        service.Pause = () => {
+          service.playbackInfo.state = 'paused'
+          service.playbackInfo.position += 0.34
+        }
+        service.Seek = (position = 0) => {
+          service.playbackInfo.position = position
+        }
+        let announce!: () => void, release!: () => void
+        const started = new Promise<void>((resolve) => {
+          announce = resolve
+        })
+        const held = new Promise<void>((resolve) => {
+          release = resolve
+        })
+        const call = service.callAsync.bind(service)
+        let seekApplied = false,
+          suspended = false
+        service.callAsync = async (method, args) => {
+          const result = await call(method, args)
+          if (method === 'Seek') seekApplied = true
+          if (!suspended && seekApplied && method === phase) {
+            suspended = true
+            announce()
+            await held
+          }
+          return result
+        }
+        const pending = manager.play('old.flac', 30.2, { paused: true })
+        await started
+        if (action === 'play') await manager.play('new.flac', 9)
+        else if (action === 'next') await manager.next()
+        else await manager.stop()
+        release()
+        assert.equal((await pending).superseded, true)
+        assert.equal(service.playbackInfo.state, action === 'stop' ? 'stopped' : 'playing')
+        if (action !== 'stop') assert.equal(service.playbackInfo.source, 'new.flac')
+        assert.equal(service.stopCalls, action === 'stop' ? 1 : 0)
+      })
+    }
+})
+
 test('paused play does not toggle an already paused native source or pause a different source', async (t) => {
   const native = new FakeNativeBinding()
   const manager = makeManager({ exclusiveMode: false }, native)
@@ -4706,6 +4892,86 @@ test('playback snapshots expose queue authority only for a matching native sourc
   await manager.loadQueue([{ id: 'ncm:c', source: 'https://cdn.test/c.flac' }], 0)
   now += 1000
   assert.equal((await manager.getPlaybackInfo()).queueToken, undefined)
+})
+
+test('playback snapshots bind public source metadata to the committed queue and reject stale native owners', async (t) => {
+  const nativeBinding = new FakeNativeBinding()
+  let now = 1000
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    nativeBinding,
+    { now: () => now }
+  )
+  t.after(() => manager.destroy())
+  const raw = (suffix: string) => `http://127.0.0.1:12345/audio/${suffix}`
+  const grant = (suffix: string) => `twilight-media://audio/${suffix}`
+  await manager.loadQueue(
+    [
+      {
+        id: 'qq:same',
+        source: raw('standard'),
+        rendererSource: grant('standard'),
+        sourceBytes: 3_460_301
+      },
+      {
+        id: 'qq:other',
+        source: raw('other'),
+        rendererSource: grant('other'),
+        sourceBytes: 9_437_184
+      }
+    ],
+    0
+  )
+  await manager.play(raw('standard'))
+  const first = await manager.getPlaybackInfo()
+  assert.equal(first.source, raw('standard'))
+  assert.equal(first.rendererSource, grant('standard'))
+  assert.equal(first.sourceBytes, 3_460_301)
+  assert.equal(first.queueToken, manager.getQueueToken())
+
+  nativeBinding.playbackInfo = {
+    ...nativeBinding.playbackInfo,
+    source: raw('other'),
+    queueIndex: 1
+  }
+  now += 1000
+  const advanced = await manager.getPlaybackInfo()
+  assert.equal(advanced.rendererSource, grant('other'))
+  assert.equal(advanced.sourceBytes, 9_437_184)
+
+  await manager.loadQueue(
+    [
+      {
+        id: 'qq:same',
+        source: raw('lossless'),
+        rendererSource: grant('new-entry'),
+        sourceBytes: 26_738_688
+      }
+    ],
+    0
+  )
+  nativeBinding.playbackInfo = {
+    ...nativeBinding.playbackInfo,
+    source: raw('standard'),
+    queueIndex: 0,
+    rendererSource: grant('new-entry'),
+    sourceBytes: 999
+  }
+  now += 1000
+  const stale = await manager.getPlaybackInfo()
+  assert.equal(stale.queueToken, undefined)
+  assert.equal(stale.rendererSource, undefined)
+  assert.equal(stale.sourceBytes, undefined)
+
+  await manager.play(raw('lossless'))
+  const changed = await manager.getPlaybackInfo()
+  assert.equal(changed.rendererSource, grant('new-entry'))
+  assert.equal(changed.sourceBytes, 26_738_688)
+  assert.notEqual(changed.queueToken, first.queueToken)
+  await manager.play(raw('unbound-direct'))
+  const direct = await manager.getPlaybackInfo()
+  assert.equal(direct.rendererSource, undefined)
+  assert.equal(direct.sourceBytes, undefined)
 })
 
 test('loadQueue skips native call and queue fanout when normalized queue is unchanged', async () => {

@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events'
 import { createHash } from 'node:crypto'
+import type { AudioEngineQueueItem } from '../../shared/audioEngineTypes.ts'
 
 export interface ProviderPlaybackIdentity {
   providerId: string
@@ -91,3 +92,24 @@ export class ProviderPlaybackIdentityRegistry extends EventEmitter {
   }
 }
 export const providerPlaybackIdentities = new ProviderPlaybackIdentityRegistry()
+
+/** Bind a metadata snapshot after authorization. A later provider resolution may
+ * revoke registry aliases while this already committed stream is still playing. */
+export function bindPlaybackSourceMetadata(
+  item: AudioEngineQueueItem,
+  authorizedSource: string,
+  identities: ProviderPlaybackIdentityRegistry = providerPlaybackIdentities
+): AudioEngineQueueItem {
+  let bytes: number | null = null
+  try {
+    bytes = identities.get(authorizedSource)?.bytes ?? null
+  } catch {
+    // Revoked/unknown provider metadata conveys no size authority to a new queue.
+  }
+  return {
+    ...item,
+    source: authorizedSource,
+    rendererSource: item.source,
+    sourceBytes: bytes !== null && Number.isSafeInteger(bytes) && bytes > 0 ? bytes : undefined
+  }
+}

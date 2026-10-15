@@ -144,6 +144,7 @@ const PROVIDER_METHODS: TwilightMediaProviderMethod[] = [
   'getPlaybackUrl',
   'getPlaybackQuality',
   'setPlaybackQuality',
+  'getTrackPlaybackQualities',
   'getLyrics',
   'searchSongs',
   'searchAlbums',

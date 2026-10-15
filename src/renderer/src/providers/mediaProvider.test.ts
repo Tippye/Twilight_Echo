@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { reactive } from 'vue'
+import type { Track } from '../types/music'
 
 function readPreloadSources(): string {
   const root = new URL('../../../preload/', import.meta.url)
@@ -31,6 +32,171 @@ const { MediaProviderRegistry, getProviderLocalId, getTrackProviderId, toProvide
 const { getNcmSongId } = (await import(
   new URL('./ncmTrack.ts', import.meta.url).href
 )) as typeof import('./ncmTrack')
+
+test('track quality DTO validation binds identity and rejects malformed, duplicated, or unsafe fields', async () => {
+  const { validateTrackPlaybackQualities, validatePlaybackQuality } =
+    await import('./mediaProvider.ts')
+  const dto = {
+    trackId: 'public:song',
+    options: [{ value: 'quality', label: 'Quality', availability: 'unknown', metadataSize: 0 }]
+  }
+  assert.deepEqual(validateTrackPlaybackQualities(dto, 'public:song'), dto)
+  for (const invalid of [
+    null,
+    {},
+    { ...dto, trackId: 'public:other' },
+    { ...dto, options: 'bad' },
+    { ...dto, options: [...dto.options, ...dto.options] },
+    ...[
+      { availability: 'playable' },
+      { value: '' },
+      { label: 1 },
+      { metadataSize: 1.5 },
+      { metadataSize: -1 },
+      { metadataSize: Number.MAX_SAFE_INTEGER + 1 },
+      { reason: false }
+    ].map((fields) => ({ ...dto, options: [{ ...dto.options[0], ...fields }] }))
+  ])
+    assert.throws(() => validateTrackPlaybackQualities(invalid, 'public:song'), /音质列表无效/)
+  assert.throws(
+    () => validatePlaybackQuality({ quality: 'other', options: [{ value: 'a', label: 'A' }] }),
+    /音质设置无效/
+  )
+  assert.throws(
+    () =>
+      validatePlaybackQuality({
+        quality: 'a',
+        options: [
+          { value: 'a', label: 'A' },
+          { value: 'a', label: 'A' }
+        ]
+      }),
+    /音质设置无效/
+  )
+})
+
+test('per-track quality bridge requires advertisement and forwards cancellation without sending signals through IPC', async (t) => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  const { syncPluginProviders, useMediaProviders } = await import('./index.ts')
+  let methods: string[] | undefined
+  let listed = true
+  let capabilities = ['playbackUrl']
+  const calls: Array<{ method: string; args: unknown[]; options?: { requestId?: string } }> = []
+  const cancelled: string[] = []
+  let finish: ((value: unknown) => void) | undefined
+  let hold = false
+  let response: unknown = {
+    trackId: 'public:song',
+    options: [
+      { value: 'lossless', label: 'Lossless', availability: 'candidate', metadataSize: 1000 }
+    ]
+  }
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      api: {
+        providers: {
+          list: async () =>
+            listed
+              ? [
+                  {
+                    id: 'track-quality-test',
+                    name: 'Track quality',
+                    capabilities,
+                    supportedMethods: methods
+                  }
+                ]
+              : [],
+          call: async (
+            _id: string,
+            method: string,
+            args: unknown[],
+            options?: { requestId?: string }
+          ) => {
+            calls.push({ method, args, options })
+            if (hold)
+              return new Promise((resolve) => {
+                finish = resolve
+              })
+            return response
+          },
+          cancel: (requestId: string) => {
+            cancelled.push(requestId)
+          }
+        }
+      }
+    }
+  })
+  const registry = useMediaProviders()
+  t.after(async () => {
+    listed = false
+    await syncPluginProviders()
+    registry.unregister('track-quality-test')
+    if (previous) Object.defineProperty(globalThis, 'window', previous)
+    else Reflect.deleteProperty(globalThis, 'window')
+  })
+  await syncPluginProviders()
+  assert.equal(registry.get('track-quality-test')?.getTrackPlaybackQualities, undefined)
+  methods = ['getTrackPlaybackQualities', 'getPlaybackQuality', 'setPlaybackQuality']
+  await syncPluginProviders()
+  const provider = registry.get('track-quality-test')!
+  const track: Track = {
+    id: 'public:song',
+    title: 'Public fixture',
+    source: 'track-quality-test',
+    artist: 'Fixture artist',
+    album: 'Fixture album',
+    filePath: '',
+    fileName: '',
+    duration: 120,
+    size: 0,
+    cover: null,
+    lyrics: null
+  }
+  assert.deepEqual(await provider.getTrackPlaybackQualities!(track), response)
+  assert.deepEqual(calls[0].args, [track])
+  const aborted = new AbortController()
+  aborted.abort()
+  const before = calls.length
+  await assert.rejects(
+    provider.getTrackPlaybackQualities!(track, { signal: aborted.signal }),
+    /cancelled/
+  )
+  await assert.rejects(provider.getPlaybackQuality!({ signal: aborted.signal }), /cancelled/)
+  await assert.rejects(
+    provider.setPlaybackQuality!('lossless', { signal: aborted.signal }),
+    /cancelled/
+  )
+  await assert.rejects(
+    provider.getPlaybackUrl!(track, { quality: 'lossless' }, { signal: aborted.signal }),
+    /cancelled/
+  )
+  assert.equal(calls.length, before)
+  hold = true
+  const controller = new AbortController()
+  const held = provider.getTrackPlaybackQualities!(track, { signal: controller.signal })
+  await Promise.resolve()
+  controller.abort()
+  assert.equal(cancelled.length, 1)
+  assert.equal(cancelled[0], calls.at(-1)?.options?.requestId)
+  assert.equal(JSON.stringify(calls.at(-1)?.args).includes('signal'), false)
+  finish!(response)
+  await assert.rejects(
+    held,
+    /cancelled/,
+    'a response after abort must not become fresh availability'
+  )
+  hold = false
+  response = { trackId: 'public:other', options: [] }
+  await assert.rejects(provider.getTrackPlaybackQualities!(track), /音质列表无效/)
+  methods = []
+  await syncPluginProviders()
+  assert.equal(registry.get('track-quality-test')?.getTrackPlaybackQualities, undefined)
+  methods = ['getTrackPlaybackQualities']
+  capabilities = []
+  await syncPluginProviders()
+  assert.equal(registry.get('track-quality-test')?.getTrackPlaybackQualities, undefined)
+})
 
 test('extracts provider prefixes from source or track id', () => {
   assert.equal(getTrackProviderId({ id: 'bili:BV1xx', source: undefined }), 'bili')

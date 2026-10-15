@@ -3,9 +3,86 @@ import type { Track } from '../types/music'
 import { getNcmSongId } from './ncmTrack.ts'
 import { unifiedSearchSongs, type UnifiedSearchResult } from '../utils/unifiedMusicSearch.ts'
 import type { NetworkEntry } from '../../../shared/networkSources.ts'
-import type { ProviderPlaybackQuality } from '../../../shared/mediaProviderMethods.ts'
+import type {
+  ProviderPlaybackQuality,
+  ProviderTrackPlaybackQualities
+} from '../../../shared/mediaProviderMethods.ts'
 
 export type MediaProviderPlaybackQuality = ProviderPlaybackQuality
+export type MediaProviderTrackPlaybackQualities = ProviderTrackPlaybackQualities
+
+export function validatePlaybackQuality(value: unknown): MediaProviderPlaybackQuality {
+  if (!value || typeof value !== 'object') throw new Error('音质设置无效，请重试')
+  const state = value as Partial<MediaProviderPlaybackQuality>
+  if (
+    typeof state.quality !== 'string' ||
+    !Array.isArray(state.options) ||
+    !state.options.length ||
+    state.options.length > 64
+  )
+    throw new Error('音质设置无效，请重试')
+  const seen = new Set<string>()
+  const options = state.options.map((entry) => {
+    if (
+      !entry ||
+      typeof entry !== 'object' ||
+      typeof entry.value !== 'string' ||
+      !entry.value.trim() ||
+      entry.value.length > 128 ||
+      seen.has(entry.value) ||
+      typeof entry.label !== 'string' ||
+      !entry.label.trim() ||
+      entry.label.length > 256
+    )
+      throw new Error('音质设置无效，请重试')
+    seen.add(entry.value)
+    return { value: entry.value, label: entry.label }
+  })
+  if (!seen.has(state.quality)) throw new Error('音质设置无效，请重试')
+  return { quality: state.quality, options }
+}
+
+/** Validate the optional IPC DTO at its renderer boundary and bind it to its request. */
+export function validateTrackPlaybackQualities(
+  value: unknown,
+  trackId: string
+): MediaProviderTrackPlaybackQualities {
+  const invalid = (): never => {
+    throw new Error('当前歌曲的音质列表无效，请重试')
+  }
+  if (!value || typeof value !== 'object') return invalid()
+  const result = value as Partial<MediaProviderTrackPlaybackQualities>
+  if (result.trackId !== trackId || !Array.isArray(result.options) || result.options.length > 64)
+    return invalid()
+  const seen = new Set<string>()
+  const options = result.options.map((entry) => {
+    if (!entry || typeof entry !== 'object') return invalid()
+    const { value, label, availability, reason, metadataSize } = entry
+    if (
+      typeof value !== 'string' ||
+      !value.trim() ||
+      value.length > 128 ||
+      seen.has(value) ||
+      typeof label !== 'string' ||
+      !label.trim() ||
+      label.length > 256 ||
+      !['candidate', 'unavailable', 'unknown'].includes(availability) ||
+      (reason !== undefined &&
+        (typeof reason !== 'string' || !reason.trim() || reason.length > 500)) ||
+      (metadataSize !== undefined && (!Number.isSafeInteger(metadataSize) || metadataSize < 0))
+    )
+      return invalid()
+    seen.add(value)
+    return {
+      value,
+      label,
+      availability,
+      ...(reason !== undefined ? { reason } : {}),
+      ...(metadataSize !== undefined ? { metadataSize } : {})
+    }
+  })
+  return { trackId, options }
+}
 
 export type MediaProviderCapability =
   | 'search'
@@ -182,9 +259,20 @@ export interface MediaProvider {
   capabilities: MediaProviderCapability[]
   health?: MediaProviderHealth
   isEnabled?: () => boolean | Promise<boolean>
-  getPlaybackUrl?: (track: Track, options?: PlaybackUrlOptions) => Promise<string | null>
-  getPlaybackQuality?: () => Promise<MediaProviderPlaybackQuality>
-  setPlaybackQuality?: (quality: string) => Promise<MediaProviderPlaybackQuality>
+  getPlaybackUrl?: (
+    track: Track,
+    options?: PlaybackUrlOptions,
+    callOptions?: MediaProviderCallOptions
+  ) => Promise<string | null>
+  getPlaybackQuality?: (options?: MediaProviderCallOptions) => Promise<MediaProviderPlaybackQuality>
+  setPlaybackQuality?: (
+    quality: string,
+    options?: MediaProviderCallOptions
+  ) => Promise<MediaProviderPlaybackQuality>
+  getTrackPlaybackQualities?: (
+    track: Track,
+    options?: MediaProviderCallOptions
+  ) => Promise<MediaProviderTrackPlaybackQualities>
   getLyrics?: (track: Track, options?: MediaProviderCallOptions) => Promise<MediaProviderLyrics>
   searchSongs?: (
     keywords: string,

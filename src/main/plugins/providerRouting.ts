@@ -41,6 +41,7 @@ export function getProviderCallTimeoutMs(method: TwilightMediaProviderMethod): n
   if (
     [
       'getPlaybackUrl',
+      'getTrackPlaybackQualities',
       'getLyrics',
       'searchSongs',
       'searchAlbums',
@@ -240,6 +241,7 @@ export const TWILIGHT_MEDIA_PROVIDER_METHODS = [
   'getPlaybackUrl',
   'getPlaybackQuality',
   'setPlaybackQuality',
+  'getTrackPlaybackQualities',
   'getLyrics',
   'searchSongs',
   'searchAlbums',
@@ -315,6 +317,7 @@ const PROVIDER_METHOD_CAPABILITIES: Partial<
   getPlaybackUrl: 'playbackUrl',
   getPlaybackQuality: 'playbackUrl',
   setPlaybackQuality: 'playbackUrl',
+  getTrackPlaybackQualities: 'playbackUrl',
   getLyrics: 'lyrics',
   searchSongs: 'search',
   searchAlbums: 'search',
@@ -385,7 +388,9 @@ export function providerSupportsMethod(
   // New optional quality methods require an actual handler advertisement;
   // older providers may declare playbackUrl without implementing preferences.
   if (
-    (method === 'getPlaybackQuality' || method === 'setPlaybackQuality') &&
+    (method === 'getPlaybackQuality' ||
+      method === 'setPlaybackQuality' ||
+      method === 'getTrackPlaybackQualities') &&
     !provider.supportedMethods?.includes(method)
   )
     return false

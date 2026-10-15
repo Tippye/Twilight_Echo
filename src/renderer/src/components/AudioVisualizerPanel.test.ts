@@ -105,6 +105,112 @@ test('visualizer ignores stale playback data and unknown lossy source bit depth'
   assert.equal(lossy.bitdepth, '')
 })
 
+test('visualizer uses main-bound grant metadata and current plaintext bytes after quality switches', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/standard',
+    size: 3_460_301,
+    format: 'flac',
+    sampleRate: 96000,
+    bitDepth: 24,
+    bitrate: 2000000
+  }
+  const standard = resolveVisualizerAudioMetadata(track, {
+    source: 'http://127.0.0.1:12345/audio/standard',
+    rendererSource: track.streamUrl,
+    sourceBytes: 3_460_301,
+    codec: 'mp3float',
+    sourceSampleRate: 44100,
+    sourceChannels: 2,
+    sourceBitDepth: 32,
+    bitrate: 128000
+  })
+  assert.equal(standard.format, 'MP3')
+  assert.equal(standard.samplerate, '44.1 kHz')
+  assert.equal(standard.bitdepth, '')
+  assert.equal(standard.bitrate, '128 kbps')
+  assert.equal(standard.filesize, '3.3 MB')
+  const lossless = resolveVisualizerAudioMetadata(
+    { ...track, streamUrl: 'twilight-media://audio/lossless' },
+    {
+      source: 'http://127.0.0.1:12345/audio/lossless',
+      rendererSource: 'twilight-media://audio/lossless',
+      sourceBytes: 26_738_688,
+      codec: 'flac',
+      sourceSampleRate: 96000,
+      sourceChannels: 2,
+      sourceBitDepth: 24,
+      bitrate: 2000000
+    }
+  )
+  assert.equal(lossless.format, 'FLAC')
+  assert.equal(lossless.samplerate, '96.0 kHz')
+  assert.equal(lossless.bitdepth, '24-bit')
+  assert.equal(lossless.filesize, '25.5 MB')
+  const panel = readFileSync(new URL('./AudioVisualizerPanel.vue', import.meta.url), 'utf8')
+  assert.match(panel, /\(\) => playbackInfo\.value\?\.rendererSource/)
+  assert.match(panel, /\(\) => playbackInfo\.value\?\.sourceBytes/)
+})
+
+test('visualizer rejects old grant metadata for the same song and never substitutes search size', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/new-entry',
+    size: 3_460_301
+  }
+  const info = {
+    source: 'http://127.0.0.1:12345/audio/old-entry',
+    rendererSource: 'twilight-media://audio/old-entry',
+    sourceBytes: 26_738_688,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceChannels: 2,
+    sourceBitDepth: 24,
+    bitrate: 2000000
+  }
+  const stale = resolveVisualizerAudioMetadata(track, info)
+  assert.equal(stale.samplerate, '')
+  assert.equal(stale.bitdepth, '')
+  assert.equal(stale.filesize, '')
+  for (const sourceBytes of [undefined, 0, -1, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    const current = resolveVisualizerAudioMetadata(track, {
+      ...info,
+      rendererSource: track.streamUrl,
+      sourceBytes
+    })
+    assert.equal(current.filesize, '')
+    assert.equal(current.format, 'FLAC')
+  }
+})
+
+test('visualizer preserves local file size and PCM container names', () => {
+  const metadata = resolveVisualizerAudioMetadata(
+    {
+      id: 'D:/Music/fixture.wav',
+      filePath: 'D:/Music/fixture.wav',
+      fileName: 'fixture.wav',
+      size: 26_738_688
+    },
+    {
+      source: 'D:/Music/fixture.wav',
+      codec: 'pcm_s24le',
+      sourceSampleRate: 96000,
+      sourceBitDepth: 24,
+      sourceChannels: 2,
+      bitrate: 4608000
+    }
+  )
+  assert.equal(metadata.format, 'WAV')
+  assert.equal(metadata.filesize, '25.5 MB')
+  assert.equal(metadata.bitdepth, '24-bit')
+})
+
 test('audio visualizer renderer avoids random low-frequency texture', () => {
   const visualizer = readFileSync(
     new URL('../../../../resources/audio-visualizer/index.html', import.meta.url),

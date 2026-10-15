@@ -84,7 +84,10 @@ import { assertTrustedIpcSender } from '../security/electronSecurity.ts'
 import { remoteMediaGrants } from '../security/remoteMediaGrants.ts'
 import { TwilightAutoMixCoordinator } from './twilightAutoMixCoordinator.ts'
 import { TwilightAutoMixWindowCache } from './twilightAutoMixCache.ts'
-import { providerPlaybackIdentities } from './providerPlaybackIdentity.ts'
+import {
+  bindPlaybackSourceMetadata,
+  providerPlaybackIdentities
+} from './providerPlaybackIdentity.ts'
 import {
   TWILIGHT_AUTOMIX_AVAILABLE,
   effectiveAutoMixMode,
@@ -966,7 +969,9 @@ function registerAudioEngineIpcHandlers(): void {
         queue.map((item) => item.source),
         resolveAuthorizedPlaybackSource
       )
-      const authorizedQueue = queue.map((item) => ({ ...item, source: sources.get(item.source)! }))
+      const authorizedQueue = queue.map((item) =>
+        bindPlaybackSourceMetadata(item, sources.get(item.source)!)
+      )
       const normalizedStartIndex = normalizeInteger(
         startIndex,
         'queue start index',

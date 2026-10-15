@@ -165,6 +165,17 @@ provider 是选项和首选品质持久化的唯一 owner；宿主不内置来�
 沿用当前播放入口、进度与暂停状态。这里展示首选音质，实际解码／输出格式仍由 HiFi 信息提供。
 未声明这两个方法的现有插件保持原行为。此可选扩展从任务构建 `1.3.1-qq.2` 提供，API 主版本仍为3。
 
+从任务构建 `1.3.1-qq.3` 起，provider 可另外声明 `getTrackPlaybackQualities(track, context)`，
+返回 `{ trackId, options: [{ value, label, availability, reason?, metadataSize? }] }`。
+`availability` 为 `candidate`（有该格式记录，仍需当前会话与媒体校验）、`unavailable`（明确未提供）
+或 `unknown`（资料不足，可尝试）。`trackId` 必须匹配请求；宿主禁用明确未提供的当前歌曲选项，
+不会据候选标记推断账号权限。全局首选音质仍由原 get/set 方法维护。方法必须实际声明，旧插件不受影响。
+
+插件侧 `getPlaybackUrl` 还可返回向后兼容的 `{ streamUrl, providerSource? }`，宿主向 renderer
+继续只返回受保护的 URL 字符串。`providerSource.bytes` 是该解析实际媒体的明文字节长度；
+它作为已授权队列的元数据快照绑定，不能用列表的默认音质大小替代。主进程仅在当前队列身份和
+实际 native source 匹配时公开 `rendererSource` 和 `sourceBytes`，播放页据此使用实际解码信息。
+
 Phase 3 的受控 UI 注入只渲染宿主批准的 DTO：`sidebarPage`、`playerBarButton`
 和 `settingsPanel` 均通过 command 回到插件宿主进程执行业务逻辑，不向插件开放
 任意 DOM 权限。主题插件由用户在外观设置中显式选择后生效；宿主一次只应用一个

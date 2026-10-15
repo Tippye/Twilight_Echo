@@ -1,9 +1,13 @@
-export type { ProviderPlaybackQuality } from '../../packages/plugin-api/src/index.ts'
+export type {
+  ProviderPlaybackQuality,
+  ProviderTrackPlaybackQualities
+} from '../../packages/plugin-api/src/index.ts'
 
 export type TwilightMediaProviderMethod =
   | 'getPlaybackUrl'
   | 'getPlaybackQuality'
   | 'setPlaybackQuality'
+  | 'getTrackPlaybackQualities'
   | 'getLyrics'
   | 'searchSongs'
   | 'searchAlbums'

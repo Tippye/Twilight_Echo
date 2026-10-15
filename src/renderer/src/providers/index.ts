@@ -1,7 +1,9 @@
 import {
   isPluginProviderEnabled,
   MediaProviderRegistry,
-  toProviderIpcArgs
+  toProviderIpcArgs,
+  validateTrackPlaybackQualities,
+  validatePlaybackQuality
 } from './mediaProvider.ts'
 import type {
   MediaProvider,
@@ -14,6 +16,7 @@ import type {
   MediaProviderPlaylistSummary,
   MediaProviderPlaylistTracksPage,
   MediaProviderPlaybackQuality,
+  MediaProviderTrackPlaybackQualities,
   MediaProviderProfile,
   MediaProviderSearchResult,
   MediaProviderUserSummary
@@ -112,12 +115,14 @@ export async function syncPluginProviders(): Promise<void> {
             options.signal.addEventListener('abort', onAbort, { once: true })
           }
           try {
-            return (await api.call(
+            const result = (await api.call(
               provider.id,
               method as never,
               toProviderIpcArgs(args),
               requestId ? { requestId } : undefined
             )) as T
+            if (options?.signal?.aborted) throw new Error('Provider call was cancelled')
+            return result
           } finally {
             void refreshPluginProviderHealth()
             if (options?.signal && onAbort) {
@@ -139,12 +144,37 @@ export async function syncPluginProviders(): Promise<void> {
             : undefined
         const getPlaybackQuality: MediaProvider['getPlaybackQuality'] =
           provider.capabilities.includes('playbackUrl') && supports('getPlaybackQuality')
-            ? () => callProvider<MediaProviderPlaybackQuality>('getPlaybackQuality')
+            ? async (options) =>
+                validatePlaybackQuality(
+                  await callProvider<MediaProviderPlaybackQuality>(
+                    'getPlaybackQuality',
+                    [],
+                    options
+                  )
+                )
             : undefined
         const setPlaybackQuality: MediaProvider['setPlaybackQuality'] =
           provider.capabilities.includes('playbackUrl') && supports('setPlaybackQuality')
-            ? (quality) =>
-                callProvider<MediaProviderPlaybackQuality>('setPlaybackQuality', [quality])
+            ? async (quality, options) =>
+                validatePlaybackQuality(
+                  await callProvider<MediaProviderPlaybackQuality>(
+                    'setPlaybackQuality',
+                    [quality],
+                    options
+                  )
+                )
+            : undefined
+        const getTrackPlaybackQualities: MediaProvider['getTrackPlaybackQualities'] =
+          provider.capabilities.includes('playbackUrl') && supports('getTrackPlaybackQualities')
+            ? async (track, options) =>
+                validateTrackPlaybackQualities(
+                  await callProvider<MediaProviderTrackPlaybackQualities>(
+                    'getTrackPlaybackQualities',
+                    [track],
+                    options
+                  ),
+                  track.id
+                )
             : undefined
         if (mediaProviders.get(provider.id)) {
           mediaProviders.update(provider.id, {
@@ -154,7 +184,8 @@ export async function syncPluginProviders(): Promise<void> {
             isEnabled: () => isPluginProviderEnabled(provider.health),
             searchAlbums,
             getPlaybackQuality,
-            setPlaybackQuality
+            setPlaybackQuality,
+            getTrackPlaybackQualities
           })
           continue
         }
@@ -166,10 +197,12 @@ export async function syncPluginProviders(): Promise<void> {
           health: provider.health as MediaProviderHealth | undefined,
           isEnabled: () => isPluginProviderEnabled(provider.health),
           getPlaybackUrl: provider.capabilities.includes('playbackUrl')
-            ? (track, options) => callProvider<string | null>('getPlaybackUrl', [track, options])
+            ? (track, options, callOptions) =>
+                callProvider<string | null>('getPlaybackUrl', [track, options], callOptions)
             : undefined,
           getPlaybackQuality,
           setPlaybackQuality,
+          getTrackPlaybackQualities,
           getLyrics: provider.capabilities.includes('lyrics')
             ? (track, options) =>
                 callProvider<{

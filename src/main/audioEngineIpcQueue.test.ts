@@ -5,6 +5,7 @@ import { normalizeCueRange } from '../shared/cue.ts'
 import { stripTypeScriptTypes } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { resolveAuthorizationBatch } from './security/authorizationBatch.ts'
+import { bindPlaybackSourceMetadata } from './audio/providerPlaybackIdentity.ts'
 
 function readPreloadSources(): string {
   const root = new URL('../preload/', import.meta.url)
@@ -54,6 +55,34 @@ test('audioEngine loadQueue IPC accepts renderer queue items with source field',
     false,
     'source must be checked before filePath because renderer queue items no longer include filePath'
   )
+})
+
+test('queue normalization drops untrusted renderer source aliases and byte counts', () => {
+  const start = source.indexOf('export function toQueueItem(')
+  const declaration = source
+    .slice(start, source.indexOf('\nasync function authorizeAudioProcessingSettings', start))
+    .replace('export function', 'function')
+  const textStart = source.indexOf('function normalizeQueueText(')
+  const textDeclaration = source.slice(
+    textStart,
+    source.indexOf('\nasync function resolveAuthorizedPlaybackSource', textStart)
+  )
+  const context = {
+    normalizeIpcString: (value: string) => value,
+    MAX_AUDIO_SOURCE_LENGTH: 8192,
+    normalizeCueRange,
+    result: null as Record<string, unknown> | null
+  }
+  runInNewContext(
+    stripTypeScriptTypes(`${textDeclaration}\n${declaration}\nresult = toQueueItem({
+    id: 'qq:fixture', source: 'twilight-media://audio/fixture',
+    rendererSource: 'twilight-media://audio/forged', sourceBytes: 123
+  })`),
+    context
+  )
+  assert.equal(context.result?.source, 'twilight-media://audio/fixture')
+  assert.equal(Object.hasOwn(context.result!, 'rendererSource'), false)
+  assert.equal(Object.hasOwn(context.result!, 'sourceBytes'), false)
 })
 
 test('audio engine cold start passes persisted software volume into the manager', () => {
@@ -136,7 +165,7 @@ test('audioEngine IPC normalizes untrusted renderer parameters', () => {
   )
   assert.match(source, /queue\.length !== items\.length/)
   assert.match(source, /await resolveAuthorizationBatch\(/)
-  assert.match(source, /source: sources\.get\(item\.source\)!/)
+  assert.match(source, /bindPlaybackSourceMetadata\(item, sources\.get\(item\.source\)!\)/)
   assert.match(source, /normalizeIpcString\(source, 'audio source'/)
   assert.match(source, /await resolveAuthorizedPlaybackSource\(/)
   assert.match(source, /normalizeFiniteNumber\(time, 'seek time', 0, 0, Number\.MAX_SAFE_INTEGER\)/)
@@ -182,6 +211,7 @@ test('loadQueue authorizes duplicate sources once, retains CUE entries, and awai
     toQueueItem: () => {},
     normalizeInteger: (index: number) => index,
     resolveAuthorizationBatch,
+    bindPlaybackSourceMetadata,
     resolveAuthorizedPlaybackSource: async () => {
       resolutions++
       return 'canonical.flac'
@@ -207,6 +237,7 @@ test('loadQueue authorizes duplicate sources once, retains CUE entries, and awai
   assert.equal(resolutions, 1)
   assert.equal(received.length, 5000)
   assert.equal(received[17].source, 'canonical.flac')
+  assert.equal((received[17] as { rendererSource?: string }).rendererSource, 'same.flac')
   assert.equal(received[17].id, '17')
   assert.equal(received[17].cueRange, items[17].cueRange)
   assert.equal(completed, false)

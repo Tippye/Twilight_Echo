@@ -342,7 +342,8 @@ export class PlaybackController {
     // Startup preparation can outlive a next/previous/stop or a newer play.
     // Never dispatch the old source after a newer transport action owns playback.
     if (!isCurrent()) return superseded
-    const current = this.queue[this.playbackInfo.queueIndex]
+    const selectedQueueIndex = this.playbackInfo.queueIndex
+    const current = this.queue[selectedQueueIndex]
     const duration = current?.source === source ? (current.duration ?? 0) : 0
     const boundedStartTime = clampQueueItemPosition(current, startTime)
     const firstErrorContext = {
@@ -430,10 +431,15 @@ export class PlaybackController {
     let nativeInfo = nativeStarted ? await this.readNativePlaybackInfoAsync() : null
     if (!isCurrent()) return superseded
     if (nativeStarted && paused) {
+      const ownsPausedSource = (info: PlaybackInfo | null): info is PlaybackInfo =>
+        info?.source === source &&
+        (current?.source !== source ||
+          info.queueIndex === selectedQueueIndex ||
+          (!current?.cueRange && info.queueIndex < 0))
       const stopOwnedStart = async (): Promise<void> => {
         if (!isCurrent() || !nativeBinding || nativeBinding !== this.native) return
         const currentInfo = await this.readNativePlaybackInfoAsync()
-        if (!isCurrent() || nativeBinding !== this.native || currentInfo?.source !== source) return
+        if (!isCurrent() || nativeBinding !== this.native || !ownsPausedSource(currentInfo)) return
         // A failed paused start must not leave its own new source running.
         // This internal cleanup retains the same transport owner; a newer
         // play/next/stop must never be stopped by this failed transaction.
@@ -456,7 +462,7 @@ export class PlaybackController {
       // Pause belongs to this play transaction, not a separate public toggle.
       // Service calls fence their native-process generation; also retain this
       // binding, source and transport owner across every awaited confirmation.
-      if (!nativeBinding || nativeBinding !== this.native || nativeInfo?.source !== source) {
+      if (!nativeBinding || nativeBinding !== this.native || !ownsPausedSource(nativeInfo)) {
         throw nativeAudioError(
           'audio.pause_failed',
           'native paused start could not confirm its source'
@@ -483,10 +489,49 @@ export class PlaybackController {
         nativeInfo = await this.readNativePlaybackInfoAsync()
         if (!isCurrent() || nativeBinding !== this.native) return superseded
       }
-      if (nativeInfo?.source !== source || nativeInfo.state !== 'paused') {
+      if (!ownsPausedSource(nativeInfo) || nativeInfo?.state !== 'paused') {
         await stopOwnedStart()
         if (!isCurrent()) return superseded
         throw nativeAudioError('audio.pause_failed', 'native paused start was not confirmed')
+      }
+      const positionRestored = (info: PlaybackInfo | null): boolean => {
+        if (!ownsPausedSource(info) || info?.state !== 'paused' || !Number.isFinite(info.position))
+          return false
+        // The native timeline is renderedFrames/rate. Seek rounds/truncates to
+        // that frame; allow exactly one frame, never Play-to-Pause elapsed time.
+        const rate =
+          info.isDsd && info.dsdMode === 'native'
+            ? info.decodedSampleRate
+            : info.actualSampleRate || info.outputSampleRate
+        const frame = Number.isFinite(rate) && rate > 0 ? 1 / rate : 0
+        return Math.abs(info.position - boundedStartTime) <= frame
+      }
+      if (!positionRestored(nativeInfo)) {
+        try {
+          if (typeof nativeBinding.callAsync === 'function')
+            await nativeBinding.callAsync('Seek', [boundedStartTime])
+          else nativeBinding.Seek(boundedStartTime)
+        } catch (error) {
+          if (!isCurrent() || nativeBinding !== this.native) return superseded
+          await stopOwnedStart()
+          if (!isCurrent()) return superseded
+          throw nativeAudioError(
+            'audio.pause_failed',
+            'native paused start position restore failed',
+            error instanceof Error ? error.message : String(error)
+          )
+        }
+        if (!isCurrent() || nativeBinding !== this.native) return superseded
+        nativeInfo = await this.readNativePlaybackInfoAsync()
+        if (!isCurrent() || nativeBinding !== this.native) return superseded
+        if (!positionRestored(nativeInfo)) {
+          await stopOwnedStart()
+          if (!isCurrent()) return superseded
+          throw nativeAudioError(
+            'audio.pause_failed',
+            'native paused start position was not confirmed'
+          )
+        }
       }
     }
     if (nativeInfo?.source === source) {
@@ -1712,10 +1757,13 @@ export class PlaybackController {
   private playbackSnapshot(): PlaybackInfo {
     // A stale native sample must not inherit authority from a newly loaded queue.
     const indexed = this.queue[this.playbackInfo.queueIndex]
+    const ownsQueueSource = !!this.queueToken && indexed?.source === this.playbackInfo.source
     return {
       ...this.playbackInfo,
       nativePlaybackActive: this.nativePlaybackActive,
-      queueToken: indexed?.source === this.playbackInfo.source ? this.queueToken : undefined
+      queueToken: ownsQueueSource ? this.queueToken : undefined,
+      rendererSource: ownsQueueSource ? indexed.rendererSource : undefined,
+      sourceBytes: ownsQueueSource ? indexed.sourceBytes : undefined
     }
   }
 

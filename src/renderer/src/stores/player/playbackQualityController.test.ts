@@ -187,3 +187,113 @@ test('loading, casting, or missing optional methods do not mutate a preference',
   await assert.rejects(f.controller.changeQuality('lossless'), /不支持切换/)
   assert.deepEqual(f.saved, [])
 })
+
+test('per-track availability is rechecked before persistence; unavailable or missing choices do not write', async () => {
+  for (const missing of [false, true]) {
+    const f = fixture()
+    f.provider.getTrackPlaybackQualities = async (track) => ({
+      trackId: track.id,
+      options: missing
+        ? []
+        : [
+            {
+              value: 'spatial',
+              label: 'Spatial',
+              availability: 'unavailable',
+              reason: '该歌曲暂无此音质'
+            }
+          ]
+    })
+    await assert.rejects(
+      f.controller.changeQuality('spatial'),
+      missing ? /没有所选音质/ : /暂无此音质/
+    )
+    assert.deepEqual(f.saved, [])
+    assert.deepEqual(f.resolves, [])
+    assert.deepEqual(f.reloads, [])
+  }
+})
+
+test('unknown catalogue evidence may be attempted and cancelled calls reach the availability owner', async () => {
+  const f = fixture()
+  const held =
+    deferred<
+      NonNullable<Awaited<ReturnType<NonNullable<MediaProvider['getTrackPlaybackQualities']>>>>
+    >()
+  let querySignal: AbortSignal | undefined
+  f.provider.getTrackPlaybackQualities = async (_track, options) => {
+    querySignal = options?.signal
+    return held.promise
+  }
+  const abort = new AbortController()
+  const changing = f.controller.changeQuality('lossless', { signal: abort.signal })
+  await Promise.resolve()
+  assert.deepEqual(f.saved, [])
+  abort.abort()
+  assert.equal(querySignal?.aborted, true)
+  held.resolve({
+    trackId: f.track.id,
+    options: [{ value: 'lossless', label: 'Lossless', availability: 'unknown' }]
+  })
+  await changing
+  assert.deepEqual(f.saved, [])
+  f.provider.getTrackPlaybackQualities = async (track) => ({
+    trackId: track.id,
+    options: [{ value: 'lossless', label: 'Lossless', availability: 'unknown' }]
+  })
+  await f.controller.changeQuality('lossless')
+  assert.deepEqual(f.saved, ['lossless'])
+  assert.equal(f.reloads.length, 1)
+})
+
+test('a changed owner while availability is held cannot write or reload; pre-abort performs no work', async () => {
+  for (const drift of ['entry', 'provider', 'new-selection']) {
+    const f = fixture()
+    const held =
+      deferred<
+        NonNullable<Awaited<ReturnType<NonNullable<MediaProvider['getTrackPlaybackQualities']>>>>
+      >()
+    let queried = 0
+    let firstSignal: AbortSignal | undefined
+    f.provider.getTrackPlaybackQualities = async (track, options) => {
+      if (++queried === 1) {
+        firstSignal = options?.signal
+        return held.promise
+      }
+      return {
+        trackId: track.id,
+        options: [{ value: 'latest', label: 'Latest', availability: 'candidate' }]
+      }
+    }
+    const changing = f.controller.changeQuality('lossless')
+    await Promise.resolve()
+    if (drift === 'entry') f.replaceTrack({ ...f.track, queueEntryId: 'next-copy' })
+    if (drift === 'provider') f.invalidate()
+    if (drift === 'new-selection') {
+      await f.controller.changeQuality('latest')
+      assert.equal(firstSignal?.aborted, true)
+    }
+    held.resolve({
+      trackId: 'fake:song',
+      options: [{ value: 'lossless', label: 'Lossless', availability: 'candidate' }]
+    })
+    await changing
+    assert.deepEqual(f.saved, drift === 'new-selection' ? ['latest'] : [], drift)
+    assert.equal(f.reloads.length, drift === 'new-selection' ? 1 : 0, drift)
+  }
+  const f = fixture()
+  const abort = new AbortController()
+  abort.abort()
+  await assert.rejects(f.controller.changeQuality('lossless', { signal: abort.signal }), /取消/)
+  assert.deepEqual(f.saved, [])
+})
+
+test('mismatched catalogue identities and malformed options fail before changing preference', async () => {
+  const f = fixture()
+  f.provider.getTrackPlaybackQualities = async () => ({
+    trackId: 'fake:other',
+    options: [{ value: 'lossless', label: 'Lossless', availability: 'candidate' }]
+  })
+  await assert.rejects(f.controller.changeQuality('lossless'), /音质列表无效/)
+  assert.deepEqual(f.saved, [])
+})

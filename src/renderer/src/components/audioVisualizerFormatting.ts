@@ -45,6 +45,7 @@ export function formatVisualizerSource(track: { id: string; source?: string }): 
 
 interface VisualizerTrackMetadata {
   id: string
+  source?: string
   filePath: string
   fileName: string
   streamUrl?: string | null
@@ -57,6 +58,8 @@ interface VisualizerTrackMetadata {
 
 interface VisualizerPlaybackMetadata {
   source: string
+  rendererSource?: string
+  sourceBytes?: number
   codec: string
   sourceSampleRate: number
   sourceChannels?: number
@@ -96,17 +99,32 @@ export function resolveVisualizerAudioMetadata(
 } {
   const sourceMatches =
     !!playbackInfo?.source &&
-    (playbackInfo.source === track.streamUrl || playbackInfo.source === track.filePath)
+    [playbackInfo.rendererSource, playbackInfo.source].some(
+      (source) => !!source && (source === track.streamUrl || source === track.filePath)
+    )
   const source = sourceMatches ? playbackInfo : null
   const codec = source?.codec.trim().toLowerCase() ?? ''
   const losslessCodec = /^(flac|alac|ape|wavpack|tta|dsd|dst|pcm_)/.test(codec)
-  const sampleRate = positiveNumber(source?.sourceSampleRate) ?? positiveNumber(track.sampleRate)
-  const bitDepth =
-    (losslessCodec ? positiveNumber(source?.sourceBitDepth) : undefined) ??
-    positiveNumber(track.bitDepth)
-  const bitrate = positiveNumber(source?.bitrate) ?? positiveNumber(track.bitrate)
+  const sampleRate = source
+    ? positiveNumber(source.sourceSampleRate)
+    : positiveNumber(track.sampleRate)
+  const bitDepth = source
+    ? losslessCodec
+      ? positiveNumber(source.sourceBitDepth)
+      : undefined
+    : positiveNumber(track.bitDepth)
+  const bitrate = source ? positiveNumber(source.bitrate) : positiveNumber(track.bitrate)
   const channels = positiveNumber(source?.sourceChannels)
-  const format = track.format?.trim() || formatCodec(source?.codec ?? '', track.fileName)
+  const format = source
+    ? formatCodec(source.codec, track.fileName)
+    : track.format?.trim() || formatCodec('', track.fileName)
+  const sourceBytes = source?.sourceBytes
+  const size =
+    sourceBytes !== undefined && Number.isSafeInteger(sourceBytes) && sourceBytes > 0
+      ? sourceBytes
+      : getTrackSource(track) === 'local'
+        ? positiveNumber(track.size)
+        : undefined
 
   return {
     quality: buildVisualizerQualityString({ format, sampleRate, bitDepth, bitrate }),
@@ -115,7 +133,7 @@ export function resolveVisualizerAudioMetadata(
     channels:
       channels === 1 ? 'Mono' : channels === 2 ? 'Stereo' : channels ? `${channels} channels` : '',
     bitrate: formatVisualizerBitrate(bitrate),
-    filesize: positiveNumber(track.size) ? `${(track.size / (1024 * 1024)).toFixed(1)} MB` : '',
+    filesize: size ? `${(size / (1024 * 1024)).toFixed(1)} MB` : '',
     format
   }
 }

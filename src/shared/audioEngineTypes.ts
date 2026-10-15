@@ -236,6 +236,10 @@ export interface AudioOutputState {
 export interface AudioEngineQueueItem {
   id: string
   source: string
+  /** Main-bound renderer identity before source authorization; never supplied by native. */
+  rendererSource?: string
+  /** Verified plaintext media bytes for this authorized queue source. */
+  sourceBytes?: number
   title?: string
   artist?: string
   album?: string
@@ -459,6 +463,10 @@ export interface PlaybackInfo extends PlaybackOutputInfoMirror {
   source: string
   codec: string
   nativePlaybackActive: boolean
+  /** Main-bound queue identity; present only while the native source owns that queue entry. */
+  rendererSource?: string
+  /** Verified plaintext media bytes belonging to rendererSource. */
+  sourceBytes?: number
   bitrate: number
   sourceSampleRate: number
   sourceChannels?: number

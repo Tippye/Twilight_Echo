@@ -408,13 +408,18 @@ export interface TwilightMediaProviderRegistration {
     track: Track,
     options?: PlaybackUrlOptions,
     context?: TwilightProviderRequestContext
-  ): Promise<string | null>
+  ): Promise<string | ProviderPlaybackSource | null>
   /** Optional provider-owned playback preference; hosts must detect method support. */
   getPlaybackQuality?(context?: TwilightProviderRequestContext): Promise<ProviderPlaybackQuality>
   setPlaybackQuality?(
     quality: string,
     context?: TwilightProviderRequestContext
   ): Promise<ProviderPlaybackQuality>
+  /** Optional per-track catalogue evidence; candidate does not guarantee account entitlement. */
+  getTrackPlaybackQualities?(
+    track: Track,
+    context?: TwilightProviderRequestContext
+  ): Promise<ProviderTrackPlaybackQualities>
   getLyrics?(
     track: Track,
     context?: TwilightProviderRequestContext
@@ -683,6 +688,31 @@ export interface PlaybackUrlOptions {
 export interface ProviderPlaybackQuality {
   quality: string
   options: Array<{ value: string; label: string }>
+}
+
+/** Media metadata must describe the resolved stream, rather than a catalogue default. */
+export interface ProviderPlaybackSource {
+  streamUrl: string
+  providerSource?: {
+    bytes?: number
+    actualQuality?: string
+    format?: string
+    sampleRate?: number
+    bitrate?: number
+    expiresAt?: number
+  }
+}
+
+export interface ProviderTrackPlaybackQualities {
+  trackId: string
+  options: Array<{
+    value: string
+    label: string
+    availability: 'candidate' | 'unavailable' | 'unknown'
+    reason?: string
+    /** Catalogue bytes, never a substitute for resolved stream bytes. */
+    metadataSize?: number
+  }>
 }
 
 export type TwilightMediaProviderMethod = Exclude<
