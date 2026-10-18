@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "scope": "Unmodified resolver with fully synthetic client/MP3-shaped bytes; fakeclock advances beyond60s TTL, no real account or music",
+  "resolverSha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
+  "harnessSha256": "291dad27d6387b8d53e78491f2f1557d7bd5bba3f9a48c25819a77ace5cb89ee",
+  "warm": {
+    "label": "warm-metadata-cache",
+    "wallMs": 0.4129000000000076,
+    "completed": [
+      {
+        "index": 0,
+        "elapsedMs": 0.14759999999999707
+      },
+      {
+        "index": 1,
+        "elapsedMs": 0.2536000000000058
+      },
+      {
+        "index": 2,
+        "elapsedMs": 0.3603999999999985
+      },
+      {
+        "index": 3,
+        "elapsedMs": 0.4059000000000026
+      }
+    ],
+    "counts": {
+      "loginChecks": 8,
+      "vkeyCalls": 0,
+      "preflightFetches": 0
+    }
+  },
+  "expired": {
+    "label": "metadata-cache-expired-three900ms-preflights",
+    "wallMs": 2725.8296,
+    "completed": [
+      {
+        "index": 0,
+        "elapsedMs": 2725.6307
+      },
+      {
+        "index": 1,
+        "elapsedMs": 2725.6574
+      },
+      {
+        "index": 2,
+        "elapsedMs": 2725.6825
+      },
+      {
+        "index": 3,
+        "elapsedMs": 2725.8258
+      }
+    ],
+    "counts": {
+      "loginChecks": 8,
+      "vkeyCalls": 1,
+      "preflightFetches": 3
+    }
+  }
+}

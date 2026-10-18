@@ -1,0 +1,10 @@
+{
+  "scope": "independent synthetic late refresh/revoke probe; no application/account/music/profile",
+  "sourceSha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+  "passed": true,
+  "fetches": 4,
+  "refreshes": 1,
+  "resolutions": 6,
+  "disposals": 6,
+  "revokedStatus": 404
+}

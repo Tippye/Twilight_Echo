@@ -1,0 +1,715 @@
+{
+  "schema": 1,
+  "scope": "Strict known-media-cache cold run: complete downloadproxyNew (including shared tp_dp_file and tp2p) moved intact before new process; QMDL originally absent; all version-specific QQ processes exited. Profile/settings/image/browser caches preserved. Exact source had not been selected after restart before observer attach.",
+  "publicSong": {
+    "title": "One Last Kiss",
+    "artist": "宇多田光",
+    "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+    "mediaMid": "000zwUDf0KftQv",
+    "quality": "hires",
+    "fileName": "RSM1000zwUDf0KftQv.mflac",
+    "sourceBytes": 88129955,
+    "decodedComparison": {
+      "codec": "flac",
+      "sampleRate": 96000,
+      "bits": 24
+    }
+  },
+  "pid": 65976,
+  "evidence_id": "ev_67885e9cc2f33cff6a597066756c35e55a10af7be7a803610751e0afac69f28e",
+  "script_id": "15298f84-8b98-48d8-91e7-0a598fa4c5ff",
+  "cacheJournal": "qq-task14-full-media-cache-state.json",
+  "cacheObservation": {
+    "newFileCreationUtc": "2026-10-18T12:26:20Z",
+    "observedLengthAt11s": 25165824,
+    "observedLengthAt42s": 88129955
+  },
+  "rea": {
+    "messagesTruncated": false,
+    "statSampling": "one in five captured stats plus last; all non-stat selected-media events retained",
+    "events": [
+      {
+        "ms": 1,
+        "kind": "ready",
+        "pid": 65976,
+        "module": "QMNetwork.dll",
+        "targetSha256": "ce160adb08e0bbf76d667f9528d89d03d33bbbce0e09bd7059fe81ba5f4702c4",
+        "scope": "Exact public One Last Kiss mediaMID only",
+        "limitations": [
+          "Qmdl/P2P cache result does not alone prove completeness",
+          "HTTP callback counts exclude alternate P2P engine downloads",
+          "Worker pointers are session-only opaque identities",
+          "Only synchronous successful fileIO is counted"
+        ]
+      },
+      {
+        "ms": 1004,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 6025,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 11057,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 16088,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 21111,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 26134,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 31176,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 36223,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 41265,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 46291,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 51320,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 56340,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 61372,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 66403,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 71437,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 0,
+        "httpWritten": 0,
+        "workerRead": 0,
+        "workerWaiting": 0,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 0
+      },
+      {
+        "ms": 75739,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75739,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75740,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75741,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75742,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75742,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75742,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75742,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75742,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75742,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75743,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75743,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75744,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75744,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75745,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75745,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75745,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75746,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 75746,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 75746,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 76053,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 76053,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 76065,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 76066,
+        "kind": "startDownload",
+        "command": 13,
+        "elapsedMs": 1
+      },
+      {
+        "ms": 76083,
+        "kind": "httpOpen",
+        "worker": "0x5d200f0",
+        "begin": "0",
+        "end": "0",
+        "capacity": 8743051
+      },
+      {
+        "ms": 76142,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/RSM1000zwUDf0KftQv.mflac"
+      },
+      {
+        "ms": 76143,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/.property"
+      },
+      {
+        "ms": 76193,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/tp"
+      },
+      {
+        "ms": 76193,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/.property"
+      },
+      {
+        "ms": 76466,
+        "kind": "stats",
+        "fileRead": 0,
+        "fileWrite": 1609857,
+        "httpWritten": 1589824,
+        "workerRead": 188409,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 71
+      },
+      {
+        "ms": 81497,
+        "kind": "stats",
+        "fileRead": 3145728,
+        "fileWrite": 5262913,
+        "httpWritten": 5242880,
+        "workerRead": 1695341,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 415
+      },
+      {
+        "ms": 86526,
+        "kind": "stats",
+        "fileRead": 20971520,
+        "fileWrite": 14700097,
+        "httpWritten": 9893504,
+        "workerRead": 3128498,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1005
+      },
+      {
+        "ms": 87683,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/.property"
+      },
+      {
+        "ms": 91546,
+        "kind": "stats",
+        "fileRead": 28311552,
+        "fileWrite": 26234614,
+        "httpWritten": 11495080,
+        "workerRead": 4758236,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1012
+      },
+      {
+        "ms": 96572,
+        "kind": "stats",
+        "fileRead": 50331648,
+        "fileWrite": 46157558,
+        "httpWritten": 13100712,
+        "workerRead": 6330586,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 98204,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/.property"
+      },
+      {
+        "ms": 101603,
+        "kind": "stats",
+        "fileRead": 74448896,
+        "fileWrite": 55594923,
+        "httpWritten": 14771880,
+        "workerRead": 7968480,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 106650,
+        "kind": "stats",
+        "fileRead": 85983232,
+        "fileWrite": 63983531,
+        "httpWritten": 16426664,
+        "workerRead": 9606378,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 108981,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/.property"
+      },
+      {
+        "ms": 111680,
+        "kind": "stats",
+        "fileRead": 95420416,
+        "fileWrite": 82907639,
+        "httpWritten": 18081448,
+        "workerRead": 11260652,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 112310,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/.property"
+      },
+      {
+        "ms": 112311,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/.property"
+      },
+      {
+        "ms": 112761,
+        "kind": "selectedFileOpen",
+        "path": "<local-path>/RSM1000zwUDf0KftQv.mflac"
+      },
+      {
+        "ms": 113073,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 113074,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 113075,
+        "kind": "qmdlCache",
+        "value": 0
+      },
+      {
+        "ms": 113075,
+        "kind": "p2pCache",
+        "value": 0
+      },
+      {
+        "ms": 116736,
+        "kind": "stats",
+        "fileRead": 116491078,
+        "fileWrite": 88150857,
+        "httpWritten": 19752616,
+        "workerRead": 12914954,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 121785,
+        "kind": "stats",
+        "fileRead": 117539654,
+        "fileWrite": 88150857,
+        "httpWritten": 21456552,
+        "workerRead": 14626545,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 126819,
+        "kind": "stats",
+        "fileRead": 119636806,
+        "fileWrite": 88150857,
+        "httpWritten": 23258792,
+        "workerRead": 16395463,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 131855,
+        "kind": "stats",
+        "fileRead": 121733958,
+        "fileWrite": 88150857,
+        "httpWritten": 25110184,
+        "workerRead": 18213497,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 136884,
+        "kind": "stats",
+        "fileRead": 123831110,
+        "fileWrite": 88150857,
+        "httpWritten": 26945192,
+        "workerRead": 20039755,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 141901,
+        "kind": "stats",
+        "fileRead": 124879686,
+        "fileWrite": 88150857,
+        "httpWritten": 28845736,
+        "workerRead": 21890540,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 146922,
+        "kind": "stats",
+        "fileRead": 126976838,
+        "fileWrite": 88150857,
+        "httpWritten": 30713512,
+        "workerRead": 23741326,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 151964,
+        "kind": "stats",
+        "fileRead": 129073990,
+        "fileWrite": 88150857,
+        "httpWritten": 32515752,
+        "workerRead": 25510256,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 156991,
+        "kind": "stats",
+        "fileRead": 130122566,
+        "fileWrite": 88150857,
+        "httpWritten": 33924776,
+        "workerRead": 27270954,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 162041,
+        "kind": "stats",
+        "fileRead": 132219718,
+        "fileWrite": 88150857,
+        "httpWritten": 35710632,
+        "workerRead": 29023560,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 167082,
+        "kind": "stats",
+        "fileRead": 134316870,
+        "fileWrite": 88150857,
+        "httpWritten": 37496488,
+        "workerRead": 30792474,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 172112,
+        "kind": "stats",
+        "fileRead": 135365446,
+        "fileWrite": 88150857,
+        "httpWritten": 39282344,
+        "workerRead": 32553192,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 177132,
+        "kind": "stats",
+        "fileRead": 137462598,
+        "fileWrite": 88150857,
+        "httpWritten": 41117352,
+        "workerRead": 34395786,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 182162,
+        "kind": "stats",
+        "fileRead": 139559750,
+        "fileWrite": 88150857,
+        "httpWritten": 42985128,
+        "workerRead": 36238392,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 187209,
+        "kind": "stats",
+        "fileRead": 141656902,
+        "fileWrite": 88150857,
+        "httpWritten": 44836520,
+        "workerRead": 38072810,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 192258,
+        "kind": "stats",
+        "fileRead": 142705478,
+        "fileWrite": 88150857,
+        "httpWritten": 46753448,
+        "workerRead": 39989100,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1015
+      },
+      {
+        "ms": 197308,
+        "kind": "stats",
+        "fileRead": 144802630,
+        "fileWrite": 88150857,
+        "httpWritten": 48703144,
+        "workerRead": 41938151,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1016
+      },
+      {
+        "ms": 202326,
+        "kind": "stats",
+        "fileRead": 146899782,
+        "fileWrite": 88150857,
+        "httpWritten": 50685608,
+        "workerRead": 43854400,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1016
+      },
+      {
+        "ms": 204336,
+        "kind": "stats",
+        "fileRead": 146899782,
+        "fileWrite": 88150857,
+        "httpWritten": 51439272,
+        "workerRead": 44624196,
+        "workerWaiting": 5,
+        "workerReconnect": 0,
+        "maxWriteGapMs": 1016
+      }
+    ]
+  },
+  "ui": "qq-task14-qq-strict-cold-ui.json",
+  "limits": [
+    "Passive hooks count only selected synchronous successful file IO and legacy QMNetwork HTTP worker; other transport payloads/peer attribution are not captured.",
+    "Known audio cache trees and process RAM were excluded; no exhaustive claim about every unrelated local file or remote CDN cache.",
+    "Single UI run with interval observations, not a sample-exact PCM or acoustic stall measurement.",
+    "Main build ran concurrently for part of observation; no performance stress gate ran during the cold interval."
+  ]
+}

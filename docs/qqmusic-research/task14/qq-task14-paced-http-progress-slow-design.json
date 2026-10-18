@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "scope": "One predeclared progress-slow pressure variant; immutable8secondheader-delay baseline remains unchanged",
+  "selection": "Root selected8chunksx3000ms body progression forblock32, replacing8000msheaderdelay; noadaptiveparametersearch",
+  "baselineReceipt": "qq-task14-paced-http-comparison.json",
+  "factsFromPriorRun": {
+    "baseline": {
+      "requestBeginMs": 27528.408,
+      "applicationPlaybackBeginMs": 3277.6775
+    },
+    "candidate": {
+      "requestBeginMs": 21679.3223,
+      "applicationPlaybackBeginMs": 3277.9443
+    }
+  },
+  "estimatedOrderedConsumptionAtBlock32Ms": {
+    "baseline": 51181.86911676646,
+    "candidate": 51182.13591676646
+  },
+  "predictedBlockBodyCompletionMs": {
+    "baseline": 51528.407999999996,
+    "candidate": 45679.3223
+  },
+  "limits": [
+    "Predictionsusepreviousrun timings andconstantbyteconsumer, notmeasurednewrun facts.",
+    "Each3000mschunk isbelow15sidle sohealthyprogressshouldnottriggeridle cancellation; wholefutureblockcompletesat~24s, beyondretry-onlydeadlinebutfirsthealthyattemptremainsperread.",
+    "OS/Nodebuffersmaymaskstallorothertransportcontentionmaystillcausefailure; preserveactualresult andstopafterthisvariant."
+  ]
+}

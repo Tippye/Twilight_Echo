@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "scope": "Six fresh child processes in three two-process waves; loopback synthetic race/resource cases only",
+  "sourceSha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+  "sourceAfterSha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+  "harnessSha256": "5221b2b79744e7aa74774caf18c86b79062544ff533b9e92f348b640c288341a",
+  "pattern": "completed unread blocks|retrying future blocks|separate transport permits|first-stream failure|overlapping encrypted seeks|read-ahead uses verified",
+  "results": [
+    {
+      "index": 0,
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "index": 1,
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "index": 2,
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "index": 3,
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "index": 4,
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0
+    },
+    {
+      "index": 5,
+      "exitCode": 0,
+      "pass": 6,
+      "fail": 0
+    }
+  ]
+}

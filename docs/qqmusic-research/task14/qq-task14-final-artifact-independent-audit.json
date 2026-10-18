@@ -1,0 +1,802 @@
+{
+  "schema": 1,
+  "scope": "Independent fixed final artifact audit; no installer execution, application control, account/profile/cache access or production/Skill/archive/Git mutation. Only audit scratch copies are extracted/stripped.",
+  "productSourceCommit": "3bacff6e275c2333e1931373f48088e47e1fc8c3",
+  "providerSourceCommit": "5eb33115090fd5cb4bb6035eab3e7d99ae3afa05",
+  "installer": {
+    "file": "TwilightEcho-1.3.1-qq.6-setup.exe",
+    "bytes": 153196613,
+    "sha256": "81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088",
+    "sidecarMatches": true
+  },
+  "package": {
+    "file": "com.twilightecho.provider.qqmusic-0.4.0-rc.7.tep",
+    "bytes": 270232,
+    "sha256": "b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2",
+    "members": [
+      {
+        "file": "lib/windows/album-call.mjs",
+        "bytes": 7976,
+        "rawSha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+        "commitBlobRawSha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+        "providerGitBlob": "e62d90f482f2fd333705df7014214168e562a1c8",
+        "coreMirrorGitBlob": "e62d90f482f2fd333705df7014214168e562a1c8",
+        "gitLfSha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/artist-call.mjs",
+        "bytes": 12972,
+        "rawSha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+        "commitBlobRawSha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+        "providerGitBlob": "4d3c58dd7cd8592cdad227d614212fdb90faf855",
+        "coreMirrorGitBlob": "4d3c58dd7cd8592cdad227d614212fdb90faf855",
+        "gitLfSha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/audio-proxy.mjs",
+        "bytes": 33514,
+        "rawSha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+        "commitBlobRawSha256": "159e1fa945285be3432d7b4c1c5c43737e3aaaed19e5cef3fc20fdc32cd145ff",
+        "providerGitBlob": "c9828905e259ca9961084e1249196f1616721500",
+        "coreMirrorGitBlob": "c9828905e259ca9961084e1249196f1616721500",
+        "gitLfSha256": "159e1fa945285be3432d7b4c1c5c43737e3aaaed19e5cef3fc20fdc32cd145ff",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/client.mjs",
+        "bytes": 20296,
+        "rawSha256": "71259f3c170ddf78e4252a80188e3fce5edcde33ee025c7bf8e0d88e63c7b3d3",
+        "commitBlobRawSha256": "71259f3c170ddf78e4252a80188e3fce5edcde33ee025c7bf8e0d88e63c7b3d3",
+        "providerGitBlob": "cc103cf2aa263aa7ac13aed2c43bbba696f49f15",
+        "coreMirrorGitBlob": "cc103cf2aa263aa7ac13aed2c43bbba696f49f15",
+        "gitLfSha256": "71259f3c170ddf78e4252a80188e3fce5edcde33ee025c7bf8e0d88e63c7b3d3",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/comm.mjs",
+        "bytes": 3463,
+        "rawSha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+        "commitBlobRawSha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+        "providerGitBlob": "03c508229ce32e50903cbe147236d5cf4707bfe5",
+        "coreMirrorGitBlob": "03c508229ce32e50903cbe147236d5cf4707bfe5",
+        "gitLfSha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/container.mjs",
+        "bytes": 4407,
+        "rawSha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+        "commitBlobRawSha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+        "providerGitBlob": "6e8a02028eec5aaaa132c4b84c7214587831c7b8",
+        "coreMirrorGitBlob": "6e8a02028eec5aaaa132c4b84c7214587831c7b8",
+        "gitLfSha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/discovery-call.mjs",
+        "bytes": 19351,
+        "rawSha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+        "commitBlobRawSha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+        "providerGitBlob": "9ba7ea45da3811b7258815bcca7da69fb7238cb7",
+        "coreMirrorGitBlob": "9ba7ea45da3811b7258815bcca7da69fb7238cb7",
+        "gitLfSha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/ekey.mjs",
+        "bytes": 2574,
+        "rawSha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+        "commitBlobRawSha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+        "providerGitBlob": "2c9ea2b2023ab652e9fdb5f0353dc7cc8a666ba8",
+        "coreMirrorGitBlob": "2c9ea2b2023ab652e9fdb5f0353dc7cc8a666ba8",
+        "gitLfSha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/favorite-call.mjs",
+        "bytes": 5936,
+        "rawSha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+        "commitBlobRawSha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+        "providerGitBlob": "f46361802abbc6ebfa62d998f3db6cb125a01024",
+        "coreMirrorGitBlob": "f46361802abbc6ebfa62d998f3db6cb125a01024",
+        "gitLfSha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/favorite-state.mjs",
+        "bytes": 6002,
+        "rawSha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+        "commitBlobRawSha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+        "providerGitBlob": "6fb4deb6358297f5591b0abf2cc84b73197ae79c",
+        "coreMirrorGitBlob": "6fb4deb6358297f5591b0abf2cc84b73197ae79c",
+        "gitLfSha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/filename.mjs",
+        "bytes": 4288,
+        "rawSha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+        "commitBlobRawSha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+        "providerGitBlob": "aeeb6ddd1b7d74446f9bb19ae15f1f3de035cde0",
+        "coreMirrorGitBlob": "aeeb6ddd1b7d74446f9bb19ae15f1f3de035cde0",
+        "gitLfSha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/home-call.mjs",
+        "bytes": 15864,
+        "rawSha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+        "commitBlobRawSha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+        "providerGitBlob": "98a817e0cd5feada6ed8c1ac72e5cc372acab287",
+        "coreMirrorGitBlob": "98a817e0cd5feada6ed8c1ac72e5cc372acab287",
+        "gitLfSha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/json-integer.mjs",
+        "bytes": 602,
+        "rawSha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+        "commitBlobRawSha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+        "providerGitBlob": "a076cdd57154f7ba1fabcb87e178d25324b9b9b0",
+        "coreMirrorGitBlob": "a076cdd57154f7ba1fabcb87e178d25324b9b9b0",
+        "gitLfSha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/login-request.mjs",
+        "bytes": 3818,
+        "rawSha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+        "commitBlobRawSha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+        "providerGitBlob": "fab7d41340484df804c6ec8cbf35c66162194ccf",
+        "coreMirrorGitBlob": "fab7d41340484df804c6ec8cbf35c66162194ccf",
+        "gitLfSha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/lyric-call.mjs",
+        "bytes": 3876,
+        "rawSha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+        "commitBlobRawSha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+        "providerGitBlob": "3cbc8991a57633e2d5abb6d96ed35b668bde0e7f",
+        "coreMirrorGitBlob": "3cbc8991a57633e2d5abb6d96ed35b668bde0e7f",
+        "gitLfSha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/media-source.mjs",
+        "bytes": 19009,
+        "rawSha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
+        "commitBlobRawSha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
+        "providerGitBlob": "3cc92e3a85a134886b33a26e13fdb8dc4e1d55b9",
+        "coreMirrorGitBlob": "3cc92e3a85a134886b33a26e13fdb8dc4e1d55b9",
+        "gitLfSha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/media-stream.mjs",
+        "bytes": 6405,
+        "rawSha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+        "commitBlobRawSha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+        "providerGitBlob": "91adc9e85b762468d008841f122e790ffce88c2a",
+        "coreMirrorGitBlob": "91adc9e85b762468d008841f122e790ffce88c2a",
+        "gitLfSha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/playlist-binding.mjs",
+        "bytes": 4485,
+        "rawSha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+        "commitBlobRawSha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+        "providerGitBlob": "1dc1bf975a69953418d6e420893e9541cdb5b0d2",
+        "coreMirrorGitBlob": "1dc1bf975a69953418d6e420893e9541cdb5b0d2",
+        "gitLfSha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/playlist-call.mjs",
+        "bytes": 3895,
+        "rawSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+        "commitBlobRawSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+        "providerGitBlob": "c3da37fefe6661677b76ae6ae217ac907009548d",
+        "coreMirrorGitBlob": "c3da37fefe6661677b76ae6ae217ac907009548d",
+        "gitLfSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/playlist-data.mjs",
+        "bytes": 10732,
+        "rawSha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+        "commitBlobRawSha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+        "providerGitBlob": "795c5a644e58c37183422e4dea976478f1b6b97c",
+        "coreMirrorGitBlob": "795c5a644e58c37183422e4dea976478f1b6b97c",
+        "gitLfSha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/quality.mjs",
+        "bytes": 6254,
+        "rawSha256": "e15c7016f089b818f06835d081de52cf6640bd83d26c1a02dd73ba8edd438c8e",
+        "commitBlobRawSha256": "e15c7016f089b818f06835d081de52cf6640bd83d26c1a02dd73ba8edd438c8e",
+        "providerGitBlob": "77c4f8b2c7619760be6242e51b696b607a4d8d9f",
+        "coreMirrorGitBlob": "77c4f8b2c7619760be6242e51b696b607a4d8d9f",
+        "gitLfSha256": "e15c7016f089b818f06835d081de52cf6640bd83d26c1a02dd73ba8edd438c8e",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/response.mjs",
+        "bytes": 3268,
+        "rawSha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+        "commitBlobRawSha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+        "providerGitBlob": "179235e0d6afb1b683b5def91e848d51c63fb583",
+        "coreMirrorGitBlob": "179235e0d6afb1b683b5def91e848d51c63fb583",
+        "gitLfSha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/search-call.mjs",
+        "bytes": 1523,
+        "rawSha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+        "commitBlobRawSha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+        "providerGitBlob": "6af5a502937bcf111c62d3c26e277200b222b85e",
+        "coreMirrorGitBlob": "6af5a502937bcf111c62d3c26e277200b222b85e",
+        "gitLfSha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/search-catalog.mjs",
+        "bytes": 8025,
+        "rawSha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+        "commitBlobRawSha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+        "providerGitBlob": "5cc2adbdf55d648504660fdcc7a5d4074aad3b14",
+        "coreMirrorGitBlob": "5cc2adbdf55d648504660fdcc7a5d4074aad3b14",
+        "gitLfSha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/settings.mjs",
+        "bytes": 3170,
+        "rawSha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
+        "commitBlobRawSha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
+        "providerGitBlob": "6d6111899584ad9f470a87882b9a5be88aa168ec",
+        "coreMirrorGitBlob": "6d6111899584ad9f470a87882b9a5be88aa168ec",
+        "gitLfSha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/signature.mjs",
+        "bytes": 1676,
+        "rawSha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+        "commitBlobRawSha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+        "providerGitBlob": "e7719605aef27a6abf9b555c040521a1d22585c4",
+        "coreMirrorGitBlob": "e7719605aef27a6abf9b555c040521a1d22585c4",
+        "gitLfSha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/song-detail-call.mjs",
+        "bytes": 1523,
+        "rawSha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+        "commitBlobRawSha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+        "providerGitBlob": "4e58a8cf6d590ddd36879186195848becd606a63",
+        "coreMirrorGitBlob": "4e58a8cf6d590ddd36879186195848becd606a63",
+        "gitLfSha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/tea.mjs",
+        "bytes": 4535,
+        "rawSha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+        "commitBlobRawSha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+        "providerGitBlob": "a4aef83256ea7fb1437cf56c8a97bd340bc11e1c",
+        "coreMirrorGitBlob": "a4aef83256ea7fb1437cf56c8a97bd340bc11e1c",
+        "gitLfSha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/tracks.mjs",
+        "bytes": 6956,
+        "rawSha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+        "commitBlobRawSha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+        "providerGitBlob": "913ac9a600b6d8b2e58afe7fac1549b4bc55d80e",
+        "coreMirrorGitBlob": "913ac9a600b6d8b2e58afe7fac1549b4bc55d80e",
+        "gitLfSha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/vkey-request.mjs",
+        "bytes": 4008,
+        "rawSha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+        "commitBlobRawSha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+        "providerGitBlob": "9f213191a5f44a748666b1e1ee75ed6b5f295dee",
+        "coreMirrorGitBlob": "9f213191a5f44a748666b1e1ee75ed6b5f295dee",
+        "gitLfSha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "lib/windows/wire.mjs",
+        "bytes": 680,
+        "rawSha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+        "commitBlobRawSha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+        "providerGitBlob": "df27b2285258e938c6f89a228bdfbab9ef0e6093",
+        "coreMirrorGitBlob": "df27b2285258e938c6f89a228bdfbab9ef0e6093",
+        "gitLfSha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "plugin.json",
+        "bytes": 1900,
+        "rawSha256": "3296578caca4020dfc0ef1d18e1c7565c46c72c010f1235256d39145eedb74d5",
+        "commitBlobRawSha256": "a97c4aef246863bb2557ad90c526c062f5ae1f35d4c8576f56eb286ed24d29ad",
+        "providerGitBlob": "372b4acaed4320096c8c197cf91c186ad80ae6f8",
+        "coreMirrorGitBlob": "372b4acaed4320096c8c197cf91c186ad80ae6f8",
+        "gitLfSha256": "a97c4aef246863bb2557ad90c526c062f5ae1f35d4c8576f56eb286ed24d29ad",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "THIRD_PARTY_NOTICES.md",
+        "bytes": 3115,
+        "rawSha256": "c2bd1f24c38c4e83d25cecfb3a857d7bd8f41ed762878ad86ec771abe0726525",
+        "commitBlobRawSha256": "b421dc13e82ce8fbbcd0adc2986c6a3c95dbffb257ed363a2f9a0d562963c931",
+        "providerGitBlob": "c720276393ac08d4c87dbdabf2f9bccba2f705be",
+        "coreMirrorGitBlob": "c720276393ac08d4c87dbdabf2f9bccba2f705be",
+        "gitLfSha256": "b421dc13e82ce8fbbcd0adc2986c6a3c95dbffb257ed363a2f9a0d562963c931",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      },
+      {
+        "file": "windows-index.mjs",
+        "bytes": 29812,
+        "rawSha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e",
+        "commitBlobRawSha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e",
+        "providerGitBlob": "d47ddbac7b403ca524233785f50f52ad2e65584b",
+        "coreMirrorGitBlob": "d47ddbac7b403ca524233785f50f52ad2e65584b",
+        "gitLfSha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e",
+        "rawSourceExact": true,
+        "mirrorLfExact": true,
+        "committedMirrorLfExact": true
+      }
+    ],
+    "memberCount": 34,
+    "crcPassed": true,
+    "entry": "windows-index.mjs",
+    "version": "0.4.0-rc.7",
+    "minimumHost": ">=1.3.1-qq.5",
+    "rawWorkingSourceAndCommittedTextAndMirrorExact": true
+  },
+  "installerPayload": {
+    "extraction": "trusted7za embedded7z extraction, installer never executed",
+    "sevenZipSha256": "b0cfdeaf429f5cc53f85123dd8f5a5feb92c19d31aa34df257edf9a26be05f95",
+    "embeddedOffset": 300414,
+    "tailBytes": 446947,
+    "remainingEnvelopeCoveredByFullInstallerSha": true,
+    "payloadFiles": 175,
+    "unpackedFiles": 175,
+    "missing": [],
+    "extra": [],
+    "different": [],
+    "exactAllUnpackedBytes": true
+  },
+  "externalPayloadExclusionsAndLicenses": {
+    "forbiddenFiles": [],
+    "licenseFiles": [
+      {
+        "file": "native-third-party-notices.txt",
+        "bytes": 5266,
+        "sha256": "9a0ee7cefb86ac701e8f8056776ea757047b0e8356a2ddc7a0122d790d2a99d4"
+      },
+      {
+        "file": "FFmpeg-LICENSE.txt",
+        "bytes": 7651,
+        "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+      },
+      {
+        "file": "libebur128-COPYING.txt",
+        "bytes": 1059,
+        "sha256": "d6b4754bb67bdd08b97d5d11b2d7434997a371585a78fe77007149df3af8d09c"
+      }
+    ]
+  },
+  "nodeChecks": {
+    "dependencyClosure": {
+      "passed": true,
+      "packages": 241
+    },
+    "branding": {
+      "passed": true,
+      "productName": "TwilightEcho"
+    },
+    "nativePEClosureBudgets": {
+      "passed": true,
+      "productBinaryCount": 7,
+      "shippedBinaryCount": 14,
+      "dependencyCount": 4,
+      "workerMachine": 332,
+      "sizes": {
+        "avcodec-62.dll": 90946048,
+        "avformat-62.dll": 22728192,
+        "avutil-60.dll": 3014144,
+        "msvcp140.dll": 557728,
+        "swresample-6.dll": 734720,
+        "twilight-asio-helper.exe": 209408,
+        "twilight-audio-engine.dll": 1797120,
+        "twilight-qq-excellent-worker.exe": 125952,
+        "twilight-vst3-host.exe": 198144,
+        "twilight-vst3-scanner.exe": 138752,
+        "twilight_audio_node.node": 85504,
+        "twilight_smtc_node.node": 72704,
+        "vcruntime140.dll": 124544,
+        "vcruntime140_1.dll": 49792,
+        "installer": 153196613
+      }
+    },
+    "capabilityConsistency": {
+      "passed": true,
+      "manifestSchema": 1,
+      "capabilityStatus": {
+        "ASIO": {
+          "status": "experimental",
+          "buildStatus": "available",
+          "runtimeStatus": "available",
+          "deviceVerification": "unverified",
+          "evidence": {
+            "build": {
+              "state": "available",
+              "reason": "runtime build observation",
+              "provenance": "audio-engine-runtime-observation"
+            },
+            "runtime": {
+              "state": "available",
+              "reason": "no ASIO device observation",
+              "provenance": "audio-engine-runtime-observation"
+            },
+            "device": {
+              "state": "unverified",
+              "reason": "real-device evidence is required",
+              "provenance": "audio-smoke-evidence"
+            }
+          }
+        },
+        "VST3": {
+          "status": "available",
+          "buildStatus": "available",
+          "runtimeStatus": "unverified",
+          "deviceVerification": "unverified",
+          "evidence": {
+            "build": {
+              "state": "available",
+              "reason": "VST3 helper pair and PE import facts",
+              "provenance": "staged-native-artifact"
+            },
+            "runtime": {
+              "state": "unverified",
+              "reason": "no VST3 runtime observation",
+              "provenance": "no-runtime-observation"
+            },
+            "device": {
+              "state": "unverified",
+              "reason": "third-party plugin/runtime validation is absent",
+              "provenance": "not-run"
+            }
+          }
+        },
+        "SoXR": {
+          "status": "unverified",
+          "buildStatus": "unverified",
+          "runtimeStatus": "unverified",
+          "deviceVerification": "unverified",
+          "evidence": {
+            "build": {
+              "state": "unverified",
+              "reason": "FFmpeg runtime engine has no standalone import fact",
+              "provenance": "manifest"
+            },
+            "runtime": {
+              "state": "unverified",
+              "reason": "no runtime observation",
+              "provenance": "audio-engine-runtime-observation"
+            },
+            "device": {
+              "state": "unverified",
+              "reason": "no real-device surface was observed",
+              "provenance": "not-run"
+            }
+          }
+        },
+        "ebur128": {
+          "status": "available",
+          "buildStatus": "available",
+          "runtimeStatus": "available",
+          "deviceVerification": "unverified",
+          "evidence": {
+            "build": {
+              "state": "available",
+              "reason": "runtime build observation",
+              "provenance": "audio-engine-runtime-observation"
+            },
+            "runtime": {
+              "state": "available",
+              "reason": "no ebur128 processing observation",
+              "provenance": "audio-engine-runtime-observation"
+            },
+            "device": {
+              "state": "unverified",
+              "reason": "no real-device evidence was supplied",
+              "provenance": "not-run"
+            }
+          }
+        },
+        "CUDA": {
+          "status": "not-built",
+          "buildStatus": "not-built",
+          "runtimeStatus": "not-built",
+          "deviceVerification": "unverified",
+          "evidence": {
+            "build": {
+              "state": "not-built",
+              "reason": "CUDA imports across staged native artifacts",
+              "provenance": "audio-capabilities.json"
+            },
+            "runtime": {
+              "state": "not-built",
+              "reason": "no GPU runtime observation",
+              "provenance": "no-runtime-observation"
+            },
+            "device": {
+              "state": "unverified",
+              "reason": "no GPU hardware evidence was supplied",
+              "provenance": "not-run"
+            }
+          }
+        },
+        "Native DSD provider": {
+          "status": "available",
+          "buildStatus": "available",
+          "runtimeStatus": "available",
+          "deviceVerification": "unverified",
+          "evidence": {
+            "build": {
+              "state": "available",
+              "reason": "runtime build observation",
+              "provenance": "audio-engine-runtime-observation"
+            },
+            "runtime": {
+              "state": "available",
+              "reason": "no Native DSD provider route observation",
+              "provenance": "audio-engine-runtime-observation"
+            },
+            "device": {
+              "state": "unverified",
+              "reason": "real DAC/provider evidence is required",
+              "provenance": "audio-smoke-evidence"
+            }
+          }
+        }
+      }
+    },
+    "freshCapabilityChild": {
+      "passed": true,
+      "exitCode": 0,
+      "stderrBytes": 0,
+      "features": {
+        "ffmpeg": true,
+        "wasapi": true,
+        "asio": true,
+        "coreaudio": false,
+        "alsa": false,
+        "nativeDsd": false,
+        "dop": false,
+        "sacdIso": true,
+        "sacdIsoDst": true,
+        "sacdIsoDstDsdProvider": true,
+        "audioPluginSystem": true,
+        "nativeDsp": true,
+        "ebur128": true,
+        "loudnessAnalysis": true
+      },
+      "observation": {
+        "observation": {
+          "schemaVersion": 1,
+          "source": "audio-engine-runtime-observation",
+          "artifactSha256": {
+            "avcodec-62.dll": "0259adbf50b1ccd88e3dad5648fbc1faf453c11f9bf8dddc73d4de628832c70e",
+            "avformat-62.dll": "d369715ae34cbaf3470185bd1e4b893209060a3e8ab507d6006683800ef938b5",
+            "avutil-60.dll": "0cd1d710d6bf0de3187bd1cb54759ebaf328b6229653fd8241ed8a405b231eea",
+            "msvcp140.dll": "0f885b509a685d2bbfa652fed26b5fb31d88fbdab0a978c641d1c7b8aa460aa9",
+            "swresample-6.dll": "94065fb1ee7c354c8256edc9de589529f685b00af9b703f92de5a87d78e71fd1",
+            "twilight-asio-helper.exe": "c6e874c4a8f67b3beee4642394e96482e2cdcbacc0f2929aa92bb163fb802c02",
+            "twilight-audio-engine.dll": "8ce9d21a6c8b5675a6c3b0eedd67270f05ad94e1ff2c10b94f0370634c9595d1",
+            "twilight-qq-excellent-worker.exe": "eb9e080d2d62cdb70779e89798da188cabe83663305400232fdc5daef084d541",
+            "twilight-vst3-host.exe": "99dab2fdf2ada62d0c8300f5da0b2649c2d517342c50dffa8c4d00aa58a441d8",
+            "twilight-vst3-scanner.exe": "b83922152cf7ff57062db723c3e38c4a0378a10bcc47d1a2b216bff7a0152a0b",
+            "twilight_audio_node.node": "092ff0fde3bf66530bc7fecaf77fb89711ca729b36ec70b18ca57f5cb48e7134",
+            "twilight_smtc_node.node": "13c28cbd14bb2a12998003e13c2c4ab150e982bc128bb4f1ecb5c7f8f65684ca",
+            "vcruntime140.dll": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066",
+            "vcruntime140_1.dll": "1f2d41c4aa5db0bc33ebf7b66d72943a817d7ce6cbe880502a9403823633093f"
+          }
+        },
+        "capabilities": {
+          "asio": {
+            "enabled": true
+          },
+          "ebur128": {
+            "available": true
+          },
+          "nativeDsdProvider": {
+            "available": true
+          }
+        }
+      }
+    },
+    "normalTEPImportClosure": {
+      "passed": true,
+      "parser": "acorn",
+      "version": "8.16.0",
+      "modules": 32,
+      "builtins": [
+        "node:crypto",
+        "node:http",
+        "node:os",
+        "node:perf_hooks"
+      ],
+      "executed": false
+    },
+    "packagedSourceAndDiagnosticExclusion": {
+      "passed": true,
+      "entryCount": 4224,
+      "exactBuiltOutFiles": 614,
+      "javascriptScanned": 105,
+      "version": "1.3.1-qq.6",
+      "main": "./out/main/index.js",
+      "knownTaskMarkersAbsent": true
+    },
+    "postStripSourceMapping": {
+      "passed": true,
+      "rows": [
+        {
+          "file": "twilight-audio-engine.dll",
+          "sourceRawSha256": "2374e2cc3c55933d458ee267b9b8710bc9274523e786e09bffbf921277bae2bf",
+          "packagedSha256": "8ce9d21a6c8b5675a6c3b0eedd67270f05ad94e1ff2c10b94f0370634c9595d1",
+          "exactReproducedStrip": true
+        },
+        {
+          "file": "twilight_audio_node.node",
+          "sourceRawSha256": "48ab4fd91dad5327e8174c0f7d4aba6fc8fcf309d950962440700311ffc8b148",
+          "packagedSha256": "092ff0fde3bf66530bc7fecaf77fb89711ca729b36ec70b18ca57f5cb48e7134",
+          "exactReproducedStrip": true
+        },
+        {
+          "file": "twilight_smtc_node.node",
+          "sourceRawSha256": "afe08b2c9ac2d1767c1ca9f714ff4a6b2e1c056c68a360e26db1e42ef62c231c",
+          "packagedSha256": "13c28cbd14bb2a12998003e13c2c4ab150e982bc128bb4f1ecb5c7f8f65684ca",
+          "exactReproducedStrip": true
+        },
+        {
+          "file": "twilight-asio-helper.exe",
+          "sourceRawSha256": "a84b26e235b65690f2093fd0e2e237597fa07cab7793316376951041172f5401",
+          "packagedSha256": "c6e874c4a8f67b3beee4642394e96482e2cdcbacc0f2929aa92bb163fb802c02",
+          "exactReproducedStrip": true
+        },
+        {
+          "file": "twilight-vst3-host.exe",
+          "sourceRawSha256": "f8faa8695cdaa9accf554628098f72fc35c350c496f55b1e4213877c895b63e3",
+          "packagedSha256": "99dab2fdf2ada62d0c8300f5da0b2649c2d517342c50dffa8c4d00aa58a441d8",
+          "exactReproducedStrip": true
+        },
+        {
+          "file": "twilight-vst3-scanner.exe",
+          "sourceRawSha256": "fdad10dd46e38330f2d3248b99348d348735c85d47d5592e05c591891db218f1",
+          "packagedSha256": "b83922152cf7ff57062db723c3e38c4a0378a10bcc47d1a2b216bff7a0152a0b",
+          "exactReproducedStrip": true
+        },
+        {
+          "file": "twilight-qq-excellent-worker.exe",
+          "sourceRawSha256": "85296660930bcf2220d8b05b7924de45fdb67e513a5ebf628586254ae04247e4",
+          "packagedSha256": "eb9e080d2d62cdb70779e89798da188cabe83663305400232fdc5daef084d541",
+          "exactReproducedStrip": true
+        }
+      ],
+      "testedStageCoreInputsMatchReceipt": true,
+      "testedStageCommit": "ac573ac083b244d6d253ab1ae93c2b9f38fad33c",
+      "transformation": "canonical strip/debug/symbol cleanup on audit-only copies; final dist unchanged"
+    }
+  },
+  "nodeAuditExitCode": 0,
+  "nodeAuditStderrBytes": 0,
+  "rootOwnedWorkerProtocolVerification": {
+    "sourceReceipt": "qq-task14-packaged-worker-test.json",
+    "sourceReceiptRawSha256": "921655be2c324788a0e4c58978ec71f0299d35aa02890931b84f5f33cf009394",
+    "binarySha256": "eb9e080d2d62cdb70779e89798da188cabe83663305400232fdc5daef084d541",
+    "testHelperSha256": "a621746fe828f29126ed93a1bc6f4d6ff952f050fbb5c5f5cb28e6a686bc1533",
+    "pass": 23,
+    "fail": 0,
+    "rerunByThisAudit": false,
+    "limits": [
+      "Native available-output EOF is reproduced; full model lookahead tail/duration alignment is not asserted.",
+      "Account/Windows/expiry authorization belongs to parent and is not exercised by this isolated numeric worker."
+    ]
+  },
+  "sourceHelpers": {
+    "qq-task14-final-artifact-audit.py": "af70515a8306aef9e09bf08e6f29210ee22af6827c9c253cefd6717a1c78c74f",
+    "qq-task14-final-artifact-node-audit.cjs": "241dae207356d1266b4b475c59fa14ea602c54aea79999afbe0a7d12127db341"
+  },
+  "auditHarnessCorrections": [
+    "ASAR Windows API requires native backslash member names; slash-only lookup caused a false missing-file result in preserved v1 audit.",
+    "Canonical-v2 SMTC build directory is supplied explicitly from the release producer; no rebuild or fallback to a different staged binary."
+  ],
+  "issues": [],
+  "passed": true,
+  "limits": [
+    "No installer or application was executed; final normal GUI/default-session QA is Root-owned.",
+    "Embedded 7z payload was extracted and exactly mapped; NSIS envelope instructions were not independently executed or semantically proven, and are covered only by the full pinned installer SHA.",
+    "GetEngineCapabilities loads only the packaged product addon in a bounded child; originalQQ and its account/profile are not accessed.",
+    "TEP raw bytes match pinned source checkout; committed text and Core mirror are compared with explicitLF text normalization. No binary input is normalized.",
+    "Package integrity and fault tests do not prove audible benefits or resolve unknownCDN/PCDN/peer attribution."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "scope": "Independent synthetic HTTP byte-progress >15-second total-duration case; no application/account/profile/music",
+  "executableSha256": "a2e27738fa77431ff249ad0702d7c58b2a505636a7ddd81223cfd118382a52be",
+  "passed": true,
+  "killed": false,
+  "exitCode": 0,
+  "requests": 2,
+  "sentBytes": 9216044,
+  "stderrBytes": 0,
+  "facts": {
+    "opened": true,
+    "configured": true,
+    "sought": true,
+    "error": false,
+    "cancelled": false,
+    "cancelledBeforeRestart": false,
+    "restarted": false,
+    "framesBeforeRestart": 1920000,
+    "framesAfterRestart": 0,
+    "timeout": false,
+    "eof": true,
+    "frames": 1920000,
+    "openMs": 43.0868,
+    "totalMs": 24197.3
+  }
+}

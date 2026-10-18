@@ -1,0 +1,1915 @@
+{
+  "schema": 1,
+  "archive_date": "2026-10-18",
+  "status": "qq7 real GUI failed; qq8 renderer/proxy/native seek repairs source-reviewed with scoped synthetic gates, new native9pass; final source/package/GUI/cold/release pending, not deliverable",
+  "source_repository": "Twilight-Echo-plugins",
+  "source_commit": "5eb33115090fd5cb4bb6035eab3e7d99ae3afa05",
+  "implementation_slice": "28c23565ee7345cdb7dbd4e3a090f80a9f51fd42",
+  "integrated_host_commit": "ac573ac083b244d6d253ab1ae93c2b9f38fad33c",
+  "user_dsp_parent": "c99cb5bdf34ba93c8b79e3709881b84c56b05849",
+  "host_version": "1.3.1-qq.7",
+  "provider_version": "0.4.0-rc.7",
+  "normal_package_sha256": "b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2",
+  "normalization": "source_sha256/sources.raw_sha256 preserve original input bytes. sha256 describes archived working bytes and git_lf_sha256 describes LF text. Historical git_blob_sha1 entries were checked through read-only Git filters; updated README and new qq8 summary use independently computed canonical LF content blobs, pending final repository-filter verification. Binary package inputs are hashed raw and never line-normalized.",
+  "privacy": "Curated numeric/public-source facts; no audio/cache contents, profiles, accounts, credentials, actual URLs, QQ DLLs/models or build binaries. Absolute local paths reduced to basenames, with redaction JSON pointers recorded.",
+  "research_files": [
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-proxy-recovery-receipt-v2.json",
+      "bytes": 4252,
+      "sha256": "f9fa785adcb3f606bb3fefb9d530295836d0a93d6cbc19dd19a7e7f8a17ec3ed",
+      "git_lf_sha256": "f9fa785adcb3f606bb3fefb9d530295836d0a93d6cbc19dd19a7e7f8a17ec3ed",
+      "git_blob_sha1": "20f0cca733f415b63b14d53c784d9efede198d40",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-proxy-recovery-receipt-v2.json",
+          "raw_sha256": "c33594ca35d6c1f93763a48072f90ff30e75e07ffa280ab83eb03e3ecf29f22c",
+          "bytes": 4350,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-proxy-recovery-receipt-v2.json",
+      "source_sha256": "c33594ca35d6c1f93763a48072f90ff30e75e07ffa280ab83eb03e3ecf29f22c"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-read-ahead-receipt.json",
+      "bytes": 3812,
+      "sha256": "ab665a53e75ddeea4fb5beeb965380f75d2a1b92e3df3ee2df15da8508c5b4c4",
+      "git_lf_sha256": "ab665a53e75ddeea4fb5beeb965380f75d2a1b92e3df3ee2df15da8508c5b4c4",
+      "git_blob_sha1": "622b40630b80b82e977a4c37b9bc461d940b9081",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-receipt.json",
+          "raw_sha256": "8c65240ef9b7c2fe0005f2346882dd41a480e71883f7e36def31c7977bbbae1c",
+          "bytes": 3895,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-receipt.json",
+      "source_sha256": "8c65240ef9b7c2fe0005f2346882dd41a480e71883f7e36def31c7977bbbae1c"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-read-ahead-independent-review.json",
+      "bytes": 4908,
+      "sha256": "e0c5b0432b181fd78d215f5c02cf87733f4eba750727af2f77f4a2184b19e14b",
+      "git_lf_sha256": "e0c5b0432b181fd78d215f5c02cf87733f4eba750727af2f77f4a2184b19e14b",
+      "git_blob_sha1": "2c23da8153b5fdf3753c6979e2e2a2bb63e30640",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-independent-review.json",
+          "raw_sha256": "c8762956c5502f7f075b89554c343980b66f57083d4fb0698e08395b24543439",
+          "bytes": 4886,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-independent-review.json",
+      "source_sha256": "c8762956c5502f7f075b89554c343980b66f57083d4fb0698e08395b24543439"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-read-ahead-independent-probe.json",
+      "bytes": 658,
+      "sha256": "c8009191badf1f8ce31f67b711dd795bbdbc73103e932d380e1b6ee7a146413b",
+      "git_lf_sha256": "c8009191badf1f8ce31f67b711dd795bbdbc73103e932d380e1b6ee7a146413b",
+      "git_blob_sha1": "dc3ba1b19d81d0723c6c2bb5b53c6161440f505e",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-independent-probe.json",
+          "raw_sha256": "822c0dbf71e4ee86ba35143745a45db4eeb5f82b5d5a77e3ed0b83549ef417fe",
+          "bytes": 657,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-independent-probe.json",
+      "source_sha256": "822c0dbf71e4ee86ba35143745a45db4eeb5f82b5d5a77e3ed0b83549ef417fe"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-read-ahead-refresh-probe.json",
+      "bytes": 303,
+      "sha256": "1c10baadf2c51d51b5947e67f75decbbf38a19e3e6212d48d4146620f91166e4",
+      "git_lf_sha256": "1c10baadf2c51d51b5947e67f75decbbf38a19e3e6212d48d4146620f91166e4",
+      "git_blob_sha1": "4fe770148bca3eb89ec445a8821a93f6e90f0c2f",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-refresh-probe.json",
+          "raw_sha256": "7c9cfd5b4e880b043475dacef7c8cd0d76f61e0c23e3453ac79b4d0327544c92",
+          "bytes": 302,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-refresh-probe.json",
+      "source_sha256": "7c9cfd5b4e880b043475dacef7c8cd0d76f61e0c23e3453ac79b4d0327544c92"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-read-ahead-stress.json",
+      "bytes": 1087,
+      "sha256": "46606cfe17ed446ec841ff5a5f5b2efefaf1de72f4eefad514fed647811475a6",
+      "git_lf_sha256": "46606cfe17ed446ec841ff5a5f5b2efefaf1de72f4eefad514fed647811475a6",
+      "git_blob_sha1": "f25cea434e247954e0944f5975b79febb736343c",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-stress.json",
+          "raw_sha256": "46606cfe17ed446ec841ff5a5f5b2efefaf1de72f4eefad514fed647811475a6",
+          "bytes": 1087,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-read-ahead-stress.json",
+      "source_sha256": "46606cfe17ed446ec841ff5a5f5b2efefaf1de72f4eefad514fed647811475a6"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-paced-http-comparison.json",
+      "bytes": 72727,
+      "sha256": "29b924438f937cb70657d8bdeae357a5bc8c4314bb62c412ae98df5a16e0542d",
+      "git_lf_sha256": "29b924438f937cb70657d8bdeae357a5bc8c4314bb62c412ae98df5a16e0542d",
+      "git_blob_sha1": "a1070b499fc4d2eee957cbaa1b42412591880c70",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-comparison.json",
+          "raw_sha256": "29b924438f937cb70657d8bdeae357a5bc8c4314bb62c412ae98df5a16e0542d",
+          "bytes": 72727,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-comparison.json",
+      "source_sha256": "29b924438f937cb70657d8bdeae357a5bc8c4314bb62c412ae98df5a16e0542d"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-paced-http-analysis.json",
+      "bytes": 2858,
+      "sha256": "2d1ffb5100e83b545f01e2cfbc95aa8a02e0fdd153d40fda87908b85b68af4d4",
+      "git_lf_sha256": "2d1ffb5100e83b545f01e2cfbc95aa8a02e0fdd153d40fda87908b85b68af4d4",
+      "git_blob_sha1": "f1a9564d34a611f7fd8aa96e33a47c885221da46",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-analysis.json",
+          "raw_sha256": "151f28226d5c1343f3176260a0dfb773bad68481a5d015ae5446de38cb7c94e1",
+          "bytes": 2916,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-analysis.json",
+      "source_sha256": "151f28226d5c1343f3176260a0dfb773bad68481a5d015ae5446de38cb7c94e1"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-paced-http-progress-slow-design.json",
+      "bytes": 1218,
+      "sha256": "c8b369cfccd839341b911eeeadec08412b736457232cf1a2123e5e91f7be4b27",
+      "git_lf_sha256": "c8b369cfccd839341b911eeeadec08412b736457232cf1a2123e5e91f7be4b27",
+      "git_blob_sha1": "bdb73c67856f3b4ca725faa2715f32ae8454143e",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-progress-slow-design.json",
+          "raw_sha256": "ca49c7d1610fd5266742247bb16cda414f226aaf1c664f7413f179fe487aa114",
+          "bytes": 1247,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-progress-slow-design.json",
+      "source_sha256": "ca49c7d1610fd5266742247bb16cda414f226aaf1c664f7413f179fe487aa114"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-paced-http-progress-slow.json",
+      "bytes": 72657,
+      "sha256": "c25d7a361d23c0d5864b42997c7b5e01011d7c0dfa9a926e65aa4c12cee9cb92",
+      "git_lf_sha256": "c25d7a361d23c0d5864b42997c7b5e01011d7c0dfa9a926e65aa4c12cee9cb92",
+      "git_blob_sha1": "67c0181b8337e7543ffba5a17bfac87ca61be034",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-progress-slow.json",
+          "raw_sha256": "c25d7a361d23c0d5864b42997c7b5e01011d7c0dfa9a926e65aa4c12cee9cb92",
+          "bytes": 72657,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-progress-slow.json",
+      "source_sha256": "c25d7a361d23c0d5864b42997c7b5e01011d7c0dfa9a926e65aa4c12cee9cb92"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-paced-http-progress-slow-analysis.json",
+      "bytes": 3292,
+      "sha256": "e3c6dd92adfce6795b41193d1b32d468a482e62eb76de27f242dae7a5aee11d2",
+      "git_lf_sha256": "e3c6dd92adfce6795b41193d1b32d468a482e62eb76de27f242dae7a5aee11d2",
+      "git_blob_sha1": "b0aa1605463ed8ed0d46a1eae8d96c75e5e7e016",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-progress-slow-analysis.json",
+          "raw_sha256": "4ee6f4685934bda2af3e775e8f3a0385968f41f244112edf790f48cc044e5340",
+          "bytes": 3358,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paced-http-progress-slow-analysis.json",
+      "source_sha256": "4ee6f4685934bda2af3e775e8f3a0385968f41f244112edf790f48cc044e5340"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-resolver-expiry-review.json",
+      "bytes": 1348,
+      "sha256": "dbc24e619731a01e5b53781d114f6c7ac2f0955ddc01565d27a098ba4c97f86f",
+      "git_lf_sha256": "dbc24e619731a01e5b53781d114f6c7ac2f0955ddc01565d27a098ba4c97f86f",
+      "git_blob_sha1": "c7994768441116789fffccc6eceb2df913eb9b8d",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-resolver-expiry-review.json",
+          "raw_sha256": "dbc24e619731a01e5b53781d114f6c7ac2f0955ddc01565d27a098ba4c97f86f",
+          "bytes": 1348,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-resolver-expiry-review.json",
+      "source_sha256": "dbc24e619731a01e5b53781d114f6c7ac2f0955ddc01565d27a098ba4c97f86f"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-service-timeout-probe.json",
+      "bytes": 686,
+      "sha256": "67107caaba0600c35b6fd277b792326b701fb23669f002686621f2eaf3651998",
+      "git_lf_sha256": "67107caaba0600c35b6fd277b792326b701fb23669f002686621f2eaf3651998",
+      "git_blob_sha1": "2c761ff6959f9e95933156ee54488500dc818290",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-service-timeout-probe.json",
+          "raw_sha256": "67107caaba0600c35b6fd277b792326b701fb23669f002686621f2eaf3651998",
+          "bytes": 686,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-service-timeout-probe.json",
+      "source_sha256": "67107caaba0600c35b6fd277b792326b701fb23669f002686621f2eaf3651998"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-independent-recovery-review.json",
+      "bytes": 4383,
+      "sha256": "51f368341c62a29b210efb86c49b596b9e9e669de6d96685f4a2f03ec33c6c1f",
+      "git_lf_sha256": "51f368341c62a29b210efb86c49b596b9e9e669de6d96685f4a2f03ec33c6c1f",
+      "git_blob_sha1": "114f0833e09c86a82538f6f3649bc789c58e3c30",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-independent-recovery-review.json",
+          "raw_sha256": "c5fdbe943b4dab8daf284fba564bd36af3ea3dd7c87e307580ea8bfed66be2b4",
+          "bytes": 4217,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-independent-recovery-review.json",
+      "source_sha256": "c5fdbe943b4dab8daf284fba564bd36af3ea3dd7c87e307580ea8bfed66be2b4"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-ffmpeg-fault-baseline-v2.json",
+      "bytes": 1179,
+      "sha256": "8fbf251851f80cd6d4f56bd3a8c428daf7b06caeda1bcc7524cdfb524f24a688",
+      "git_lf_sha256": "8fbf251851f80cd6d4f56bd3a8c428daf7b06caeda1bcc7524cdfb524f24a688",
+      "git_blob_sha1": "7352047672e0d8575b1cacda7ee921b31afb754c",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-ffmpeg-fault-baseline-v2.json",
+          "raw_sha256": "8fbf251851f80cd6d4f56bd3a8c428daf7b06caeda1bcc7524cdfb524f24a688",
+          "bytes": 1179,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-ffmpeg-fault-baseline-v2.json",
+      "source_sha256": "8fbf251851f80cd6d4f56bd3a8c428daf7b06caeda1bcc7524cdfb524f24a688"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-native-a-independent-review.json",
+      "bytes": 5422,
+      "sha256": "744b6fc062640f8aca8a4913a4411619126c7db1c36e6e9309edb32bd3946937",
+      "git_lf_sha256": "744b6fc062640f8aca8a4913a4411619126c7db1c36e6e9309edb32bd3946937",
+      "git_blob_sha1": "f9cfc366f68c5d3a5a49d218cf38e515f03b440b",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-a-independent-review.json",
+          "raw_sha256": "d79490436f5b29893287b23e7db622729186d364d8769aa6649bf3cf8612b76a",
+          "bytes": 5406,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-a-independent-review.json",
+      "source_sha256": "d79490436f5b29893287b23e7db622729186d364d8769aa6649bf3cf8612b76a"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-native-b-independent-review.json",
+      "bytes": 10849,
+      "sha256": "018306ff4eed1d59997b3be66c539012782465c67c2a4e8fa9b63af8d319bcc9",
+      "git_lf_sha256": "018306ff4eed1d59997b3be66c539012782465c67c2a4e8fa9b63af8d319bcc9",
+      "git_blob_sha1": "b54b79742b1155ce28d8b9497ca3fa07418b0d3c",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-b-independent-review.json",
+          "raw_sha256": "d4b191a0d2912f78fc6a00ac035072553815d6fac3e36ee6563d66fdfad3725f",
+          "bytes": 10945,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-b-independent-review.json",
+      "source_sha256": "d4b191a0d2912f78fc6a00ac035072553815d6fac3e36ee6563d66fdfad3725f"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-native-performance-independent-review.json",
+      "bytes": 2211,
+      "sha256": "673b29bdb4ff8a6a8f406af4760e7c8e8aca129f0e808cda4305bf1104e5bdc5",
+      "git_lf_sha256": "673b29bdb4ff8a6a8f406af4760e7c8e8aca129f0e808cda4305bf1104e5bdc5",
+      "git_blob_sha1": "ac602b815baa3a3fc46c8467ed4452b04b507857",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-performance-independent-review.json",
+          "raw_sha256": "4359350176e64a8d7cad636a43c71dc9e1f7214024ab1a5aa06420b6de7d1855",
+          "bytes": 2364,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [
+        {
+          "pointer": "/baseline/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/candidate/path",
+          "action": "absolute local path replaced by basename"
+        }
+      ],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-performance-independent-review.json",
+      "source_sha256": "4359350176e64a8d7cad636a43c71dc9e1f7214024ab1a5aa06420b6de7d1855"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-native-integration-independent-review.json",
+      "bytes": 10983,
+      "sha256": "759645c9e00095cc27791798994fb10058ae24172cca7ff0cd8bfbb7e23b1208",
+      "git_lf_sha256": "759645c9e00095cc27791798994fb10058ae24172cca7ff0cd8bfbb7e23b1208",
+      "git_blob_sha1": "7b4d9ac254a5dfb63efcd8fc89f4b18d178c6a88",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-integration-independent-review.json",
+          "raw_sha256": "2395999a4b8e1f1c517b5d1f3e584e1503e96239c566f3a121419210fc355496",
+          "bytes": 11130,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-integration-independent-review.json",
+      "source_sha256": "2395999a4b8e1f1c517b5d1f3e584e1503e96239c566f3a121419210fc355496"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-native-a-progress-independent.json",
+      "bytes": 692,
+      "sha256": "e434c591a5d71d4fb0e4f36af05ebf9c5c816aadce289841038c3d738d5bc499",
+      "git_lf_sha256": "e434c591a5d71d4fb0e4f36af05ebf9c5c816aadce289841038c3d738d5bc499",
+      "git_blob_sha1": "bc1e49f19d352fbdc9387428b979e155c1222303",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-a-progress-independent.json",
+          "raw_sha256": "10d628a8b16939c60b9e3d2b152b5c1f06707f1e3b5d721a7bc4f54c1abc0135",
+          "bytes": 691,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-native-a-progress-independent.json",
+      "source_sha256": "10d628a8b16939c60b9e3d2b152b5c1f06707f1e3b5d721a7bc4f54c1abc0135"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-qq-strict-cold.json",
+      "bytes": 17367,
+      "sha256": "efd24dc84f959fcb6b15e38f2c391a2cb6ce9e44f979991ae881bb186f9c1df9",
+      "git_lf_sha256": "efd24dc84f959fcb6b15e38f2c391a2cb6ce9e44f979991ae881bb186f9c1df9",
+      "git_blob_sha1": "2219e5340cf70fbe619138dc28d0cca05bb24554",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq-strict-cold.json",
+          "raw_sha256": "24abeb38a1d020a2ca067623f50b73dd291cdb98727156e9ce2af950c343eda3",
+          "bytes": 18044,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [
+        {
+          "pointer": "/rea/events/41/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/42/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/43/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/44/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/48/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/51/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/54/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/56/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/57/path",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/rea/events/58/path",
+          "action": "absolute local path replaced by basename"
+        }
+      ],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq-strict-cold.json",
+      "source_sha256": "24abeb38a1d020a2ca067623f50b73dd291cdb98727156e9ce2af950c343eda3"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-qq-strict-cold-ui.json",
+      "bytes": 1454,
+      "sha256": "f6f787d357974628ea6f232abaf51d19e970d4ca3c512d0e325895cb63ecbda7",
+      "git_lf_sha256": "f6f787d357974628ea6f232abaf51d19e970d4ca3c512d0e325895cb63ecbda7",
+      "git_blob_sha1": "3550726ab12817f5deebd1613e0ae65d476075a2",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq-strict-cold-ui.json",
+          "raw_sha256": "f6f787d357974628ea6f232abaf51d19e970d4ca3c512d0e325895cb63ecbda7",
+          "bytes": 1454,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq-strict-cold-ui.json",
+      "source_sha256": "f6f787d357974628ea6f232abaf51d19e970d4ca3c512d0e325895cb63ecbda7"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-full-media-cache-state.json",
+      "bytes": 818,
+      "sha256": "121f73e117dd2d66891318cba59390ba32cb4b267cdfd57563cba1a7524ff39e",
+      "git_lf_sha256": "121f73e117dd2d66891318cba59390ba32cb4b267cdfd57563cba1a7524ff39e",
+      "git_blob_sha1": "1887c23553d4fc32489026f9a1b20b97e33ffb53",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-full-media-cache-state.json",
+          "raw_sha256": "4ea5e7dac558c64811c6b23aa7ec93484002d628560cb079d7891ba5aa4c0c7f",
+          "bytes": 897,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [
+        {
+          "pointer": "/CacheRoot",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/BackupRoot",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/FreshRoot",
+          "action": "absolute local path replaced by basename"
+        }
+      ],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-full-media-cache-state.json",
+      "source_sha256": "4ea5e7dac558c64811c6b23aa7ec93484002d628560cb079d7891ba5aa4c0c7f"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-real-streaming-baseline.json",
+      "bytes": 84637,
+      "sha256": "bba1f8000ab9d9aab5ea9430814d4bfb6300c4acbf2c648c9a59e252bcc51681",
+      "git_lf_sha256": "bba1f8000ab9d9aab5ea9430814d4bfb6300c4acbf2c648c9a59e252bcc51681",
+      "git_blob_sha1": "65466801f562740b333b7b919d751a4bb7599beb",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-real-streaming-baseline.json",
+          "raw_sha256": "bba1f8000ab9d9aab5ea9430814d4bfb6300c4acbf2c648c9a59e252bcc51681",
+          "bytes": 84637,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-real-streaming-baseline.json",
+      "source_sha256": "bba1f8000ab9d9aab5ea9430814d4bfb6300c4acbf2c648c9a59e252bcc51681"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-native-service-source-pins.json",
+      "bytes": 1922,
+      "sha256": "ea62b5782b54f0765e00cac699ffea088d0b4cd400652a95f61f60fa8b6ea780",
+      "git_lf_sha256": "ea62b5782b54f0765e00cac699ffea088d0b4cd400652a95f61f60fa8b6ea780",
+      "git_blob_sha1": "ce6a3f88003aa40d735f036f29e0066366eeb99c",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": ".cache/qq-task14-native-service-source-pins.json",
+          "raw_sha256": "ec72476770ad903c26513a564534e54759caa8854cd63284d26cffab7477fb64",
+          "bytes": 1975,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": ".cache/qq-task14-native-service-source-pins.json",
+      "source_sha256": "ec72476770ad903c26513a564534e54759caa8854cd63284d26cffab7477fb64"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-integrated-source-pins.json",
+      "bytes": 2947,
+      "sha256": "d3fbe30e6ec45f55ce855d6f395c3b01c70a071b704243eb6b4c2e05842c8422",
+      "git_lf_sha256": "d3fbe30e6ec45f55ce855d6f395c3b01c70a071b704243eb6b4c2e05842c8422",
+      "git_blob_sha1": "8e5cd27bff895cead0a0bbe68cedbc1950162cf5",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": ".cache/qq-task14-integrated-source-pins.json",
+          "raw_sha256": "e2b31c2234b83e60fc607f1d0f928a0f43c86378fc86d00481d7118553599d16",
+          "bytes": 3028,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": ".cache/qq-task14-integrated-source-pins.json",
+      "source_sha256": "e2b31c2234b83e60fc607f1d0f928a0f43c86378fc86d00481d7118553599d16"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-integrated-native-final-receipt.json",
+      "bytes": 3830,
+      "sha256": "f078889191ba6fda6b518212423832c467b3fc054bde19397bac0ce5cc6673ae",
+      "git_lf_sha256": "f078889191ba6fda6b518212423832c467b3fc054bde19397bac0ce5cc6673ae",
+      "git_blob_sha1": "f7e11fa0ba34dea8c984b01982a788c4aaca0270",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": ".cache/qq-task14-integrated-native-final-receipt.json",
+          "raw_sha256": "f30277bc57d0c381b97bbb81cf49565c17c73d97ee2a17764522454ed0eae083",
+          "bytes": 4050,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [
+        {
+          "pointer": "/sourceRoot",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/buildRoot",
+          "action": "absolute local path replaced by basename"
+        },
+        {
+          "pointer": "/stageRoot",
+          "action": "absolute local path replaced by basename"
+        }
+      ],
+      "source": ".cache/qq-task14-integrated-native-final-receipt.json",
+      "source_sha256": "f30277bc57d0c381b97bbb81cf49565c17c73d97ee2a17764522454ed0eae083"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-ffmpeg-fault-final.json",
+      "bytes": 5143,
+      "sha256": "9f823a0e360f0c9ff437a98f5f76ad7a18b0c1c6e1a3db8c4289ec099b014559",
+      "git_lf_sha256": "9f823a0e360f0c9ff437a98f5f76ad7a18b0c1c6e1a3db8c4289ec099b014559",
+      "git_blob_sha1": "8660a11fef434acd8254f2a57056926e45b78cbd",
+      "kind": "curated-json",
+      "sources": [
+        {
+          "path": ".cache/qq-task14-ffmpeg-fault-final.json",
+          "raw_sha256": "9f823a0e360f0c9ff437a98f5f76ad7a18b0c1c6e1a3db8c4289ec099b014559",
+          "bytes": 5143,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": ".cache/qq-task14-ffmpeg-fault-final.json",
+      "source_sha256": "9f823a0e360f0c9ff437a98f5f76ad7a18b0c1c6e1a3db8c4289ec099b014559"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-native-buffer-policy-summary.json",
+      "bytes": 7888,
+      "sha256": "f05092084487b4d86903ee6f4d2acc96c66ac6df24fcc031e760f10c6e621dc2",
+      "git_lf_sha256": "f05092084487b4d86903ee6f4d2acc96c66ac6df24fcc031e760f10c6e621dc2",
+      "git_blob_sha1": "2e5c47dc3d6cb3c9000dd07cd0f5b3b3affcff37",
+      "kind": "derived-static-summary",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-static-buffer-policy.json",
+          "raw_sha256": "5e9322d8baba5a9ff6a78568d8a1b89c4dfd94e386aed46879cbc80bd7af6255",
+          "bytes": 25300,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-static-buffer-calculate.json",
+          "raw_sha256": "94ea45fce20e75fd6397420662985dd9e835c6d62edb2e1521958cbb152a3f9e",
+          "bytes": 17320,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-static-block-connections.json",
+          "raw_sha256": "7b9b771991c80057b40fd645596cd96d72004d2d11a393c8811052167538d444",
+          "bytes": 18148,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": []
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-normal-rc7-package-metadata.json",
+      "bytes": 4069,
+      "sha256": "bed619c4af5be84d538a1c1999f66cc80c8f9cf6a30cb78a56cac9d9403e64de",
+      "git_lf_sha256": "bed619c4af5be84d538a1c1999f66cc80c8f9cf6a30cb78a56cac9d9403e64de",
+      "git_blob_sha1": "08a28fc3f602f74cf25c7c4b40f8248f42d786b6",
+      "kind": "binary-package-metadata-only",
+      "sources": [
+        {
+          "path": "Twilight-Echo-plugins/packages/com.twilightecho.provider.qqmusic-0.4.0-rc.7.tep",
+          "raw_sha256": "b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2",
+          "bytes": 270232,
+          "source_kind": "binary ZIP; never line-normalized"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; absolute local paths reduced to basenames",
+      "redactions": [],
+      "source": "Twilight-Echo-plugins/packages/com.twilightecho.provider.qqmusic-0.4.0-rc.7.tep",
+      "source_sha256": "b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-static2-findings.md",
+      "bytes": 5105,
+      "sha256": "2fe5c1b76bb18cb5613ec611f4401c59acf1841a9ba7b05d6dc8727f4b55b747",
+      "git_lf_sha256": "2fe5c1b76bb18cb5613ec611f4401c59acf1841a9ba7b05d6dc8727f4b55b747",
+      "git_blob_sha1": "029fdbdb1007d243a6cbae431d65fbf8d4261948",
+      "kind": "static-transport-second-stage",
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-static2-findings.md",
+      "source_sha256": "2fe5c1b76bb18cb5613ec611f4401c59acf1841a9ba7b05d6dc8727f4b55b747",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-static2-findings.md",
+          "raw_sha256": "2fe5c1b76bb18cb5613ec611f4401c59acf1841a9ba7b05d6dc8727f4b55b747",
+          "bytes": 5105,
+          "source_kind": "UTF-8 text"
+        }
+      ],
+      "transform": "UTF-8/LF; no binary input normalization",
+      "redactions": []
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-static2-receipt.json",
+      "bytes": 4565,
+      "sha256": "8dc31e4788cf01914b54d63334e1881eb73e6612aee10c705937ae4e00261325",
+      "git_lf_sha256": "8dc31e4788cf01914b54d63334e1881eb73e6612aee10c705937ae4e00261325",
+      "git_blob_sha1": "82f7f44a20c1a12f8f489ae9dea70fac077dfadc",
+      "kind": "static-transport-second-stage",
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-static2-receipt.json",
+      "source_sha256": "5caff7e1d6465d033d8141c403f71e6b08e529ec792b00910618f70276aed526",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-static2-receipt.json",
+          "raw_sha256": "5caff7e1d6465d033d8141c403f71e6b08e529ec792b00910618f70276aed526",
+          "bytes": 4664,
+          "source_kind": "UTF-8 text"
+        }
+      ],
+      "transform": "UTF-8/LF; no binary input normalization",
+      "redactions": []
+    },
+    {
+      "path": "docs/qqmusic-research/task14/README.md",
+      "bytes": 10931,
+      "sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
+      "git_lf_sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
+      "git_blob_sha1": "665d2d23535e7806ddeb6de9d787139163de61fe",
+      "kind": "archive-entrypoint",
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-archive-readme-draft.md",
+      "source_sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-archive-readme-draft.md",
+          "raw_sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
+          "bytes": 10931,
+          "source_kind": "generated UTF-8 text"
+        }
+      ],
+      "transform": "UTF-8/LF serialization; no binary normalization",
+      "redactions": [],
+      "git_blob_verification": "Canonical UTF-8/LF content blob independently computed; final repository-filter check pending coordinator source freeze"
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-real-streaming-candidate.json",
+      "bytes": 84603,
+      "sha256": "ac7ec4b1aa4517d6e9d4c460d6fece39fbef8aecfa0b000185fc91b9245953dd",
+      "git_lf_sha256": "ac7ec4b1aa4517d6e9d4c460d6fece39fbef8aecfa0b000185fc91b9245953dd",
+      "git_blob_sha1": "6ab364f983fc35e65fdad6072bf4655541b5cf56",
+      "kind": "actual-candidate-runtime",
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-real-streaming-candidate.json",
+      "source_sha256": "ac7ec4b1aa4517d6e9d4c460d6fece39fbef8aecfa0b000185fc91b9245953dd",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-real-streaming-candidate.json",
+          "raw_sha256": "ac7ec4b1aa4517d6e9d4c460d6fece39fbef8aecfa0b000185fc91b9245953dd",
+          "bytes": 84603,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "UTF-8/LF serialization; no binary normalization",
+      "redactions": []
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-standalone-process-check.json",
+      "bytes": 479,
+      "sha256": "d3896989f73f746072a868c47259e5141e0673d6096aca74930f2ed391aa633a",
+      "git_lf_sha256": "d3896989f73f746072a868c47259e5141e0673d6096aca74930f2ed391aa633a",
+      "git_blob_sha1": "eb2d275694d582166c79dd3e124a98d3b8b6bd61",
+      "kind": "actual-candidate-runtime",
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-standalone-process-check.json",
+      "source_sha256": "ad6595f471de491209a968dc58c5fd4e9aba840e786bed625b219118ac67f44e",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-standalone-process-check.json",
+          "raw_sha256": "ad6595f471de491209a968dc58c5fd4e9aba840e786bed625b219118ac67f44e",
+          "bytes": 491,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "UTF-8/LF serialization; no binary normalization",
+      "redactions": []
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-final-artifact-independent-audit.json",
+      "bytes": 36129,
+      "sha256": "3354f9994281a6384289d5bdb2b6e9e9a012ecd5f5dd760903a97ad3475a298c",
+      "git_lf_sha256": "3354f9994281a6384289d5bdb2b6e9e9a012ecd5f5dd760903a97ad3475a298c",
+      "git_blob_sha1": "89b78d72a9130e1e03fdd70825bb65116d6f239f",
+      "kind": "curated-json",
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-final-artifact-independent-audit.json",
+      "source_sha256": "dad0c3bbf9367f31edff0817070f9d372038354ff1e9cfe724ea511c63084b91",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-final-artifact-independent-audit.json",
+          "raw_sha256": "dad0c3bbf9367f31edff0817070f9d372038354ff1e9cfe724ea511c63084b91",
+          "bytes": 36931,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; safety checked; no redaction needed",
+      "redactions": []
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-paused-seek-fix-independent-review.json",
+      "bytes": 8440,
+      "sha256": "631c2eaf3f1b243e84b6dedfec20109f572568e5581be1f9136169568f62a498",
+      "git_lf_sha256": "631c2eaf3f1b243e84b6dedfec20109f572568e5581be1f9136169568f62a498",
+      "git_blob_sha1": "bf8477c57add075b0eb1894afc066c2840ba1508",
+      "kind": "curated-json",
+      "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paused-seek-fix-independent-review.json",
+      "source_sha256": "4192d0ad1b901311141c76e56fd32f584414b683f62f954926fae047f2dd4653",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-paused-seek-fix-independent-review.json",
+          "raw_sha256": "4192d0ad1b901311141c76e56fd32f584414b683f62f954926fae047f2dd4653",
+          "bytes": 8521,
+          "source_kind": "UTF-8 JSON"
+        }
+      ],
+      "transform": "JSON parsed and emitted UTF-8/LF; safety checked; no redaction needed",
+      "redactions": []
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-eof-and-pause-repair-summary.json",
+      "bytes": 26034,
+      "sha256": "c572561f1f92cb2e1628cf2b50cd69a7d696d7277b07e1cb8cd4eb65ff1dcd5e",
+      "git_lf_sha256": "c572561f1f92cb2e1628cf2b50cd69a7d696d7277b07e1cb8cd4eb65ff1dcd5e",
+      "git_blob_sha1": "ba9269d964a6aef291cd470ea2747e3a971671d7",
+      "kind": "derived-repair-and-gate-summary",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-eof-capi-independent.json",
+          "raw_sha256": "00aaad5b3d638674f8c820ccb059a3a2106ff6c01ff98c40bf5cf87f6a8be819",
+          "bytes": 2964,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-eof-native-handoff.json",
+          "raw_sha256": "b782d90b0ed341a9c8947d226dfb70082ffeea5bcbf81b9d206ec9f7aba9207d",
+          "bytes": 3583,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-eof-native-independent-review.json",
+          "raw_sha256": "ac568b4aa66f561a49e40593024bc07cd4d5fd57fbd6f5792d5ea526d934250d",
+          "bytes": 3835,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-eof-capi-candidate-review.json",
+          "raw_sha256": "d594679695abcb4d11e90e718a8f9761bfe9c3c039ef3ff14fbb8f5ab86c08b7",
+          "bytes": 175300,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-service-pause-repair-receipt.json",
+          "raw_sha256": "aa55191a101c3e87f46f87db1f7ac66e5cac88fa94db66225e93cac5e435d9a7",
+          "bytes": 4720,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-service-pause-independent-review.json",
+          "raw_sha256": "a55f2e4688ef2a19a05ac4075d447af48932065cc78b5284bf623312f8167cbc",
+          "bytes": 2806,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq7-stage-receipt.json",
+          "raw_sha256": "c4a5d4bf991b1f6e63a84d65e9c9ced3e65b6fd8a641f856b0f5c2636e2c9dde",
+          "bytes": 3049,
+          "source_kind": "UTF-8 JSON"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq7-native-ctest-v2.txt",
+          "raw_sha256": "783e3f974320bbf1f00953625377b190c1b187062d18bff239833e07dd630a43",
+          "bytes": 1252,
+          "source_kind": "UTF-8 text log; not copied"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq7-production-build-v3.txt",
+          "raw_sha256": "742e89e47937365b1f7b1b931030b58b63632e55c2e8d9d945c15575e9e29b10",
+          "bytes": 20422,
+          "source_kind": "UTF-8 text log; not copied"
+        }
+      ],
+      "transform": "Selected numeric/public-source facts and reviewed contracts; CAPI source/device/profile/UI tree fields omitted; UTF-8/LF",
+      "redactions": [
+        {
+          "pointer": "/nativeRepair/independentCapi/cases/*/phases",
+          "action": "Selected result/state/position/duration/output-release fields only; source and device identifiers not copied"
+        }
+      ]
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-qq8-pre-release-repairs-summary.json",
+      "bytes": 38190,
+      "sha256": "55fad8f90507d609781d020863c54c608e5dafa998bcd3331ea5d38c65b1fa10",
+      "git_lf_sha256": "55fad8f90507d609781d020863c54c608e5dafa998bcd3331ea5d38c65b1fa10",
+      "git_blob_sha1": "d5245f450b810b079105fc0356b90b82afeb4554",
+      "kind": "derived-qq8-repair-and-retained-failure-summary",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq7-ui-observations.json",
+          "raw_sha256": "201e06ae20b91342488285ee2dc9855ca3024ada019b3b5a30e2929bc1a0e0b6",
+          "bytes": 3568,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq7-final-artifact-independent-audit.json",
+          "raw_sha256": "8b795e2362c069697156a38c2312a04eba279a2df6dbb7f79d57e78a7b31c9c8",
+          "bytes": 40657,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-renderer-ack-handoff.json",
+          "raw_sha256": "1e5580ebaed384ee4a184301179319d408552403ee1a099c89e6e0bf450478ea",
+          "bytes": 10194,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-renderer-ack-independent-review.json",
+          "raw_sha256": "2759c6c3a9bfbb7f0a4366a0ce30971ed82a6a294f9d3282d19e0fd47175b096",
+          "bytes": 2108,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-proxy-early-headers-repair-receipt.json",
+          "raw_sha256": "63e8bc786b78651cfc6f273a464dfa03c59ebe6515fe11b8e3e05b897b3ed9f7",
+          "bytes": 8422,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-early-headers-independent-review.json",
+          "raw_sha256": "439733af4fa95cbe1e54881a9ea110d8996fc4a6158f3877db8b9c4eccf26d77",
+          "bytes": 4183,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-seek-budget-source-pins.json",
+          "raw_sha256": "0e75338cdd36b684fc8447dcdfcf3d9c570ff5d2fc8e1b3cc8afe07e07d37a10",
+          "bytes": 2129,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-seek-budget-independent-review.json",
+          "raw_sha256": "4869b73cc516d37a15e6e36511d3eff4c1f1220e31c453f924a6b5c466c1a57e",
+          "bytes": 2348,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-http-seek-budget-candidate-v2.json",
+          "raw_sha256": "c889a31969991071c9231d78b5649e0783cef847cae519c55916cdec51595969",
+          "bytes": 41350,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-flac-http-seek-candidate-v2.json",
+          "raw_sha256": "3bd6f6e6e8a60cfafcc70bab33a10cc898ef43520bc1f22b5bcf836997932820",
+          "bytes": 21974,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-flac-http-seek-baseline.json",
+          "raw_sha256": "aea9aa7046a30d23e2085fa3fd90a840d616c8680b81a0d99a194007f4ef0847",
+          "bytes": 19667,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-seek-budget-read-progress.json",
+          "raw_sha256": "64ffe3406667ccd2b2848c8505036911e51750e89053b8d23760c3a10c85149e",
+          "bytes": 691,
+          "source_kind": "UTF-8 JSON; selected facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-seek-budget-three-ctest.txt",
+          "raw_sha256": "de6a8531fe51fa6c0bf15f7490fc4a5243a4ea245acb5f658df233f0194b8273",
+          "bytes": 536,
+          "source_kind": "UTF-8 text log/helper; not copied"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq8-native-ctest.txt",
+          "raw_sha256": "19bd61430492b4a919a94d8d124e6fdae3d43a5f41185f1ae1c8843646f3fba3",
+          "bytes": 1252,
+          "source_kind": "UTF-8 text log/helper; not copied"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq8-native-full-build.txt",
+          "raw_sha256": "a2994fa224c4ea6c9ce8ff549608fa8ac6a48efd30e4701da987eb6b0b48e81d",
+          "bytes": 10380,
+          "source_kind": "UTF-8 text log/helper; not copied"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq7-ui-receipt.py",
+          "raw_sha256": "b3b6e2619f3d8e36806d4e6c2aa6993903ebd56442e289c907e48d36f308a830",
+          "bytes": 8278,
+          "source_kind": "UTF-8 text log/helper; not copied"
+        }
+      ],
+      "git_blob_verification": "Canonical UTF-8/LF content blob independently computed; final repository-filter check pending coordinator source freeze",
+      "transform": "Selected public technical facts and pins; omitted screenshot paths, full UI trees, generated audio, live source identifiers and request endpoints; UTF-8/LF",
+      "redactions": [
+        {
+          "pointer": "/retainedQq7/observations/*/screenshotPath",
+          "action": "Field omitted; no screenshots copied"
+        }
+      ]
+    }
+  ],
+  "provider_mirror_files": [
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/index.mjs",
+      "bytes": 84969,
+      "sha256": "4a370494f6f44d27922269ea219f011dd437a46f9ac9132a12470ca5b0abaffe",
+      "git_lf_sha256": "4a370494f6f44d27922269ea219f011dd437a46f9ac9132a12470ca5b0abaffe",
+      "git_blob_sha1": "c5fe5afd3db575a0d8a4c9ddc5c7cf43f4ce12eb",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/index.mjs",
+      "source_sha256": "60b6cd82808ad6bd45bed2bf633c419972783f0d38ddf69edffd8e3d6dd75669",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/index.test.mjs",
+      "bytes": 46793,
+      "sha256": "2cb592bb8b3a5af28aaf484b49f1bd79dda78cf562b4d5cc3b11b29aaf8de61e",
+      "git_lf_sha256": "2cb592bb8b3a5af28aaf484b49f1bd79dda78cf562b4d5cc3b11b29aaf8de61e",
+      "git_blob_sha1": "3c1c3dbd4a2d878fbdc753175c1fda8b2f5232fa",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/index.test.mjs",
+      "source_sha256": "c11c27c392d0da1cbba894940ac53b3c77b246cc9e6676106b204fa6e1084b7f",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/album-call.mjs",
+      "bytes": 7976,
+      "sha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "git_lf_sha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "git_blob_sha1": "e62d90f482f2fd333705df7014214168e562a1c8",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/album-call.mjs",
+      "source_sha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/artist-call.mjs",
+      "bytes": 12972,
+      "sha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "git_lf_sha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "git_blob_sha1": "4d3c58dd7cd8592cdad227d614212fdb90faf855",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/artist-call.mjs",
+      "source_sha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+      "bytes": 33514,
+      "sha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+      "git_lf_sha256": "159e1fa945285be3432d7b4c1c5c43737e3aaaed19e5cef3fc20fdc32cd145ff",
+      "git_blob_sha1": "c9828905e259ca9961084e1249196f1616721500",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+      "source_sha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/client.mjs",
+      "bytes": 20296,
+      "sha256": "71259f3c170ddf78e4252a80188e3fce5edcde33ee025c7bf8e0d88e63c7b3d3",
+      "git_lf_sha256": "71259f3c170ddf78e4252a80188e3fce5edcde33ee025c7bf8e0d88e63c7b3d3",
+      "git_blob_sha1": "cc103cf2aa263aa7ac13aed2c43bbba696f49f15",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/client.mjs",
+      "source_sha256": "71259f3c170ddf78e4252a80188e3fce5edcde33ee025c7bf8e0d88e63c7b3d3",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/comm.mjs",
+      "bytes": 3463,
+      "sha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "git_lf_sha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "git_blob_sha1": "03c508229ce32e50903cbe147236d5cf4707bfe5",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/comm.mjs",
+      "source_sha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/container.mjs",
+      "bytes": 4407,
+      "sha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "git_lf_sha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "git_blob_sha1": "6e8a02028eec5aaaa132c4b84c7214587831c7b8",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/container.mjs",
+      "source_sha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform-vectors.json",
+      "bytes": 17609,
+      "sha256": "2f778c9147f6742e6dfe700e57c4cba539542040798dbbf95865b391ec4d3cd1",
+      "git_lf_sha256": "2f778c9147f6742e6dfe700e57c4cba539542040798dbbf95865b391ec4d3cd1",
+      "git_blob_sha1": "95d52c78a7fdc96f2294d9fd0b7cb5ee390e22e9",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/data-transform-vectors.json",
+      "source_sha256": "b1cd30aa7de40b26c0c389835e40fd16164910a45ebe7844c932a156326e4549",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform.mjs",
+      "bytes": 2430,
+      "sha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
+      "git_lf_sha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
+      "git_blob_sha1": "09f040a7c636477678f96047f9f5e764390c8c9d",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/data-transform.mjs",
+      "source_sha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform.test.mjs",
+      "bytes": 2871,
+      "sha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
+      "git_lf_sha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
+      "git_blob_sha1": "d825bdb77af10cc0b39c72bda97993fe66e0e8ea",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/data-transform.test.mjs",
+      "source_sha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/discovery-call.mjs",
+      "bytes": 19351,
+      "sha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "git_lf_sha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "git_blob_sha1": "9ba7ea45da3811b7258815bcca7da69fb7238cb7",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/discovery-call.mjs",
+      "source_sha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/ekey.mjs",
+      "bytes": 2574,
+      "sha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "git_lf_sha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "git_blob_sha1": "2c9ea2b2023ab652e9fdb5f0353dc7cc8a666ba8",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/ekey.mjs",
+      "source_sha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/favorite-call.mjs",
+      "bytes": 5936,
+      "sha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+      "git_lf_sha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+      "git_blob_sha1": "f46361802abbc6ebfa62d998f3db6cb125a01024",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/favorite-call.mjs",
+      "source_sha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/favorite-state.mjs",
+      "bytes": 6002,
+      "sha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+      "git_lf_sha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+      "git_blob_sha1": "6fb4deb6358297f5591b0abf2cc84b73197ae79c",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/favorite-state.mjs",
+      "source_sha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/file-transform.mjs",
+      "bytes": 2082,
+      "sha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
+      "git_lf_sha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
+      "git_blob_sha1": "a819d0e9bad010b8c87c20afb6917e0900d277b7",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/file-transform.mjs",
+      "source_sha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/filename.mjs",
+      "bytes": 4288,
+      "sha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+      "git_lf_sha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+      "git_blob_sha1": "aeeb6ddd1b7d74446f9bb19ae15f1f3de035cde0",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/filename.mjs",
+      "source_sha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/home-call.mjs",
+      "bytes": 15864,
+      "sha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "git_lf_sha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "git_blob_sha1": "98a817e0cd5feada6ed8c1ac72e5cc372acab287",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/home-call.mjs",
+      "source_sha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/json-integer.mjs",
+      "bytes": 602,
+      "sha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "git_lf_sha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "git_blob_sha1": "a076cdd57154f7ba1fabcb87e178d25324b9b9b0",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/json-integer.mjs",
+      "source_sha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/login-request.mjs",
+      "bytes": 3818,
+      "sha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "git_lf_sha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "git_blob_sha1": "fab7d41340484df804c6ec8cbf35c66162194ccf",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/login-request.mjs",
+      "source_sha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/lyric-call.mjs",
+      "bytes": 3876,
+      "sha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "git_lf_sha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "git_blob_sha1": "3cbc8991a57633e2d5abb6d96ed35b668bde0e7f",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/lyric-call.mjs",
+      "source_sha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/media-source.mjs",
+      "bytes": 19009,
+      "sha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
+      "git_lf_sha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
+      "git_blob_sha1": "3cc92e3a85a134886b33a26e13fdb8dc4e1d55b9",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/media-source.mjs",
+      "source_sha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/media-stream.mjs",
+      "bytes": 6405,
+      "sha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+      "git_lf_sha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+      "git_blob_sha1": "91adc9e85b762468d008841f122e790ffce88c2a",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/media-stream.mjs",
+      "source_sha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-binding.mjs",
+      "bytes": 4485,
+      "sha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "git_lf_sha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "git_blob_sha1": "1dc1bf975a69953418d6e420893e9541cdb5b0d2",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/playlist-binding.mjs",
+      "source_sha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-call.mjs",
+      "bytes": 3895,
+      "sha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "git_lf_sha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "git_blob_sha1": "c3da37fefe6661677b76ae6ae217ac907009548d",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/playlist-call.mjs",
+      "source_sha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-data.mjs",
+      "bytes": 10732,
+      "sha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "git_lf_sha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "git_blob_sha1": "795c5a644e58c37183422e4dea976478f1b6b97c",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/playlist-data.mjs",
+      "source_sha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/quality.mjs",
+      "bytes": 6254,
+      "sha256": "e15c7016f089b818f06835d081de52cf6640bd83d26c1a02dd73ba8edd438c8e",
+      "git_lf_sha256": "e15c7016f089b818f06835d081de52cf6640bd83d26c1a02dd73ba8edd438c8e",
+      "git_blob_sha1": "77c4f8b2c7619760be6242e51b696b607a4d8d9f",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/quality.mjs",
+      "source_sha256": "e15c7016f089b818f06835d081de52cf6640bd83d26c1a02dd73ba8edd438c8e",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/response.mjs",
+      "bytes": 3268,
+      "sha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "git_lf_sha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "git_blob_sha1": "179235e0d6afb1b683b5def91e848d51c63fb583",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/response.mjs",
+      "source_sha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/search-call.mjs",
+      "bytes": 1523,
+      "sha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "git_lf_sha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "git_blob_sha1": "6af5a502937bcf111c62d3c26e277200b222b85e",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/search-call.mjs",
+      "source_sha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/search-catalog.mjs",
+      "bytes": 8025,
+      "sha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "git_lf_sha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "git_blob_sha1": "5cc2adbdf55d648504660fdcc7a5d4074aad3b14",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/search-catalog.mjs",
+      "source_sha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/settings.mjs",
+      "bytes": 3170,
+      "sha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
+      "git_lf_sha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
+      "git_blob_sha1": "6d6111899584ad9f470a87882b9a5be88aa168ec",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/settings.mjs",
+      "source_sha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/signature.mjs",
+      "bytes": 1676,
+      "sha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "git_lf_sha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "git_blob_sha1": "e7719605aef27a6abf9b555c040521a1d22585c4",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/signature.mjs",
+      "source_sha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/song-detail-call.mjs",
+      "bytes": 1523,
+      "sha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "git_lf_sha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "git_blob_sha1": "4e58a8cf6d590ddd36879186195848becd606a63",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/song-detail-call.mjs",
+      "source_sha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/tea.mjs",
+      "bytes": 4535,
+      "sha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "git_lf_sha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "git_blob_sha1": "a4aef83256ea7fb1437cf56c8a97bd340bc11e1c",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/tea.mjs",
+      "source_sha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/tracks.mjs",
+      "bytes": 6956,
+      "sha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+      "git_lf_sha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+      "git_blob_sha1": "913ac9a600b6d8b2e58afe7fac1549b4bc55d80e",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/tracks.mjs",
+      "source_sha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/vkey-request.mjs",
+      "bytes": 4008,
+      "sha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "git_lf_sha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "git_blob_sha1": "9f213191a5f44a748666b1e1ee75ed6b5f295dee",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/vkey-request.mjs",
+      "source_sha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/vkey-request.test.mjs",
+      "bytes": 4647,
+      "sha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
+      "git_lf_sha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
+      "git_blob_sha1": "c8cd9ae147ee11bc45a35cc8efaad25e13595b50",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/vkey-request.test.mjs",
+      "source_sha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/wire.mjs",
+      "bytes": 680,
+      "sha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "git_lf_sha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "git_blob_sha1": "df27b2285258e938c6f89a228bdfbab9ef0e6093",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/wire.mjs",
+      "source_sha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/plugin.json",
+      "bytes": 1900,
+      "sha256": "3296578caca4020dfc0ef1d18e1c7565c46c72c010f1235256d39145eedb74d5",
+      "git_lf_sha256": "a97c4aef246863bb2557ad90c526c062f5ae1f35d4c8576f56eb286ed24d29ad",
+      "git_blob_sha1": "372b4acaed4320096c8c197cf91c186ad80ae6f8",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/plugin.json",
+      "source_sha256": "3296578caca4020dfc0ef1d18e1c7565c46c72c010f1235256d39145eedb74d5",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/README.md",
+      "bytes": 7180,
+      "sha256": "5b69d29e630e58041dd0e3a25d1435e6ff9fcde4590feb4840600a2e952f30ff",
+      "git_lf_sha256": "31c95842568795093cfac5d9b95892b42b363a3c403100fa20d6f5e0ea202b26",
+      "git_blob_sha1": "8f50fdf4dd025ab155d6c94dd64a448faa1d74ab",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/README.md",
+      "source_sha256": "5b69d29e630e58041dd0e3a25d1435e6ff9fcde4590feb4840600a2e952f30ff",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-ekey-native-v1.json",
+      "bytes": 10831,
+      "sha256": "329d49990a3f8e8808cfb24bf0f7934c6613da576557bda2556191cf9e6cfc4c",
+      "git_lf_sha256": "329d49990a3f8e8808cfb24bf0f7934c6613da576557bda2556191cf9e6cfc4c",
+      "git_blob_sha1": "638432337759dfec6811b34913f2e287e8001bf3",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-ekey-native-v1.json",
+      "source_sha256": "6bd984365bcd17c92b4237b598da625c2293317c5374bafc9167d9a4ef5ec360",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-file-transform-native-v1.json",
+      "bytes": 138562,
+      "sha256": "a1009a5f3f1da6a793049faa5c50e17dbab27e5ade113ad145a24e8d06d267fa",
+      "git_lf_sha256": "a1009a5f3f1da6a793049faa5c50e17dbab27e5ade113ad145a24e8d06d267fa",
+      "git_blob_sha1": "af8fdc046ce93b1c6b4be64ad06bc2d5d68455c4",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-file-transform-native-v1.json",
+      "source_sha256": "5b891c2f41880056093969cfeebe6314d295a7e1e985497da1b81b28bae27710",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v1.json",
+      "bytes": 17514,
+      "sha256": "da3fb8b75b74139200d9f322be2907bf07a543e5d6bc65efec988cf7c062c6f3",
+      "git_lf_sha256": "da3fb8b75b74139200d9f322be2907bf07a543e5d6bc65efec988cf7c062c6f3",
+      "git_blob_sha1": "cfe727eee66ace59f9a0163f6895c90c39f883a2",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v1.json",
+      "source_sha256": "38fe2eed518ac7e3790ae13de8f13ae5851d467e159fdafeb7f9d5c373665637",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v2.json",
+      "bytes": 10346,
+      "sha256": "d9bffeac611c9f8168bf32392e5e3637e3f1a2994771b14611ab0e930280ff62",
+      "git_lf_sha256": "d9bffeac611c9f8168bf32392e5e3637e3f1a2994771b14611ab0e930280ff62",
+      "git_blob_sha1": "62e8c792a8b9c78a7e0933f7bbcc8697c7b1d28e",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v2.json",
+      "source_sha256": "31034aafb62b287394006b5f3675a6e5656ea00b9f32703d45a2f3be8757e2f9",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-public-search-songs.json",
+      "bytes": 5544,
+      "sha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
+      "git_lf_sha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
+      "git_blob_sha1": "81575861bbe3bddfcb73d0bd35853519f1e30f45",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-public-search-songs.json",
+      "source_sha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-signature-native-v2.json",
+      "bytes": 12750,
+      "sha256": "508da1d473b912f4dca627a4862b45f153c9b4f5e727a90087efb014eda55b60",
+      "git_lf_sha256": "508da1d473b912f4dca627a4862b45f153c9b4f5e727a90087efb014eda55b60",
+      "git_blob_sha1": "69b8d2bff5a73c6f5c74cb046a0e155b26b35ee4",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-signature-native-v2.json",
+      "source_sha256": "9672f940af9340687aeb5cb2c63d07241ab3b8b8c7eff48641290b45b9076f29",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/THIRD_PARTY_NOTICES.md",
+      "bytes": 3054,
+      "sha256": "b421dc13e82ce8fbbcd0adc2986c6a3c95dbffb257ed363a2f9a0d562963c931",
+      "git_lf_sha256": "b421dc13e82ce8fbbcd0adc2986c6a3c95dbffb257ed363a2f9a0d562963c931",
+      "git_blob_sha1": "c720276393ac08d4c87dbdabf2f9bccba2f705be",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/THIRD_PARTY_NOTICES.md",
+      "source_sha256": "c2bd1f24c38c4e83d25cecfb3a857d7bd8f41ed762878ad86ec771abe0726525",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-album-call.test.mjs",
+      "bytes": 14303,
+      "sha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
+      "git_lf_sha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
+      "git_blob_sha1": "92636890db55e0d54b319ecb8726d4d7308b8a1b",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-album-call.test.mjs",
+      "source_sha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-artist-call.test.mjs",
+      "bytes": 18476,
+      "sha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
+      "git_lf_sha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
+      "git_blob_sha1": "46bdc177c68462ca4121368b1a943ccbb6d69b8a",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-artist-call.test.mjs",
+      "source_sha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+      "bytes": 68518,
+      "sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
+      "git_lf_sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
+      "git_blob_sha1": "85c2b0f3708e9bed5b13ae37f639636fe08a03e0",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+      "source_sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-client.test.mjs",
+      "bytes": 18400,
+      "sha256": "ad0cb04b85207742abccd295e90a5ffb3c02c1db5ab19501df63a98945308d14",
+      "git_lf_sha256": "ad0cb04b85207742abccd295e90a5ffb3c02c1db5ab19501df63a98945308d14",
+      "git_blob_sha1": "43dde1ff4d3c1533c18cac889fa59f0c785b32bd",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-client.test.mjs",
+      "source_sha256": "ad0cb04b85207742abccd295e90a5ffb3c02c1db5ab19501df63a98945308d14",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-container.test.mjs",
+      "bytes": 3583,
+      "sha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
+      "git_lf_sha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
+      "git_blob_sha1": "6fcd2d3a9b8fd53470989d892bb630d3a9983a72",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-container.test.mjs",
+      "source_sha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-discovery-call.test.mjs",
+      "bytes": 24203,
+      "sha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
+      "git_lf_sha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
+      "git_blob_sha1": "236b04c349483c3701722e7ef5bb1f1a9efe3b3f",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-discovery-call.test.mjs",
+      "source_sha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-ekey.test.mjs",
+      "bytes": 1714,
+      "sha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
+      "git_lf_sha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
+      "git_blob_sha1": "92711a5af4d9036d7a15675f53f154da4de82fa8",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-ekey.test.mjs",
+      "source_sha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-call.test.mjs",
+      "bytes": 6058,
+      "sha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
+      "git_lf_sha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
+      "git_blob_sha1": "ee79c85eef086252d1f4a3a1acfd065c40f0dd2b",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-favorite-call.test.mjs",
+      "source_sha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-integration.test.mjs",
+      "bytes": 10262,
+      "sha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
+      "git_lf_sha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
+      "git_blob_sha1": "20369881df7cbd616855723bb34d6f0f7252a8d3",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-favorite-integration.test.mjs",
+      "source_sha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-state.test.mjs",
+      "bytes": 11033,
+      "sha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
+      "git_lf_sha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
+      "git_blob_sha1": "6b89b1217be9f25cb2b0add3ed1835fafad5a67f",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-favorite-state.test.mjs",
+      "source_sha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-file-transform.test.mjs",
+      "bytes": 3369,
+      "sha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
+      "git_lf_sha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
+      "git_blob_sha1": "b94ee147b59476ff1e245845f1a46a04e1f508f5",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-file-transform.test.mjs",
+      "source_sha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-filename.test.mjs",
+      "bytes": 6512,
+      "sha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
+      "git_lf_sha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
+      "git_blob_sha1": "b4d6777aaabc6ae44470a5d021083881363523f5",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-filename.test.mjs",
+      "source_sha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-home-call.test.mjs",
+      "bytes": 23833,
+      "sha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
+      "git_lf_sha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
+      "git_blob_sha1": "0186c13b8eb20541a0e9aebd2ef72934ebdfe326",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-home-call.test.mjs",
+      "source_sha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-index.mjs",
+      "bytes": 29812,
+      "sha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e",
+      "git_lf_sha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e",
+      "git_blob_sha1": "d47ddbac7b403ca524233785f50f52ad2e65584b",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-index.mjs",
+      "source_sha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-index.test.mjs",
+      "bytes": 50829,
+      "sha256": "2075f91ebc419cda5f1fb4f6b7f4bb7dbb0d7ef0494da60ef0e58eb327d68428",
+      "git_lf_sha256": "2075f91ebc419cda5f1fb4f6b7f4bb7dbb0d7ef0494da60ef0e58eb327d68428",
+      "git_blob_sha1": "4d6d89b4e8754f5e69901d4c139bfa5da6d6e56f",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-index.test.mjs",
+      "source_sha256": "2075f91ebc419cda5f1fb4f6b7f4bb7dbb0d7ef0494da60ef0e58eb327d68428",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-login-request.test.mjs",
+      "bytes": 5123,
+      "sha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
+      "git_lf_sha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
+      "git_blob_sha1": "56750a138e8a4a7bb36af8f796878695ee34b208",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-login-request.test.mjs",
+      "source_sha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-lyric-call.test.mjs",
+      "bytes": 4517,
+      "sha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
+      "git_lf_sha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
+      "git_blob_sha1": "b5ed94c5a42ed289fd8d67fdab210dfad3b77bcb",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-lyric-call.test.mjs",
+      "source_sha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-media-source.test.mjs",
+      "bytes": 32872,
+      "sha256": "3cf2e440d75b03abd1d54271a604fc4d3a50feb7dd6e4fa85722b9ea2ea14ac4",
+      "git_lf_sha256": "3cf2e440d75b03abd1d54271a604fc4d3a50feb7dd6e4fa85722b9ea2ea14ac4",
+      "git_blob_sha1": "fc0f2b750d4432ecdef7e90687602d47e0fc139e",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-media-source.test.mjs",
+      "source_sha256": "3cf2e440d75b03abd1d54271a604fc4d3a50feb7dd6e4fa85722b9ea2ea14ac4",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-media-stream.test.mjs",
+      "bytes": 4608,
+      "sha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
+      "git_lf_sha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
+      "git_blob_sha1": "6e58ce675d90f964464b3a8a366060a88f777c31",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-media-stream.test.mjs",
+      "source_sha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-binding.test.mjs",
+      "bytes": 6435,
+      "sha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
+      "git_lf_sha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
+      "git_blob_sha1": "fdc48402a36daf068c9b8788766081f0c71a33f1",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-playlist-binding.test.mjs",
+      "source_sha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-call.test.mjs",
+      "bytes": 5930,
+      "sha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+      "git_lf_sha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+      "git_blob_sha1": "013d0efd798f490472e84b946b308ec97137730f",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-playlist-call.test.mjs",
+      "source_sha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-data.test.mjs",
+      "bytes": 24795,
+      "sha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
+      "git_lf_sha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
+      "git_blob_sha1": "4f84ee444db0bac882350c1cda2cd05c4d23b78e",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-playlist-data.test.mjs",
+      "source_sha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-probe-index.mjs",
+      "bytes": 41371,
+      "sha256": "01ce6631b17595adf064c6307acc97681c6ef6aceb605e6945542bf3946a749c",
+      "git_lf_sha256": "01ce6631b17595adf064c6307acc97681c6ef6aceb605e6945542bf3946a749c",
+      "git_blob_sha1": "1e62bd5d9f692d6a915c36a492e886dbdc46b48b",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-probe-index.mjs",
+      "source_sha256": "01ce6631b17595adf064c6307acc97681c6ef6aceb605e6945542bf3946a749c",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-quality-probe-helper.mjs",
+      "bytes": 6728,
+      "sha256": "d2d2e37a36da92904c38b73f33b845553e30ec711ca72c1945aad3ed523b6f77",
+      "git_lf_sha256": "d2d2e37a36da92904c38b73f33b845553e30ec711ca72c1945aad3ed523b6f77",
+      "git_blob_sha1": "6a0707a1746c5eaf162e39f0c755b3d604ce30c7",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-quality-probe-helper.mjs",
+      "source_sha256": "d2d2e37a36da92904c38b73f33b845553e30ec711ca72c1945aad3ed523b6f77",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-response.test.mjs",
+      "bytes": 3156,
+      "sha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
+      "git_lf_sha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
+      "git_blob_sha1": "dd17348b7143850ac5e0da3f8f5f1126c26d62a0",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-response.test.mjs",
+      "source_sha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-search-call.test.mjs",
+      "bytes": 2279,
+      "sha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
+      "git_lf_sha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
+      "git_blob_sha1": "fd8dca3ae5d4e7b5ce461ab72c1ca7996956e6b8",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-search-call.test.mjs",
+      "source_sha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-search-catalog.test.mjs",
+      "bytes": 10172,
+      "sha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
+      "git_lf_sha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
+      "git_blob_sha1": "074c3755112f36b21ed9d7f14ee31af8cae8d335",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-search-catalog.test.mjs",
+      "source_sha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-settings.test.mjs",
+      "bytes": 13991,
+      "sha256": "2881883fd627ac44bd0403fac929420021e3e5772bcaa680d2b8086371bb1c08",
+      "git_lf_sha256": "2881883fd627ac44bd0403fac929420021e3e5772bcaa680d2b8086371bb1c08",
+      "git_blob_sha1": "aebffa4fbbe322f480a0ac8318366f2595cebcd8",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-settings.test.mjs",
+      "source_sha256": "2881883fd627ac44bd0403fac929420021e3e5772bcaa680d2b8086371bb1c08",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-signature.test.mjs",
+      "bytes": 2864,
+      "sha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
+      "git_lf_sha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
+      "git_blob_sha1": "dc96146dfb6ebb493aac563b4b61f00119e16896",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-signature.test.mjs",
+      "source_sha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-song-detail-call.test.mjs",
+      "bytes": 2584,
+      "sha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
+      "git_lf_sha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
+      "git_blob_sha1": "39794b463916b7fecf46cc01f8e5a427ec0196aa",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-song-detail-call.test.mjs",
+      "source_sha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-tea-decrypt.test.mjs",
+      "bytes": 1820,
+      "sha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
+      "git_lf_sha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
+      "git_blob_sha1": "9e6d7a53230de4889d22af3006da7bd3f3aa1ef3",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-tea-decrypt.test.mjs",
+      "source_sha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-tracks.test.mjs",
+      "bytes": 12337,
+      "sha256": "8dcec3fdeea93e76d8c1ea977dfeab0e679860b3e2baa274ee40327eab59f0b4",
+      "git_lf_sha256": "8dcec3fdeea93e76d8c1ea977dfeab0e679860b3e2baa274ee40327eab59f0b4",
+      "git_blob_sha1": "b3f255bbd7e966b61967fa061aa497bb4f3135f3",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-tracks.test.mjs",
+      "source_sha256": "8dcec3fdeea93e76d8c1ea977dfeab0e679860b3e2baa274ee40327eab59f0b4",
+      "kind": "text"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-wire.test.mjs",
+      "bytes": 3998,
+      "sha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
+      "git_lf_sha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
+      "git_blob_sha1": "f636fffe9310474da9c9bb9e65d6585d22d03570",
+      "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-wire.test.mjs",
+      "source_sha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
+      "kind": "text"
+    }
+  ],
+  "pending": [
+    "Final product/provider commit and exact package freeze",
+    "New installer payload/native/source audit",
+    "Real quality switching at retained position with actual source formats",
+    "Single-track queue natural EOF then seek/resume",
+    "Normal no-debug cold launch/playback and final release/skill/archive freeze"
+  ],
+  "archive_fixture_count": 39,
+  "archive_fixture_budget": 40,
+  "reserved_final_fixture_slots": 1,
+  "actual_runtime": {
+    "baseline": "task14/qq-task14-real-streaming-baseline.json",
+    "candidate": "task14/qq-task14-real-streaming-candidate.json",
+    "independent_process_facts": "task14/qq-task14-standalone-process-check.json",
+    "comparison": "Same recording/FLAC96kHz24-bit88129955bytes; both100secondruns stable, baseline stutter not reproduced; start6.836to7.127s gives no faster-startup evidence",
+    "baseline_composition": "Task14 web/service layer + Task13 native-v5/provider rc.6",
+    "candidate_composition": "Integrated Task14 native + provider rc.7; predates final acknowledged-seek GUI acceptance"
+  },
+  "product_source_commit": "05186af4bb6a8bbe464d4d77cc7eccc187e1f1d0",
+  "artifact_verification": {
+    "receipt": "task14/qq-task14-final-artifact-independent-audit.json",
+    "installer_bytes": 153196613,
+    "installer_sha256": "81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088",
+    "passed": true,
+    "installer_executed_by_auditor": false,
+    "final_gui_complete": false,
+    "historical_candidate_only": true,
+    "release_ready": false,
+    "host": "1.3.1-qq.6",
+    "product_source_commit": "3bacff6e275c2333e1931373f48088e47e1fc8c3"
+  },
+  "source_gate_provenance": [
+    {
+      "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-final-audio-manager-tests.txt",
+      "raw_sha256": "e54f58c77aaaa195aa4a2c6793113d8b77f3d3b46a5e293efa00b26936284ac6",
+      "bytes": 140160,
+      "scope": "Core test:audio-manager506pass,0fail,0skip; producer exit0, independent tail readback",
+      "raw_log_archived": false
+    },
+    {
+      "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-private-final-build.txt",
+      "raw_sha256": "2d4caf21376265aee344fd7bc5b3fe12a82d3c9152fade20f90ac78470b5ef21",
+      "bytes": 20422,
+      "scope": "Full production typecheck/build, renderer budget630files; producer exit0, independent tail readback",
+      "raw_log_archived": false
+    }
+  ],
+  "known_gui_failure": {
+    "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-final-sky-ui-v1.json",
+    "source_raw_sha256": "d983f6e23b36d075dbf7ef57596388084585951139207b8e438d1c0479d41188",
+    "source_bytes": 33570,
+    "raw_ui_tree_archived": false,
+    "scope": "EOF252 paused -> slider45 -> resume after6591ms; not a sub-second resume test",
+    "error": "native seek position was not confirmed",
+    "actual_sample_rate_verified": false,
+    "candidate_installer_sha256": "81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088",
+    "status": "Historical qq6FAIL retained; native/service repairs reviewed, qq7 actual GUI revalidation pending",
+    "repair_source_commit": "05186af4bb6a8bbe464d4d77cc7eccc187e1f1d0"
+  },
+  "historical_candidate_product_source_commit": "3bacff6e275c2333e1931373f48088e47e1fc8c3",
+  "historical_candidate_host_version": "1.3.1-qq.6",
+  "post_failure_fix_source_pins": {
+    "audio-engine/core/TwilightAudioEngine.cpp": "656a9ccb3e2981fd567e773e18e23ab043fab23c5da785b1734c60371d4d6d95",
+    "audio-engine/core/TwilightAudioEngine.h": "76340ec9aeb4125c4f8f0dd9a71edbdb2fad606b163d26409bdf76cc6c106e14",
+    "audio-engine/core/AudioPipeline.cpp": "e4948b544af19fbe334d271c74be3059ae43529bc521be4b3532acdb2e65fe93",
+    "audio-engine/core/AudioPipeline.h": "2bac1c12c1f499d751137271d7bc2b0aa2e6d9196f1dbe9cf6bb8246521b01a8",
+    "audio-engine/tests/runtime_queue_reroute_tests.cpp": "50e96362c5e0a64672119ef3cce3e2c4988710f9b22f3e1cd8ff8645693cc0d9",
+    "src/main/audioEngineServiceClient.ts": "a6b6ed142ea612310bb842c1bac8c80a3029c0e69a75f7b201c8bb39c80e59c3",
+    "src/main/audioEngineServiceClient.test.ts": "bebd035e7a24f55a4c2baacd2cb40d18740bf7305f79b00a9efbd08376f69be2"
+  },
+  "target_artifact_verification": {
+    "host": "1.3.1-qq.8",
+    "status": "pending"
+  },
+  "target_host_version": "1.3.1-qq.8",
+  "target_provider_version": "0.4.0-rc.8",
+  "product_source_role": "Previously tested qq7 candidate, not the un-frozen qq8 product source",
+  "known_qq7_gui_failure": {
+    "source": "qq-task14-qq7-ui-observations.json",
+    "status": "failed-not-deliverable",
+    "summary_archive": "docs/qqmusic-research/task14/qq-task14-qq8-pre-release-repairs-summary.json",
+    "actual_source96k24_verified": true,
+    "retained_position_quality_switch_timeout_ms": 5385
+  }
+}

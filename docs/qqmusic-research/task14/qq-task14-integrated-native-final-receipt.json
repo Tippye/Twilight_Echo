@@ -1,0 +1,115 @@
+{
+  "head": "ac573ac083b244d6d253ab1ae93c2b9f38fad33c",
+  "sourceRoot": "<local-path>/qq-task14-streaming",
+  "buildRoot": "<local-path>/qq-task14-native-build",
+  "stageRoot": "<local-path>/qq-task14-integrated-native-stage",
+  "sourceMutationsDuringIntegrationGate": false,
+  "configureExit": 0,
+  "buildExit": 0,
+  "workerBuildExit": 0,
+  "ctest": {
+    "exitCode": 0,
+    "passed": 9,
+    "failed": 0,
+    "seconds": 94.96,
+    "log": ".cache/qq-task14-integrated-native-ctest.txt",
+    "tests": [
+      "twilight_dsp_unit",
+      "twilight_listening_enhancer_unit",
+      "twilight_bitperfect_unit",
+      "twilight_ffmpeg_decoder_unit",
+      "twilight_pcm_stream_transform_unit",
+      "twilight_asio_helper_selftest",
+      "twilight_runtime_queue_reroute_unit",
+      "twilight_audio_performance_gate",
+      "twilight_audio_pcm_transparency"
+    ]
+  },
+  "workerIntegration": {
+    "exitCode": 0,
+    "log": ".cache/qq-task14-integrated-worker-integration.txt",
+    "frames": 88336,
+    "seekFrames": 58640,
+    "scope": "Synthetic source; new x86 worker; real HSR SDK; EOF/seek-recreate/precancel. No original app session."
+  },
+  "stageExit": 0,
+  "stageLog": ".cache/qq-task14-integrated-native-stage.txt",
+  "artifactReceipt": ".cache/qq-task14-integrated-native-artifacts.json",
+  "sourcePins": ".cache/qq-task14-integrated-source-pins.json",
+  "stageFiles": [
+    {
+      "file": "audio-capabilities.json",
+      "bytes": 11045,
+      "sha256": "87748ae145432b4ca847d0197aa22061e9cc048e068d399de9e43e2a0f79aa38"
+    },
+    {
+      "file": "avcodec-62.dll",
+      "bytes": 90946048,
+      "sha256": "0259adbf50b1ccd88e3dad5648fbc1faf453c11f9bf8dddc73d4de628832c70e"
+    },
+    {
+      "file": "avformat-62.dll",
+      "bytes": 22728192,
+      "sha256": "d369715ae34cbaf3470185bd1e4b893209060a3e8ab507d6006683800ef938b5"
+    },
+    {
+      "file": "avutil-60.dll",
+      "bytes": 3014144,
+      "sha256": "0cd1d710d6bf0de3187bd1cb54759ebaf328b6229653fd8241ed8a405b231eea"
+    },
+    {
+      "file": "release-capability-status.json",
+      "bytes": 4409,
+      "sha256": "c8fbd38f4bfdf5515af6c8de7a21991ac9f766c406a20447d75ca3103c2bb93d"
+    },
+    {
+      "file": "swresample-6.dll",
+      "bytes": 734720,
+      "sha256": "94065fb1ee7c354c8256edc9de589529f685b00af9b703f92de5a87d78e71fd1"
+    },
+    {
+      "file": "twilight_audio_node.node",
+      "bytes": 85504,
+      "sha256": "48ab4fd91dad5327e8174c0f7d4aba6fc8fcf309d950962440700311ffc8b148"
+    },
+    {
+      "file": "twilight-asio-helper.exe",
+      "bytes": 209408,
+      "sha256": "a84b26e235b65690f2093fd0e2e237597fa07cab7793316376951041172f5401"
+    },
+    {
+      "file": "twilight-audio-engine.dll",
+      "bytes": 1797120,
+      "sha256": "2374e2cc3c55933d458ee267b9b8710bc9274523e786e09bffbf921277bae2bf"
+    },
+    {
+      "file": "twilight-qq-excellent-worker.exe",
+      "bytes": 125952,
+      "sha256": "85296660930bcf2220d8b05b7924de45fdb67e513a5ebf628586254ae04247e4"
+    },
+    {
+      "file": "twilight-vst3-host.exe",
+      "bytes": 198144,
+      "sha256": "f8faa8695cdaa9accf554628098f72fc35c350c496f55b1e4213877c895b63e3"
+    },
+    {
+      "file": "twilight-vst3-scanner.exe",
+      "bytes": 138752,
+      "sha256": "fdad10dd46e38330f2d3248b99348d348735c85d47d5592e05c591891db218f1"
+    }
+  ],
+  "reusedProductionHelpers": [
+    {
+      "source": "resources/audio-engine/twilight-vst3-host.exe",
+      "bytes": 198144,
+      "sha256": "f8faa8695cdaa9accf554628098f72fc35c350c496f55b1e4213877c895b63e3"
+    },
+    {
+      "source": "resources/audio-engine/twilight-vst3-scanner.exe",
+      "bytes": 138752,
+      "sha256": "fdad10dd46e38330f2d3248b99348d348735c85d47d5592e05c591891db218f1"
+    }
+  ],
+  "excludedPressureFixture": "Release/twilight-vst3-host.exe (24576 bytes), never copied to stage",
+  "buildDirectoryReleased": true
+}

@@ -1,0 +1,53 @@
+{
+  "scope": "Task14 source slice before integration with user DSP baseline",
+  "files": [
+    {
+      "path": "src/main/audioEngineServiceClient.ts",
+      "sha256": "91174bba73f01c0c7ea49f0aa95bec1d7ae6e3acb7fe515fbcecddfc9d3462d6"
+    },
+    {
+      "path": "src/main/audioEngineServiceClient.test.ts",
+      "sha256": "00dfac5e09fa00c47597488b3b42085ed7765ae353c3194cf1ddd34085b5749d"
+    },
+    {
+      "path": "audio-engine/decoder/FFmpegDecoder.cpp",
+      "sha256": "e91accf1fa9e7befb3427bace06ceab0980aad2f8b13d9f3f09619bddd26cddb"
+    },
+    {
+      "path": "audio-engine/decoder/FFmpegDecoder.h",
+      "sha256": "b69e2422ae4e36c1faf3b239a00c54480369d9bcdbd8048b2c4576c561c618dd"
+    },
+    {
+      "path": "audio-engine/core/AudioPipeline.cpp",
+      "sha256": "408098a945694c740487eb3ecaa562628f278d69d4f85b13a2a48b345292aa9b"
+    },
+    {
+      "path": "audio-engine/core/AudioPipeline.h",
+      "sha256": "dab0ac62631fec422e2de1f1112c3d3f526b93e41447b8fecc546ad032c2bfdb"
+    },
+    {
+      "path": "audio-engine/core/PreloadJob.h",
+      "sha256": "dca3b85b1e8c7983fe305d816107736af7857ffef59498180de69b7eda44f909"
+    },
+    {
+      "path": "audio-engine/tests/runtime_queue_reroute_tests.cpp",
+      "sha256": "0b25448a4577343031f3b789ad070a8800044ca07a769956c146febba0152c45"
+    },
+    {
+      "path": "audio-engine/tests/ffmpeg_decoder_tests.cpp",
+      "sha256": "a9ab34886373f9936cb3bd84a676d91d4234c53bdb6907b4852bacfb4e2ff90a"
+    },
+    {
+      "path": "audio-engine/tests/FfmpegHttpProbe.h",
+      "sha256": "56a34b1c82b98b10df1d1129dbaf07a91d7955398194dcba38cc3eaf5b943c5a"
+    },
+    {
+      "path": "scripts/ffmpeg-http-fault-probe.mjs",
+      "sha256": "0390eeebacd14592a48ebf73cd7ef144cd2f2f8f110f4f5aae2a09b1e47bd085"
+    },
+    {
+      "path": "audio-engine/tests/audio_performance_gate.cpp",
+      "sha256": "9a642d6ac86039ff37dd3a8cb431cc8efb21996c570997058deff26c37570359"
+    }
+  ]
+}

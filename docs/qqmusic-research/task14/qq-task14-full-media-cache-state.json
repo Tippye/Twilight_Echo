@@ -1,0 +1,26 @@
+{
+  "Schema": 1,
+  "Kind": "reversible-whole-media-cache-isolation",
+  "State": "restored",
+  "CacheRoot": "<local-path>/QQMusicCache",
+  "BackupRoot": "<local-path>/qq-task14-full-media-cache-original",
+  "FreshRoot": "<local-path>/qq-task14-full-media-cache-fresh",
+  "CreatedAtUtc": "2026-10-18T12:24:37.0421332Z",
+  "Entries": [
+    {
+      "Name": "downloadproxyNew",
+      "OriginalExists": true,
+      "Moved": true,
+      "Restored": true
+    },
+    {
+      "Name": "QMDL",
+      "OriginalExists": false,
+      "Moved": false,
+      "Restored": true
+    }
+  ],
+  "Scope": "Only media downloadproxyNew and QMDL directories. No account, settings, image, lyric or browser cache moved. No file contents read.",
+  "IsolatedAtUtc": "2026-10-18T12:24:37.0748419Z",
+  "RestoredAtUtc": "2026-10-18T12:30:42.3149388Z"
+}

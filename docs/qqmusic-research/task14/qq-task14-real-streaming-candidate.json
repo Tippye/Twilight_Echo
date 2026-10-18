@@ -1,0 +1,2948 @@
+{
+  "phase": "candidate",
+  "scope": "Owned Task14 client; public exact song and numeric playback facts only. No credential, media URL, PCM or cache content exported. No persistent QQ media cache in this provider.",
+  "samples": [
+    {
+      "wallMs": 1.8194000000003143,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.1,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1,
+        "totalCallbackNanoseconds": 40000,
+        "meanCallbackNanoseconds": 40000,
+        "peakCallbackNanoseconds": 40000,
+        "p999DeadlineRatioUpper": 0.001,
+        "totalDeadlineNanoseconds": 100000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.04
+      }
+    },
+    {
+      "wallMs": 1015.9902999999995,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.86,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 77,
+        "totalCallbackNanoseconds": 2152700,
+        "meanCallbackNanoseconds": 27957.1,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 860000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.250314
+      }
+    },
+    {
+      "wallMs": 2032.6435999999994,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 1.94,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 185,
+        "totalCallbackNanoseconds": 4419500,
+        "meanCallbackNanoseconds": 23889.2,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 1940000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227809
+      }
+    },
+    {
+      "wallMs": 3038.567000000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 3.02,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 293,
+        "totalCallbackNanoseconds": 7085100,
+        "meanCallbackNanoseconds": 24181.2,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 3020000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.234606
+      }
+    },
+    {
+      "wallMs": 4043.0296,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 3.99,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 390,
+        "totalCallbackNanoseconds": 9076000,
+        "meanCallbackNanoseconds": 23271.8,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 3990000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227469
+      }
+    },
+    {
+      "wallMs": 5051.136,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 5.08,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 499,
+        "totalCallbackNanoseconds": 11507500,
+        "meanCallbackNanoseconds": 23061.1,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 5080000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226526
+      }
+    },
+    {
+      "wallMs": 6073.0103,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 6.15,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 606,
+        "totalCallbackNanoseconds": 13590300,
+        "meanCallbackNanoseconds": 22426.2,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 6150000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.22098
+      }
+    },
+    {
+      "wallMs": 7088.8467,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 7.13,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 704,
+        "totalCallbackNanoseconds": 15567700,
+        "meanCallbackNanoseconds": 22113.2,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 7130000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.218341
+      }
+    },
+    {
+      "wallMs": 8093.921399999999,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 7.99,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 790,
+        "totalCallbackNanoseconds": 17620200,
+        "meanCallbackNanoseconds": 22304.1,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 7990000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.220528
+      }
+    },
+    {
+      "wallMs": 9098.4055,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 8.97,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 888,
+        "totalCallbackNanoseconds": 19724300,
+        "meanCallbackNanoseconds": 22212,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 8970000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.219892
+      }
+    },
+    {
+      "wallMs": 10102.807400000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 10.05,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 996,
+        "totalCallbackNanoseconds": 22036900,
+        "meanCallbackNanoseconds": 22125.4,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 10050000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.219273
+      }
+    },
+    {
+      "wallMs": 11106.627400000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 11.13,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1104,
+        "totalCallbackNanoseconds": 24391100,
+        "meanCallbackNanoseconds": 22093.4,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 11130000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.219147
+      }
+    },
+    {
+      "wallMs": 12107.973699999999,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 12.1,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1201,
+        "totalCallbackNanoseconds": 26247300,
+        "meanCallbackNanoseconds": 21854.5,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 12100000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.21692
+      }
+    },
+    {
+      "wallMs": 13113.725699999999,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 13.18,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1309,
+        "totalCallbackNanoseconds": 28508000,
+        "meanCallbackNanoseconds": 21778.5,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 13180000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.216297
+      }
+    },
+    {
+      "wallMs": 14118.1436,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 14.05,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1396,
+        "totalCallbackNanoseconds": 30369100,
+        "meanCallbackNanoseconds": 21754.4,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 14050000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.21615
+      }
+    },
+    {
+      "wallMs": 15124.428500000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 15.03,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1494,
+        "totalCallbackNanoseconds": 32364100,
+        "meanCallbackNanoseconds": 21662.7,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 15030000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.21533
+      }
+    },
+    {
+      "wallMs": 16131.456000000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 16.11,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1602,
+        "totalCallbackNanoseconds": 34537900,
+        "meanCallbackNanoseconds": 21559.2,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 16110000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.214388
+      }
+    },
+    {
+      "wallMs": 17137.034,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 17.19,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1710,
+        "totalCallbackNanoseconds": 36623200,
+        "meanCallbackNanoseconds": 21417.1,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 17190000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213049
+      }
+    },
+    {
+      "wallMs": 18144.672,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 18.28,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1819,
+        "totalCallbackNanoseconds": 38753700,
+        "meanCallbackNanoseconds": 21304.9,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 18280000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.212001
+      }
+    },
+    {
+      "wallMs": 19153.364,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 19.25,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1916,
+        "totalCallbackNanoseconds": 40484500,
+        "meanCallbackNanoseconds": 21129.7,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 19250000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.210309
+      }
+    },
+    {
+      "wallMs": 20157.6992,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 20.01,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1992,
+        "totalCallbackNanoseconds": 42054600,
+        "meanCallbackNanoseconds": 21111.7,
+        "peakCallbackNanoseconds": 82500,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 20010000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.210168
+      }
+    },
+    {
+      "wallMs": 21161.0903,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 21.09,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2100,
+        "totalCallbackNanoseconds": 44200900,
+        "meanCallbackNanoseconds": 21048,
+        "peakCallbackNanoseconds": 93400,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 21090000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.209582
+      }
+    },
+    {
+      "wallMs": 22172.0997,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 22.18,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2209,
+        "totalCallbackNanoseconds": 46336600,
+        "meanCallbackNanoseconds": 20976.3,
+        "peakCallbackNanoseconds": 93400,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 22180000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.208912
+      }
+    },
+    {
+      "wallMs": 23187.261,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 23.15,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2306,
+        "totalCallbackNanoseconds": 48658400,
+        "meanCallbackNanoseconds": 21100.8,
+        "peakCallbackNanoseconds": 93400,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 23150000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.210187
+      }
+    },
+    {
+      "wallMs": 24200.715200000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 24.23,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2414,
+        "totalCallbackNanoseconds": 51273400,
+        "meanCallbackNanoseconds": 21240,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 24230000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.211611
+      }
+    },
+    {
+      "wallMs": 25223.286799999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 25.32,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2523,
+        "totalCallbackNanoseconds": 53995700,
+        "meanCallbackNanoseconds": 21401.4,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 25320000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213253
+      }
+    },
+    {
+      "wallMs": 26240.481000000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 26.3,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2621,
+        "totalCallbackNanoseconds": 56306500,
+        "meanCallbackNanoseconds": 21482.8,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 26300000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.214093
+      }
+    },
+    {
+      "wallMs": 27246.5681,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 27.16,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2707,
+        "totalCallbackNanoseconds": 57963900,
+        "meanCallbackNanoseconds": 21412.6,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 27160000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213416
+      }
+    },
+    {
+      "wallMs": 28255.823099999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 28.14,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2805,
+        "totalCallbackNanoseconds": 59968800,
+        "meanCallbackNanoseconds": 21379.3,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 28140000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213109
+      }
+    },
+    {
+      "wallMs": 29270.950699999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 29.22,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2913,
+        "totalCallbackNanoseconds": 62084100,
+        "meanCallbackNanoseconds": 21312.8,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 29220000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.212471
+      }
+    },
+    {
+      "wallMs": 30279.7403,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 30.3,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3021,
+        "totalCallbackNanoseconds": 64170200,
+        "meanCallbackNanoseconds": 21241.4,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 30300000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.211783
+      }
+    },
+    {
+      "wallMs": 31292.475199999997,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 31.38,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3129,
+        "totalCallbackNanoseconds": 66992100,
+        "meanCallbackNanoseconds": 21410.1,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 31380000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213487
+      }
+    },
+    {
+      "wallMs": 32301.0154,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 32.35,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3226,
+        "totalCallbackNanoseconds": 69020700,
+        "meanCallbackNanoseconds": 21395.1,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 32350000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213356
+      }
+    },
+    {
+      "wallMs": 33309.4856,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 33.21,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3312,
+        "totalCallbackNanoseconds": 71119100,
+        "meanCallbackNanoseconds": 21473.2,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 33210000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.21415
+      }
+    },
+    {
+      "wallMs": 34321.3208,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 34.18,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3409,
+        "totalCallbackNanoseconds": 73659700,
+        "meanCallbackNanoseconds": 21607.4,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 34180000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.215505
+      }
+    },
+    {
+      "wallMs": 35336.4011,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 35.25,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3516,
+        "totalCallbackNanoseconds": 76310900,
+        "meanCallbackNanoseconds": 21703.9,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 35250000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.216485
+      }
+    },
+    {
+      "wallMs": 36345.3282,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 36.33,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3624,
+        "totalCallbackNanoseconds": 79247100,
+        "meanCallbackNanoseconds": 21867.3,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 36330000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.218131
+      }
+    },
+    {
+      "wallMs": 37349.3254,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 37.3,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3721,
+        "totalCallbackNanoseconds": 82014700,
+        "meanCallbackNanoseconds": 22041,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 37300000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.219879
+      }
+    },
+    {
+      "wallMs": 38361.4703,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 38.37,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3828,
+        "totalCallbackNanoseconds": 84478300,
+        "meanCallbackNanoseconds": 22068.5,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 38370000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.220168
+      }
+    },
+    {
+      "wallMs": 39374.144400000005,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 39.45,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3936,
+        "totalCallbackNanoseconds": 87152400,
+        "meanCallbackNanoseconds": 22142.4,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 39450000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.220919
+      }
+    },
+    {
+      "wallMs": 40390.6777,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 40.53,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4044,
+        "totalCallbackNanoseconds": 89965600,
+        "meanCallbackNanoseconds": 22246.7,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 40530000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.221973
+      }
+    },
+    {
+      "wallMs": 41404.1924,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 41.28,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4119,
+        "totalCallbackNanoseconds": 91738100,
+        "meanCallbackNanoseconds": 22271.9,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 41280000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222234
+      }
+    },
+    {
+      "wallMs": 42428.18980000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 42.35,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4226,
+        "totalCallbackNanoseconds": 94261300,
+        "meanCallbackNanoseconds": 22305.1,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 42350000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222577
+      }
+    },
+    {
+      "wallMs": 43433.182400000005,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 43.43,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4334,
+        "totalCallbackNanoseconds": 96935100,
+        "meanCallbackNanoseconds": 22366.2,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 43430000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223198
+      }
+    },
+    {
+      "wallMs": 44438.691300000006,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 44.39,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4430,
+        "totalCallbackNanoseconds": 99236300,
+        "meanCallbackNanoseconds": 22401,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 44390000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223556
+      }
+    },
+    {
+      "wallMs": 45453.609599999996,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 45.47,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4538,
+        "totalCallbackNanoseconds": 101614800,
+        "meanCallbackNanoseconds": 22392,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 45470000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223477
+      }
+    },
+    {
+      "wallMs": 46458.038400000005,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 46.55,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4646,
+        "totalCallbackNanoseconds": 103682100,
+        "meanCallbackNanoseconds": 22316.4,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 46550000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222733
+      }
+    },
+    {
+      "wallMs": 47467.538,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 47.52,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4743,
+        "totalCallbackNanoseconds": 105562100,
+        "meanCallbackNanoseconds": 22256.4,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 47520000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222142
+      }
+    },
+    {
+      "wallMs": 48475.364,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 48.61,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4852,
+        "totalCallbackNanoseconds": 108325600,
+        "meanCallbackNanoseconds": 22326,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 48610000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222846
+      }
+    },
+    {
+      "wallMs": 49491.562399999995,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 49.36,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4927,
+        "totalCallbackNanoseconds": 110539900,
+        "meanCallbackNanoseconds": 22435.5,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 49360000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223946
+      }
+    },
+    {
+      "wallMs": 50501.075500000006,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 50.45,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5036,
+        "totalCallbackNanoseconds": 112447600,
+        "meanCallbackNanoseconds": 22328.8,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 50450000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222889
+      }
+    },
+    {
+      "wallMs": 51504.245200000005,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 51.42,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5133,
+        "totalCallbackNanoseconds": 114336700,
+        "meanCallbackNanoseconds": 22274.8,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 51420000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222358
+      }
+    },
+    {
+      "wallMs": 52520.2423,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 52.5,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5241,
+        "totalCallbackNanoseconds": 116729300,
+        "meanCallbackNanoseconds": 22272.3,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 52500000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222342
+      }
+    },
+    {
+      "wallMs": 53538.1814,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 53.58,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5349,
+        "totalCallbackNanoseconds": 119282000,
+        "meanCallbackNanoseconds": 22299.9,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 53580000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222624
+      }
+    },
+    {
+      "wallMs": 54545.143299999996,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 54.66,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5457,
+        "totalCallbackNanoseconds": 122222900,
+        "meanCallbackNanoseconds": 22397.5,
+        "peakCallbackNanoseconds": 96000,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 54660000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223606
+      }
+    },
+    {
+      "wallMs": 55556.653000000006,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 55.42,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5533,
+        "totalCallbackNanoseconds": 123814400,
+        "meanCallbackNanoseconds": 22377.4,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 55420000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223411
+      }
+    },
+    {
+      "wallMs": 56569.56270000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 56.5,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5641,
+        "totalCallbackNanoseconds": 125913800,
+        "meanCallbackNanoseconds": 22321.2,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 56500000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222856
+      }
+    },
+    {
+      "wallMs": 57586.22200000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 57.48,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5739,
+        "totalCallbackNanoseconds": 128069400,
+        "meanCallbackNanoseconds": 22315.6,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 57480000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222807
+      }
+    },
+    {
+      "wallMs": 58594.842000000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 58.55,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5846,
+        "totalCallbackNanoseconds": 131018800,
+        "meanCallbackNanoseconds": 22411.7,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 58550000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223773
+      }
+    },
+    {
+      "wallMs": 59614.5609,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 59.63,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 5954,
+        "totalCallbackNanoseconds": 133436600,
+        "meanCallbackNanoseconds": 22411.3,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 59630000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223774
+      }
+    },
+    {
+      "wallMs": 60631.5849,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 60.61,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6052,
+        "totalCallbackNanoseconds": 135490500,
+        "meanCallbackNanoseconds": 22387.7,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 60610000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223545
+      }
+    },
+    {
+      "wallMs": 61641.14080000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 61.68,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6159,
+        "totalCallbackNanoseconds": 137739900,
+        "meanCallbackNanoseconds": 22364,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 61680000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223314
+      }
+    },
+    {
+      "wallMs": 62654.0843,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 62.76,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6267,
+        "totalCallbackNanoseconds": 139896600,
+        "meanCallbackNanoseconds": 22322.7,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 62760000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222907
+      }
+    },
+    {
+      "wallMs": 63671.480200000005,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 63.51,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6342,
+        "totalCallbackNanoseconds": 141511000,
+        "meanCallbackNanoseconds": 22313.3,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 63510000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222817
+      }
+    },
+    {
+      "wallMs": 64677.4669,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 64.59,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6450,
+        "totalCallbackNanoseconds": 143935700,
+        "meanCallbackNanoseconds": 22315.6,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 64590000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222845
+      }
+    },
+    {
+      "wallMs": 65679.4862,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 65.67,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6558,
+        "totalCallbackNanoseconds": 146528400,
+        "meanCallbackNanoseconds": 22343.5,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 65670000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223128
+      }
+    },
+    {
+      "wallMs": 66692.7684,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 66.65,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6656,
+        "totalCallbackNanoseconds": 149434900,
+        "meanCallbackNanoseconds": 22451.2,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 66650000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224208
+      }
+    },
+    {
+      "wallMs": 67704.4183,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 67.73,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6764,
+        "totalCallbackNanoseconds": 152334700,
+        "meanCallbackNanoseconds": 22521.4,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 67730000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224915
+      }
+    },
+    {
+      "wallMs": 68712.7347,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 68.81,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6872,
+        "totalCallbackNanoseconds": 154927600,
+        "meanCallbackNanoseconds": 22544.8,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 68810000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225153
+      }
+    },
+    {
+      "wallMs": 69735.5702,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 69.68,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 6959,
+        "totalCallbackNanoseconds": 156845900,
+        "meanCallbackNanoseconds": 22538.6,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 69680000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225095
+      }
+    },
+    {
+      "wallMs": 70741.119,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 70.64,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7055,
+        "totalCallbackNanoseconds": 159277400,
+        "meanCallbackNanoseconds": 22576.5,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 70640000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225478
+      }
+    },
+    {
+      "wallMs": 71756.7673,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 71.72,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7163,
+        "totalCallbackNanoseconds": 161574900,
+        "meanCallbackNanoseconds": 22556.9,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 71720000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225286
+      }
+    },
+    {
+      "wallMs": 72759.55690000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 72.8,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7271,
+        "totalCallbackNanoseconds": 164145400,
+        "meanCallbackNanoseconds": 22575.4,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 72800000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225474
+      }
+    },
+    {
+      "wallMs": 73767.24410000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 73.78,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7369,
+        "totalCallbackNanoseconds": 166554000,
+        "meanCallbackNanoseconds": 22602,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 73780000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225744
+      }
+    },
+    {
+      "wallMs": 74770.9936,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 74.85,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7476,
+        "totalCallbackNanoseconds": 169334900,
+        "meanCallbackNanoseconds": 22650.5,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 74850000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226232
+      }
+    },
+    {
+      "wallMs": 75774.4454,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 75.94,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7585,
+        "totalCallbackNanoseconds": 171799900,
+        "meanCallbackNanoseconds": 22650,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 75940000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226231
+      }
+    },
+    {
+      "wallMs": 76777.8226,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 76.7,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7661,
+        "totalCallbackNanoseconds": 173456700,
+        "meanCallbackNanoseconds": 22641.5,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 76700000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.22615
+      }
+    },
+    {
+      "wallMs": 77794.8474,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 77.67,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7758,
+        "totalCallbackNanoseconds": 175984900,
+        "meanCallbackNanoseconds": 22684.3,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 77670000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.22658
+      }
+    },
+    {
+      "wallMs": 78803.42020000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 78.75,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7866,
+        "totalCallbackNanoseconds": 178780300,
+        "meanCallbackNanoseconds": 22728.2,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 78750000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227023
+      }
+    },
+    {
+      "wallMs": 79810.15400000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 79.83,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 7974,
+        "totalCallbackNanoseconds": 180918700,
+        "meanCallbackNanoseconds": 22688.6,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 79830000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.22663
+      }
+    },
+    {
+      "wallMs": 80819.6401,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 80.81,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8072,
+        "totalCallbackNanoseconds": 182805900,
+        "meanCallbackNanoseconds": 22646.9,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 80810000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226217
+      }
+    },
+    {
+      "wallMs": 81837.67360000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 81.89,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8180,
+        "totalCallbackNanoseconds": 185140300,
+        "meanCallbackNanoseconds": 22633.3,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 81890000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226084
+      }
+    },
+    {
+      "wallMs": 82854.50170000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 82.97,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8288,
+        "totalCallbackNanoseconds": 187447700,
+        "meanCallbackNanoseconds": 22616.8,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 82970000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225922
+      }
+    },
+    {
+      "wallMs": 83859.8117,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 83.73,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8364,
+        "totalCallbackNanoseconds": 189435900,
+        "meanCallbackNanoseconds": 22649,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 83730000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226246
+      }
+    },
+    {
+      "wallMs": 84872.7994,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 84.81,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8472,
+        "totalCallbackNanoseconds": 191876200,
+        "meanCallbackNanoseconds": 22648.3,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 84810000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226242
+      }
+    },
+    {
+      "wallMs": 85886.96500000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 85.79,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8570,
+        "totalCallbackNanoseconds": 193819500,
+        "meanCallbackNanoseconds": 22616,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 85790000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225923
+      }
+    },
+    {
+      "wallMs": 86889.55040000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 86.87,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8678,
+        "totalCallbackNanoseconds": 195807100,
+        "meanCallbackNanoseconds": 22563.6,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 86870000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225402
+      }
+    },
+    {
+      "wallMs": 87907.504,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 87.95,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8786,
+        "totalCallbackNanoseconds": 198882000,
+        "meanCallbackNanoseconds": 22636.2,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 87950000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226131
+      }
+    },
+    {
+      "wallMs": 88927.3475,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 88.93,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8884,
+        "totalCallbackNanoseconds": 201691700,
+        "meanCallbackNanoseconds": 22702.8,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 88930000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226798
+      }
+    },
+    {
+      "wallMs": 89939.3053,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 90.01,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 8992,
+        "totalCallbackNanoseconds": 204672600,
+        "meanCallbackNanoseconds": 22761.6,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 90010000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227389
+      }
+    },
+    {
+      "wallMs": 90947.8165,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 90.77,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9068,
+        "totalCallbackNanoseconds": 206143600,
+        "meanCallbackNanoseconds": 22733.1,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 90770000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227105
+      }
+    },
+    {
+      "wallMs": 91963.3431,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 91.85,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9176,
+        "totalCallbackNanoseconds": 208208300,
+        "meanCallbackNanoseconds": 22690.5,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 91850000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226683
+      }
+    },
+    {
+      "wallMs": 92966.62580000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 92.93,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9284,
+        "totalCallbackNanoseconds": 210954100,
+        "meanCallbackNanoseconds": 22722.3,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 92930000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227003
+      }
+    },
+    {
+      "wallMs": 93972.0076,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 93.9,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9381,
+        "totalCallbackNanoseconds": 212997200,
+        "meanCallbackNanoseconds": 22705.2,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 93900000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226834
+      }
+    },
+    {
+      "wallMs": 94976.20360000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 94.99,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9490,
+        "totalCallbackNanoseconds": 215455400,
+        "meanCallbackNanoseconds": 22703.4,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 94990000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226819
+      }
+    },
+    {
+      "wallMs": 95991.5779,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 96.07,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9598,
+        "totalCallbackNanoseconds": 218697700,
+        "meanCallbackNanoseconds": 22785.8,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 96070000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227644
+      }
+    },
+    {
+      "wallMs": 97005.103,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 97.05,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9696,
+        "totalCallbackNanoseconds": 221099300,
+        "meanCallbackNanoseconds": 22803.1,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 97050000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.22782
+      }
+    },
+    {
+      "wallMs": 98009.743,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 98.13,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9804,
+        "totalCallbackNanoseconds": 223542300,
+        "meanCallbackNanoseconds": 22801.1,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 98130000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227802
+      }
+    },
+    {
+      "wallMs": 99023.00170000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 98.99,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9890,
+        "totalCallbackNanoseconds": 225152100,
+        "meanCallbackNanoseconds": 22765.6,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 98990000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227449
+      }
+    },
+    {
+      "wallMs": 100037.5617,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 99.96,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 9987,
+        "totalCallbackNanoseconds": 227166000,
+        "meanCallbackNanoseconds": 22746.2,
+        "peakCallbackNanoseconds": 147400,
+        "p999DeadlineRatioUpper": 0.009,
+        "totalDeadlineNanoseconds": 99960000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.227257
+      }
+    }
+  ],
+  "startedAt": "2026-10-18T12:34:43.316Z",
+  "initial": {
+    "loggedIn": true,
+    "preference": "flac",
+    "proxyMode": "auto",
+    "pluginVersion": "0.4.0-rc.7"
+  },
+  "first": {
+    "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+    "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+    "state": "playing",
+    "position": 0.1,
+    "codec": "flac",
+    "rate": 96000,
+    "bits": 24,
+    "channels": 2,
+    "sourceBytes": 88129955,
+    "preferred": "hires",
+    "busy": false,
+    "diagnostics": {
+      "underruns": 0,
+      "drops": 0,
+      "recoveries": 0
+    },
+    "renderPerformance": {
+      "callbackCount": 1,
+      "totalCallbackNanoseconds": 40000,
+      "meanCallbackNanoseconds": 40000,
+      "peakCallbackNanoseconds": 40000,
+      "p999DeadlineRatioUpper": 0.001,
+      "totalDeadlineNanoseconds": 100000000,
+      "deadlineMissCount": 0,
+      "callbackDeadlineLoadPercent": 0.04
+    }
+  },
+  "startMs": 7127.4138,
+  "positionAdvance": 99.86,
+  "wallSeconds": 100.03574230000001,
+  "loadingSamples": 0,
+  "largestIntervalDeficitSeconds": 0.26739590000000324,
+  "result": "passed",
+  "endedAt": "2026-10-18T12:36:33.597Z"
+}

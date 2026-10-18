@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "scope": "Task14 optionB read-ahead implementation; source and synthetic loopback verification only; no account/profile/native app/music/Git/packaging access",
+  "sourcePins": {
+    "proxy": {
+      "path": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+      "sha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad"
+    },
+    "proxyTests": {
+      "path": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+      "sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0"
+    },
+    "providerCallsite": {
+      "path": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-index.mjs",
+      "sha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e"
+    },
+    "providerTests": {
+      "path": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-index.test.mjs",
+      "sha256": "2075f91ebc419cda5f1fb4f6b7f4bb7dbb0d7ef0494da60ef0e58eb327d68428"
+    }
+  },
+  "frozenRetryOnlyBaselines": [
+    {
+      "file": "qq-task14-proxy-retry-only-8e588958.mjs",
+      "sha256": "8e5889582e87580c27e50689c597ea65ca05d385e547704fbdcaa587e3164892"
+    },
+    {
+      "file": "qq-task14-proxy-retry-only-tests-b906c115.mjs",
+      "sha256": "b906c1155605884473524f2bcfe44ec9fce38dfe27d2dd3811b53da3e90dc30b"
+    }
+  ],
+  "policy": {
+    "durationOwner": "fresh exactTrackInfo.interval from existinggetPlaybackUrl; numeric scheduling hint only, never actual decoded duration",
+    "sizeOwner": "tail-excluded identity-verified lease.length",
+    "byteTarget": "ceil(length*20/duration) usingBigInt, roundUp512KiB, clamp2..8MiB; unknown/invalid duration remains2MiB",
+    "perResponseTransportMaximum": 4,
+    "globalTransportMaximum": 8,
+    "globalCipherMemoryCredits": 32,
+    "creditBytes": 524288,
+    "globalOwnedCipherMemoryBytesMaximum": 16777216,
+    "perResponseCreditsMaximum": 16,
+    "order": "memory before transport; first block streams immediately; complete future EOF freestransport and pumps ahead; memory remains held to consumption/discard",
+    "retry": "unchangedmax2 per unpublishedfutureblock; originaldeadline remainder; bothcredits held acrossretry",
+    "limits": [
+      "transport limit applies participating parallel Rangeowner; does not claim all sockets/preflight/smallGETs globally bound",
+      "memory limit coversowned/reserved compressedblocks, not RSS/socket/Undici temporarybuffers",
+      "no persistent music cache, preference, SDK contract or original-client dependency added"
+    ]
+  },
+  "tests": {
+    "adjacent": {
+      "pass": 119,
+      "fail": 0,
+      "proxyCases": 46,
+      "log": "qq-task14-read-ahead-adjacent-tests.txt"
+    },
+    "stress": {
+      "freshProcesses": 6,
+      "parallelWaves": 3,
+      "casesPerProcess": 6,
+      "totalPass": 36,
+      "fail": 0,
+      "receipt": "qq-task14-read-ahead-stress.json"
+    },
+    "covered": [
+      "duration unknown/0/malformed/rounding/clamp/uint64",
+      "first-byte streaming while fifteenfutureblocks fill",
+      "fourperresponse/eightglobal active jobs andFIFO queuedfirstadmission",
+      "thirtytwoheldmemory exhausted acrossresponses",
+      "externalabort/expiry andqueuedseek cancel",
+      "encryptedlargewindow overlappingseek andkey wiping",
+      "firststreamfailure only afterlargeahead isfull; nofuturecipher published; allpermits reusable",
+      "remainingretry budget/cancel/latebody/Retry-After strictdates",
+      "provider ignoresrenderer/optionsduration andcatalogqualitysize forhint"
+    ]
+  },
+  "pending": [
+    "Root independent review",
+    "same-song same-quality actualsource cold and >90second sustained runtime comparison",
+    "real arrival/consume lead and stop/seek background growth checks",
+    "packaging and source integration byRoot"
+  ]
+}

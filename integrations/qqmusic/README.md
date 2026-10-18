@@ -1,6 +1,6 @@
 # QQ 音乐 Windows 插件源码
 
-此目录是独立插件仓库 `Twilight-Echo-plugins` 中 QQ 音乐插件的源码快照，版本为 `0.4.0-rc.6`，配套宿主为 `1.3.1-qq.5`，来源提交为 `2de4bf293ec3abb907a2089c79602427be855f47`。本轮来源与逐文件哈希见 [Task13 归档清单](../../docs/qqmusic-research/task13-manifest.json)；原 [归档清单](../../docs/qqmusic-research/archive-manifest.json) 保留 Task12 历史，不代表本轮文件。保留上游代码、作者、LICENSE 和 THIRD_PARTY_NOTICES，不改变插件的原始来源声明。
+此目录是独立插件仓库 `Twilight-Echo-plugins` 中 QQ 音乐插件的源码快照，版本为 `0.4.0-rc.7`，目标配套宿主为 `1.3.1-qq.7`，来源提交仍为 `5eb33115090fd5cb4bb6035eab3e7d99ae3afa05`。旧 qq.6 候选源码 `3bacff6e275c2333e1931373f48088e47e1fc8c3` 的插件镜像与产物已有独立字节审计，但随后真实 GUI 的 EOF定位失败。原生 EOF 与服务 Pause 分层修复已有独立审查，qq.7 新版本实测、正常冷启动、新产物及发布冻结仍待补齐，尚不可交付。本轮来源与逐文件哈希见 [Task14 归档清单](../../docs/qqmusic-research/task14-manifest.json)，调查及待验状态见 [Task14 入口](../../docs/qqmusic-research/task14/README.md)；[Task13 清单](../../docs/qqmusic-research/task13-manifest.json)与原 [归档清单](../../docs/qqmusic-research/archive-manifest.json) 保留历史，不代表本轮镜像文件。保留上游代码、作者、LICENSE 和 THIRD_PARTY_NOTICES，不改变插件的原始来源声明。
 
 从宿主仓库根目录执行测试：
 

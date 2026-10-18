@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "scope": "ZIP central-directory/CRC metadata only, not installed-client acceptance",
+  "provider_commit": "5eb33115090fd5cb4bb6035eab3e7d99ae3afa05",
+  "version": "0.4.0-rc.7",
+  "host_version": "1.3.1-qq.6",
+  "package": "com.twilightecho.provider.qqmusic-0.4.0-rc.7.tep",
+  "bytes": 270232,
+  "sha256": "b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2",
+  "crc_pass": true,
+  "members": [
+    {
+      "path": "lib/windows/album-call.mjs",
+      "bytes": 7976,
+      "crc32": "7c73b668"
+    },
+    {
+      "path": "lib/windows/artist-call.mjs",
+      "bytes": 12972,
+      "crc32": "407eea9e"
+    },
+    {
+      "path": "lib/windows/audio-proxy.mjs",
+      "bytes": 33514,
+      "crc32": "523215bc"
+    },
+    {
+      "path": "lib/windows/client.mjs",
+      "bytes": 20296,
+      "crc32": "fd119dbd"
+    },
+    {
+      "path": "lib/windows/comm.mjs",
+      "bytes": 3463,
+      "crc32": "76702a2b"
+    },
+    {
+      "path": "lib/windows/container.mjs",
+      "bytes": 4407,
+      "crc32": "bb512538"
+    },
+    {
+      "path": "lib/windows/discovery-call.mjs",
+      "bytes": 19351,
+      "crc32": "00915c82"
+    },
+    {
+      "path": "lib/windows/ekey.mjs",
+      "bytes": 2574,
+      "crc32": "cd41dbb2"
+    },
+    {
+      "path": "lib/windows/favorite-call.mjs",
+      "bytes": 5936,
+      "crc32": "7013f2d8"
+    },
+    {
+      "path": "lib/windows/favorite-state.mjs",
+      "bytes": 6002,
+      "crc32": "a104d9da"
+    },
+    {
+      "path": "lib/windows/filename.mjs",
+      "bytes": 4288,
+      "crc32": "bbe69c3b"
+    },
+    {
+      "path": "lib/windows/home-call.mjs",
+      "bytes": 15864,
+      "crc32": "f0973c5f"
+    },
+    {
+      "path": "lib/windows/json-integer.mjs",
+      "bytes": 602,
+      "crc32": "514a83b7"
+    },
+    {
+      "path": "lib/windows/login-request.mjs",
+      "bytes": 3818,
+      "crc32": "6fe36c57"
+    },
+    {
+      "path": "lib/windows/lyric-call.mjs",
+      "bytes": 3876,
+      "crc32": "0045e645"
+    },
+    {
+      "path": "lib/windows/media-source.mjs",
+      "bytes": 19009,
+      "crc32": "5595088f"
+    },
+    {
+      "path": "lib/windows/media-stream.mjs",
+      "bytes": 6405,
+      "crc32": "123de213"
+    },
+    {
+      "path": "lib/windows/playlist-binding.mjs",
+      "bytes": 4485,
+      "crc32": "276f7d5f"
+    },
+    {
+      "path": "lib/windows/playlist-call.mjs",
+      "bytes": 3895,
+      "crc32": "1fb9fce0"
+    },
+    {
+      "path": "lib/windows/playlist-data.mjs",
+      "bytes": 10732,
+      "crc32": "63d51c40"
+    },
+    {
+      "path": "lib/windows/quality.mjs",
+      "bytes": 6254,
+      "crc32": "1c4cf85a"
+    },
+    {
+      "path": "lib/windows/response.mjs",
+      "bytes": 3268,
+      "crc32": "ed2f35be"
+    },
+    {
+      "path": "lib/windows/search-call.mjs",
+      "bytes": 1523,
+      "crc32": "4e1167c3"
+    },
+    {
+      "path": "lib/windows/search-catalog.mjs",
+      "bytes": 8025,
+      "crc32": "fe3f1c88"
+    },
+    {
+      "path": "lib/windows/settings.mjs",
+      "bytes": 3170,
+      "crc32": "fdbb73fd"
+    },
+    {
+      "path": "lib/windows/signature.mjs",
+      "bytes": 1676,
+      "crc32": "6b84ccaa"
+    },
+    {
+      "path": "lib/windows/song-detail-call.mjs",
+      "bytes": 1523,
+      "crc32": "ad9f05cc"
+    },
+    {
+      "path": "lib/windows/tea.mjs",
+      "bytes": 4535,
+      "crc32": "dd8943cf"
+    },
+    {
+      "path": "lib/windows/tracks.mjs",
+      "bytes": 6956,
+      "crc32": "2793e55d"
+    },
+    {
+      "path": "lib/windows/vkey-request.mjs",
+      "bytes": 4008,
+      "crc32": "272498fd"
+    },
+    {
+      "path": "lib/windows/wire.mjs",
+      "bytes": 680,
+      "crc32": "8992e73b"
+    },
+    {
+      "path": "plugin.json",
+      "bytes": 1900,
+      "crc32": "a0aec863"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "bytes": 3115,
+      "crc32": "75d012df"
+    },
+    {
+      "path": "windows-index.mjs",
+      "bytes": 29812,
+      "crc32": "32bab9b7"
+    }
+  ],
+  "pending": [
+    "Final runtime install/cold session acceptance",
+    "Final host installer and release manifest"
+  ]
+}
