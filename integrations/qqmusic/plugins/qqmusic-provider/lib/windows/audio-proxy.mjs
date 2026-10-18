@@ -715,11 +715,21 @@ export class WindowsAudioProxy {
     try {
       const count = selected.end - selected.start + 1n
       const parallel = request.method === 'GET' && count >= PARALLEL_MIN_BYTES
+      if (parallel && selected.partial) {
+        source = await this.#resolve(lease, false, controller)
+        await this.#transport(lease, source, controller)
+        if (signal.aborted) throw aborted()
+        // This verified lease metadata admits a seek, not upstream audio. Flush
+        // before credits so a reader can close its old response to release them.
+        // Status, Range, length and encoding still gate every media byte below.
+        responseHeaders(response, source, selected)
+        response.flushHeaders()
+      }
       if (parallel) {
         releaseFirstMemory = await this.#memorySlot(signal)
         releaseFirstTransport = await this.#transportSlot(signal)
       }
-      source = await this.#resolve(lease, false, controller)
+      source ??= await this.#resolve(lease, false, controller)
       if (request.method === 'HEAD' || source.length === 0n) {
         await this.#transport(lease, source, controller)
         responseHeaders(response, source, selected)
@@ -733,7 +743,7 @@ export class WindowsAudioProxy {
         source.key.fill(0)
       }
       reader = upstream.body.getReader()
-      responseHeaders(response, source, selected)
+      if (!response.headersSent) responseHeaders(response, source, selected)
       if (parallel && upstream.status === 206) {
         await this.#parallel(response, lease, source, selected, controller, reader, cipher, releaseFirstMemory, releaseFirstTransport)
         response.end(); return

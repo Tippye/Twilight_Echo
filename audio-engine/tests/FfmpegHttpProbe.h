@@ -4,10 +4,65 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <vector>
+
+// A no-reader seek probe keeps the operation's network budget independent of
+// subsequent playback. Only loopback synthetic sources are accepted.
+inline int runFfmpegHttpSeekBudgetProbe(const std::string& url, const std::string& mode) {
+  using namespace twilight::audio;
+  using Clock = std::chrono::steady_clock;
+  if (url.rfind("http://127.0.0.1:", 0) != 0 ||
+      (mode != "startup" && mode != "transport" && mode != "cancel" &&
+       mode != "precise-startup" && mode != "precise-transport" && mode != "expired-startup-retry")) return 2;
+  const auto begin = Clock::now();
+  FFmpegDecoder decoder;
+  std::string error;
+  const bool opened = decoder.open(url, &error);
+  const auto openedAt = Clock::now();
+  bool configured = false;
+  bool sought = false;
+  bool initialBudgetRejected = false;
+  std::thread cancellation;
+  if (opened) {
+    auto format = decoder.outputFormat();
+    format.sampleFormat = AudioSampleFormat::Float32Interleaved;
+    format.bitDepth = 32;
+    configured = decoder.setOutputFormat(format, &error);
+    if (configured) {
+      if (mode == "expired-startup-retry") {
+        std::this_thread::sleep_until(begin + std::chrono::milliseconds(15100));
+        initialBudgetRejected = !decoder.seek(32.7103, &error, FFmpegDecoder::SeekPurpose::Startup)
+            && error == "network_io_timeout";
+        error.clear();
+      }
+      if (mode == "cancel") cancellation = std::thread([&] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        decoder.cancelPcmStreamTransform();
+      });
+      const auto purpose = mode == "startup" || mode == "precise-startup"
+          ? FFmpegDecoder::SeekPurpose::Startup : FFmpegDecoder::SeekPurpose::Transport;
+      sought = mode == "precise-startup" || mode == "precise-transport"
+          ? decoder.seekOutputFrame(static_cast<uint64_t>(std::llround(32.7103 * format.sampleRate)), &error, purpose)
+          : decoder.seek(32.7103, &error, purpose);
+    }
+  }
+  if (cancellation.joinable()) cancellation.join();
+  const auto ms = [](auto duration) { return std::chrono::duration<double, std::milli>(duration).count(); };
+  std::cout << "{\"opened\":" << (opened ? "true" : "false")
+            << ",\"configured\":" << (configured ? "true" : "false")
+            << ",\"sought\":" << (sought ? "true" : "false")
+            << ",\"initialBudgetRejected\":" << (initialBudgetRejected ? "true" : "false")
+            << ",\"cancelled\":" << (error == "decode_cancelled" ? "true" : "false")
+            << ",\"timeout\":" << (error == "network_io_timeout" ? "true" : "false")
+            << ",\"openMs\":" << ms(openedAt - begin)
+            << ",\"seekMs\":" << ms(Clock::now() - openedAt)
+            << ",\"totalMs\":" << ms(Clock::now() - begin) << "}\n";
+  return 0;
+}
 
 // This diagnostic entry point accepts only an ephemeral loopback fixture. It
 // emits timing/count/classification facts, never a URL or decoded PCM sample.

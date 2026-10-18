@@ -302,12 +302,36 @@ struct FFmpegDecoder::Impl {
   using IoClock = std::chrono::steady_clock;
   enum class IoPhase { None, Startup, Read, Seek };
   IoPhase ioPhase = IoPhase::None;
-  IoClock::time_point ioDeadline{};
+  IoClock::time_point ioIdleDeadline{};
+  IoClock::time_point ioAbsoluteDeadline{};
+  // Retained only for initial positioning after open/probe. Seek scopes also
+  // cover precise seek's decode/preroll reads, then restore ordinary read IO.
+  IoClock::time_point startupDeadline{};
+  IoClock::time_point positioningDeadline{};
+  bool positioning = false;
   int64_t ioLastBytes = 0;
   bool httpSource = false;
   bool ioTimedOut = false;
   std::string readFailure;
   bool readFailureWasCancelled = false;
+
+  struct SeekBudgetScope {
+    Impl& owner;
+    bool previous;
+    IoClock::time_point previousDeadline;
+    SeekBudgetScope(Impl& impl, SeekPurpose purpose)
+        : owner(impl), previous(impl.positioning), previousDeadline(impl.positioningDeadline) {
+      if (!previous) owner.positioningDeadline = IoClock::now() + std::chrono::seconds(15);
+      if (purpose == SeekPurpose::Startup) {
+        owner.positioningDeadline = std::min(owner.positioningDeadline, owner.startupDeadline);
+      }
+      owner.positioning = true;
+    }
+    ~SeekBudgetScope() {
+      owner.positioning = previous;
+      owner.positioningDeadline = previousDeadline;
+    }
+  };
 
   struct IoOperation {
     Impl& owner;
@@ -316,7 +340,17 @@ struct FFmpegDecoder::Impl {
       owner.ioTimedOut = false;
       owner.ioLastBytes = owner.formatContext && owner.formatContext->pb
           ? owner.formatContext->pb->bytes_read : 0;
-      owner.ioDeadline = IoClock::now() + std::chrono::milliseconds(phase == IoPhase::Seek ? 5000 : 15000);
+      const auto now = IoClock::now();
+      if (phase == IoPhase::Startup) owner.startupDeadline = now + std::chrono::seconds(15);
+      owner.ioIdleDeadline = now + std::chrono::seconds(phase == IoPhase::Seek || owner.positioning ? 5 : 15);
+      owner.ioAbsoluteDeadline = phase == IoPhase::Read
+          ? IoClock::time_point::max() : now + std::chrono::seconds(15);
+      if (phase == IoPhase::Startup) {
+        owner.ioAbsoluteDeadline = std::min(owner.ioAbsoluteDeadline, owner.startupDeadline);
+      }
+      if (owner.positioning) {
+        owner.ioAbsoluteDeadline = std::min(owner.ioAbsoluteDeadline, owner.positioningDeadline);
+      }
     }
     ~IoOperation() { owner.ioPhase = IoPhase::None; }
   };
@@ -327,14 +361,19 @@ struct FFmpegDecoder::Impl {
         (owner.interrupt && owner.interrupt(owner.interruptContext))) return 1;
     if (owner.ioPhase == IoPhase::None) return 0;
     const auto now = IoClock::now();
-    if (owner.ioPhase == IoPhase::Read && owner.formatContext && owner.formatContext->pb) {
+    if (now >= owner.ioAbsoluteDeadline) {
+      owner.ioTimedOut = true;
+      return 1;
+    }
+    if ((owner.ioPhase == IoPhase::Read || owner.ioPhase == IoPhase::Seek) &&
+        owner.formatContext && owner.formatContext->pb) {
       const auto bytes = owner.formatContext->pb->bytes_read;
       if (bytes != owner.ioLastBytes) {
         owner.ioLastBytes = bytes;
-        owner.ioDeadline = now + std::chrono::milliseconds(15000);
+        owner.ioIdleDeadline = now + std::chrono::seconds(owner.ioPhase == IoPhase::Seek || owner.positioning ? 5 : 15);
       }
     }
-    if (now < owner.ioDeadline) return 0;
+    if (now < owner.ioIdleDeadline) return 0;
     owner.ioTimedOut = true;
     return 1;
   }
@@ -1305,13 +1344,14 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
 #endif
 }
 
-bool FFmpegDecoder::seek(double seconds, std::string* error) {
+bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose) {
 #if defined(TAE_HAS_FFMPEG)
   if (!impl_->formatContext || impl_->audioStreamIndex < 0) return false;
   // The transport owner has stopped/joined the old reader before seeking.
   impl_->transformCancelled.store(false, std::memory_order_release);
   impl_->readFailure.clear();
   impl_->readFailureWasCancelled = false;
+  Impl::SeekBudgetScope positioning(*impl_, purpose);
   Impl::IoOperation io(*impl_, Impl::IoPhase::Seek);
   AVStream* stream = impl_->formatContext->streams[impl_->audioStreamIndex];
   const int64_t timestamp = static_cast<int64_t>(seconds / av_q2d(stream->time_base));
@@ -1340,12 +1380,13 @@ bool FFmpegDecoder::seek(double seconds, std::string* error) {
   return true;
 #else
   (void)seconds;
+  (void)purpose;
   if (error) *error = "当前构建未启用音频解码支持";
   return false;
 #endif
 }
 
-bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
+bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error, SeekPurpose purpose) {
 #if defined(TAE_HAS_FFMPEG)
   if (impl_->transformFactory) {
     if (error) *error = "Precise PCM seek is unsupported for transformed streams";
@@ -1357,7 +1398,8 @@ bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
   // song duration. The final trim is in integer output frames, not seconds.
   const auto rate = static_cast<uint64_t>(impl_->outputFormat.sampleRate);
   const auto preroll = frame > rate ? frame - rate : 0;
-  if (!seek(static_cast<double>(preroll) / rate, error)) return false;
+  Impl::SeekBudgetScope positioning(*impl_, purpose);
+  if (!seek(static_cast<double>(preroll) / rate, error, purpose)) return false;
   impl_->exactSeek = true;
   impl_->exactFromStart = preroll == 0;
   impl_->exactTarget = frame;
@@ -1372,6 +1414,7 @@ bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
   return true;
 #else
   (void)frame;
+  (void)purpose;
   if (error) *error = "当前构建未启用音频解码支持";
   return false;
 #endif

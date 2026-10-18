@@ -21,6 +21,10 @@ class FFmpegDecoder {
     SoxrVhq
   };
 
+  // Initial positioning shares open/probe's HTTP startup budget. Transport
+  // seeks have their own bounded budget; local-file behavior is unchanged.
+  enum class SeekPurpose { Transport, Startup };
+
   FFmpegDecoder();
   ~FFmpegDecoder();
 
@@ -50,10 +54,10 @@ class FFmpegDecoder {
   void setResamplerQuality(ResamplerQuality quality);
   size_t readFrames(float* output, size_t frameCount, std::string* error);
   size_t readFrames(PcmBlock& output, std::string* error);
-  bool seek(double seconds, std::string* error);
+  bool seek(double seconds, std::string* error, SeekPurpose purpose = SeekPurpose::Transport);
   /** Background-only: align decoded/resampled PCM to an absolute output frame.
    * Requires continuous frame timestamps; fails instead of inventing a clock. */
-  bool seekOutputFrame(uint64_t frame, std::string* error);
+  bool seekOutputFrame(uint64_t frame, std::string* error, SeekPurpose purpose = SeekPurpose::Transport);
   bool eof() const;
 
   const AudioStreamInfo& streamInfo() const;

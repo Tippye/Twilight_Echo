@@ -458,6 +458,9 @@ void assertDecoderOpensExternalFixturesWhenProvided() {
 
 int main(int argc,char** argv) {
 #if defined(TAE_HAS_FFMPEG)
+  if(argc==4 && std::string(argv[1])=="--http-seek-budget-probe") {
+    return runFfmpegHttpSeekBudgetProbe(argv[2], argv[3]);
+  }
   if(argc==4 && std::string(argv[1])=="--http-read-probe") {
     return runFfmpegHttpProbe(argv[2], std::stoi(argv[3]), false);
   }

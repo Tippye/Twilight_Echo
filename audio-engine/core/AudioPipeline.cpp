@@ -943,10 +943,10 @@ struct AudioPipeline::DecodeStream {
     if (exactLogicalStart) {
       const uint64_t sourceFrame = *exactLogicalStart + static_cast<uint64_t>(
           std::llround(item.cueStartSeconds.value_or(0) * decodeFormat.sampleRate));
-      if (!decoder->seekOutputFrame(sourceFrame, error)) return false;
+      if (!decoder->seekOutputFrame(sourceFrame, error, FFmpegDecoder::SeekPurpose::Startup)) return false;
     } else if (sourceStart > 0.0 && !(precisePcmSeek
-        ? decoder->seekOutputFrame(preciseSourceFrame(sourceStart), error)
-        : decoder->seek(sourceStart, error))) return false;
+        ? decoder->seekOutputFrame(preciseSourceFrame(sourceStart), error, FFmpegDecoder::SeekPurpose::Startup)
+        : decoder->seek(sourceStart, error, FFmpegDecoder::SeekPurpose::Startup))) return false;
     sourceTimelineExact = !item.pcmWorker &&
         (exactLogicalStart.has_value() || sourceStart == 0 || precisePcmSeek);
 

@@ -5615,7 +5615,8 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
   return read;
 }
 
-bool FFmpegDecoder::seek(double seconds, std::string* error) {
+bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose) {
+  (void)purpose;
   if (impl_->profile.stream.source == "preload-control-current.flac" && g_currentSeekGate)
     g_currentSeekGate->enter(nullptr, nullptr);
   const double clamped = std::max(0.0, seconds);
@@ -5633,8 +5634,8 @@ bool FFmpegDecoder::eof() const {
   return impl_->positionFrames >= impl_->profile.totalFrames;
 }
 
-bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
-  return seek(static_cast<double>(frame)/std::max(1,impl_->outputFormat.sampleRate),error);
+bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error, SeekPurpose purpose) {
+  return seek(static_cast<double>(frame)/std::max(1,impl_->outputFormat.sampleRate),error,purpose);
 }
 
 const AudioStreamInfo& FFmpegDecoder::streamInfo() const {
