@@ -622,6 +622,414 @@ test('native completion grace rejects invalid timer bounds', () => {
   }
 })
 
+async function confirmPauseState(
+  binding: AudioEngineServiceBinding,
+  child: ManualUtilityProcess,
+  value: unknown
+): Promise<void> {
+  const read = binding.callAsync('GetPlaybackInfo', [])
+  const request = child.messages.at(-1) as { requestId: string }
+  child.emit('message', { kind: 'response', requestId: request.requestId, ok: true, value })
+  await read
+}
+
+const freshSharedPauseState = {
+  state: 'paused',
+  outputInfo: {
+    outputReleased: false,
+    exclusive: false,
+    accessMode: 'shared',
+    actualBackend: 'wasapi'
+  }
+}
+
+test('Pause with unknown released or exclusive output uses the existing slow admission tier', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  for (const value of [
+    undefined,
+    'malformed JSON',
+    '{"state":"paused"}',
+    { state: 'paused', outputInfo: { outputReleased: true } },
+    {
+      state: 'playing',
+      outputInfo: { outputReleased: false, exclusive: true, accessMode: 'exclusive' }
+    },
+    {
+      state: 'paused',
+      outputInfo: { outputReleased: false, exclusive: false, accessMode: 'unknown' }
+    }
+  ]) {
+    const child = new ManualUtilityProcess()
+    const binding = new AudioEngineServiceBinding({
+      serviceEntry: 'audioEngineService.js',
+      requestTimeoutMs: 5,
+      topologyRequestTimeoutMs: 20,
+      nativeCompletionGraceMs: 30,
+      electron: { utilityProcess: { fork: () => child } }
+    })
+    try {
+      if (value !== undefined) await confirmPauseState(binding, child, value)
+      let settled = false
+      const pause = binding.callAsync('Pause', []).finally(() => {
+        settled = true
+      })
+      const rejected = assert.rejects(pause, /音频服务调用超时/)
+      t.mock.timers.tick(5)
+      await Promise.resolve()
+      assert.equal(settled, false, 'Unknown/reopening Pause must not use the fast caller deadline')
+      assert.equal(child.killCount, 0)
+      t.mock.timers.tick(15)
+      await rejected
+      assert.equal(child.killCount, 0)
+    } finally {
+      binding.destroy()
+    }
+  }
+})
+
+test('Pause with fresh authoritative stopped or paused shared output retains the fast watchdog', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  for (const value of ['{"state":"stopped"}', freshSharedPauseState]) {
+    const child = new ManualUtilityProcess()
+    const binding = new AudioEngineServiceBinding({
+      serviceEntry: 'audioEngineService.js',
+      requestTimeoutMs: 5,
+      topologyRequestTimeoutMs: 20,
+      electron: { utilityProcess: { fork: () => child } }
+    })
+    try {
+      await confirmPauseState(binding, child, value)
+      const rejected = assert.rejects(binding.callAsync('Pause', []), /音频服务调用超时/)
+      t.mock.timers.tick(5)
+      await rejected
+      assert.equal(
+        child.killCount,
+        1,
+        'Known ordinary Pause must keep the fast unresponsive-child check'
+      )
+    } finally {
+      binding.destroy()
+    }
+  }
+})
+
+test('Pause cannot infer a fast path from playing shared output across autonomous native queue advancement', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const child = new ManualUtilityProcess()
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    electron: { utilityProcess: { fork: () => child } }
+  })
+  try {
+    await confirmPauseState(binding, child, { ...freshSharedPauseState, state: 'playing' })
+    // The native clock may auto-advance into a DSD/exclusive route without an
+    // IPC mutation. An earlier Playing/shared read cannot fence that change.
+    const pause = binding.callAsync('Pause', [])
+    void pause.catch(() => {})
+    const request = child.messages.at(-1) as { requestId: string }
+    t.mock.timers.tick(5)
+    assert.equal(child.killCount, 0)
+    child.emit('message', { kind: 'response', requestId: request.requestId, ok: true })
+    await pause
+  } finally {
+    binding.destroy()
+  }
+})
+
+test('Pause mutation invalidates its prior ordinary observation without clearing the presentation cache', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const child = new ManualUtilityProcess()
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    electron: { utilityProcess: { fork: () => child } }
+  })
+  try {
+    await confirmPauseState(binding, child, freshSharedPauseState)
+    const first = binding.callAsync('Pause', [])
+    const firstRequest = child.messages.at(-1) as { requestId: string }
+    child.emit('message', { kind: 'response', requestId: firstRequest.requestId, ok: true })
+    await first
+    const pause = binding.callAsync('Pause', [])
+    void pause.catch(() => {})
+    const request = child.messages.at(-1) as { requestId: string }
+    t.mock.timers.tick(5)
+    assert.equal(child.killCount, 0, 'A prior Pause ACK is not a fresh output-state readback')
+    child.emit('message', { kind: 'response', requestId: request.requestId, ok: true })
+    await pause
+    assert.deepEqual(binding.GetPlaybackInfo(), freshSharedPauseState)
+  } finally {
+    binding.destroy()
+  }
+})
+
+test('Pause cannot treat old or overlapping playback readback as fresh after a state-mutator admission', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  for (const readBeforeMutation of [true, false]) {
+    const child = new ManualUtilityProcess()
+    const binding = new AudioEngineServiceBinding({
+      serviceEntry: 'audioEngineService.js',
+      requestTimeoutMs: 5,
+      topologyRequestTimeoutMs: 20,
+      electron: { utilityProcess: { fork: () => child } }
+    })
+    try {
+      await confirmPauseState(binding, child, freshSharedPauseState)
+      let read: Promise<unknown> | undefined
+      let readRequest: { requestId: string } | undefined
+      if (readBeforeMutation) {
+        read = binding.callAsync('GetPlaybackInfo', [])
+        readRequest = child.messages.at(-1) as { requestId: string }
+      }
+      const mutation = binding.callAsync('SetOutputConfig', ['{"releaseExclusiveOnPause":true}'])
+      const mutationRequest = child.messages.at(-1) as { requestId: string }
+      if (!readBeforeMutation) {
+        read = binding.callAsync('GetPlaybackInfo', [])
+        readRequest = child.messages.at(-1) as { requestId: string }
+      }
+      child.emit('message', {
+        kind: 'response',
+        requestId: readRequest!.requestId,
+        ok: true,
+        value: freshSharedPauseState
+      })
+      await read
+      child.emit('message', { kind: 'response', requestId: mutationRequest.requestId, ok: true })
+      await mutation
+      const pause = binding.callAsync('Pause', [])
+      void pause.catch(() => {})
+      const request = child.messages.at(-1) as { requestId: string }
+      t.mock.timers.tick(5)
+      assert.equal(child.killCount, 0, 'Old/overlapping readback cannot restore fast eligibility')
+      child.emit('message', { kind: 'response', requestId: request.requestId, ok: true })
+      await pause
+      await confirmPauseState(binding, child, freshSharedPauseState)
+      const ordinary = assert.rejects(binding.callAsync('Pause', []), /音频服务调用超时/)
+      t.mock.timers.tick(5)
+      await ordinary
+      assert.equal(
+        child.killCount,
+        1,
+        'A new non-overlapping native observation restores ordinary fast policy'
+      )
+    } finally {
+      binding.destroy()
+    }
+  }
+})
+
+test('Pause slow ownership survives its caller timeout until late completion and keeps the grace bounded', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  for (const completesLate of [true, false]) {
+    const child = new ManualUtilityProcess()
+    const binding = new AudioEngineServiceBinding({
+      serviceEntry: 'audioEngineService.js',
+      requestTimeoutMs: 5,
+      topologyRequestTimeoutMs: 20,
+      nativeCompletionGraceMs: 30,
+      electron: { utilityProcess: { fork: () => child } }
+    })
+    try {
+      await confirmPauseState(binding, child, {
+        state: 'paused',
+        outputInfo: { outputReleased: true }
+      })
+      let completed = false
+      const pause = binding.callAsync('Pause', []).then(() => {
+        completed = true
+      })
+      const rejected = assert.rejects(pause, /音频服务调用超时/)
+      const request = child.messages.at(-1) as { requestId: string }
+      t.mock.timers.tick(20)
+      await rejected
+      const polling = assert.rejects(binding.callAsync('GetPlaybackInfo', []), /音频服务调用超时/)
+      t.mock.timers.tick(5)
+      await polling
+      assert.equal(child.killCount, 0)
+      if (completesLate) {
+        child.emit('message', { kind: 'response', requestId: request.requestId, ok: true })
+        await Promise.resolve()
+        assert.equal(completed, false)
+        const wedged = assert.rejects(binding.callAsync('GetPlaybackInfo', []), /音频服务调用超时/)
+        t.mock.timers.tick(5)
+        await wedged
+        assert.equal(child.killCount, 1)
+      } else {
+        t.mock.timers.tick(25)
+        assert.equal(child.killCount, 1, 'Polling cannot renew the existing completion grace')
+      }
+    } finally {
+      binding.destroy()
+    }
+  }
+})
+
+test('Pause behind a slow readonly predecessor keeps slow ownership without renewing that predecessor grace', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  for (const predecessorCallerExpired of [false, true]) {
+    const child = new ManualUtilityProcess()
+    const binding = new AudioEngineServiceBinding({
+      serviceEntry: 'audioEngineService.js',
+      requestTimeoutMs: 5,
+      topologyRequestTimeoutMs: 20,
+      nativeCompletionGraceMs: 30,
+      electron: { utilityProcess: { fork: () => child } }
+    })
+    try {
+      await confirmPauseState(binding, child, freshSharedPauseState)
+      const metadata = binding.getMetadataAsync('synthetic-slow-read.flac')
+      void metadata.catch(() => {})
+      const metadataRequest = child.messages.at(-1) as { requestId: string }
+      if (predecessorCallerExpired) {
+        const rejected = assert.rejects(metadata, /音频服务调用超时/)
+        t.mock.timers.tick(20)
+        await rejected
+      }
+      let settled = false
+      const pause = binding.callAsync('Pause', []).finally(() => {
+        settled = true
+      })
+      void pause.catch(() => {})
+      const pauseRequest = child.messages.at(-1) as { requestId: string }
+      t.mock.timers.tick(5)
+      await Promise.resolve()
+      assert.equal(
+        settled,
+        false,
+        'Fresh shared state cannot bypass an outstanding slow readonly call'
+      )
+      assert.equal(child.killCount, 0)
+      if (!predecessorCallerExpired) {
+        child.emit('message', {
+          kind: 'response',
+          requestId: metadataRequest.requestId,
+          ok: true,
+          value: '{}'
+        })
+        await metadata
+        child.emit('message', { kind: 'response', requestId: pauseRequest.requestId, ok: true })
+        await pause
+      } else {
+        const polling = assert.rejects(binding.callAsync('GetPlaybackInfo', []), /音频服务调用超时/)
+        t.mock.timers.tick(5)
+        await polling
+        const rejected = assert.rejects(pause, /音频服务调用超时/)
+        t.mock.timers.tick(10)
+        await rejected
+        assert.equal(child.killCount, 0)
+        t.mock.timers.tick(10)
+        assert.equal(
+          child.killCount,
+          1,
+          'Predecessor original deadline20+grace30 remains authoritative'
+        )
+      }
+    } finally {
+      binding.destroy()
+    }
+  }
+})
+
+test('Pause policy uses the authoritative observation rather than an older presentation refresh callback', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const child = new ManualUtilityProcess()
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    electron: { utilityProcess: { fork: () => child } }
+  })
+  try {
+    binding.GetPlaybackInfo()
+    const older = child.messages.at(-1) as { requestId: string }
+    child.emit('message', {
+      kind: 'response',
+      requestId: older.requestId,
+      ok: true,
+      value: freshSharedPauseState
+    })
+    const newer = binding.callAsync('GetPlaybackInfo', [])
+    const request = child.messages.at(-1) as { requestId: string }
+    child.emit('message', {
+      kind: 'response',
+      requestId: request.requestId,
+      ok: true,
+      value: { state: 'paused', outputInfo: { outputReleased: true } }
+    })
+    await newer
+    const pause = binding.callAsync('Pause', [])
+    void pause.catch(() => {})
+    const pauseRequest = child.messages.at(-1) as { requestId: string }
+    t.mock.timers.tick(5)
+    assert.equal(
+      child.killCount,
+      0,
+      'An older presentation callback cannot reclassify released output as ordinary'
+    )
+    child.emit('message', { kind: 'response', requestId: pauseRequest.requestId, ok: true })
+    await pause
+  } finally {
+    binding.destroy()
+  }
+})
+
+test('Pause output-state eligibility is invalidated across child exit and replacement', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const children: ManualUtilityProcess[] = []
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    restartDelayMs: 1,
+    electron: {
+      utilityProcess: {
+        fork: () => {
+          const child = new ManualUtilityProcess()
+          children.push(child)
+          return child
+        }
+      }
+    }
+  })
+  try {
+    binding.GetPlaybackInfo()
+    const first = children[0]
+    const read = first.messages.at(-1) as { requestId: string }
+    first.emit('message', {
+      kind: 'response',
+      requestId: read.requestId,
+      ok: true,
+      value: freshSharedPauseState
+    })
+    await Promise.resolve()
+    first.emit('exit', 1)
+    t.mock.timers.tick(1)
+    const child = children[1]
+    const pause = binding.callAsync('Pause', [])
+    void pause.catch(() => {})
+    const request = child.messages.at(-1) as { requestId: string }
+    first.emit('message', {
+      kind: 'response',
+      requestId: read.requestId,
+      ok: true,
+      value: freshSharedPauseState
+    })
+    t.mock.timers.tick(5)
+    assert.equal(
+      child.killCount,
+      0,
+      'Synthetic stopped fallback/old child must not authorize a fast Pause'
+    )
+    child.emit('message', { kind: 'response', requestId: request.requestId, ok: true })
+    await pause
+  } finally {
+    binding.destroy()
+  }
+})
+
 test('slow native ownership survives caller timeout and late completion restores the ordinary watchdog', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const child = new ManualUtilityProcess()

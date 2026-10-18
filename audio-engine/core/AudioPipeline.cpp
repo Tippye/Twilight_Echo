@@ -5036,12 +5036,15 @@ void AudioPipeline::setRerouteInProgress(bool active, const std::string& reason)
   }
 }
 
-bool AudioPipeline::consumeEnded() {
+bool AudioPipeline::consumeEnded(bool* terminalFailurePending) {
   std::lock_guard lock(mutex_);
-  if (activeStream_ && activeStream_->processingFailed.load()) {
-    ended_ = false;
-    return false;
-  }
+  const bool processingFailed = activeStream_ && activeStream_->processingFailed.load();
+  const bool failed = deviceInvalidated_.load(std::memory_order_acquire) ||
+      renderError_.load(std::memory_order_acquire) || processingFailed;
+  if (terminalFailurePending) *terminalFailurePending = failed;
+  if (processingFailed) ended_ = false;
+  // Failure flags remain owned by the clock's error path, never by EOF seek.
+  if (failed) return false;
   return ended_.exchange(false);
 }
 

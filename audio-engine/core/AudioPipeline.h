@@ -183,7 +183,7 @@ class AudioPipeline {
   void pollAutoMix();
 
   PipelineStatus status();
-  bool consumeEnded();
+  bool consumeEnded(bool* terminalFailurePending = nullptr);
   bool consumeDeviceInvalidated(std::string* message);
   bool consumeRenderError(std::string* message);
   bool consumeTrackStarted(QueueItem* item);

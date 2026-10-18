@@ -217,6 +217,9 @@ class TwilightAudioEngine {
   OutputConfig outputConfig_;
   bool outputRoutePending_ = false;
   bool pausedOutputReleased_ = false;
+  // A late render EOF must not undo an explicit stop or queue replacement.
+  enum class EofSeekState { Ineligible, Active, Ended };
+  EofSeekState eofSeekState_ = EofSeekState::Ineligible;
   std::unique_ptr<AudioPipeline> pipeline_;
   TAE_EventCallback eventCallback_ = nullptr;
   void* eventUserData_ = nullptr;

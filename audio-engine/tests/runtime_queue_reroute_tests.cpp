@@ -847,6 +847,7 @@ enum class FakeNativeDsdBehavior {
 FakeDopBehavior g_fakeDopBehavior = FakeDopBehavior::Proven;
 FakeNativeDsdBehavior g_fakeNativeDsdBehavior = FakeNativeDsdBehavior::Proven;
 std::atomic<int> g_fakeTopologyOpenFailures{0};
+std::atomic<int> g_eofSeekOpenFailures{0};
 std::atomic<int> g_fakeTopologyStartFailures{0};
 std::atomic<bool> g_fakeTopologyDeviceInvalidated{false};
 std::atomic<size_t> g_renderFramesDuringStart{0};
@@ -1448,6 +1449,10 @@ TrackProfile buildTrackProfile(const std::string& source) {
   profile.defaultOutput = profile.stream.decodedFormat;
   profile.totalFrames = 65536;
   profile.sampleValue = 0.25f;
+  if (source.find("eof-seek-") != std::string::npos) {
+    profile.stream.durationSeconds = 60.0;
+    profile.totalFrames = static_cast<size_t>(profile.defaultOutput.sampleRate) * 60;
+  }
   if (source.find("startup-prefill-probe") != std::string::npos) {
     const int rate = source.find("pcm-192k") != std::string::npos ? 192000 : 48000;
     profile.stream.sourceFormat = makePcmFormat(rate, 2, 24, AudioSampleFormat::Int24Interleaved);
@@ -1509,6 +1514,7 @@ class EngineHarness {
     g_fakeDopBehavior = FakeDopBehavior::Proven;
     g_fakeNativeDsdBehavior = FakeNativeDsdBehavior::Proven;
     g_fakeTopologyOpenFailures = 0;
+    g_eofSeekOpenFailures = 0;
     g_fakeTopologyStartFailures = 0;
     g_fakeTopologyDeviceInvalidated = false;
     g_renderFramesDuringStart = 0;
@@ -1522,6 +1528,7 @@ class EngineHarness {
     g_fakeDopBehavior = FakeDopBehavior::Proven;
     g_fakeNativeDsdBehavior = FakeNativeDsdBehavior::Proven;
     g_fakeTopologyOpenFailures = 0;
+    g_eofSeekOpenFailures = 0;
     g_fakeTopologyStartFailures = 0;
     g_fakeTopologyDeviceInvalidated = false;
     g_renderFramesDuringStart = 0;
@@ -2652,6 +2659,298 @@ void testOutputStartDoesNotWaitForPrerollTimeoutAtEof() {
 
   assert(elapsed < std::chrono::milliseconds(250));
   assert(waitForStartedBackendCount(1));
+}
+
+std::shared_ptr<BackendState> reachNaturalEofForSeek(TwilightAudioEngine& engine, bool releaseOutput) {
+  assert(engine.setOutputConfig(releaseOutput
+      ? "{\"releaseExclusiveOnPause\":true}" : "{\"releaseExclusiveOnPause\":false}") == TAE_RESULT_OK);
+  assert(engine.setVolume(0) == TAE_RESULT_OK);
+  assert(engine.play("eof-seek-recovery.flac", 59.99) == TAE_RESULT_OK);
+  const auto backend = waitForLatestStartedBackendState();
+  assert(backend);
+  assert(waitUntil([&] {
+    if (jsonContains(engine.getPlaybackInfoJson(), "\"state\":\"stopped\"")) return true;
+    renderBackendFrames(backend, 128);
+    return false;
+  }));
+  assert(playbackJsonNumber(engine.getPlaybackInfoJson(), "position") == 60.0);
+  assertLatestPlaybackContains(engine, releaseOutput ? "\"outputReleased\":true" : "\"outputReleased\":false");
+  return backend;
+}
+
+void testNaturalEofSeekPreparesPausedSourceBeforeResume() {
+  for (const bool releaseOutput : {false, true}) {
+    EngineHarness harness;
+    auto& engine = harness.engine();
+    const auto endedBackend = reachNaturalEofForSeek(engine, releaseOutput);
+    assert(engine.pause() == TAE_RESULT_OK);  // Stopped Pause remains a no-op.
+    assertLatestPlaybackContains(engine, "\"state\":\"stopped\"");
+    const auto seekResult = engine.seek(45.0);
+    std::fprintf(stderr, "[EOF seek probe] released=%d result=%d position=%.6f\n",
+        releaseOutput, static_cast<int>(seekResult), playbackJsonNumber(engine.getPlaybackInfoJson(), "position"));
+    assert(seekResult == TAE_RESULT_OK);
+    assertLatestPlaybackContains(engine, "\"state\":\"paused\"");
+    assert(std::abs(playbackJsonNumber(engine.getPlaybackInfoJson(), "position") - 45.0) < 1.0 / 44100);
+    assertLatestPlaybackContains(engine, "\"outputReleased\":false");
+    assert(waitForStartedBackendCount(2));
+    const auto preparedBackend = waitForLatestStartedBackendState();
+    assert(preparedBackend && preparedBackend != endedBackend);
+    renderBackendFrames(preparedBackend, 256);
+    assert(playbackJsonNumber(engine.getPlaybackInfoJson(), "position") == 45.0);
+    assert(engine.pause() == TAE_RESULT_OK);
+    renderBackendFrames(preparedBackend, 256);
+    assert(waitUntil([&] { return playbackJsonNumber(engine.getPlaybackInfoJson(), "position") > 45.0; }));
+    assertLatestPlaybackContains(engine, "\"state\":\"playing\"");
+    assert(g_backendRegistry.snapshots().size() == 2);  // Resume does not open HTTP/device again.
+  }
+}
+
+void testStoppedSeekCannotReopenAfterManualStopQueueChangeOrFailure() {
+  for (const std::string action : {"fresh", "stop", "queue", "select", "next", "previous", "render-error"}) {
+    EngineHarness harness;
+    auto& engine = harness.engine();
+    if (action != "fresh") {
+      if (action != "stop" && action != "render-error")
+        assert(engine.loadQueue("[{\"id\":\"other\",\"source\":\"other.flac\"},"
+            "{\"id\":\"ended\",\"source\":\"eof-seek-recovery.flac\"}]", 1) == TAE_RESULT_OK);
+      reachNaturalEofForSeek(engine, false);
+      if (action == "stop") assert(engine.stop() == TAE_RESULT_OK);
+      else if (action == "render-error") {
+        const auto backend = g_backendRegistry.latestStarted();
+        assert(backend);
+        backend->event(OutputBackendEvent::RenderError, "synthetic EOF device failure");
+        assert(waitUntil([&] { return jsonContains(engine.getLastErrorJson(), "\"hasError\":true"); }));
+      } else {
+        if (action == "queue") assert(engine.loadQueue("[{\"id\":\"replacement\",\"source\":\"other.flac\"}]", 0) == TAE_RESULT_OK);
+        if (action == "select") assert(engine.selectQueueIndex(0) == TAE_RESULT_OK);
+        if (action == "next") assert(engine.next() == TAE_RESULT_OK);
+        if (action == "previous") assert(engine.previous() == TAE_RESULT_OK);
+      }
+    }
+    const auto before = engine.getPlaybackInfoJson();
+    const auto backendCount = g_backendRegistry.snapshots().size();
+    assert(engine.seek(45.0) == TAE_RESULT_NOT_INITIALIZED);
+    assert(engine.getPlaybackInfoJson() == before);
+    assert(engine.pause() == TAE_RESULT_OK);
+    assertLatestPlaybackContains(engine, "\"state\":\"stopped\"");
+    assert(g_backendRegistry.snapshots().size() == backendCount);
+  }
+}
+
+// Hold the clock between its snapshot and lifecycle consumption. Render and
+// explicit transport commands still run, so no timing guess chooses the winner.
+void testPendingRenderEofSeekAndQueueRevocationKeepTheirOwner() {
+  for (const std::string action : {"seek", "queue", "render-error", "device-error"}) {
+    struct Capture {
+      std::mutex mutex;
+      std::condition_variable cv;
+      bool entered = false, release = false;
+    } capture;
+    EngineHarness harness;
+    auto& engine = harness.engine();
+    assert(engine.setOutputConfig("{\"releaseExclusiveOnPause\":false}") == TAE_RESULT_OK);
+    assert(engine.setVolume(0) == TAE_RESULT_OK);
+    assert(engine.play("eof-seek-recovery.flac", 59.99) == TAE_RESULT_OK);
+    const auto backend = waitForLatestStartedBackendState();
+    assert(backend);
+    engine.setEventCallback([](const char* event, const char*, void* data) {
+      auto& capture = *static_cast<Capture*>(data);
+      std::unique_lock lock(capture.mutex);
+      if (std::string_view(event) == "config-applied" && !capture.release) {
+        capture.entered = true;
+        capture.cv.notify_all();
+        capture.cv.wait(lock, [&] { return capture.release; });
+      }
+    }, &capture);
+    assert(engine.setVolume(0.1) == TAE_RESULT_OK);
+    renderBackendFrames(backend, 128);
+    assert(waitUntil([&] { std::lock_guard lock(capture.mutex); return capture.entered; }));
+    if (action == "queue") {
+      // The old render lane can end after the queue command has returned.
+      assert(engine.loadQueue("[{\"id\":\"replacement\",\"source\":\"other.flac\"}]", 0) == TAE_RESULT_OK);
+    }
+    for (int i = 0; i < 16; ++i) renderBackendFrames(backend, 128);
+    if (action == "render-error") backend->event(OutputBackendEvent::RenderError, "pending EOF render error");
+    if (action == "device-error") {
+      // A pinned device prevents the existing automatic-device recovery path.
+      assert(engine.setOutputDevice("device-a") == TAE_RESULT_OK);
+      backend->event(OutputBackendEvent::DeviceInvalidated, "pending EOF device error");
+    }
+    const auto result = engine.seek(45.0);
+    const auto after = engine.getPlaybackInfoJson();
+    {
+      std::lock_guard lock(capture.mutex);
+      capture.release = true;
+    }
+    capture.cv.notify_all();
+    if (action == "seek") {
+      assert(result == TAE_RESULT_OK);
+      assert(jsonContains(after, "\"state\":\"paused\""));
+      assert(std::abs(playbackJsonNumber(after, "position") - 45.0) < 1.0 / 44100);
+      assert(waitForStartedBackendCount(2));
+      assert(engine.pause() == TAE_RESULT_OK);
+      renderBackendFrames(waitForLatestStartedBackendState(), 256);
+      assert(waitUntil([&] { return playbackJsonNumber(engine.getPlaybackInfoJson(), "position") > 45.0; }));
+      assertLatestPlaybackContains(engine, "\"state\":\"playing\"");
+    } else {
+      assert(result == TAE_RESULT_NOT_INITIALIZED);
+      assert(waitUntil([&] { return jsonContains(engine.getPlaybackInfoJson(), "\"state\":\"stopped\""); }));
+      assert(engine.pause() == TAE_RESULT_OK);
+      assertLatestPlaybackContains(engine, "\"state\":\"stopped\"");
+      assert(g_backendRegistry.snapshots().size() == 1);
+      if (action == "queue") {
+        assert(jsonContains(after, "\"state\":\"stopped\""));
+        assert(playbackJsonNumber(after, "position") == 60.0);
+      } else {
+        assert(waitUntil([&] { return jsonContains(engine.getLastErrorJson(), "pending EOF"); }));
+      }
+    }
+    engine.setEventCallback(nullptr, nullptr);
+  }
+}
+
+void testLateRenderEofAfterQueueReplacementCannotReopenOldSource() {
+  EngineHarness harness;
+  auto& engine = harness.engine();
+  assert(engine.setOutputConfig("{\"releaseExclusiveOnPause\":false}") == TAE_RESULT_OK);
+  assert(engine.play("eof-seek-recovery.flac", 59.99) == TAE_RESULT_OK);
+  const auto backend = waitForLatestStartedBackendState();
+  assert(engine.loadQueue("[{\"id\":\"replacement\",\"source\":\"other.flac\"}]", 0) == TAE_RESULT_OK);
+  assert(waitUntil([&] {
+    renderBackendFrames(backend, 128);
+    return jsonContains(engine.getPlaybackInfoJson(), "\"state\":\"stopped\"");
+  }));
+  const auto before = engine.getPlaybackInfoJson();
+  assert(engine.seek(45.0) == TAE_RESULT_NOT_INITIALIZED);
+  assert(engine.getPlaybackInfoJson() == before);
+  assert(engine.pause() == TAE_RESULT_OK);
+  assert(g_backendRegistry.snapshots().size() == 1);
+}
+
+void testCommittedEofSeekCannotHidePendingBackendFailure() {
+  for (const bool deviceError : {false, true}) {
+    struct Capture {
+      std::mutex mutex;
+      std::condition_variable cv;
+      bool entered = false, release = false;
+    } capture;
+    EngineHarness harness;
+    auto& engine = harness.engine();
+    const auto backend = reachNaturalEofForSeek(engine, false);
+    assert(engine.setOutputDevice("device-a") == TAE_RESULT_OK);
+    engine.setEventCallback([](const char* event, const char*, void* data) {
+      auto& capture = *static_cast<Capture*>(data);
+      std::unique_lock lock(capture.mutex);
+      if (std::string_view(event) == "config-applied" && !capture.release) {
+        capture.entered = true;
+        capture.cv.notify_all();
+        capture.cv.wait(lock, [&] { return capture.release; });
+      }
+    }, &capture);
+    assert(engine.setVolume(0.1) == TAE_RESULT_OK);
+    renderBackendFrames(backend, 128);  // Control commands also apply while stopped.
+    assert(waitUntil([&] { std::lock_guard lock(capture.mutex); return capture.entered; }));
+    backend->event(deviceError ? OutputBackendEvent::DeviceInvalidated : OutputBackendEvent::RenderError,
+        "committed EOF backend failure");
+    const auto result = engine.seek(45.0);
+    const auto after = engine.getPlaybackInfoJson();
+    { std::lock_guard lock(capture.mutex); capture.release = true; }
+    capture.cv.notify_all();
+    assert(result == TAE_RESULT_NOT_INITIALIZED);
+    assert(jsonContains(after, "\"state\":\"stopped\""));
+    assert(playbackJsonNumber(after, "position") == 60.0);
+    assert(waitUntil([&] { return jsonContains(engine.getLastErrorJson(), "committed EOF backend failure"); }));
+    assert(engine.pause() == TAE_RESULT_OK);
+    assert(g_backendRegistry.snapshots().size() == 1);
+    engine.setEventCallback(nullptr, nullptr);
+  }
+}
+
+void testPreloadedPromotionRestoresNaturalEofSeekEligibility() {
+  for (const bool manualNext : {false, true}) {
+    EngineHarness harness;
+    auto& engine = harness.engine();
+    assert(engine.setOutputConfig("{\"releaseExclusiveOnPause\":false}") == TAE_RESULT_OK);
+    assert(engine.setVolume(0.5) == TAE_RESULT_OK);
+    assert(engine.setDspConfig("{\"gapless\":true,\"crossfadeSeconds\":0}") == TAE_RESULT_OK);
+    assert(engine.loadQueue("[{\"id\":\"first\",\"source\":\"eof-seek-first.flac\"},"
+        "{\"id\":\"next\",\"source\":\"eof-seek-next.flac\"}]", 0) == TAE_RESULT_OK);
+    assert(engine.play("eof-seek-first.flac", 59.99) == TAE_RESULT_OK);
+    auto backend = waitForLatestStartedBackendState();
+    assert(waitUntil([&] { return jsonContains(engine.getPlaybackInfoJson(), "\"preloadReady\":true"); }));
+    if (manualNext) assert(engine.next() == TAE_RESULT_OK);
+    assert(waitUntil([&] {
+      renderBackendFrames(backend, 128);
+      return jsonContains(engine.getPlaybackInfoJson(), "\"source\":\"eof-seek-next.flac\"");
+    }));
+    backend = waitForLatestStartedBackendState();
+    assert(g_backendRegistry.snapshots().size() == 1); // A real preload promotion, not reopened fallback.
+    const bool ended = waitUntil([&] {
+      for (int i = 0; i < 64; ++i) renderBackendFrames(backend, 512);
+      return jsonContains(engine.getPlaybackInfoJson(), "\"state\":\"stopped\"");
+    }, 8000);
+    if (!ended) std::fprintf(stderr, "promotion EOF failed manual=%d position=%.6f backendCount=%zu\n",
+        manualNext, playbackJsonNumber(engine.getPlaybackInfoJson(), "position"), g_backendRegistry.snapshots().size());
+    assert(ended);
+    assert(engine.seek(45.0) == TAE_RESULT_OK);
+    assertLatestPlaybackContains(engine, "\"state\":\"paused\"");
+    assertLatestPlaybackContains(engine, "\"source\":\"eof-seek-next.flac\"");
+    assert(playbackJsonNumber(engine.getPlaybackInfoJson(), "position") == 45.0);
+  }
+}
+
+void testQueueReplacementRevokesUnacknowledgedRenderPromotion() {
+  struct Capture {
+    std::mutex mutex;
+    std::condition_variable cv;
+    bool entered = false, release = false;
+  } capture;
+  EngineHarness harness;
+  auto& engine = harness.engine();
+  assert(engine.setOutputConfig("{\"releaseExclusiveOnPause\":false}") == TAE_RESULT_OK);
+  assert(engine.setVolume(0.5) == TAE_RESULT_OK);
+  assert(engine.setDspConfig("{\"gapless\":true,\"crossfadeSeconds\":0}") == TAE_RESULT_OK);
+  assert(engine.loadQueue("[{\"id\":\"first\",\"source\":\"eof-seek-first.flac\"},"
+      "{\"id\":\"next\",\"source\":\"eof-seek-next.flac\"}]", 0) == TAE_RESULT_OK);
+  assert(engine.play("eof-seek-first.flac", 59.99) == TAE_RESULT_OK);
+  const auto backend = waitForLatestStartedBackendState();
+  assert(waitUntil([&] { return jsonContains(engine.getPlaybackInfoJson(), "\"preloadReady\":true"); }));
+  engine.setEventCallback([](const char* event, const char*, void* data) {
+    auto& capture = *static_cast<Capture*>(data);
+    std::unique_lock lock(capture.mutex);
+    if (std::string_view(event) == "config-applied" && !capture.release) {
+      capture.entered = true;
+      capture.cv.notify_all();
+      capture.cv.wait(lock, [&] { return capture.release; });
+    }
+  }, &capture);
+  assert(engine.setVolume(0.6) == TAE_RESULT_OK);
+  renderBackendFrames(backend, 128);
+  assert(waitUntil([&] { std::lock_guard lock(capture.mutex); return capture.entered; }));
+  for (int i = 0; i < 16; ++i) renderBackendFrames(backend, 128);
+  assert(engine.loadQueue("[{\"id\":\"replacement\",\"source\":\"other.flac\"}]", 0) == TAE_RESULT_OK);
+  { std::lock_guard lock(capture.mutex); capture.release = true; }
+  capture.cv.notify_all();
+  assert(waitUntil([&] { return jsonContains(engine.getPlaybackInfoJson(), "\"source\":\"eof-seek-next.flac\""); }));
+  assert(g_backendRegistry.snapshots().size() == 1);
+  assert(waitUntil([&] {
+    for (int i = 0; i < 64; ++i) renderBackendFrames(backend, 512);
+    return jsonContains(engine.getPlaybackInfoJson(), "\"state\":\"stopped\"");
+  }, 8000));
+  assert(engine.seek(45.0) == TAE_RESULT_NOT_INITIALIZED);
+  assert(g_backendRegistry.snapshots().size() == 1);
+  engine.setEventCallback(nullptr, nullptr);
+}
+
+void testNaturalEofSeekPropagatesRealReopenFailure() {
+  EngineHarness harness;
+  auto& engine = harness.engine();
+  reachNaturalEofForSeek(engine, true);
+  g_eofSeekOpenFailures = 1;
+  assert(engine.seek(45.0) != TAE_RESULT_OK);
+  assertLatestPlaybackContains(engine, "\"state\":\"stopped\"");
+  assert(playbackJsonNumber(engine.getPlaybackInfoJson(), "position") != 45.0);
+  assert(jsonContains(engine.getLastErrorJson(), "synthetic EOF source reopen failed"));
 }
 
 void testBackendRenderErrorIsReportedThroughLastError() {
@@ -5202,6 +5501,11 @@ bool FFmpegDecoder::restartPcmStreamTransform(std::string*) { return true; }
 
 bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   (void)error;
+  if (source.find("eof-seek-") != std::string::npos && g_eofSeekOpenFailures.load() > 0) {
+    g_eofSeekOpenFailures.fetch_sub(1);
+    if (error) *error = "synthetic EOF source reopen failed";
+    return false;
+  }
   if (source == "held-next-open.flac" && g_nextOpenGate &&
       !g_nextOpenGate->enter(impl_->interrupt, impl_->interruptContext)) {
     if (error) *error = "decode_cancelled";
@@ -5357,6 +5661,17 @@ void FFmpegDecoder::pollStreamMetadata() {}
   } while (false)
 
 int main() {
+  if (std::getenv("TAE_RUNTIME_EOF_SEEK_ONLY")) {
+    RUN_RUNTIME_CASE(testNaturalEofSeekPreparesPausedSourceBeforeResume());
+    RUN_RUNTIME_CASE(testStoppedSeekCannotReopenAfterManualStopQueueChangeOrFailure());
+    RUN_RUNTIME_CASE(testPendingRenderEofSeekAndQueueRevocationKeepTheirOwner());
+    RUN_RUNTIME_CASE(testLateRenderEofAfterQueueReplacementCannotReopenOldSource());
+    RUN_RUNTIME_CASE(testCommittedEofSeekCannotHidePendingBackendFailure());
+    RUN_RUNTIME_CASE(testPreloadedPromotionRestoresNaturalEofSeekEligibility());
+    RUN_RUNTIME_CASE(testQueueReplacementRevokesUnacknowledgedRenderPromotion());
+    RUN_RUNTIME_CASE(testNaturalEofSeekPropagatesRealReopenFailure());
+    return 0;
+  }
   if (std::getenv("TAE_RUNTIME_PRELOAD_START_ONLY")) {
     RUN_RUNTIME_CASE(testSlowNextOpenDoesNotBlockCurrentOutputOrPlayAcknowledgement());
     RUN_RUNTIME_CASE(testPendingPreloadIsCancelledBeforeStopQueueSeekOrFormatChange());
@@ -5440,6 +5755,14 @@ int main() {
   RUN_RUNTIME_CASE(testOutputStartWaitsForFirstDecodedFrames());
   RUN_RUNTIME_CASE(testFiniteHighRateHttpStartsWithExistingRingPrefilled());
   RUN_RUNTIME_CASE(testOutputStartDoesNotWaitForPrerollTimeoutAtEof());
+  RUN_RUNTIME_CASE(testNaturalEofSeekPreparesPausedSourceBeforeResume());
+  RUN_RUNTIME_CASE(testStoppedSeekCannotReopenAfterManualStopQueueChangeOrFailure());
+  RUN_RUNTIME_CASE(testPendingRenderEofSeekAndQueueRevocationKeepTheirOwner());
+  RUN_RUNTIME_CASE(testLateRenderEofAfterQueueReplacementCannotReopenOldSource());
+  RUN_RUNTIME_CASE(testCommittedEofSeekCannotHidePendingBackendFailure());
+  RUN_RUNTIME_CASE(testPreloadedPromotionRestoresNaturalEofSeekEligibility());
+  RUN_RUNTIME_CASE(testQueueReplacementRevokesUnacknowledgedRenderPromotion());
+  RUN_RUNTIME_CASE(testNaturalEofSeekPropagatesRealReopenFailure());
   RUN_RUNTIME_CASE(testBackendRenderErrorIsReportedThroughLastError());
   RUN_RUNTIME_CASE(testStoppedSetOutputDeviceKeepsOutputInfoDeviceNamesConsistent());
   RUN_RUNTIME_CASE(testOutputRouteTransactionCommitsOnceAfterBackendDeviceConfig());

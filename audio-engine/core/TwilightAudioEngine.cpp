@@ -795,6 +795,7 @@ TAE_Result TwilightAudioEngine::play(const std::string& source, double startTime
     info_.hasUpcomingTrack = upcoming.has_value();
     info_.upcomingTrack = upcoming.value_or(QueueItem{});
     pausedOutputReleased_ = false;
+    eofSeekState_ = EofSeekState::Active;
     info_.outputInfo.outputReleased = false;
     backend = info_.outputBackend;
     device = info_.outputDevice;
@@ -811,6 +812,7 @@ TAE_Result TwilightAudioEngine::play(const std::string& source, double startTime
     {
       std::lock_guard lock(mutex_);
       info_.state = PlaybackState::Stopped;
+      eofSeekState_ = EofSeekState::Ineligible;
       info_.positionSeconds = 0.0;
     }
     emitError(error.empty() ? "无法启动原生音频播放" : error, result, "play");
@@ -857,6 +859,7 @@ TAE_Result TwilightAudioEngine::playQueueItem(const QueueItem& item, double star
     info_.hasUpcomingTrack = upcoming.has_value();
     info_.upcomingTrack = upcoming.value_or(QueueItem{});
     pausedOutputReleased_ = false;
+    eofSeekState_ = EofSeekState::Active;
     info_.outputInfo.outputReleased = false;
     backend = info_.outputBackend;
     device = info_.outputDevice;
@@ -873,6 +876,7 @@ TAE_Result TwilightAudioEngine::playQueueItem(const QueueItem& item, double star
     {
       std::lock_guard lock(mutex_);
       info_.state = PlaybackState::Stopped;
+      eofSeekState_ = EofSeekState::Ineligible;
       info_.positionSeconds = 0.0;
     }
     emitError(error.empty() ? "无法启动原生音频播放" : error, result, "play");
@@ -970,6 +974,7 @@ TAE_Result TwilightAudioEngine::stop() {
   if (pipeline_) pipeline_->stop();
   std::lock_guard lock(mutex_);
   info_.state = PlaybackState::Stopped;
+  eofSeekState_ = EofSeekState::Ineligible;
   info_.positionSeconds = 0.0;
   if (outputConfig_.releaseExclusiveOnPause || pausedOutputReleased_) markOutputReleasedLocked();
   pausedOutputReleased_ = false;
@@ -983,8 +988,25 @@ TAE_Result TwilightAudioEngine::seek(double positionSeconds) {
   if (!std::isfinite(positionSeconds)) return TAE_RESULT_INVALID_ARGUMENT;
   std::string error;
   PlaybackState currentState = PlaybackState::Stopped;
+  // Render can finish before the clock commits its terminal event. This
+  // explicit transport turn owns the seek and must observe that EOF itself.
+  const auto status = pipeline_ ? pipeline_->status() : PipelineStatus{};
+  bool terminalFailurePending = false;
+  const bool pendingEof = pipeline_ && status.state == PipelineState::Stopped &&
+      pipeline_->consumeEnded(&terminalFailurePending);
+  bool restoreEndedSource = false;
   {
     std::lock_guard lock(mutex_);
+    if (terminalFailurePending) {
+      eofSeekState_ = EofSeekState::Ineligible;
+      return TAE_RESULT_NOT_INITIALIZED;
+    }
+    if (pendingEof) {
+      applyPipelineStatusLocked(status);
+      info_.state = PlaybackState::Stopped;
+      if (eofSeekState_ == EofSeekState::Active) eofSeekState_ = EofSeekState::Ended;
+      publishStateLocked();
+    }
     if (pausedOutputReleased_) {
       info_.positionSeconds = info_.durationSeconds > 0.0
                                   ? std::clamp(positionSeconds, 0.0, info_.durationSeconds)
@@ -993,8 +1015,17 @@ TAE_Result TwilightAudioEngine::seek(double positionSeconds) {
       return TAE_RESULT_OK;
     }
     currentState = info_.state;
+    restoreEndedSource = currentState == PlaybackState::Stopped && eofSeekState_ == EofSeekState::Ended;
   }
-  if (pipeline_ && currentState != PlaybackState::Stopped) {
+  if (status.state == PipelineState::Stopped && currentState != PlaybackState::Stopped && !pendingEof)
+    return TAE_RESULT_NOT_INITIALIZED;
+  if (restoreEndedSource) {
+    // Prepare while the slow Seek request owns the operation; Resume only
+    // toggles this already prepared source and does not reopen the network.
+    return restartCurrentPlaybackForReroute(std::max(0.0, positionSeconds), PlaybackState::Paused, {}, "seek");
+  }
+  if (currentState == PlaybackState::Stopped || !pipeline_) return TAE_RESULT_NOT_INITIALIZED;
+  if (pipeline_) {
     if (pipeline_->isDopPathActive() || pipeline_->isNativeDsdPathActive()) {
       return restartCurrentPlaybackForReroute(
           std::max(0.0, positionSeconds),
@@ -1145,6 +1176,7 @@ TAE_Result TwilightAudioEngine::selectQueueIndex(int index) {
   std::lock_guard lock(mutex_);
   if (index < 0 || static_cast<size_t>(index) >= queue_.size()) return TAE_RESULT_INVALID_ARGUMENT;
   queue_.setCurrentIndex(index);
+  eofSeekState_ = EofSeekState::Ineligible;
   info_.queueIndex = index;
   const auto upcoming = queue_.upcoming();
   info_.hasUpcomingTrack = upcoming.has_value();
@@ -1240,6 +1272,7 @@ TAE_Result TwilightAudioEngine::loadQueue(const std::string& queueJson, int star
       emitError(error.empty() ? "播放队列加载失败" : error, TAE_RESULT_INVALID_ARGUMENT, "queue");
       return TAE_RESULT_INVALID_ARGUMENT;
     }
+    eofSeekState_ = EofSeekState::Ineligible;
     current = queue_.current();
     upcoming = queue_.upcoming();
     for (const auto& previous : {oldCurrent, oldUpcoming}) {
@@ -1298,6 +1331,7 @@ TAE_Result TwilightAudioEngine::next() {
   {
     std::lock_guard lock(mutex_);
     item = queue_.next();
+    eofSeekState_ = EofSeekState::Ineligible;
     if (!item) return TAE_RESULT_OK;
     upcoming = queue_.upcoming();
     state = info_.state;
@@ -1319,6 +1353,7 @@ TAE_Result TwilightAudioEngine::next() {
       if (pipeline_) pipeline_->preloadNext(upcoming, &error);
       std::lock_guard lock(mutex_);
       applyPipelineStatusLocked(pipeline_->status());
+      eofSeekState_ = EofSeekState::Active;
       publishStateLocked();
     } else {
       const TAE_Result result = playQueueItem(*item, 0.0);
@@ -1337,6 +1372,7 @@ TAE_Result TwilightAudioEngine::previous() {
   {
     std::lock_guard lock(mutex_);
     item = queue_.previous();
+    eofSeekState_ = EofSeekState::Ineligible;
     if (!item) return TAE_RESULT_OK;
     state = info_.state;
     info_.queueIndex = queue_.currentIndex();
@@ -2154,6 +2190,7 @@ void TwilightAudioEngine::clockLoop() {
       {
         std::lock_guard lock(mutex_);
         previousState = info_.state;
+        eofSeekState_ = EofSeekState::Ineligible;
         if (hasPipelineStatus) {
           info_.positionSeconds = pipelineStatus.positionSeconds;
           info_.durationSeconds = pipelineStatus.stream.durationSeconds;
@@ -2195,6 +2232,7 @@ void TwilightAudioEngine::clockLoop() {
         std::lock_guard lock(mutex_);
         if (hasPipelineStatus) applyPipelineStatusLocked(pipelineStatus);
         info_.state = PlaybackState::Stopped;
+        eofSeekState_ = EofSeekState::Ineligible;
         if (stateEvents) {
           payload = playbackInfoToJson(info_);
           emitTick = true;
@@ -2217,17 +2255,20 @@ void TwilightAudioEngine::clockLoop() {
         // window instead, the queue is already on the started item and
         // advancing again would skip a track. Compare by item id; fall back to
         // source + CUE identity when the host supplied no id.
-        const auto current = queue_.current();
-        const bool queueAlreadyOnStartedItem =
-            current.has_value() && startedItem.source == current->source &&
+        const auto matchesStartedItem = [&](const std::optional<QueueItem>& current) {
+          return current.has_value() && startedItem.source == current->source &&
             (!startedItem.id.empty()
                  ? startedItem.id == current->id
                  : startedItem.cueStartSeconds == current->cueStartSeconds &&
-                       startedItem.cueEndSeconds == current->cueEndSeconds);
+                       startedItem.cueEndSeconds == current->cueEndSeconds &&
+                       startedItem.cueVirtualPregapSeconds == current->cueVirtualPregapSeconds);
+        };
+        const bool queueAlreadyOnStartedItem = matchesStartedItem(queue_.current());
         if (!queueAlreadyOnStartedItem) {
           queue_.advanceAfterEnd();
         }
         applyClockPipelineStatusLocked(pipelineStatus);
+        eofSeekState_ = matchesStartedItem(queue_.current()) ? EofSeekState::Active : EofSeekState::Ineligible;
         info_.queueIndex = queue_.currentIndex();
         info_.playMode = queue_.playModeId();
         upcoming = queue_.upcoming();
@@ -2264,6 +2305,7 @@ void TwilightAudioEngine::clockLoop() {
           info_.upcomingTrack = queue_.upcoming().value_or(QueueItem{});
         } else {
           releaseAtEnd = shouldReleaseOutputLocked();
+          if (eofSeekState_ == EofSeekState::Active) eofSeekState_ = EofSeekState::Ended;
           info_.state = PlaybackState::Stopped;
           if (info_.durationSeconds > 0.0) info_.positionSeconds = info_.durationSeconds;
         }
@@ -2289,6 +2331,7 @@ void TwilightAudioEngine::clockLoop() {
           info_.hasUpcomingTrack = upcomingAfterPromote.has_value();
           info_.upcomingTrack = upcomingAfterPromote.value_or(QueueItem{});
           applyPipelineStatusLocked(pipeline_->status());
+          eofSeekState_ = EofSeekState::Active;
           publishStateLocked();
         }
         std::string preloadError;

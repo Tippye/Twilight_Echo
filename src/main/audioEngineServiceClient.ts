@@ -121,6 +121,24 @@ const SLOW_NATIVE_METHODS = new Set<string>([
   'PrepareAutoMix'
 ])
 
+// Only explicit read contracts preserve a native playback observation. Even a
+// fast setter can change the output route or make a later Pause reopen it.
+const PLAYBACK_STATE_READ_METHODS = new Set<string>([
+  'GetPlaybackInfo',
+  'GetUpcomingTrack',
+  'GetDspGraphStatus',
+  'GetConvolverInfo',
+  'GetDspPluginStatus',
+  'GetMetadata',
+  'GetVisualizationData',
+  'GetSpectrumData',
+  'EnumerateDevices',
+  'EnumerateBackends',
+  'GetEngineCapabilities',
+  'GetLastError',
+  'ScanVst3Module'
+])
+
 // A child that survives this long is considered stable: the exponential
 // restart backoff resets after it.
 const AUDIO_SERVICE_STABLE_CHILD_MS = 60_000
@@ -130,6 +148,10 @@ function isSlowNativeMethod(method: keyof NativeAudioBinding): boolean {
   return SLOW_NATIVE_METHODS.has(String(method))
 }
 
+function mutatesPlaybackState(method: keyof NativeAudioBinding): boolean {
+  return !PLAYBACK_STATE_READ_METHODS.has(String(method))
+}
+
 type PendingRequest = {
   method: keyof NativeAudioBinding
   slow: boolean
@@ -137,6 +159,7 @@ type PendingRequest = {
   reject: (error: Error) => void
   timer: NodeJS.Timeout
   callerSettled: boolean
+  playbackInfoMutationRevision?: number
 }
 
 type AudioServiceError = Error & {
@@ -196,6 +219,8 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   private cacheRequestSerial = new Map<string, number>()
   private cacheRequestsInFlight = new Set<string>()
   private lastPlaybackInfo: string | PlaybackInfo | null = null
+  private playbackStateMutationRevision = 0
+  private pauseStateObservation: { mutationRevision: number; ordinary: boolean } | null = null
   private lastDspStatus: string | { plugins: unknown[] } = { plugins: [] }
   private lastDspGraphStatus: DspGraphStatus = createEmptyDspGraphStatus()
   private serviceCapabilities: AudioServiceCapabilities | null = null
@@ -532,6 +557,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
 
   destroy(): void {
     this.stopped = true
+    this.invalidatePlaybackInfoObservation()
     this.rejectQueuedDspState(new Error('音频服务已停止'))
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer)
@@ -751,6 +777,15 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
       // that regular playback ticks consume, before the caller resumes.
       if (pending.method === 'GetPlaybackInfo')
         this.lastPlaybackInfo = response.value as string | PlaybackInfo
+      if (
+        pending.method === 'GetPlaybackInfo' &&
+        pending.playbackInfoMutationRevision === this.playbackStateMutationRevision &&
+        ![...this.pending.values()].some((request) => mutatesPlaybackState(request.method))
+      )
+        this.pauseStateObservation = {
+          mutationRevision: this.playbackStateMutationRevision,
+          ordinary: this.isOrdinaryPauseState(response.value)
+        }
       if (pending.method === 'GetUpcomingTrack')
         this.lastUpcomingTrack = response.value as string | AudioEngineQueueItem | null
       pending.resolve(response.value)
@@ -999,6 +1034,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   }
 
   private clearServiceDerivedCaches(): void {
+    this.invalidatePlaybackInfoObservation()
     this.lastDspStatus = { plugins: [] }
     this.lastDspGraphStatus = createEmptyDspGraphStatus()
     this.serviceCapabilities = null
@@ -1040,7 +1076,15 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     }
     const requestId = randomUUID()
     const generation = this.generation
-    const slow = isSlowNativeMethod(method)
+    // Classify once: timeout and retained native ownership must agree. A
+    // released/exclusive/unknown Pause may synchronously reopen a decoder or
+    // device; even a known ordinary Pause may queue behind existing slow work.
+    const slow =
+      isSlowNativeMethod(method) ||
+      (method === 'Pause' && (this.slowPendingCount > 0 || !this.hasFreshOrdinaryPauseState()))
+    if (mutatesPlaybackState(method)) this.invalidatePlaybackInfoObservation()
+    const playbackInfoMutationRevision =
+      method === 'GetPlaybackInfo' ? this.playbackStateMutationRevision : undefined
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         const pending = this.pending.get(requestId)
@@ -1068,7 +1112,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         // This remains collateral until all known slow native work completes.
         if (this.slowPendingCount > 0) return
         this.restartUnresponsiveService(child, generation, error.message)
-      }, this.requestTimeoutForMethod(method))
+      }, this.requestTimeoutForMethod(slow))
       this.pending.set(requestId, {
         method,
         slow,
@@ -1078,7 +1122,8 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         },
         reject,
         timer,
-        callerSettled: false
+        callerSettled: false,
+        playbackInfoMutationRevision
       })
       if (slow) this.slowPendingCount += 1
       try {
@@ -1128,13 +1173,53 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
       : MAX_AUDIO_SERVICE_DEFAULT_RESPONSE_BYTES
   }
 
-  private requestTimeoutForMethod(method: keyof NativeAudioBinding): number {
+  private invalidatePlaybackInfoObservation(): void {
+    this.playbackStateMutationRevision += 1
+    this.pauseStateObservation = null
+  }
+
+  private hasFreshOrdinaryPauseState(): boolean {
+    return (
+      this.pauseStateObservation?.mutationRevision === this.playbackStateMutationRevision &&
+      this.pauseStateObservation.ordinary
+    )
+  }
+
+  private isOrdinaryPauseState(value: unknown): boolean {
+    if (typeof value === 'string') {
+      const parsed = tryParseJsonWithNestingLimit(value)
+      if (!parsed.ok) return false
+      value = parsed.value
+    }
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+    const info = value as { state?: unknown; outputInfo?: unknown }
+    // Native Stopped returns without reopening. A local stopped fallback is
+    // never eligible because only a current native read sets the observation.
+    if (info.state === 'stopped') return true
+    // Playing can auto-advance on the native clock into a different output
+    // route without an IPC mutation. Its earlier shared snapshot is no fence.
+    if (info.state !== 'paused') return false
+    if (!info.outputInfo || typeof info.outputInfo !== 'object' || Array.isArray(info.outputInfo))
+      return false
+    const output = info.outputInfo as {
+      outputReleased?: unknown
+      exclusive?: unknown
+      accessMode?: unknown
+    }
+    return (
+      output.outputReleased === false &&
+      output.exclusive === false &&
+      output.accessMode === 'shared'
+    )
+  }
+
+  private requestTimeoutForMethod(slow: boolean): number {
     // Slow-tier methods (device reopen, FFmpeg probe, DSP graph compile, the
     // 8s-budget VST3 scanner) legally block the service's single JS thread far
     // beyond the control deadline. They are still generation-fenced by call(),
     // but must neither fail fast nor trigger the unresponsive-service kill
     // while a driver negotiates the new stream.
-    return isSlowNativeMethod(method) ? this.topologyRequestTimeoutMs : this.requestTimeoutMs
+    return slow ? this.topologyRequestTimeoutMs : this.requestTimeoutMs
   }
 
   private recordTransientFailure(message: string): void {
