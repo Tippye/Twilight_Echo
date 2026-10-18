@@ -3210,6 +3210,18 @@ async function loadAndPlay(
     if (nativePlaybackActive) {
       setAudioEngineError('')
       stopRendererAudio(true)
+      // Start-file and polling snapshots can predate this completed Play.
+      // Refresh current-stream facts while this load still owns the source.
+      try {
+        const info = await window.api.audioEngine.getPlaybackInfo()
+        if (!isOwnedLoad()) {
+          releaseLoadIfOwned()
+          return
+        }
+        applyNativePlaybackInfo(info, { applyTrackWhenInactive: true })
+      } catch {
+        // Playback already succeeded; normal native events can refresh facts.
+      }
     } else if (useNativePlayback) {
       nativeQueueDelegated = false
       clearNativePlaybackInfoIntentForLoad(loadToken)
@@ -3555,14 +3567,54 @@ function seekPlayback(time: number): void {
     beginPlaybackPositionTransition(position)
     return
   }
-  beginPlaybackPositionTransition(position)
   if (castTargetName.value) {
+    beginPlaybackPositionTransition(position)
     void window.api.remote?.controlCast?.({ seek: position }).catch(() => {})
     return
   }
   if (nativePlaybackActive || nativeQueueDelegated) {
-    window.api.audioEngine.seek(position).catch(() => {})
+    const loadToken = activeLoadToken
+    const queueRevision = nativeQueueRevisionFence.current
+    const index = queueIndex.value
+    const source = getTrackAudioSource(track)
+    // A new clock epoch supersedes older seeks, but keeps the observed
+    // position until the main process confirms a real native seek.
+    beginPlaybackPositionTransition(getLatestPlaybackTime())
+    publishPlaybackClockTransport(isPlaying.value ? 'playing' : 'paused')
+    const epoch = playbackClockSnapshot.value.epoch
+    const ownsSeek = (): boolean =>
+      activeLoadToken === loadToken &&
+      nativeQueueRevisionFence.isCurrent(queueRevision) &&
+      playbackClockSnapshot.value.epoch === epoch &&
+      queueIndex.value === index &&
+      currentTrack.value?.id === track.id &&
+      currentTrack.value?.queueEntryId === track.queueEntryId &&
+      getTrackAudioSource(currentTrack.value) === source &&
+      (nativePlaybackActive || nativeQueueDelegated)
+    void (async () => {
+      try {
+        await window.api.audioEngine.seek(position)
+        if (!ownsSeek()) return
+        const info = await window.api.audioEngine.getPlaybackInfo()
+        if (!ownsSeek()) return
+        if (
+          info.nativePlaybackActive !== true ||
+          findTrackIndexFromPlaybackInfo(info) !== index ||
+          !Number.isFinite(info.position) ||
+          !applyNativePlaybackInfo(info, { applyTrackWhenInactive: true })
+        )
+          throw new Error('native seek readback does not belong to the current playback')
+        // ACK is authoritative, including a backward seek after the ordinary
+        // presentation guard expired while network I/O was still pending.
+        beginPlaybackPositionTransition(info.position)
+        publishPlaybackClockTransport(info.state === 'playing' ? 'playing' : 'paused')
+        setAudioEngineError('')
+      } catch (error) {
+        if (ownsSeek()) setAudioEngineError(error instanceof Error ? error.message : String(error))
+      }
+    })()
   } else if (playbackAudio) {
+    beginPlaybackPositionTransition(position)
     playbackAudio.currentTime = rendererAudioAbsolutePositionForTrack(position, track)
   }
 }
