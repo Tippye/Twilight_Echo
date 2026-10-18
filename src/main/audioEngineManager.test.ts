@@ -6307,6 +6307,269 @@ test('setVolume re-dispatches while the service native volume is not confirmed s
   manager.destroy()
 })
 
+async function acknowledgedSeekFixture() {
+  const service = new FakeAudioServiceBinding()
+  service.Play = (source = '', position = 0) => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      position,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  service.Pause = () => {
+    service.playbackInfo.state = service.playbackInfo.state === 'paused' ? 'playing' : 'paused'
+  }
+  service.Seek = (position = 0) => {
+    service.playbackInfo.position = position
+  }
+  const manager = makeManager({ exclusiveMode: false }, service)
+  await manager.play('acknowledged-seek.flac', 3, { paused: true })
+  service.callOrder = []
+  return { service, manager }
+}
+
+test('acknowledged seek holds resume until the real seek and readback complete without publishing a fake target', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  let announce!: () => void, release!: () => void
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  let acknowledgedPathEntered = false
+  service.callAsync = async (method, args) => {
+    if (method === 'Seek') {
+      acknowledgedPathEntered = true
+      announce()
+      await held
+    }
+    return call(method, args)
+  }
+  const positions: number[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'time-pos') positions.push(data)
+  })
+  const seek = manager.seek(45)
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(acknowledgedPathEntered, true, 'Seek must enter the acknowledged service path')
+  await started
+  const resume = manager.togglePause()
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(service.callOrder.includes('Pause'), false)
+  assert.equal((await manager.getPlaybackInfo()).position, 3)
+  assert.equal(positions.includes(45), false)
+  release()
+  await Promise.all([seek, resume])
+  assert.deepEqual(
+    service.callOrder.filter((m) => m === 'Seek' || m === 'Pause'),
+    ['Seek', 'Pause']
+  )
+  assert.equal(service.playbackInfo.state, 'playing')
+  assert.equal(service.playbackInfo.position, 45)
+  assert.equal((await manager.getPlaybackInfo()).position, 45)
+})
+
+test('acknowledged seek coalesces same-turn and queued seeks to the latest intent', async (t) => {
+  for (const heldFirst of [false, true])
+    await t.test(String(heldFirst), async (t) => {
+      const { service, manager } = await acknowledgedSeekFixture()
+      t.after(() => manager.destroy())
+      let announce!: () => void, release!: () => void
+      const started = new Promise<void>((resolve) => {
+        announce = resolve
+      })
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      const call = service.callAsync.bind(service)
+      const dispatched: number[] = []
+      service.callAsync = async (method, args) => {
+        if (method === 'Seek') {
+          dispatched.push(Number(args[0]))
+          if (heldFirst && dispatched.length === 1) {
+            announce()
+            await held
+          }
+        }
+        return call(method, args)
+      }
+      const first = manager.seek(10)
+      if (heldFirst) await started
+      const second = manager.seek(20),
+        third = manager.seek(30)
+      release()
+      await Promise.all([first, second, third])
+      assert.deepEqual(dispatched, heldFirst ? [10, 30] : [30])
+      assert.equal((await manager.getPlaybackInfo()).position, 30)
+    })
+})
+
+test('acknowledged seek commits a backward paused position instead of applying stale-tick rewind protection', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  await manager.seek(91)
+  await manager.seek(45)
+  assert.equal(service.playbackInfo.position, 45)
+  assert.equal((await manager.getPlaybackInfo()).position, 45)
+  assert.equal((await manager.getPlaybackInfo()).state, 'paused')
+})
+
+test('acknowledged seek retains a rejected barrier without a fake position until an explicit retry succeeds', async (t) => {
+  for (const behavior of ['failure', 'timeout', 'unconfirmed'])
+    await t.test(behavior, async (t) => {
+      const { service, manager } = await acknowledgedSeekFixture()
+      t.after(() => manager.destroy())
+      const call = service.callAsync.bind(service)
+      service.callAsync = async (method, args) => {
+        if (method === 'Seek') {
+          if (behavior === 'unconfirmed') return undefined
+          const error = new Error('synthetic seek ' + behavior)
+          if (behavior === 'timeout') Object.assign(error, { code: 'ERR_AUDIO_SERVICE_TIMEOUT' })
+          throw error
+        }
+        return call(method, args)
+      }
+      await assert.rejects(manager.seek(45), /native seek failed/)
+      assert.equal((await manager.getPlaybackInfo()).position, 3)
+      const pauseCalls = service.callOrder.filter((m) => m === 'Pause').length
+      await assert.rejects(manager.togglePause(), /requires an acknowledged seek/)
+      assert.equal(service.callOrder.filter((m) => m === 'Pause').length, pauseCalls)
+      service.callAsync = call
+      const retryPosition = behavior === 'timeout' ? 3 : 20
+      await manager.seek(retryPosition)
+      await manager.togglePause()
+      assert.equal(service.playbackInfo.position, retryPosition)
+      assert.equal(service.playbackInfo.state, 'playing')
+    })
+})
+
+test('acknowledged seek and its dependent pause cannot publish or toggle a newer play or stop', async (t) => {
+  for (const phase of ['Seek', 'GetPlaybackInfo'])
+    for (const action of ['play', 'stop'])
+      await t.test(`${phase} then ${action}`, async (t) => {
+        const { service, manager } = await acknowledgedSeekFixture()
+        t.after(() => manager.destroy())
+        let announce!: () => void, release!: () => void
+        const started = new Promise<void>((resolve) => {
+          announce = resolve
+        })
+        const held = new Promise<void>((resolve) => {
+          release = resolve
+        })
+        const call = service.callAsync.bind(service)
+        let seekApplied = false,
+          suspended = false
+        service.callAsync = async (method, args) => {
+          const result = await call(method, args)
+          if (method === 'Seek') seekApplied = true
+          if (!suspended && seekApplied && method === phase) {
+            suspended = true
+            announce()
+            await held
+          }
+          return result
+        }
+        const seek = manager.seek(45)
+        await started
+        const pause = manager.togglePause()
+        await new Promise((resolve) => setImmediate(resolve))
+        const published: PlaybackInfo[] = []
+        manager.on('playback-info', (info) => published.push(info))
+        if (action === 'play') await manager.play('new-seek-source.flac', 9)
+        else await manager.stop()
+        const afterNewIntent = published.length
+        release()
+        await Promise.all([seek, pause])
+        assert.equal(service.callOrder.includes('Pause'), false)
+        assert.equal(published.length, afterNewIntent)
+        const info = await manager.getPlaybackInfo()
+        assert.equal(info.position, action === 'play' ? 9 : 0)
+        assert.equal(info.state, action === 'play' ? 'playing' : 'stopped')
+      })
+})
+
+test('acknowledged seek invalidates a dependent resume when a newer seek owns the same source', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  let announce!: () => void, release!: () => void
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  let first = true
+  service.callAsync = async (method, args) => {
+    const result = await call(method, args)
+    if (method === 'Seek' && first) {
+      first = false
+      announce()
+      await held
+    }
+    return result
+  }
+  const oldSeek = manager.seek(45)
+  await started
+  const oldResume = manager.togglePause()
+  await new Promise((resolve) => setImmediate(resolve))
+  const latestSeek = manager.seek(20)
+  release()
+  await Promise.all([oldSeek, oldResume, latestSeek])
+  assert.equal(service.callOrder.includes('Pause'), false)
+  assert.equal((await manager.getPlaybackInfo()).position, 20)
+  assert.equal((await manager.getPlaybackInfo()).state, 'paused')
+})
+
+test('acknowledged seek preserves two dependent toggles rather than cancelling their parity', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  let announce!: () => void, release!: () => void
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'Seek') {
+      announce()
+      await held
+    }
+    return call(method, args)
+  }
+  const seek = manager.seek(45)
+  await started
+  const first = manager.togglePause(),
+    second = manager.togglePause()
+  release()
+  await Promise.all([seek, first, second])
+  assert.equal(service.callOrder.filter((m) => m === 'Pause').length, 2)
+  assert.equal(service.playbackInfo.state, 'paused')
+  assert.equal(service.playbackInfo.position, 45)
+})
+
+test('failed direct seek rejects without publishing a target', async (t) => {
+  const native = new FakeNativeBinding({ state: 'paused', position: 3 })
+  native.Seek = () => {
+    throw new Error('synthetic direct seek failure')
+  }
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  const positions: number[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'time-pos') positions.push(data)
+  })
+  await assert.rejects(manager.seek(45), /native seek failed/)
+  assert.equal(positions.includes(45), false)
+  assert.notEqual((await manager.getPlaybackInfo()).position, 45)
+})
+
 test('seek skips native call and fanout when paused position is unchanged', async () => {
   const nativeBinding = new FakeNativeBinding({ state: 'paused', position: 32 })
   const manager = makeManager(
