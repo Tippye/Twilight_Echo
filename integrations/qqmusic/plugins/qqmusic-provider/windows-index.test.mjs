@@ -128,6 +128,25 @@ test('Excellent is a gated local effect on ordinary SQ, never a new Vkey file qu
   }
 })
 
+test('read-ahead duration hint belongs to the freshly fetched TrackInfo rather than renderer fields or quality sizes', { skip: process.platform !== 'win32' }, async () => {
+  const originalFetch = globalThis.fetch, originalOpen = WindowsAudioProxy.prototype.open
+  const hints = [], h = fallbackHarness({ sizes: { hires: 123456789 } })
+  WindowsAudioProxy.prototype.open = function(options) {
+    hints.push(options.durationSeconds)
+    return originalOpen.call(this, options)
+  }
+  globalThis.fetch = h.fetch
+  try {
+    await activate(h.context)
+    const result = await h.provider.getPlaybackUrl({ id: 'qq:0039MnYb0qxYhV:97773', duration: 1, interval: 1 },
+      { quality: 'hires', durationSeconds: 1 }, {})
+    assert.deepEqual(hints, [fixture.publicSongs[0].interval])
+    assert.equal(h.details, 1)
+    assert.equal(result.providerSource.bytes, 2048)
+    assert.equal(Object.hasOwn(result.providerSource, 'durationSeconds'), false)
+  } finally { await deactivate(); globalThis.fetch = originalFetch; WindowsAudioProxy.prototype.open = originalOpen }
+})
+
 test('same-track spatial fallback tries each candidate once, preserves preference, and binds one real loopback source', { skip: process.platform !== 'win32' }, async () => {
   const original = globalThis.fetch
   const h = fallbackHarness({ outcome: quality => quality === 'dolby' ? 22 : quality === 'hires' ? 'empty' : 'success' })

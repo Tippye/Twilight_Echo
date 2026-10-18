@@ -648,15 +648,15 @@ test('parallel plain, mode1 and both mode2 sizes preserve exact uint64 offsets a
   }
 })
 
-test('completed unread blocks retain a global eight-slot budget across leases and queued seeks cancel cleanly', async (t) => {
+test('completed unread blocks retain a global sixteen-MiB budget across leases and queued seeks cancel cleanly', async (t) => {
   const length = 8 * 1024 * 1024
   const eight = deferred(), twelve = deferred()
   const calls = [], resolutions = new Map(), connections = []
   let cancels = 0
   const proxy = await harness(t, { fetch: (url, options) => {
     calls.push(url)
-    if (calls.length === 8) eight.resolve()
-    if (calls.length === 12) twelve.resolve()
+    if (calls.length === 32) eight.resolve()
+    if (calls.length === 48) twelve.resolve()
     const selected = requested(options)
     if (selected.start > 0n) return partial(Buffer.alloc(blockBytes, 1), selected, length)
     return new Response(new ReadableStream({
@@ -665,7 +665,7 @@ test('completed unread blocks retain a global eight-slot budget across leases an
     }), { status: 206, headers: { 'Content-Range': `bytes 0-${blockBytes - 1}/${length}`, 'Content-Length': String(blockBytes) } })
   } })
   async function open(label) {
-    return proxy.open({ resolve: () => {
+    return proxy.open({ durationSeconds: 1, resolve: () => {
       resolutions.set(label, (resolutions.get(label) ?? 0) + 1)
       return largeSource(length, { sourceId: label, url: `${origin}/${label}` })
     } })
@@ -680,11 +680,11 @@ test('completed unread blocks retain a global eight-slot budget across leases an
   t.after(() => { for (const { req, response } of connections) { response.destroy(); req.destroy() } })
   const a = await open('a'), b = await open('b'), c = await open('c'), d = await open('d')
   const pa = begin(a), pb = begin(b)
-  await within(eight.promise, 1000, 'two windows must acquire exactly eight slots')
+  await within(eight.promise, 1000, 'two windows must reserve exactly thirty-two memory slots')
   await Promise.all([pa, pb])
   const pc = begin(c)
   await new Promise(resolve => setTimeout(resolve, 30))
-  assert.equal(calls.length, 8, 'finished future blocks must hold slots while their head is unconsumed')
+  assert.equal(calls.length, 32, 'finished future blocks must hold memory while their head is unconsumed')
   assert.equal(resolutions.get('c'), 1, 'a queued seek must not acquire a decoder owner before a slot')
   await c.release()
   assert.equal((await pc).response.statusCode, 502)
@@ -779,7 +779,7 @@ test('overlapping encrypted seeks own independent windows and cancellation canno
     await new Promise(resolve => setTimeout(resolve, Number(selected.start / BigInt(blockBytes) % 3n) * 3))
     return partial(encrypted.subarray(Number(selected.start), Number(selected.end + 1n)), selected, length)
   } })
-  const lease = await proxy.open({ resolve: () => {
+  const lease = await proxy.open({ durationSeconds: 1, resolve: () => {
     const owned = Buffer.from(key); keys.push(owned)
     return largeSource(length, { decoder: { kind: 'mode2', key: owned, length: String(length), tailBytes: '0' } })
   } })
@@ -973,4 +973,336 @@ test('a delayed old resolver snapshot cannot replace a published refresh with a 
   assert.equal(denied, 1)
   assert.equal(refreshes, 1)
   assert.equal(fetches, 5)
+})
+
+test('unpublished future blocks retry one transient HTTP response on the exact Range without replaying the first block', async (t) => {
+  const length = 4 * blockBytes, bytes = Buffer.alloc(length, 29)
+  for (const code of [408, 429, 500, 502, 503, 504]) {
+    const attempts = new Map()
+    let discarded = 0
+    const proxy = await harness(t, { fetch: (_url, options) => {
+      const selected = requested(options), index = Number(selected.start)
+      const attempt = (attempts.get(index) ?? 0) + 1; attempts.set(index, attempt)
+      if (index === blockBytes && attempt === 1) return new Response(new ReadableStream({
+        cancel() { discarded += 1 }
+      }), { status: code })
+      return partial(bytes.subarray(index, Number(selected.end) + 1), selected, length)
+    } })
+    const lease = await proxy.open({ resolve: () => largeSource(length) })
+    assert.deepEqual((await rawRequest(lease.url)).body, bytes)
+    assert.deepEqual([...attempts.values()], [1, 2, 1, 1])
+    assert.equal(discarded, 1)
+    await lease.release()
+  }
+})
+
+test('future fetch and partial-read transport codes discard unpublished ciphertext before retry and retain exact plaintext', async (t) => {
+  const length = 4 * blockBytes, bytes = Buffer.alloc(length)
+  for (let index = 0; index < length; index++) bytes[index] = (index * 37 + 23) & 255
+  const key = Buffer.from(native.vectors.find(value => value.key_length === 256).key_hex, 'hex')
+  const cipher = new WindowsMediaStream(key), encrypted = cipher.transform(Buffer.from(bytes), '0'); cipher.dispose()
+  for (const phase of ['fetch', 'partial-read']) {
+    const attempts = new Map(), owned = []
+    let firstSignal
+    const proxy = await harness(t, { fetch: (_url, options) => {
+      const selected = requested(options), index = Number(selected.start)
+      const attempt = (attempts.get(index) ?? 0) + 1; attempts.set(index, attempt)
+      if (index === blockBytes && attempt === 1) {
+        firstSignal = options.signal
+        if (phase === 'fetch') throw new TypeError('synthetic transport', { cause: Object.assign(Error(), { code: 'ECONNRESET' }) })
+        let count = 0
+        return new Response(new ReadableStream({ pull(controller) {
+          if (count++ === 0) controller.enqueue(Buffer.alloc(65536, 99))
+          else controller.error(Object.assign(Error('synthetic transport'), { code: 'UND_ERR_SOCKET' }))
+        } }), { status: 206, headers: { 'Content-Range': `bytes ${selected.start}-${selected.end}/${length}`,
+          'Content-Length': String(blockBytes) } })
+      }
+      return partial(encrypted.subarray(index, Number(selected.end) + 1), selected, length)
+    } })
+    const lease = await proxy.open({ resolve: () => {
+      const copy = Buffer.from(key); owned.push(copy)
+      return largeSource(length, { decoder: { kind: 'mode2', length: String(length), tailBytes: '0', key: copy } })
+    } })
+    assert.deepEqual((await rawRequest(lease.url)).body, bytes)
+    assert.equal(attempts.get(blockBytes), 2)
+    assert.equal(firstSignal.aborted, true)
+    await lease.release()
+    assert.ok(owned.every(value => value.every(byte => byte === 0)))
+  }
+})
+
+test('future retries reject unclassified errors, forbidden statuses, Retry-After outside budget and metadata changes', async (t) => {
+  const length = 4 * blockBytes
+  for (const mode of ['generic-typeerror', 'message-only', 'resolver-network-code', 'retry-after',
+    'identity', 'bad-range', 'auth', 'persistent-http', 'truncated']) {
+    let calls = 0, resolutions = 0, refreshes = 0
+    const proxy = await harness(t, { requestTimeoutMs: 100, fetch: (_url, options) => {
+      const selected = requested(options)
+      if (selected.start !== BigInt(blockBytes)) return partial(Buffer.alloc(blockBytes, 1), selected, length)
+      calls++
+      if (mode === 'generic-typeerror') throw new TypeError('fetch failed')
+      if (mode === 'message-only') throw Error('ECONNRESET')
+      if (mode === 'retry-after') return new Response(null, { status: 429, headers: { 'Retry-After': '1' } })
+      if (mode === 'truncated') return partial(Buffer.alloc(1), selected, length)
+      if (mode === 'auth' && calls > 1) return new Response(null, { status: 403 })
+      if (mode === 'bad-range' && calls > 1) return partial(Buffer.alloc(blockBytes), { start: selected.start + 1n, end: selected.end }, length)
+      return new Response(null, { status: 503 })
+    } })
+    const lease = await proxy.open({ resolve: ({ refresh }) => {
+      resolutions++
+      if (refresh) refreshes++
+      if (mode === 'resolver-network-code' && resolutions > 2) throw Object.assign(Error('synthetic auth rejection'), { code: 'ECONNRESET' })
+      return largeSource(length, { sourceId: mode === 'identity' && resolutions > 5 ? 'different-content' : 'public-content-sha' })
+    } })
+    await terminal(rawRequest(lease.url))
+    assert.ok(calls <= (mode === 'auth' ? 3 : ['bad-range', 'persistent-http'].includes(mode) ? 2 : 1), `${mode}: ${calls}`)
+    if (mode === 'auth') assert.equal(refreshes, 1)
+    await lease.release()
+  }
+})
+
+test('published first blocks never retry a fetch failure or an interrupted body', async (t) => {
+  const length = 4 * blockBytes
+  for (const phase of ['fetch', 'read']) {
+    let firstCalls = 0
+    const proxy = await harness(t, { fetch: (_url, options) => {
+      const selected = requested(options)
+      if (selected.start > 0n) return partial(Buffer.alloc(blockBytes, 1), selected, length)
+      firstCalls++
+      if (phase === 'fetch') throw Object.assign(Error('synthetic transport'), { code: 'ECONNRESET' })
+      let sent = false
+      return new Response(new ReadableStream({ pull(controller) {
+        if (!sent) { sent = true; controller.enqueue(Buffer.alloc(65536, 1)) }
+        else controller.error(Object.assign(Error('synthetic transport'), { code: 'ECONNRESET' }))
+      } }), { status: 206, headers: { 'Content-Range': `bytes 0-${blockBytes - 1}/${length}`, 'Content-Length': String(blockBytes) } })
+    } })
+    const lease = await proxy.open({ resolve: () => largeSource(length) })
+    await terminal(rawRequest(lease.url)); assert.equal(firstCalls, 1)
+  }
+})
+
+test('future retry shares the original timeout budget and discards a late response without waiting for cancel', async (t) => {
+  const length = 4 * blockBytes, late = deferred(), retryStarted = deferred()
+  let attempts = 0, canceled = 0, retrySignal
+  const timeout = 180
+  const proxy = await harness(t, { requestTimeoutMs: timeout, fetch: async (_url, options) => {
+    const selected = requested(options)
+    if (selected.start !== BigInt(blockBytes)) return partial(Buffer.alloc(blockBytes, 1), selected, length)
+    attempts++
+    if (attempts === 1) { await new Promise(resolve => setTimeout(resolve, 120)); return new Response(null, { status: 503 }) }
+    retrySignal = options.signal; retryStarted.resolve(); return late.promise
+  } })
+  const lease = await proxy.open({ resolve: () => largeSource(length) })
+  const started = performance.now(), pending = terminal(rawRequest(lease.url))
+  await retryStarted.promise; await pending
+  const elapsed = performance.now() - started
+  assert.ok(elapsed >= 150 && elapsed < 285, `recovery must use remainder of ${timeout}ms, observed ${elapsed}ms`)
+  assert.equal(attempts, 2); assert.equal(retrySignal.aborted, true)
+  late.resolve(new Response(new ReadableStream({ cancel() { canceled++; return new Promise(() => {}) } }),
+    { status: 206, headers: { 'Content-Range': `bytes ${blockBytes}-${2 * blockBytes - 1}/${length}` } }))
+  await new Promise(resolve => setTimeout(resolve, 10)); assert.equal(canceled, 1)
+  await lease.release()
+})
+
+test('retrying future blocks retain their global memory permits and stop on cancellation or their own expiry', async (t) => {
+  const length = 16 * blockBytes
+  for (const cancelMode of ['external', 'expiry']) {
+    let calls = 0, firstSignals = [], retries = 0
+    const retryReady = deferred(), memoryReady = deferred(), bodies = []
+    const proxy = await harness(t, { leaseTtlMs: cancelMode === 'expiry' ? 400 : 600000,
+      fetch: (_url, options) => {
+        const selected = requested(options); calls++
+        if (calls === 34) memoryReady.resolve()
+        if (selected.start === BigInt(blockBytes)) {
+          const label = new URL(_url).pathname
+          if (!bodies.includes(label)) { bodies.push(label); return new Response(null, { status: 503 }) }
+          retries++; if (retries === 2) retryReady.resolve()
+        }
+        if (selected.start === 0n || selected.start === BigInt(blockBytes)) {
+          firstSignals.push(options.signal)
+          return new Response(new ReadableStream({ start(controller) { controller.enqueue(Buffer.from([1])) } }),
+            { status: 206, headers: { 'Content-Range': `bytes ${selected.start}-${selected.end}/${length}`, 'Content-Length': String(blockBytes) } })
+        }
+        return partial(Buffer.alloc(blockBytes, 1), selected, length)
+      } })
+    const external = new AbortController(), leases = [], connections = []
+    t.after(() => { for (const { req, response } of connections) { response.destroy(); req.destroy() } })
+    for (const label of ['a', 'b', 'c']) leases.push(await proxy.open({ signal: external.signal, durationSeconds: 1,
+      resolve: () => largeSource(length, { url: `${origin}/${label}` }) }))
+    for (const lease of leases.slice(0, 2)) {
+      const connection = await rawRequest(lease.url, { consume: false }); connection.response.on('error', () => {}); connections.push(connection)
+    }
+    await within(retryReady.promise, 1000, 'both retries must retain their permits')
+    await within(memoryReady.promise, 1000, 'both windows must retain thirty-two memory credits')
+    const third = rawRequest(leases[2].url, { consume: false }).then(connection => {
+      connection.response.on('error', () => {}); connections.push(connection); return connection
+    })
+    await new Promise(resolve => setTimeout(resolve, 25))
+    assert.equal(calls, 34, 'thirty-two memory permits plus two retry attempts; third response stays queued')
+    if (cancelMode === 'external') external.abort()
+    await within(third, 1000, 'cancel/expiry must release queued response')
+    await proxy.revokeAll()
+    assert.ok(firstSignals.every(signal => signal.aborted))
+    // Independent leases expire in opening order: a later still-live queued
+    // lease may use released slots before its own timer. It must then stop too.
+    assert.ok(calls <= (cancelMode === 'expiry' ? 51 : 34))
+    const afterRevoke = calls
+    await new Promise(resolve => setTimeout(resolve, 20))
+    assert.equal(calls, afterRevoke)
+  }
+})
+
+test('a healthy buffered first attempt can progress beyond the retry-chain budget without restarting', async (t) => {
+  const length = 4 * blockBytes
+  let attempts = 0
+  const proxy = await harness(t, { requestTimeoutMs: 70, fetch: (_url, options) => {
+    const selected = requested(options)
+    if (selected.start !== BigInt(blockBytes)) return partial(Buffer.alloc(blockBytes, 17), selected, length)
+    attempts++
+    let position = 0
+    return new Response(new ReadableStream({ async pull(controller) {
+      await new Promise(resolve => setTimeout(resolve, 25))
+      if (options.signal.aborted) return
+      position += 65536; controller.enqueue(Buffer.alloc(65536, 17))
+      if (position === blockBytes) controller.close()
+    } }), { status: 206, headers: { 'Content-Range': `bytes ${selected.start}-${selected.end}/${length}`,
+      'Content-Length': String(blockBytes) } })
+  } })
+  const lease = await proxy.open({ resolve: () => largeSource(length) })
+  const started = performance.now(), result = await rawRequest(lease.url)
+  assert.deepEqual(result.body, Buffer.alloc(length, 17))
+  assert.ok(performance.now() - started > 150)
+  assert.equal(attempts, 1)
+})
+
+test('Retry-After rejects malformed numeric or calendar values and accepts only valid IMF-fixdate or integer delay', async (t) => {
+  const length = 4 * blockBytes
+  const cases = [
+    ...['-1', '1.5', '', '-0', 'NaN', 'Sun, 31 Feb 2026 00:00:00 GMT',
+      'Sun, 06 Nov 1994 25:00:00 GMT', 'Mon, 06 Nov 1994 08:49:37 GMT',
+      'Sun, 06 Nov 1994 08:49:37 UTC', 'Sunday, 06-Nov-94 08:49:37 GMT',
+      '999999999999999999999999999999'].map(value => [value, false]),
+    [new Date(Date.now() + 86400000).toUTCString(), false],
+    ['0', true], [new Date(Date.now() - 86400000).toUTCString(), true]
+  ]
+  for (const [value, shouldRetry] of cases) {
+    let calls = 0
+    const proxy = await harness(t, { requestTimeoutMs: 100, fetch: (_url, options) => {
+      const selected = requested(options)
+      if (selected.start === BigInt(blockBytes) && ++calls === 1) {
+        return new Response(null, { status: 429, headers: { 'Retry-After': value } })
+      }
+      return partial(Buffer.alloc(blockBytes, 17), selected, length)
+    } })
+    const lease = await proxy.open({ resolve: () => largeSource(length) })
+    if (shouldRetry) assert.deepEqual((await rawRequest(lease.url)).body, Buffer.alloc(length, 17))
+    else await terminal(rawRequest(lease.url))
+    assert.equal(calls, shouldRetry ? 2 : 1, `Retry-After: ${value}`)
+    await lease.release()
+  }
+})
+
+test('read-ahead uses verified bytes and bounded duration hints while the first byte streams immediately', async (t) => {
+  const cases = [
+    ...[undefined, 0, -1, NaN, 1.5, '20', Number.MAX_SAFE_INTEGER].map(duration => ({ length: 32n * BigInt(blockBytes), duration, blocks: 4 })),
+    { length: 8n * BigInt(blockBytes), duration: 20, blocks: 8 },
+    { length: 4n * BigInt(blockBytes) + 1n, duration: 20, blocks: 5 },
+    { length: 100n * BigInt(blockBytes), duration: 100, blocks: 16 },
+    { length: 0xffffffffffffffffn, duration: 1, blocks: 16 },
+    { length: 0xffffffffffffffffn, duration: Number.MAX_SAFE_INTEGER, blocks: 4 }
+  ]
+  for (const fixture of cases) {
+    let calls = 0, finished = 0, active = 0, peak = 0
+    const aheadReady = deferred()
+    const proxy = await harness(t, { fetch: (_url, options) => {
+      const selected = requested(options); calls++; active++; peak = Math.max(peak, active)
+      if (selected.start === 0n) return new Response(new ReadableStream({
+        start(controller) { controller.enqueue(Buffer.from([17])) }
+      }), { status: 206, headers: { 'Content-Range': `bytes ${selected.start}-${selected.end}/${fixture.length}`,
+        'Content-Length': String(blockBytes) } })
+      return new Response(new ReadableStream({ async start(controller) {
+        await new Promise(resolve => setTimeout(resolve, 5))
+        if (options.signal.aborted) return
+        controller.enqueue(Buffer.alloc(Number(selected.end - selected.start + 1n), 17)); controller.close()
+        active--; finished++; if (finished === fixture.blocks - 1) aheadReady.resolve()
+      } }), { status: 206, headers: { 'Content-Range': `bytes ${selected.start}-${selected.end}/${fixture.length}`,
+        'Content-Length': String(selected.end - selected.start + 1n) } })
+    } })
+    const lease = await proxy.open({ durationSeconds: fixture.duration, resolve: () => largeSource(fixture.length) })
+    const connection = await within(rawRequest(lease.url, { consume: false }), 1000, 'stream first byte before first block completion')
+    connection.response.on('error', () => {})
+    try {
+      await within(aheadReady.promise, 1000, 'completed future lanes must pump without consumption')
+      await new Promise(resolve => setTimeout(resolve, 15))
+      assert.equal(calls, fixture.blocks, `${fixture.length}/${fixture.duration}`)
+      assert.ok(peak <= 4)
+    } finally { connection.response.destroy(); connection.req.destroy(); await lease.release() }
+  }
+})
+
+test('separate transport permits cap overlapping windows at four each and eight globally with FIFO admission', async (t) => {
+  const length = 32 * blockBytes, gate = deferred(), eight = deferred(), thirdAdmitted = deferred()
+  const active = new Map(), peak = new Map(), calls = []
+  let totalActive = 0, totalPeak = 0
+  const proxy = await harness(t, { fetch: (url, options) => {
+    const label = new URL(url).pathname, selected = requested(options)
+    calls.push({ label, start: selected.start.toString() })
+    active.set(label, (active.get(label) ?? 0) + 1)
+    peak.set(label, Math.max(peak.get(label) ?? 0, active.get(label)))
+    totalPeak = Math.max(totalPeak, ++totalActive)
+    let completed = false
+    const finish = () => { if (completed) return; completed = true; totalActive--; active.set(label, active.get(label) - 1) }
+    options.signal.addEventListener('abort', finish, { once: true })
+    if (calls.length === 8) eight.resolve()
+    if (label === '/c' && selected.start === 0n) thirdAdmitted.resolve()
+    return new Response(new ReadableStream({ async start(controller) {
+      if (selected.start === 0n) { controller.enqueue(Buffer.from([17])); return }
+      await gate.promise
+      if (options.signal.aborted) return
+      controller.enqueue(Buffer.alloc(blockBytes, 17)); controller.close(); finish()
+    } }), { status: 206, headers: { 'Content-Range': `bytes ${selected.start}-${selected.end}/${length}`,
+      'Content-Length': String(blockBytes) } })
+  } })
+  const connections = [], leases = []
+  t.after(async () => { for (const value of connections) { value.response.destroy(); value.req.destroy() }; await proxy.revokeAll() })
+  const begin = lease => rawRequest(lease.url, { consume: false }).then(value => {
+    value.response.on('error', () => {}); connections.push(value); return value
+  })
+  for (const label of ['a', 'b', 'c']) leases.push(await proxy.open({ durationSeconds: 1,
+    resolve: () => largeSource(length, { url: `${origin}/${label}` }) }))
+  await begin(leases[0]); await begin(leases[1]); await within(eight.promise, 1000, 'eight simultaneous transport jobs')
+  const third = begin(leases[2])
+  await new Promise(resolve => setTimeout(resolve, 15)); assert.equal(calls.length, 8)
+  gate.resolve(); await within(thirdAdmitted.promise, 1000, 'queued first stream must enter before later pump work')
+  await third
+  assert.deepEqual(calls[8], { label: '/c', start: '0' })
+  assert.ok(totalPeak <= 8); assert.ok([...peak.values()].every(value => value <= 4))
+})
+
+test('first-stream failure after filling a large window aborts every future owner and returns held memory', async (t) => {
+  const length = 16 * blockBytes, ready = deferred()
+  let failFirst, finished = 0, healthy = false, calls = 0, transformed = 0
+  const signals = []
+  const proxy = await harness(t, { fetch: (_url, options) => {
+    calls++; signals.push(options.signal)
+    const selected = requested(options)
+    if (!healthy && selected.start === 0n) return new Response(new ReadableStream({ start(controller) {
+      controller.enqueue(Buffer.from([17])); failFirst = () => controller.error(Object.assign(Error('synthetic disconnect'), { code: 'ECONNRESET' }))
+    } }), { status: 206, headers: { 'Content-Range': `bytes ${selected.start}-${selected.end}/${length}`, 'Content-Length': String(blockBytes) } })
+    if (!healthy && ++finished === 15) ready.resolve()
+    return partial(Buffer.alloc(blockBytes, 17), selected, length)
+  } })
+  const lease = await proxy.open({ durationSeconds: 1, resolve: () => largeSource(length, {
+    decoder: { kind: 'mode1', length: String(length), tailBytes: '0',
+      transform(bytes) { transformed += bytes.length; return bytes }, dispose() {} }
+  }) })
+  const pending = terminal(rawRequest(lease.url))
+  await within(ready.promise, 1000, 'fifteen unpublished future blocks should fill ahead while first stream stalls')
+  await new Promise(resolve => setTimeout(resolve, 15)); assert.equal(calls, 16)
+  failFirst(); await pending; await lease.release()
+  assert.equal(transformed, 1, 'unpublished buffered ciphertext must not pass the response transform')
+  assert.ok(signals.every(signal => signal.aborted))
+  healthy = true
+  const replacement = await proxy.open({ durationSeconds: 1, resolve: () => largeSource(length) })
+  assert.equal((await within(rawRequest(replacement.url), 1500, 'failure leaked global memory/transport permits')).body.length, length)
 })

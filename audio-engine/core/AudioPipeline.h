@@ -7,6 +7,7 @@
 #include "../decoder/DopPacker.h"
 #include "DsdMuteGuard.h"
 #include "PauseFade.h"
+#include "PreloadJob.h"
 #include "../decoder/DsdReader.h"
 #include "../decoder/FFmpegDecoder.h"
 #include "../dsp/DspChain.h"
@@ -169,6 +170,8 @@ class AudioPipeline {
   void refreshQueueReplayGainTags(const QueueItem& item);
   void setNativeDspPluginChain(const std::string& json);
   std::string nativeDspPluginStatusJson() const;
+  // Accept/cancel a single asynchronous preparation. Completion and format
+  // rejection are observable through status().preloadReady/blocked reason.
   bool preloadNext(const std::optional<QueueItem>& item, std::string* error);
   void resetPreloadOverlap();
   bool skipToPreloaded(const QueueItem& item, std::string* error);
@@ -280,6 +283,9 @@ class AudioPipeline {
   struct AutoMixGeneration;
   struct AutoMixSelection;
   void cancelAutoMixLocked(const std::string&);
+  void invalidatePendingPreloadLocked();
+  bool preloadNextForSource(const std::optional<QueueItem>& item, std::string* error,
+                           uint64_t sourceToken, uint64_t expectedRevision = 0);
   void reapAutoMixLocked();
 
   struct RenderDspGraphGeneration {
@@ -402,6 +408,12 @@ class AudioPipeline {
   // playInternal calls stop() internally and retries itself on DSD fallback.
   // Lock order: transportMutex_ before mutex_, never the reverse.
   std::recursive_mutex transportMutex_;
+  // Serializes the single preparation slot; joins occur without mutex_.
+  std::mutex preloadControlMutex_;
+  PreloadJob preloadJob_;
+  uint64_t preloadRevision_ = 0;
+  std::optional<QueueItem> pendingPreloadItem_;
+  uint64_t pendingPreloadSourceToken_ = 0;
   std::unique_ptr<IOutputBackend> output_;
   std::shared_ptr<DecodeStream> activeStream_;
   std::shared_ptr<DecodeStream> preloadStream_;

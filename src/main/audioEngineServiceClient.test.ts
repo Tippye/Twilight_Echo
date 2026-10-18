@@ -613,6 +613,225 @@ test('slow-tier native RPCs time out without killing the audio service', async (
   }
 })
 
+test('native completion grace rejects invalid timer bounds', () => {
+  for (const nativeCompletionGraceMs of [0, -1, 1.5, Number.NaN, Infinity, 0x80000000]) {
+    assert.throws(
+      () => new AudioEngineServiceBinding({ serviceEntry: 'unused.js', nativeCompletionGraceMs }),
+      /bounded positive integer/
+    )
+  }
+})
+
+test('slow native ownership survives caller timeout and late completion restores the ordinary watchdog', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const child = new ManualUtilityProcess()
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    nativeCompletionGraceMs: 30,
+    restartDelayMs: 1000,
+    electron: { utilityProcess: { fork: () => child } }
+  })
+  try {
+    let completed = false
+    const play = binding.callAsync('Play', ['slow-source.flac', 0]).then(() => {
+      completed = true
+    })
+    const rejected = assert.rejects(play, /音频服务调用超时/)
+    const request = child.messages[0] as { requestId: string }
+    t.mock.timers.tick(20)
+    await rejected
+    for (let i = 0; i < 3; i++) {
+      const polling = assert.rejects(binding.callAsync('GetPlaybackInfo', []), /音频服务调用超时/)
+      t.mock.timers.tick(5)
+      await polling
+      assert.equal(child.killCount, 0)
+    }
+    child.emit('message', {
+      kind: 'response',
+      requestId: request.requestId,
+      ok: true,
+      value: undefined
+    })
+    await Promise.resolve()
+    assert.equal(completed, false, 'Late completion must not revive the caller')
+    const unresponsive = assert.rejects(
+      binding.callAsync('GetPlaybackInfo', []),
+      /音频服务调用超时/
+    )
+    t.mock.timers.tick(5)
+    await unresponsive
+    assert.equal(
+      child.killCount,
+      1,
+      'Completed native work must stop protecting an unresponsive child'
+    )
+  } finally {
+    binding.destroy()
+  }
+})
+
+test('slow completion grace is bounded and repeated status polling cannot renew it', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const children: ManualUtilityProcess[] = []
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    nativeCompletionGraceMs: 30,
+    restartDelayMs: 1,
+    electron: {
+      utilityProcess: {
+        fork: () => {
+          const child = new ManualUtilityProcess()
+          children.push(child)
+          return child
+        }
+      }
+    }
+  })
+  const crashes: string[] = []
+  binding.on('crash', (reason) => crashes.push(reason))
+  try {
+    const rejected = assert.rejects(binding.callAsync('Play', ['held.flac', 0]), /音频服务调用超时/)
+    t.mock.timers.tick(20)
+    await rejected
+    const oldRequest = children[0].messages[0] as { requestId: string }
+    for (let i = 0; i < 5; i++) {
+      const polling = assert.rejects(binding.callAsync('GetPlaybackInfo', []), /音频服务调用超时/)
+      t.mock.timers.tick(5)
+      await polling
+      assert.equal(children[0].killCount, 0)
+    }
+    t.mock.timers.tick(5)
+    assert.equal(children[0].killCount, 1)
+    assert.equal(crashes.length, 1)
+    t.mock.timers.tick(1)
+    assert.equal(children.length, 2)
+    children[0].emit('message', {
+      kind: 'response',
+      requestId: oldRequest.requestId,
+      ok: true,
+      value: undefined
+    })
+    children[0].emit('exit', 1)
+    assert.equal(children[1].killCount, 0)
+    assert.equal(crashes.length, 1)
+    const recovered = binding.callAsync('GetPlaybackInfo', [])
+    const request = children[1].messages.at(-1) as { requestId: string }
+    children[1].emit('message', {
+      kind: 'response',
+      requestId: request.requestId,
+      ok: true,
+      value: '{"state":"paused"}'
+    })
+    assert.equal(await recovered, '{"state":"paused"}')
+  } finally {
+    binding.destroy()
+  }
+})
+
+test('late slow completion clears its recovery timer and retains the original capacity bound', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const child = new ManualUtilityProcess()
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    nativeCompletionGraceMs: 30,
+    maxInFlightRequests: 1,
+    electron: { utilityProcess: { fork: () => child } }
+  })
+  try {
+    const rejected = assert.rejects(binding.getMetadataAsync('slow.flac'), /音频服务调用超时/)
+    const oldRequest = child.messages[0] as { requestId: string }
+    t.mock.timers.tick(20)
+    await rejected
+    await assert.rejects(binding.callAsync('GetPlaybackInfo', []), /音频服务请求过多/)
+    child.emit('message', {
+      kind: 'response',
+      requestId: oldRequest.requestId,
+      ok: false,
+      error: 'late native failure'
+    })
+    const fresh = binding.callAsync('GetPlaybackInfo', [])
+    const request = child.messages.at(-1) as { requestId: string }
+    child.emit('message', {
+      kind: 'response',
+      requestId: request.requestId,
+      ok: true,
+      value: '{"state":"paused"}'
+    })
+    await fresh
+    // Duplicate late replies cannot release ownership twice or poison caches.
+    child.emit('message', {
+      kind: 'response',
+      requestId: oldRequest.requestId,
+      ok: true,
+      value: '{"state":"playing"}'
+    })
+    t.mock.timers.tick(30)
+    assert.equal(child.killCount, 0)
+    assert.equal(binding.GetPlaybackInfo(), '{"state":"paused"}')
+  } finally {
+    binding.destroy()
+  }
+})
+
+test('exit and destroy retire outstanding slow completion timers before a replacement generation', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const children: ManualUtilityProcess[] = []
+  const binding = new AudioEngineServiceBinding({
+    serviceEntry: 'audioEngineService.js',
+    requestTimeoutMs: 5,
+    topologyRequestTimeoutMs: 20,
+    nativeCompletionGraceMs: 30,
+    restartDelayMs: 1,
+    electron: {
+      utilityProcess: {
+        fork: () => {
+          const child = new ManualUtilityProcess()
+          children.push(child)
+          return child
+        }
+      }
+    }
+  })
+  try {
+    const rejected = assert.rejects(binding.callAsync('Play', ['held.flac', 0]), /音频服务调用超时/)
+    t.mock.timers.tick(20)
+    await rejected
+    children[0].emit('exit', 1)
+    t.mock.timers.tick(1)
+    assert.equal(children.length, 2)
+    const newPlay = binding.callAsync('Play', ['replacement.flac', 0])
+    const request = children[1].messages[0] as { requestId: string }
+    children[1].emit('message', {
+      kind: 'response',
+      requestId: request.requestId,
+      ok: true,
+      value: undefined
+    })
+    await newPlay
+    t.mock.timers.tick(29)
+    assert.equal(children[1].killCount, 0, 'Old grace must not kill a replacement generation')
+    const heldAgain = assert.rejects(binding.callAsync('Seek', [12]), /音频服务调用超时/)
+    t.mock.timers.tick(20)
+    await heldAgain
+    binding.destroy()
+    t.mock.timers.tick(100)
+    assert.equal(
+      children[1].killCount,
+      1,
+      'Destroy kills once and cancels the detached recovery timer'
+    )
+    assert.equal(children.length, 2)
+  } finally {
+    binding.destroy()
+  }
+})
+
 test('playback polling never kills the service while a slow native operation is in flight', async () => {
   const children: ManualUtilityProcess[] = []
   const electron = {

@@ -3,6 +3,7 @@
 #include "../core/SharedInputFile.h"
 #include "../dsp/DspTypes.h"
 #include "AudioFixtureLibrary.h"
+#include "FfmpegHttpProbe.h"
 
 #include <algorithm>
 #include <array>
@@ -457,6 +458,21 @@ void assertDecoderOpensExternalFixturesWhenProvided() {
 
 int main(int argc,char** argv) {
 #if defined(TAE_HAS_FFMPEG)
+  if(argc==4 && std::string(argv[1])=="--http-read-probe") {
+    return runFfmpegHttpProbe(argv[2], std::stoi(argv[3]), false);
+  }
+  if(argc==4 && std::string(argv[1])=="--http-seek-probe") {
+    return runFfmpegHttpProbe(argv[2], std::stoi(argv[3]), true);
+  }
+  if(argc==4 && std::string(argv[1])=="--http-stop-open-probe") {
+    return runFfmpegHttpProbe(argv[2], std::stoi(argv[3]), false, true);
+  }
+  if(argc==4 && std::string(argv[1])=="--http-stop-read-probe") {
+    return runFfmpegHttpProbe(argv[2], std::stoi(argv[3]), false, false, true);
+  }
+  if(argc==4 && std::string(argv[1])=="--http-restart-read-probe") {
+    return runFfmpegHttpProbe(argv[2], std::stoi(argv[3]), false, false, true, true);
+  }
   if(argc==3 && std::string(argv[1])=="--precise-seek-probe") {
     assertPreciseSeekMatchesExternalPcm(argv[2]);return 0;
   }

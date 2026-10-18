@@ -35,11 +35,12 @@ class FFmpegDecoder {
   // Empty restores ordinary decode.
   // The factory survives close/open and creates a fresh transform after seek.
   void setPcmStreamTransformFactory(PcmStreamTransformFactory factory);
-  // Thread-safe wakeup before stopping/joining a blocked decode worker. A
-  // successful seek/open clears cancellation and starts a fresh transform.
+  // Thread-safe cancellation of FFmpeg IO and the optional PCM worker before
+  // stopping/joining the decode reader. The historical method name is retained.
+  // A seek/open or restart after joining clears this shared cancellation flag.
   void cancelPcmStreamTransform() noexcept;
-  // Call only after the decode reader stops. If cancelled, discard the old
-  // transform and pending processed PCM; next read creates a fresh instance.
+  // Call only after the decode reader stops. Clear IO cancellation and, if a
+  // transform was cancelled, discard it and its pending processed PCM.
   // Otherwise no-op, including after seek/open. This does not seek the source:
   // the transport owner must position it when exact continuation is required.
   bool restartPcmStreamTransform(std::string* error);

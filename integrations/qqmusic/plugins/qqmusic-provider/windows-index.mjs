@@ -506,7 +506,7 @@ async function getPlaybackUrl(state, args, invocation) {
         resolver = createWindowsPlaybackResolver({ client: state.client, getDevice: () => getDevice(state), song, quality })
         // A published lease keeps this exact resolver, including later transport
         // refreshes. Range identity cannot change to another quality midstream.
-        lease = await state.proxy.open({ signal, resolve: request => {
+        lease = await state.proxy.open({ signal, durationSeconds: song.interval, resolve: request => {
           assertCurrent()
           return resolver.resolve(request)
         } })

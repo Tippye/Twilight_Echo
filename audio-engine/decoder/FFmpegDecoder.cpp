@@ -12,6 +12,7 @@
 #include <array>
 #include <atomic>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -255,7 +256,7 @@ struct FFmpegDecoder::Impl {
   }
 
   bool cancelled(std::string* error) const {
-    if ((transformFactory && transformCancelled.load(std::memory_order_acquire)) ||
+    if (transformCancelled.load(std::memory_order_acquire) ||
         (interrupt && interrupt(interruptContext))) {
       if (error) *error = "decode_cancelled";
       return true;
@@ -296,6 +297,55 @@ struct FFmpegDecoder::Impl {
   AVChannelLayout targetLayout{};
   AVChannelLayout transformLayout{};
   static constexpr int kTransformPullFrames = 4096;
+  // Only the FFmpeg IO owner thread reads/writes phase, byte progress and
+  // deadlines. Cross-thread stop uses the existing cancellation atomic above.
+  using IoClock = std::chrono::steady_clock;
+  enum class IoPhase { None, Startup, Read, Seek };
+  IoPhase ioPhase = IoPhase::None;
+  IoClock::time_point ioDeadline{};
+  int64_t ioLastBytes = 0;
+  bool httpSource = false;
+  bool ioTimedOut = false;
+  std::string readFailure;
+  bool readFailureWasCancelled = false;
+
+  struct IoOperation {
+    Impl& owner;
+    IoOperation(Impl& impl, IoPhase phase) : owner(impl) {
+      owner.ioPhase = owner.httpSource ? phase : IoPhase::None;
+      owner.ioTimedOut = false;
+      owner.ioLastBytes = owner.formatContext && owner.formatContext->pb
+          ? owner.formatContext->pb->bytes_read : 0;
+      owner.ioDeadline = IoClock::now() + std::chrono::milliseconds(phase == IoPhase::Seek ? 5000 : 15000);
+    }
+    ~IoOperation() { owner.ioPhase = IoPhase::None; }
+  };
+
+  static int interruptIo(void* context) {
+    auto& owner = *static_cast<Impl*>(context);
+    if (owner.transformCancelled.load(std::memory_order_acquire) ||
+        (owner.interrupt && owner.interrupt(owner.interruptContext))) return 1;
+    if (owner.ioPhase == IoPhase::None) return 0;
+    const auto now = IoClock::now();
+    if (owner.ioPhase == IoPhase::Read && owner.formatContext && owner.formatContext->pb) {
+      const auto bytes = owner.formatContext->pb->bytes_read;
+      if (bytes != owner.ioLastBytes) {
+        owner.ioLastBytes = bytes;
+        owner.ioDeadline = now + std::chrono::milliseconds(15000);
+      }
+    }
+    if (now < owner.ioDeadline) return 0;
+    owner.ioTimedOut = true;
+    return 1;
+  }
+
+  bool ioError(std::string* error, const char* operation) const {
+    if (cancelled(error)) return false;
+    if (error) *error = ioTimedOut ? "network_io_timeout" :
+        (httpSource ? std::string("network_") + operation + "_failed" :
+                      std::string("audio_") + operation + "_failed");
+    return false;
+  }
 
   static std::string avError(int code) {
     char buffer[AV_ERROR_MAX_STRING_SIZE] = {};
@@ -782,6 +832,10 @@ struct FFmpegDecoder::Impl {
 
   bool decodeOneFrameImpl(std::string* error) {
     resetPending();
+    if (!readFailure.empty()) {
+      if (error) *error = readFailure;
+      return false;
+    }
     if (transformFactory && !ensureTransform(error)) return false;
 
     while (true) {
@@ -823,7 +877,6 @@ struct FFmpegDecoder::Impl {
       }
       if (ret != AVERROR(EAGAIN)) {
         if (error) *error = "解码器接收音频帧失败，错误码：" + std::to_string(ret);
-        eof = true;
         return false;
       }
 
@@ -841,14 +894,25 @@ struct FFmpegDecoder::Impl {
         }
         if (ret < 0 && ret != AVERROR(EAGAIN)) {
           if (error) *error = "解码器收尾失败，错误码：" + std::to_string(ret);
-          eof = true;
           return false;
         }
         continue;
       }
 
-      ret = av_read_frame(formatContext, packet);
-      if (ret < 0) {
+      {
+        IoOperation io(*this, IoPhase::Read);
+        ret = av_read_frame(formatContext, packet);
+      }
+      const int storedIoError = formatContext->pb ? formatContext->pb->error : 0;
+      if (ioTimedOut || cancelled(nullptr) || (ret < 0 && (ret != AVERROR_EOF ||
+          (storedIoError < 0 && storedIoError != AVERROR_EOF)))) {
+        av_packet_unref(packet);
+        readFailureWasCancelled = cancelled(nullptr);
+        ioError(&readFailure, "read");
+        if (error) *error = readFailure;
+        return false;
+      }
+      if (ret == AVERROR_EOF) {
         inputEof = true;
         continue;
       }
@@ -861,7 +925,6 @@ struct FFmpegDecoder::Impl {
         av_packet_unref(packet);
         if (ret < 0 && ret != AVERROR(EAGAIN)) {
           if (error) *error = "解码器提交音频包失败，错误码：" + std::to_string(ret);
-          eof = true;
           return false;
         }
       } else {
@@ -918,10 +981,22 @@ void FFmpegDecoder::cancelPcmStreamTransform() noexcept {
 }
 
 bool FFmpegDecoder::restartPcmStreamTransform(std::string* error) {
-  if (!impl_->transformFactory || !impl_->transformCancelled.load(std::memory_order_acquire)) return true;
+  if (!impl_->transformCancelled.load(std::memory_order_acquire)) return true;
 #if defined(TAE_HAS_FFMPEG)
-  impl_->discardTransform();
-  if (impl_->codecContext && !impl_->configureOutputResampler(impl_->outputFormat, error)) return false;
+  if (impl_->readFailureWasCancelled) {
+    impl_->readFailure.clear();
+    impl_->readFailureWasCancelled = false;
+    // FFmpeg caches an interrupted read in AVIO. Only this explicitly
+    // classified cancellation may be cleared for a joined reader's restart.
+    if (impl_->formatContext && impl_->formatContext->pb) {
+      impl_->formatContext->pb->error = 0;
+      impl_->formatContext->pb->eof_reached = 0;
+    }
+  }
+  if (impl_->transformFactory) {
+    impl_->discardTransform();
+    if (impl_->codecContext && !impl_->configureOutputResampler(impl_->outputFormat, error)) return false;
+  }
 #else
   (void)error;
   std::atomic_store_explicit(&impl_->transform, std::shared_ptr<IPcmStreamTransform>{}, std::memory_order_release);
@@ -968,6 +1043,10 @@ bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   const bool looksHttp =
       source.rfind("http://", 0) == 0 || source.rfind("https://", 0) == 0 ||
       source.rfind("HTTP://", 0) == 0 || source.rfind("HTTPS://", 0) == 0;
+  impl_->httpSource = looksHttp;
+  impl_->readFailure.clear();
+  impl_->readFailureWasCancelled = false;
+  Impl::IoOperation startup(*impl_, Impl::IoPhase::Startup);
   AVDictionary* openOptions = nullptr;
   if (looksHttp) {
     av_dict_set(&openOptions, "icy", "1", 0);
@@ -1012,16 +1091,18 @@ bool FFmpegDecoder::open(const std::string& source, std::string* error) {
     if (error) *error = "Cannot allocate demuxer";
     return false;
   }
-  impl_->formatContext->interrupt_callback = {impl_->interrupt, impl_->interruptContext};
+  impl_->formatContext->interrupt_callback = {Impl::interruptIo, impl_.get()};
   int ret = avformat_open_input(&impl_->formatContext, source.c_str(), inputFormat, &openOptions);
   av_dict_free(&openOptions);
-  if (ret < 0) {
+  if (ret < 0 || Impl::interruptIo(impl_.get())) {
+    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "open");
     if (error) *error = "打开音频失败，错误码：" + std::to_string(ret);
     return false;
   }
 
   ret = avformat_find_stream_info(impl_->formatContext, nullptr);
-  if (ret < 0) {
+  if (ret < 0 || Impl::interruptIo(impl_.get())) {
+    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "probe");
     if (error) *error = "解析音频信息失败，错误码：" + std::to_string(ret);
     return false;
   }
@@ -1227,10 +1308,16 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
 bool FFmpegDecoder::seek(double seconds, std::string* error) {
 #if defined(TAE_HAS_FFMPEG)
   if (!impl_->formatContext || impl_->audioStreamIndex < 0) return false;
+  // The transport owner has stopped/joined the old reader before seeking.
+  impl_->transformCancelled.store(false, std::memory_order_release);
+  impl_->readFailure.clear();
+  impl_->readFailureWasCancelled = false;
+  Impl::IoOperation io(*impl_, Impl::IoPhase::Seek);
   AVStream* stream = impl_->formatContext->streams[impl_->audioStreamIndex];
   const int64_t timestamp = static_cast<int64_t>(seconds / av_q2d(stream->time_base));
   const int ret = av_seek_frame(impl_->formatContext, impl_->audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
-  if (ret < 0) {
+  if (ret < 0 || Impl::interruptIo(impl_.get())) {
+    if (impl_->httpSource || impl_->cancelled(nullptr)) return impl_->ioError(error, "seek");
     if (error) *error = "音频跳转失败，错误码：" + std::to_string(ret);
     return false;
   }

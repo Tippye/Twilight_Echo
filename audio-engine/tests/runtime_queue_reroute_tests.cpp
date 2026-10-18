@@ -15,6 +15,7 @@
 #endif
 #include <cassert>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstring>
 #include <cmath>
@@ -774,6 +775,58 @@ struct BackendRegistry {
 };
 
 BackendRegistry g_backendRegistry;
+
+struct NextOpenGate {
+  std::mutex mutex;
+  std::condition_variable changed;
+  bool entered = false;
+  bool released = false;
+  bool cancelled = false;
+  bool exited = false;
+  unsigned entries = 0;
+  bool holdCancellation = false;
+  bool cancellationSeen = false;
+  bool enter(int (*interrupt)(void*), void* context) {
+    std::unique_lock lock(mutex);
+    entered = true;
+    ++entries;
+    changed.notify_all();
+    while (!released) {
+      if (interrupt && interrupt(context)) {
+        cancellationSeen = true;
+        changed.notify_all();
+        if (!holdCancellation) break;
+      }
+      changed.wait_for(lock, std::chrono::milliseconds(5));
+    }
+    cancelled = !released;
+    exited = true;
+    changed.notify_all();
+    return released;
+  }
+  bool waitEntered() {
+    std::unique_lock lock(mutex);
+    return changed.wait_for(lock, std::chrono::seconds(2), [&] { return entered; });
+  }
+  void release() {
+    { std::lock_guard lock(mutex); released = true; }
+    changed.notify_all();
+  }
+  bool waitExited() {
+    std::unique_lock lock(mutex);
+    return changed.wait_for(lock, std::chrono::milliseconds(500), [&] { return exited; });
+  }
+  bool waitEntries(unsigned count) {
+    std::unique_lock lock(mutex);
+    return changed.wait_for(lock, std::chrono::milliseconds(500), [&] { return entries >= count; });
+  }
+  bool waitCancellation() {
+    std::unique_lock lock(mutex);
+    return changed.wait_for(lock, std::chrono::milliseconds(500), [&] { return cancellationSeen; });
+  }
+};
+NextOpenGate* g_nextOpenGate = nullptr;
+NextOpenGate* g_currentSeekGate = nullptr;
 
 enum class FakeDopBehavior {
   Proven,
@@ -2413,7 +2466,8 @@ void testPcmTypedGaplessRejectsIncompatiblePreloads() {
     QueueItem incompatible;
     incompatible.id = source;
     incompatible.source = source;
-    assert(!pipeline.preloadNext(incompatible, &error));
+    assert(pipeline.preloadNext(incompatible, &error));
+    assert(waitUntil([&] { return pipeline.status().gaplessBlockedReason == "format_mismatch"; }));
     const auto status = pipeline.status();
     assert(!status.preloadReady);
     assert(status.gaplessBlockedReason == "format_mismatch");
@@ -4247,6 +4301,9 @@ void testGaplessBlockedReasonReportsCrossfadeAndDisabled() {
 
   // Crossfade always wins over other path gates for blocked reason.
   assert(engine.setDspConfig("{\"gapless\":true,\"crossfadeSeconds\":0.05}") == TAE_RESULT_OK);
+  assert(waitUntil([&engine] {
+    return jsonContains(engine.getPlaybackInfoJson(), "\"gaplessBlockedReason\":\"crossfade\"");
+  }));
   assertLatestPlaybackContains(engine, "\"gaplessBlockedReason\":\"crossfade\"");
   assertLatestPlaybackContains(engine, "\"crossfadeActive\":true");
 
@@ -4314,7 +4371,8 @@ void testContinuityPolicyConvertsMixedFormatsAndRejectsDsdPreload() {
     QueueItem dsd;
     dsd.id = "dsd";
     dsd.source = harness.dsdPath();
-    assert(!pipeline.preloadNext(dsd, &error));
+    assert(pipeline.preloadNext(dsd, &error));
+    assert(waitUntil([&] { return pipeline.status().gaplessBlockedReason == "format_mismatch"; }));
     assert(!pipeline.status().preloadReady);
     assert(pipeline.status().gaplessBlockedReason == "format_mismatch");
     pipeline.stop();
@@ -4375,13 +4433,13 @@ void testAutoNextPrefersPreloadedPromoteWithoutReopen() {
   assertLatestPlaybackContains(engine, "\"queueIndex\":1");
 }
 
-void testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce() {
+void testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(bool withEffect = true) {
   EngineHarness harness;
   AudioPipeline pipeline;
   QueueItem current;
   current.id = "failed-effect";
-  current.source = "pcm-effect-failure-current.flac";
-  current.pcmWorker = PcmWorkerSpec{"C:/synthetic-unused-worker.exe", {}, UINT64_MAX};
+  current.source = withEffect ? "pcm-effect-failure-current.flac" : "pcm-effect-failure-plain-current.flac";
+  if (withEffect) current.pcmWorker = PcmWorkerSpec{"C:/synthetic-unused-worker.exe", {}, UINT64_MAX};
   QueueItem next;
   next.id = "plain-next";
   next.source = "auto-promote-next.flac";
@@ -4400,6 +4458,7 @@ void testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce() {
   assert(!pipeline.consumeTrackStarted(&started));
   assert(!pipeline.consumeEnded());
   assert(pipeline.consumeRenderError(&error) && !error.empty());
+  if (!withEffect) assert(error.find("PCM 音效") == std::string::npos);
   assert(!pipeline.consumeRenderError(&error));
   assert(!pipeline.consumeEnded());
   renderBackendFrames(backend, 256);
@@ -4445,6 +4504,229 @@ void testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted() {
     pipeline.stop();
     g_pcmEffectReadsFail = false;
   }
+}
+
+void testReadFailureDrainsAlreadyDecodedPcmWithoutPromotingNext() {
+  EngineHarness harness;
+  AudioPipeline pipeline;
+  QueueItem current;
+  current.id = "buffered-read-failure";
+  current.source = "pcm-effect-failure-plain-buffered.flac";
+  QueueItem next;
+  next.id = "ready-next";
+  next.source = "auto-promote-next.flac";
+  const auto failures = g_pcmEffectFailureReads.load();
+  g_pcmEffectReadsFail = true;
+  std::string error;
+  assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
+      "{\"gapless\":true,\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
+  const auto backend = waitForLatestStartedBackendState();
+  assert(backend);
+  assert(waitUntil([&] { return g_pcmEffectFailureReads.load() > failures; }));
+  assert(waitUntil([&] { return pipeline.status().preloadReady; }));
+  assert(!pipeline.consumeRenderError(&error));
+  assert(!pipeline.consumeEnded());
+  renderBackendFrames(backend, 2048);
+  assert(!pipeline.consumeRenderError(&error));
+  renderBackendFrames(backend, 4096);
+  assert(pipeline.status().currentItem.id == current.id);
+  assert(pipeline.consumeRenderError(&error) && !error.empty());
+  assert(!pipeline.consumeRenderError(&error));
+  assert(!pipeline.consumeEnded());
+  pipeline.stop();
+  g_pcmEffectReadsFail = false;
+}
+
+void testSlowNextOpenDoesNotBlockCurrentOutputOrPlayAcknowledgement() {
+  for (const bool gapless : {false, true}) {
+    EngineHarness harness;
+    AudioPipeline pipeline;
+    NextOpenGate gate;
+    g_nextOpenGate = &gate;
+    QueueItem current;
+    current.id = "same-current";
+    current.source = "preload-control-current.flac";
+    QueueItem next;
+    next.id = "held-next";
+    next.source = "held-next-open.flac";
+    std::atomic<bool> done{false};
+    TAE_Result result = TAE_RESULT_INTERNAL_ERROR;
+    std::thread play([&] {
+      std::string error;
+      result = pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
+          "{\"crossfadeSeconds\":0}", gapless, &error);
+      done.store(true, std::memory_order_release);
+    });
+    const bool entered = gapless ? gate.waitEntered() : false;
+    const bool acknowledged = waitUntil([&] { return done.load(std::memory_order_acquire); }, 500);
+    const auto backend = g_backendRegistry.latestStarted();
+    const bool started = static_cast<bool>(backend);
+    bool advanced = false;
+    if (backend) {
+      renderBackendFrames(backend, 256);
+      advanced = pipeline.status().positionSeconds > 0;
+    }
+    // Baseline failure must release and join before asserting any condition.
+    gate.release();
+    play.join();
+    pipeline.stop();
+    g_nextOpenGate = nullptr;
+    std::fprintf(stderr, "[preload start probe] gapless=%d entered=%d acknowledged=%d started=%d advanced=%d\n",
+        gapless, entered, acknowledged, started, advanced);
+    assert(result == TAE_RESULT_OK);
+    assert(!gapless || entered);
+    assert(acknowledged && started && advanced);
+  }
+}
+
+void testPendingPreloadIsCancelledBeforeStopQueueSeekOrFormatChange() {
+  for (const std::string action : {"stop", "clear", "replace", "seek", "output"}) {
+    EngineHarness harness;
+    AudioPipeline pipeline;
+    NextOpenGate gate;
+    g_nextOpenGate = &gate;
+    QueueItem current; current.id = "same-current"; current.source = "preload-control-current.flac";
+    QueueItem next; next.id = "held-next"; next.source = "held-next-open.flac";
+    std::string error;
+    assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
+        "{\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
+    assert(gate.waitEntered());
+    const auto begin = std::chrono::steady_clock::now();
+    if (action == "stop") assert(pipeline.stop() == TAE_RESULT_OK);
+    else if (action == "clear") assert(pipeline.preloadNext(std::nullopt, &error));
+    else if (action == "replace") {
+      QueueItem replacement; replacement.id = "replacement"; replacement.source = "replacement-next.flac";
+      assert(pipeline.preloadNext(replacement, &error));
+    } else if (action == "seek") assert(pipeline.seek(0.1, &error) == TAE_RESULT_OK);
+    else { OutputConfig config; config.continuityFirst = true; assert(pipeline.setOutputConfig(config, &error)); }
+    const bool exited = gate.waitExited();
+    const auto milliseconds = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - begin).count();
+    const bool cancelled = gate.cancelled;
+    if (action == "replace") assert(waitUntil([&] { return pipeline.status().preloadReady; }));
+    const auto status = pipeline.status();
+    const bool stalePublished = status.preloadedItem && status.preloadedItem->id == next.id;
+    gate.release();
+    if (action == "seek" || action == "output") {
+      assert(waitUntil([&] { return pipeline.status().preloadReady; }));
+      assert(pipeline.status().preloadedItem->id == next.id);
+    }
+    pipeline.stop();
+    g_nextOpenGate = nullptr;
+    std::fprintf(stderr, "[preload cancel probe] action=%s exited=%d cancelled=%d stale=%d ms=%.3f\n",
+        action.c_str(), exited, cancelled, stalePublished, milliseconds);
+    assert(exited && cancelled && !stalePublished && milliseconds < 500);
+  }
+}
+
+void testDspEditsPreservePendingPreloadAndUseLatestGraph() {
+  for (const std::string action : {"config", "graph", "transaction"}) {
+    EngineHarness harness;
+    AudioPipeline pipeline;
+    NextOpenGate gate;
+    g_nextOpenGate = &gate;
+    QueueItem current; current.id = "same-current"; current.source = "preload-control-current.flac";
+    QueueItem next; next.id = "held-next"; next.source = "held-next-open.flac";
+    std::string error;
+    assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
+        "{\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
+    assert(gate.waitEntered());
+    if (action == "config") pipeline.setDspConfig("{\"gapless\":true,\"crossfadeSeconds\":0.1}");
+    else if (action == "graph") assert(pipeline.setDspGraph("{\"graph\":{\"nodes\":[]}}", &error));
+    else assert(pipeline.applyDspState(77,
+        "{\"revision\":77,\"processing\":{\"gapless\":true},\"graph\":{\"version\":2,\"nodes\":[]}}", &error));
+    gate.release();
+    assert(waitUntil([&] { return pipeline.status().preloadReady; }));
+    assert(pipeline.status().preloadedItem->id == next.id);
+    pipeline.stop();
+    g_nextOpenGate = nullptr;
+  }
+}
+
+void testAutoMixModeChangeRearmsPendingPreloadWithLatestEligibility() {
+  for (const std::string mode : {"natural", "dj"}) {
+    EngineHarness harness;
+    AudioPipeline pipeline;
+    NextOpenGate gate;
+    g_nextOpenGate = &gate;
+    QueueItem current; current.id = "same-current"; current.source = "pcm-192k-current.flac";
+    QueueItem next; next.id = "held-next"; next.source = "held-next-open.flac";
+    std::string error;
+    assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
+        "{\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
+    assert(gate.waitEntered());
+    assert(pipeline.setAutoMixMode(mode, &error));
+    assert(pipeline.preloadNext(next, &error));
+    const bool rearmed = gate.waitEntries(2);
+    gate.release();
+    const bool ready = waitUntil([&] { return pipeline.status().preloadReady; });
+    const auto status = pipeline.status();
+    pipeline.stop();
+    g_nextOpenGate = nullptr;
+    assert(rearmed && ready && status.preloadedItem && status.preloadedItem->id == next.id);
+  }
+}
+
+void testQueueChangeDuringSeekCannotResurrectOldUpcoming() {
+  for (const bool clear : {false, true}) {
+    EngineHarness harness;
+    AudioPipeline pipeline;
+    NextOpenGate nextGate, seekGate;
+    g_nextOpenGate = &nextGate;
+    QueueItem current; current.id = "same-current"; current.source = "preload-control-current.flac";
+    QueueItem next; next.id = "old-next"; next.source = "held-next-open.flac";
+    std::string error;
+    assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
+        "{\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
+    assert(nextGate.waitEntered());
+    g_currentSeekGate = &seekGate;
+    TAE_Result sought = TAE_RESULT_INTERNAL_ERROR;
+    std::thread seek([&] { std::string reason; sought = pipeline.seek(0.1, &reason); });
+    assert(seekGate.waitEntered());
+    if (clear) assert(pipeline.preloadNext(std::nullopt, &error));
+    else {
+      auto replacement = next; replacement.id = "new-next";
+      assert(pipeline.preloadNext(replacement, &error));
+      assert(nextGate.waitEntries(2));
+    }
+    seekGate.release();
+    seek.join();
+    g_currentSeekGate = nullptr;
+    nextGate.release();
+    if (!clear) assert(waitUntil([&] { return pipeline.status().preloadReady; }));
+    const auto status = pipeline.status();
+    pipeline.stop();
+    g_nextOpenGate = nullptr;
+    assert(sought == TAE_RESULT_OK);
+    assert(!status.preloadedItem || status.preloadedItem->id != "old-next");
+    assert(clear ? !status.preloadReady : status.preloadedItem->id == "new-next");
+  }
+}
+
+void testSourceChangeDuringPreloadJoinRejectsTheOldSubmission() {
+  EngineHarness harness;
+  AudioPipeline pipeline;
+  NextOpenGate gate;
+  gate.holdCancellation = true;
+  g_nextOpenGate = &gate;
+  QueueItem current; current.id = "same-current"; current.source = "preload-control-current.flac";
+  QueueItem next; next.id = "old-next"; next.source = "held-next-open.flac";
+  QueueItem replacement; replacement.id = "replacement"; replacement.source = "replacement-next.flac";
+  std::string error;
+  assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
+      "{\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
+  assert(gate.waitEntered());
+  bool submitted = true;
+  std::thread replace([&] { std::string reason; submitted = pipeline.preloadNext(replacement, &reason); });
+  assert(gate.waitCancellation());
+  const auto sought = pipeline.seek(0.1, &error);
+  gate.release();
+  replace.join();
+  const bool stalePublished = pipeline.status().preloadedItem.has_value();
+  assert(pipeline.preloadNext(replacement, &error));
+  assert(waitUntil([&] { return pipeline.status().preloadReady; }));
+  pipeline.stop();
+  g_nextOpenGate = nullptr;
+  assert(sought == TAE_RESULT_OK && !submitted && !stalePublished);
 }
 
 std::string workerQueueEntry(const char* id, const char* source, const char* executable = "A") {
@@ -4887,6 +5169,8 @@ std::string readMetadataJson(const std::string& source) {
 }
 
 struct FFmpegDecoder::Impl {
+  int (*interrupt)(void*) = nullptr;
+  void* interruptContext = nullptr;
   TrackProfile profile;
   AudioFormat outputFormat;
   size_t positionFrames = 0;
@@ -4899,7 +5183,10 @@ FFmpegDecoder::FFmpegDecoder()
 FFmpegDecoder::~FFmpegDecoder() {
   if (impl_->transformBound) --g_boundTransformDecoders;
 }
-void FFmpegDecoder::setInterrupt(int (*)(void*), void*) {}
+void FFmpegDecoder::setInterrupt(int (*interrupt)(void*), void* context) {
+  impl_->interrupt = interrupt;
+  impl_->interruptContext = context;
+}
 void FFmpegDecoder::setPcmStreamTransformFactory(PcmStreamTransformFactory factory) {
   const bool bound = static_cast<bool>(factory);
   if (bound != impl_->transformBound) {
@@ -4915,6 +5202,11 @@ bool FFmpegDecoder::restartPcmStreamTransform(std::string*) { return true; }
 
 bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   (void)error;
+  if (source == "held-next-open.flac" && g_nextOpenGate &&
+      !g_nextOpenGate->enter(impl_->interrupt, impl_->interruptContext)) {
+    if (error) *error = "decode_cancelled";
+    return false;
+  }
   impl_->profile = buildTrackProfile(source);
   impl_->outputFormat = impl_->profile.defaultOutput;
   impl_->positionFrames = 0;
@@ -4938,7 +5230,9 @@ void FFmpegDecoder::setResamplerQuality(ResamplerQuality quality) {
 }
 
 size_t FFmpegDecoder::readFrames(float* output, size_t frameCount, std::string* error) {
-  if (impl_->transformBound && g_pcmEffectReadsFail.load() &&
+  if ((impl_->transformBound || impl_->profile.stream.source.find("pcm-effect-failure-plain-") != std::string::npos) &&
+      g_pcmEffectReadsFail.load() &&
+      (impl_->profile.stream.source.find("-buffered") == std::string::npos || impl_->positionFrames >= 4096) &&
       impl_->profile.stream.source.find("pcm-effect-failure-") != std::string::npos) {
     if (error) *error = "synthetic PCM effect failure";
     ++g_pcmEffectFailureReads;
@@ -4975,7 +5269,9 @@ size_t FFmpegDecoder::readFrames(float* output, size_t frameCount, std::string* 
 }
 
 size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
-  if (impl_->transformBound && g_pcmEffectReadsFail.load() &&
+  if ((impl_->transformBound || impl_->profile.stream.source.find("pcm-effect-failure-plain-") != std::string::npos) &&
+      g_pcmEffectReadsFail.load() &&
+      (impl_->profile.stream.source.find("-buffered") == std::string::npos || impl_->positionFrames >= 4096) &&
       impl_->profile.stream.source.find("pcm-effect-failure-") != std::string::npos) {
     if (error) *error = "synthetic PCM effect failure";
     ++g_pcmEffectFailureReads;
@@ -5016,6 +5312,8 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
 }
 
 bool FFmpegDecoder::seek(double seconds, std::string* error) {
+  if (impl_->profile.stream.source == "preload-control-current.flac" && g_currentSeekGate)
+    g_currentSeekGate->enter(nullptr, nullptr);
   const double clamped = std::max(0.0, seconds);
   {
     std::lock_guard lock(g_decoderSeekMutex);
@@ -5059,10 +5357,21 @@ void FFmpegDecoder::pollStreamMetadata() {}
   } while (false)
 
 int main() {
+  if (std::getenv("TAE_RUNTIME_PRELOAD_START_ONLY")) {
+    RUN_RUNTIME_CASE(testSlowNextOpenDoesNotBlockCurrentOutputOrPlayAcknowledgement());
+    RUN_RUNTIME_CASE(testPendingPreloadIsCancelledBeforeStopQueueSeekOrFormatChange());
+    RUN_RUNTIME_CASE(testDspEditsPreservePendingPreloadAndUseLatestGraph());
+    RUN_RUNTIME_CASE(testAutoMixModeChangeRearmsPendingPreloadWithLatestEligibility());
+    RUN_RUNTIME_CASE(testQueueChangeDuringSeekCannotResurrectOldUpcoming());
+    RUN_RUNTIME_CASE(testSourceChangeDuringPreloadJoinRejectsTheOldSubmission());
+    return 0;
+  }
   if(std::getenv("TAE_RUNTIME_PCM_FAILURE_ONLY")) {
     RUN_RUNTIME_CASE(testLogicalStopPreservesRetirementAndDspUntilCallbackAcknowledgement());
     RUN_RUNTIME_CASE(testFiniteHighRateHttpStartsWithExistingRingPrefilled());
     RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce());
+    RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(false));
+    RUN_RUNTIME_CASE(testReadFailureDrainsAlreadyDecodedPcmWithoutPromotingNext());
     RUN_RUNTIME_CASE(testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted());
     RUN_RUNTIME_CASE(testQueueReloadRevokesWorkerPreloadWithoutReopeningCurrent());
     RUN_RUNTIME_CASE(testQueueReloadRemovingOrReplacingSameSourceWorkerStopsOldTransform());
@@ -5207,6 +5516,14 @@ int main() {
   RUN_RUNTIME_CASE(testDecodedTimelineOverridesRoundedQueueDurations());
   RUN_RUNTIME_CASE(testAutoNextPrefersPreloadedPromoteWithoutReopen());
   RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce());
+  RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(false));
+  RUN_RUNTIME_CASE(testReadFailureDrainsAlreadyDecodedPcmWithoutPromotingNext());
+  RUN_RUNTIME_CASE(testSlowNextOpenDoesNotBlockCurrentOutputOrPlayAcknowledgement());
+  RUN_RUNTIME_CASE(testPendingPreloadIsCancelledBeforeStopQueueSeekOrFormatChange());
+  RUN_RUNTIME_CASE(testDspEditsPreservePendingPreloadAndUseLatestGraph());
+  RUN_RUNTIME_CASE(testAutoMixModeChangeRearmsPendingPreloadWithLatestEligibility());
+  RUN_RUNTIME_CASE(testQueueChangeDuringSeekCannotResurrectOldUpcoming());
+  RUN_RUNTIME_CASE(testSourceChangeDuringPreloadJoinRejectsTheOldSubmission());
   RUN_RUNTIME_CASE(testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted());
   RUN_RUNTIME_CASE(testQueueReloadRevokesWorkerPreloadWithoutReopeningCurrent());
   RUN_RUNTIME_CASE(testQueueReloadRemovingOrReplacingSameSourceWorkerStopsOldTransform());

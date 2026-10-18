@@ -71,6 +71,7 @@ type AudioServiceRequest = {
 const MAX_VISUALIZATION_CACHE_KEYS = 8
 const DEFAULT_MAX_IN_FLIGHT_REQUESTS = 128
 const DEFAULT_TOPOLOGY_REQUEST_TIMEOUT_MS = 20_000
+const DEFAULT_NATIVE_COMPLETION_GRACE_MS = 20_000
 const AUDIO_SERVICE_BUSY_CODE = 'ERR_AUDIO_SERVICE_BUSY'
 const AUDIO_SERVICE_TIMEOUT_CODE = 'ERR_AUDIO_SERVICE_TIMEOUT'
 // Only this binding's request timers own timeout policy. An external error
@@ -87,10 +88,10 @@ const AUDIO_SERVICE_INVALID_MESSAGE = 'audio service returned an invalid or over
 // beyond the control deadline: FFmpeg open/probe on slow disks or network
 // sources, device stop/close joins and exclusive reopens, DSP graph
 // compilation (convolver IRs), ASIO driver enumeration, and the VST3 scanner
-// (which carries its own 8s native budget). Timing out here only fails the
-// individual request — the native side is internally bounded, so killing the
-// service mid-flight is the watchdog misfire that turns any legitimate slow
-// operation into a crash/restart loop.
+// (which carries its own 8s native budget). The caller's timeout does not cancel
+// synchronous native work. Keep that work attributed to its generation until
+// its response or a separate, bounded completion grace expires; otherwise a
+// collateral status timeout can kill a legitimate operation mid-flight.
 const SLOW_NATIVE_METHODS = new Set<string>([
   'Play',
   'Stop',
@@ -135,6 +136,7 @@ type PendingRequest = {
   resolve: (value: unknown) => void
   reject: (error: Error) => void
   timer: NodeJS.Timeout
+  callerSettled: boolean
 }
 
 type AudioServiceError = Error & {
@@ -163,6 +165,7 @@ export interface AudioEngineServiceBindingOptions {
   serviceEntry: string
   requestTimeoutMs?: number
   topologyRequestTimeoutMs?: number
+  nativeCompletionGraceMs?: number
   restartDelayMs?: number
   maxInFlightRequests?: number
   electron?: ElectronModule
@@ -174,6 +177,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   private pending = new Map<string, PendingRequest>()
   private requestTimeoutMs: number
   private topologyRequestTimeoutMs: number
+  private nativeCompletionGraceMs: number
   private restartDelayMs: number
   private maxInFlightRequests: number
   private stopped = false
@@ -217,6 +221,15 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
       this.requestTimeoutMs,
       options.topologyRequestTimeoutMs ?? DEFAULT_TOPOLOGY_REQUEST_TIMEOUT_MS
     )
+    this.nativeCompletionGraceMs =
+      options.nativeCompletionGraceMs ?? DEFAULT_NATIVE_COMPLETION_GRACE_MS
+    if (
+      !Number.isSafeInteger(this.nativeCompletionGraceMs) ||
+      this.nativeCompletionGraceMs <= 0 ||
+      this.nativeCompletionGraceMs > 0x7fffffff
+    ) {
+      throw new RangeError('Native completion grace must be a bounded positive integer')
+    }
     this.restartDelayMs = options.restartDelayMs ?? 500
     this.maxInFlightRequests = Math.max(
       1,
@@ -522,7 +535,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     this.rejectQueuedDspState(new Error('音频服务已停止'))
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer)
-      pending.reject(new Error('音频服务已停止'))
+      if (!pending.callerSettled) pending.reject(new Error('音频服务已停止'))
     }
     this.pending.clear()
     this.slowPendingCount = 0
@@ -730,6 +743,9 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     clearTimeout(pending.timer)
     this.pending.delete(response.requestId)
     if (pending.slow) this.slowPendingCount -= 1
+    // A late native completion releases its ownership and watchdog, but must
+    // not revive an already-rejected caller or refresh caches with stale data.
+    if (pending.callerSettled) return
     if (response.ok) {
       // Explicit reads after transport/preparation must refresh the same cache
       // that regular playback ticks consume, before the caller resumes.
@@ -1031,14 +1047,26 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         if (!pending || generation !== this.generation || this.child !== child) return
         const error = createAudioServiceTimeoutError(method)
         clearTimeout(pending.timer)
-        this.pending.delete(requestId)
-        if (pending.slow) this.slowPendingCount -= 1
+        pending.callerSettled = true
         pending.reject(error)
-        // Never kill on a slow-tier timeout: the native side is internally
-        // bounded. And while any slow-tier request is still in flight, the
-        // service's single JS thread may be legitimately busy — a fast-tier
-        // timeout here is collateral, not evidence of a wedged child.
-        if (pending.slow || this.slowPendingCount > 0) return
+        if (pending.slow) {
+          // The native call is still outstanding on the child's single JS
+          // thread. Retain its slot and slow ownership after rejecting its
+          // caller, with one grace that status polling cannot extend.
+          pending.timer = setTimeout(() => {
+            if (
+              this.pending.get(requestId) !== pending ||
+              generation !== this.generation ||
+              this.child !== child
+            )
+              return
+            this.restartUnresponsiveService(child, generation, error.message)
+          }, this.nativeCompletionGraceMs)
+          return
+        }
+        this.pending.delete(requestId)
+        // This remains collateral until all known slow native work completes.
+        if (this.slowPendingCount > 0) return
         this.restartUnresponsiveService(child, generation, error.message)
       }, this.requestTimeoutForMethod(method))
       this.pending.set(requestId, {
@@ -1049,7 +1077,8 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
           resolve(value)
         },
         reject,
-        timer
+        timer,
+        callerSettled: false
       })
       if (slow) this.slowPendingCount += 1
       try {
@@ -1087,7 +1116,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     this.rejectQueuedDspState(new Error(message))
     for (const [requestId, pending] of this.pending.entries()) {
       clearTimeout(pending.timer)
-      pending.reject(new Error(message))
+      if (!pending.callerSettled) pending.reject(new Error(message))
       this.pending.delete(requestId)
     }
   }

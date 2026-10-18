@@ -1,13 +1,19 @@
 import { createServer } from 'node:http'
 import { createHash, randomBytes } from 'node:crypto'
+import { performance } from 'node:perf_hooks'
 import { WindowsMediaStream } from './media-stream.mjs'
 
 const MAX_UINT64 = 0xffffffffffffffffn
 const RANGE_BLOCK_BYTES = 512 * 1024
 const RANGE_WINDOW = 4
+const MAX_AHEAD_BLOCKS = 16
 const PARALLEL_MIN_BYTES = BigInt(RANGE_BLOCK_BYTES * RANGE_WINDOW)
 const REDIRECTS = new Set([301, 302, 303, 307, 308])
 const REFRESH_CODES = new Set([401, 403, 410])
+const TRANSIENT_HTTP_CODES = new Set([408, 429, 500, 502, 503, 504])
+const TRANSIENT_NETWORK_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT',
+  'ENETUNREACH', 'EHOSTUNREACH', 'EAI_AGAIN', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'])
 const OWNED_HEADERS = new Set(['host', 'range', 'accept-encoding', 'content-length',
   'connection', 'transfer-encoding', 'proxy-authorization'])
 
@@ -22,6 +28,36 @@ function aborted() {
   const error = new Error('QQ 音乐音频请求已取消')
   error.name = 'AbortError'
   return error
+}
+
+// Only call at the fetch/read boundary. A resolver/auth error with the same code
+// is not transport evidence; messages and generic TypeError are never sufficient.
+function transientNetwork(error) {
+  try {
+    return TRANSIENT_NETWORK_CODES.has(error?.code) || TRANSIENT_NETWORK_CODES.has(error?.cause?.code)
+  } catch { return false }
+}
+
+function retryDelay(response) {
+  const value = response.headers.get('retry-after')
+  if (value === null) return 0
+  if (/^\d+$/.test(value)) {
+    const milliseconds = Number(value) * 1000
+    return Number.isSafeInteger(milliseconds) ? milliseconds : Infinity
+  }
+  // Accept IMF-fixdate only. Date.parse alone also accepts malformed numeric
+  // values such as -1/1.5 and normalizes impossible calendar dates.
+  const match = /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT$/.exec(value)
+  if (!match) return Infinity
+  const day = Number(match[2]), month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(match[3])
+  const year = Number(match[4]), hour = Number(match[5]), minute = Number(match[6]), second = Number(match[7])
+  if (year < 1601) return Infinity
+  const date = new Date(Date.UTC(year, month, day, hour, minute, second))
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day ||
+      date.getUTCHours() !== hour || date.getUTCMinutes() !== minute || date.getUTCSeconds() !== second ||
+      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getUTCDay()] !== match[1]) return Infinity
+  return Math.max(0, date.getTime() - Date.now())
 }
 
 function uint64(value) {
@@ -128,8 +164,8 @@ async function drain(response, signal) {
   })
 }
 
-// A permit covers one streaming/buffered block until consumption or discard,
-// including blocks shared by simultaneous probes/seeks on different leases.
+// Separate callers use the same abortable FIFO for transport jobs and retained
+// ciphertext. Always reserve memory before transport, never the reverse.
 function rangeSlots(limit) {
   let available = limit
   const queue = []
@@ -178,7 +214,8 @@ export class WindowsAudioProxy {
   #leases = new Map()
   #opening = new Set()
   #disposed = new WeakSet()
-  #slot = rangeSlots(8)
+  #transportSlot = rangeSlots(8)
+  #memorySlot = rangeSlots(32)
 
   constructor({ allowedOrigins, fetch = globalThis.fetch, now = Date.now,
     leaseTtlMs = 600000, requestTimeoutMs = 15000 } = {}) {
@@ -328,7 +365,7 @@ export class WindowsAudioProxy {
     return this.#listening
   }
 
-  async open({ resolve, signal } = {}) {
+  async open({ resolve, signal, durationSeconds } = {}) {
     if (this.#closing || typeof resolve !== 'function') throw failure('CLOSED')
     const parent = new AbortController()
     const cancel = () => parent.abort()
@@ -342,6 +379,16 @@ export class WindowsAudioProxy {
       source = await this.#resolve(lease, false, child.controller)
       lease.identity = this.#identity(source)
       lease.length = source.length
+      // TrackInfo duration is a scheduling hint only. Actual verified source
+      // length owns the byte estimate; this does not establish decoded duration.
+      let ahead = BigInt(RANGE_WINDOW)
+      if (Number.isSafeInteger(durationSeconds) && durationSeconds > 0) {
+        const duration = BigInt(durationSeconds), block = BigInt(RANGE_BLOCK_BYTES)
+        const target = (source.length * 20n + duration - 1n) / duration
+        const rounded = (target + block - 1n) / block
+        ahead = rounded < ahead ? ahead : rounded
+      }
+      lease.aheadBlocks = Number(ahead > BigInt(MAX_AHEAD_BLOCKS) ? BigInt(MAX_AHEAD_BLOCKS) : ahead)
       lease.transport = source.transport
       if (source.transport.expiresAt <= this.#now()) await wait(this.#refresh(lease), child.controller.signal)
       await this.#dispose(source)
@@ -437,15 +484,21 @@ export class WindowsAudioProxy {
     }
   }
 
-  async #upstream(transport, selected, controller) {
+  async #upstream(transport, selected, controller, recovery) {
     const { signal } = controller
     let url = transport.url
     let headers = { ...transport.headers, Range: `bytes=${selected.start}-${selected.end}`,
       'Accept-Encoding': 'identity' }
     for (let redirects = 0; ; redirects += 1) {
-      const response = await timedWait(this.#fetch(this.#url(url), {
-        method: 'GET', redirect: 'manual', headers, signal
-      }), controller, this.#timeout, cancelBody)
+      let response
+      try {
+        response = await timedWait(this.#fetch(this.#url(url), {
+          method: 'GET', redirect: 'manual', headers, signal
+        }), controller, this.#timeout, cancelBody)
+      } catch (error) {
+        if (recovery && transientNetwork(error)) recovery.network = true
+        throw error
+      }
       if (!REDIRECTS.has(response.status)) return response
       try {
         if (redirects >= 3 || !response.headers.get('location')) throw failure('REDIRECT')
@@ -471,16 +524,17 @@ export class WindowsAudioProxy {
     return { transport, revision: lease.transportRevision }
   }
 
-  async #fetchRange(lease, source, selected, controller) {
+  async #fetchRange(lease, source, selected, controller, recovery) {
     let { transport, revision } = await this.#transport(lease, source, controller)
-    let upstream = await this.#upstream(transport, selected, controller)
+    let upstream = await this.#upstream(transport, selected, controller, recovery)
     if (REFRESH_CODES.has(upstream.status)) {
+      if (recovery) recovery.auth = true
       cancelBody(upstream)
       // A delayed rejection from an older wave uses the identity-checked
       // transport already published by its sibling instead of refreshing again.
       transport = lease.transportRevision !== revision && lease.transport?.expiresAt > this.#now()
         ? lease.transport : await wait(this.#refresh(lease), controller.signal)
-      upstream = await this.#upstream(transport, selected, controller)
+      upstream = await this.#upstream(transport, selected, controller, recovery)
     }
     return upstream
   }
@@ -520,53 +574,97 @@ export class WindowsAudioProxy {
   #bufferBlock(lease, selected, controller) {
     const block = { selected, release: null, bytes: null }
     block.done = (async () => {
-      let source, upstream, reader
-      const child = childController(controller.signal)
+      block.release = await this.#memorySlot(controller.signal)
+      let releaseTransport
       try {
-        block.release = await this.#slot(child.controller.signal)
-        source = await this.#resolve(lease, false, child.controller)
-        upstream = await this.#fetchRange(lease, source, selected, child.controller)
-        this.#position(upstream, source, selected, false)
-        // Each subrequest verifies the session and identity, then immediately
-        // releases its extra decoder. The response owns the ordered transform.
-        await this.#dispose(source)
-        source = null
-        reader = upstream.body.getReader()
-        block.bytes = Buffer.alloc(Number(selected.end - selected.start + 1n))
-        let filled = 0
-        while (filled < block.bytes.length) {
-          const part = await timedWait(reader.read(), child.controller, this.#timeout)
-          if (part.done || !(part.value instanceof Uint8Array)) throw failure('TRUNCATED')
-          if (part.value.length > block.bytes.length - filled) throw failure('UPSTREAM_LENGTH')
-          block.bytes.set(part.value, filled)
-          filled += part.value.length
+        releaseTransport = await this.#transportSlot(controller.signal)
+        // Unpublished ciphertext can be discarded and requested once more. Keep
+        // the permit through both attempts. Healthy first attempts retain existing
+        // per-read timeouts; recovery gets only what remains of this same budget.
+        const deadline = performance.now() + this.#timeout
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          let source, upstream, reader, timer, retry = false, delay = 0
+          const recovery = { network: false, auth: false }
+          const child = childController(controller.signal)
+          try {
+            if (attempt > 0) {
+              const remaining = deadline - performance.now()
+              if (remaining <= 0) throw failure('UPSTREAM_TIMEOUT')
+              timer = setTimeout(() => child.controller.abort(), remaining)
+              timer.unref?.()
+            }
+            source = await this.#resolve(lease, false, child.controller)
+            upstream = await this.#fetchRange(lease, source, selected, child.controller, recovery)
+            if (TRANSIENT_HTTP_CODES.has(upstream.status)) {
+              recovery.http = true
+              delay = retryDelay(upstream)
+              throw failure('UPSTREAM_STATUS')
+            }
+            this.#position(upstream, source, selected, false)
+            // Each attempt independently verifies session/content identity and
+            // releases its extra decoder; the response owns the ordered transform.
+            await this.#dispose(source)
+            source = null
+            reader = upstream.body.getReader()
+            const read = async () => {
+              try { return await timedWait(reader.read(), child.controller, this.#timeout) }
+              catch (error) { recovery.network = transientNetwork(error); throw error }
+            }
+            block.bytes = Buffer.alloc(Number(selected.end - selected.start + 1n))
+            let filled = 0
+            while (filled < block.bytes.length) {
+              const part = await read()
+              if (part.done || !(part.value instanceof Uint8Array)) throw failure('TRUNCATED')
+              if (part.value.length > block.bytes.length - filled) throw failure('UPSTREAM_LENGTH')
+              block.bytes.set(part.value, filled)
+              filled += part.value.length
+            }
+            if (!(await read()).done) throw failure('UPSTREAM_LENGTH')
+            return
+          } catch (error) {
+            retry = attempt === 0 && !controller.signal.aborted && !child.controller.signal.aborted &&
+              !recovery.auth && (recovery.network || recovery.http) &&
+              delay < deadline - performance.now()
+            if (!retry) throw error
+          } finally {
+            clearTimeout(timer)
+            child.controller.abort()
+            child.cleanup()
+            await this.#dispose(source)
+            if (reader) { try { Promise.resolve(reader.cancel()).catch(() => {}) } catch {} }
+            else cancelBody(upstream)
+            if (retry) { block.bytes?.fill(0); block.bytes = null }
+          }
+          if (delay > 0) {
+            let delayTimer
+            try { await wait(new Promise(resolve => { delayTimer = setTimeout(resolve, delay) }), controller.signal) }
+            finally { clearTimeout(delayTimer) }
+          }
         }
-        await this.#endOfRange(reader, child.controller)
-      } finally {
-        child.controller.abort()
-        child.cleanup()
-        await this.#dispose(source)
-        if (reader) { try { Promise.resolve(reader.cancel()).catch(() => {}) } catch {} }
-        else cancelBody(upstream)
-      }
+      } finally { releaseTransport?.() }
     })().catch((error) => { controller.abort(); throw error })
     block.done.catch(() => {}) // A later block may fail before ordered consumption.
     return block
   }
 
-  async #parallel(response, lease, source, selected, controller, reader, cipher, releaseFirst) {
+  async #parallel(response, lease, source, selected, controller, reader, cipher, releaseFirstMemory, releaseFirstTransport) {
     const blocks = new Set()
     const queue = []
     const firstEnd = selected.start + BigInt(RANGE_BLOCK_BYTES) - 1n
     let next = firstEnd + 1n
     let complete = false
-    const schedule = () => {
-      if (next > selected.end) return
-      const end = next + BigInt(RANGE_BLOCK_BYTES) - 1n
-      const block = this.#bufferBlock(lease, { start: next, end: end < selected.end ? end : selected.end }, controller)
-      next = block.selected.end + 1n
-      blocks.add(block)
-      queue.push(block)
+    let firstPending = true, inFlight = 1
+    const pump = () => {
+      while (!controller.signal.aborted && next <= selected.end && inFlight < RANGE_WINDOW &&
+        blocks.size + (firstPending ? 1 : 0) < lease.aheadBlocks) {
+        const end = next + BigInt(RANGE_BLOCK_BYTES) - 1n
+        const block = this.#bufferBlock(lease, { start: next, end: end < selected.end ? end : selected.end }, controller)
+        next = block.selected.end + 1n
+        blocks.add(block)
+        queue.push(block)
+        inFlight += 1
+        block.done.then(() => { inFlight -= 1; pump() }, () => { inFlight -= 1 })
+      }
     }
     const discard = (block) => {
       block.bytes?.fill(0)
@@ -575,7 +673,7 @@ export class WindowsAudioProxy {
       blocks.delete(block)
     }
     try {
-      for (let index = 1; index < RANGE_WINDOW; index += 1) schedule()
+      pump()
       let position = selected.start
       while (position <= firstEnd) {
         const part = await timedWait(reader.read(), controller, this.#timeout)
@@ -585,21 +683,25 @@ export class WindowsAudioProxy {
         position += BigInt(part.value.length)
       }
       await this.#endOfRange(reader, controller)
-      releaseFirst()
-      schedule()
+      firstPending = false
+      inFlight -= 1
+      releaseFirstTransport()
+      releaseFirstMemory()
+      pump()
       while (queue.length) {
         const block = queue.shift()
         await block.done
         await this.#write(response, source, cipher, block.bytes, block.selected.start, controller.signal)
         discard(block)
-        schedule()
+        pump()
       }
       complete = true
     } finally {
       if (!complete) controller.abort()
       await Promise.allSettled([...blocks].map((block) => block.done))
       for (const block of blocks) discard(block)
-      releaseFirst()
+      releaseFirstTransport()
+      releaseFirstMemory()
     }
   }
 
@@ -609,11 +711,14 @@ export class WindowsAudioProxy {
     let upstream
     let reader
     let cipher
-    let releaseFirst
+    let releaseFirstMemory, releaseFirstTransport
     try {
       const count = selected.end - selected.start + 1n
       const parallel = request.method === 'GET' && count >= PARALLEL_MIN_BYTES
-      if (parallel) releaseFirst = await this.#slot(signal)
+      if (parallel) {
+        releaseFirstMemory = await this.#memorySlot(signal)
+        releaseFirstTransport = await this.#transportSlot(signal)
+      }
       source = await this.#resolve(lease, false, controller)
       if (request.method === 'HEAD' || source.length === 0n) {
         await this.#transport(lease, source, controller)
@@ -630,7 +735,7 @@ export class WindowsAudioProxy {
       reader = upstream.body.getReader()
       responseHeaders(response, source, selected)
       if (parallel && upstream.status === 206) {
-        await this.#parallel(response, lease, source, selected, controller, reader, cipher, releaseFirst)
+        await this.#parallel(response, lease, source, selected, controller, reader, cipher, releaseFirstMemory, releaseFirstTransport)
         response.end(); return
       }
       // A server ignoring the first bounded Range supplies the original serial
@@ -659,7 +764,8 @@ export class WindowsAudioProxy {
         // An unresponsive cancel promise must not retain the request or slot.
         if (reader) { try { Promise.resolve(reader.cancel()).catch(() => {}) } catch {} }
         else cancelBody(upstream)
-        releaseFirst?.()
+        releaseFirstTransport?.()
+        releaseFirstMemory?.()
       }
     }
   }
