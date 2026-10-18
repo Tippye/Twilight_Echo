@@ -1,16 +1,13 @@
 {
   "schema": 1,
   "archive_date": "2026-10-18",
-  "status": "qq7 real GUI failed; qq8 renderer/proxy/native seek repairs source-reviewed with scoped synthetic gates, new native9pass; final source/package/GUI/cold/release pending, not deliverable",
+  "status": "Public branch selected from existing Task13 baseline; provider rc8 fixed and80 mirrors indexed;39 historical development receipts retained, fresh clean package/GUI/cold/release acceptance pending, not deliverable",
   "source_repository": "Twilight-Echo-plugins",
-  "source_commit": "5eb33115090fd5cb4bb6035eab3e7d99ae3afa05",
-  "implementation_slice": "28c23565ee7345cdb7dbd4e3a090f80a9f51fd42",
-  "integrated_host_commit": "ac573ac083b244d6d253ab1ae93c2b9f38fad33c",
-  "user_dsp_parent": "c99cb5bdf34ba93c8b79e3709881b84c56b05849",
-  "host_version": "1.3.1-qq.7",
-  "provider_version": "0.4.0-rc.7",
-  "normal_package_sha256": "b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2",
-  "normalization": "source_sha256/sources.raw_sha256 preserve original input bytes. sha256 describes archived working bytes and git_lf_sha256 describes LF text. Historical git_blob_sha1 entries were checked through read-only Git filters; updated README and new qq8 summary use independently computed canonical LF content blobs, pending final repository-filter verification. Binary package inputs are hashed raw and never line-normalized.",
+  "source_commit": "8514b96b4af3c9f88ce93718bc06d8c18496f698",
+  "host_version": "1.3.1-qq.8",
+  "provider_version": "0.4.0-rc.8",
+  "normal_package_sha256": "a3e59a6d06f024ccbb9f4998b72cac529f4d74da4437bec741dd284f2e418016",
+  "normalization": "Original sources.raw_sha256/source_sha256 remain raw bytes; sha256 records actual archive/mirror working bytes, git_lf_sha256 records explicit LF text. Historical objects were checked through read-only Git filters; updated README and rc8 mirror/new summary blobs are independently computed canonical UTF-8/LF content objects pending final repository-filter confirmation. All80 mirror entries are verified text. Binary TEP is hashed raw and never normalized.",
   "privacy": "Curated numeric/public-source facts; no audio/cache contents, profiles, accounts, credentials, actual URLs, QQ DLLs/models or build binaries. Absolute local paths reduced to basenames, with redaction JSON pointers recorded.",
   "research_files": [
     {
@@ -741,18 +738,18 @@
     },
     {
       "path": "docs/qqmusic-research/task14/README.md",
-      "bytes": 10931,
-      "sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
-      "git_lf_sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
-      "git_blob_sha1": "665d2d23535e7806ddeb6de9d787139163de61fe",
+      "bytes": 11521,
+      "sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
+      "git_lf_sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
+      "git_blob_sha1": "27309ca99f5ac9e49f699241ab3f0ddaebafc040",
       "kind": "archive-entrypoint",
       "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-archive-readme-draft.md",
-      "source_sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
+      "source_sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
       "sources": [
         {
           "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-archive-readme-draft.md",
-          "raw_sha256": "48470c22e4521f31e1697322f1d9c472bc99785ed133a130733ab25b024b70d0",
-          "bytes": 10931,
+          "raw_sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
+          "bytes": 11521,
           "source_kind": "generated UTF-8 text"
         }
       ],
@@ -1069,12 +1066,12 @@
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
-      "bytes": 33514,
-      "sha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
-      "git_lf_sha256": "159e1fa945285be3432d7b4c1c5c43737e3aaaed19e5cef3fc20fdc32cd145ff",
-      "git_blob_sha1": "c9828905e259ca9961084e1249196f1616721500",
+      "bytes": 33309,
+      "sha256": "cc5319eeed8bccab1ff045d6c8c56566d75b134b5e2b645ce4ceed95b66d08aa",
+      "git_lf_sha256": "cc5319eeed8bccab1ff045d6c8c56566d75b134b5e2b645ce4ceed95b66d08aa",
+      "git_blob_sha1": "924f631dae780d8d55b1a0a1fa21a88dd8750d43",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
-      "source_sha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+      "source_sha256": "ea44755e3267f3f6cfdfb3c1014b1ed7004011c0d6294510700cb738bfdf7695",
       "kind": "text"
     },
     {
@@ -1409,22 +1406,22 @@
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/plugin.json",
-      "bytes": 1900,
-      "sha256": "3296578caca4020dfc0ef1d18e1c7565c46c72c010f1235256d39145eedb74d5",
-      "git_lf_sha256": "a97c4aef246863bb2557ad90c526c062f5ae1f35d4c8576f56eb286ed24d29ad",
-      "git_blob_sha1": "372b4acaed4320096c8c197cf91c186ad80ae6f8",
+      "bytes": 1850,
+      "sha256": "afd6655f58f7b4206e3261ce7acf5d61fba2dd6489e12e53e7fdeb61eed5f48f",
+      "git_lf_sha256": "afd6655f58f7b4206e3261ce7acf5d61fba2dd6489e12e53e7fdeb61eed5f48f",
+      "git_blob_sha1": "8c8155f4258cd77d685e9330b6ac5cfd47f60860",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/plugin.json",
-      "source_sha256": "3296578caca4020dfc0ef1d18e1c7565c46c72c010f1235256d39145eedb74d5",
+      "source_sha256": "f8fb85f0d554d704c9905a98703cb22aad3a227f4849757afccdf981481587c2",
       "kind": "text"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/README.md",
-      "bytes": 7180,
-      "sha256": "5b69d29e630e58041dd0e3a25d1435e6ff9fcde4590feb4840600a2e952f30ff",
-      "git_lf_sha256": "31c95842568795093cfac5d9b95892b42b363a3c403100fa20d6f5e0ea202b26",
-      "git_blob_sha1": "8f50fdf4dd025ab155d6c94dd64a448faa1d74ab",
+      "bytes": 7592,
+      "sha256": "2b9a46edfc0e1da58475d8569692afe92d39aa2b3d1fe9705aa19a79afd41612",
+      "git_lf_sha256": "2b9a46edfc0e1da58475d8569692afe92d39aa2b3d1fe9705aa19a79afd41612",
+      "git_blob_sha1": "ac950ed51c0792d2e3aa89f1aae022fa3f776589",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/README.md",
-      "source_sha256": "5b69d29e630e58041dd0e3a25d1435e6ff9fcde4590feb4840600a2e952f30ff",
+      "source_sha256": "28597258451be090fc7ae506f424034b1b94da1a22cad71b47a888a15a2ce81e",
       "kind": "text"
     },
     {
@@ -1519,12 +1516,12 @@
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
-      "bytes": 68518,
-      "sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
-      "git_lf_sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
-      "git_blob_sha1": "85c2b0f3708e9bed5b13ae37f639636fe08a03e0",
+      "bytes": 81450,
+      "sha256": "4a4a7f43de195fc27211fffe422a3812558fe21d202229c750d731f07d5b0c5d",
+      "git_lf_sha256": "4a4a7f43de195fc27211fffe422a3812558fe21d202229c750d731f07d5b0c5d",
+      "git_blob_sha1": "d799549376b24a361657696f59e753ddb28d2e13",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
-      "source_sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
+      "source_sha256": "4a4a7f43de195fc27211fffe422a3812558fe21d202229c750d731f07d5b0c5d",
       "kind": "text"
     },
     {
@@ -1829,8 +1826,8 @@
     }
   ],
   "pending": [
-    "Final product/provider commit and exact package freeze",
-    "New installer payload/native/source audit",
+    "Final canonical clean product build/source/package freeze",
+    "Fresh clean native/production gates and installer payload/native/source audit",
     "Real quality switching at retained position with actual source formats",
     "Single-track queue natural EOF then seek/resume",
     "Normal no-debug cold launch/playback and final release/skill/archive freeze"
@@ -1844,9 +1841,10 @@
     "independent_process_facts": "task14/qq-task14-standalone-process-check.json",
     "comparison": "Same recording/FLAC96kHz24-bit88129955bytes; both100secondruns stable, baseline stutter not reproduced; start6.836to7.127s gives no faster-startup evidence",
     "baseline_composition": "Task14 web/service layer + Task13 native-v5/provider rc.6",
-    "candidate_composition": "Integrated Task14 native + provider rc.7; predates final acknowledged-seek GUI acceptance"
+    "candidate_composition": "Integrated Task14 native + provider rc.7; predates final acknowledged-seek GUI acceptance",
+    "historical_development_only": true
   },
-  "product_source_commit": "05186af4bb6a8bbe464d4d77cc7eccc187e1f1d0",
+  "product_source_commit": "e689af4489c5ecde0f004f36377575514872d12f",
   "artifact_verification": {
     "receipt": "task14/qq-task14-final-artifact-independent-audit.json",
     "installer_bytes": 153196613,
@@ -1884,32 +1882,134 @@
     "error": "native seek position was not confirmed",
     "actual_sample_rate_verified": false,
     "candidate_installer_sha256": "81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088",
-    "status": "Historical qq6FAIL retained; native/service repairs reviewed, qq7 actual GUI revalidation pending",
+    "status": "Historical qq6FAIL retained; qq7 also failed in retained-position quality switching; clean qq8 real revalidation pending",
     "repair_source_commit": "05186af4bb6a8bbe464d4d77cc7eccc187e1f1d0"
   },
   "historical_candidate_product_source_commit": "3bacff6e275c2333e1931373f48088e47e1fc8c3",
   "historical_candidate_host_version": "1.3.1-qq.6",
-  "post_failure_fix_source_pins": {
-    "audio-engine/core/TwilightAudioEngine.cpp": "656a9ccb3e2981fd567e773e18e23ab043fab23c5da785b1734c60371d4d6d95",
-    "audio-engine/core/TwilightAudioEngine.h": "76340ec9aeb4125c4f8f0dd9a71edbdb2fad606b163d26409bdf76cc6c106e14",
-    "audio-engine/core/AudioPipeline.cpp": "e4948b544af19fbe334d271c74be3059ae43529bc521be4b3532acdb2e65fe93",
-    "audio-engine/core/AudioPipeline.h": "2bac1c12c1f499d751137271d7bc2b0aa2e6d9196f1dbe9cf6bb8246521b01a8",
-    "audio-engine/tests/runtime_queue_reroute_tests.cpp": "50e96362c5e0a64672119ef3cce3e2c4988710f9b22f3e1cd8ff8645693cc0d9",
-    "src/main/audioEngineServiceClient.ts": "a6b6ed142ea612310bb842c1bac8c80a3029c0e69a75f7b201c8bb39c80e59c3",
-    "src/main/audioEngineServiceClient.test.ts": "bebd035e7a24f55a4c2baacd2cb40d18740bf7305f79b00a9efbd08376f69be2"
-  },
   "target_artifact_verification": {
     "host": "1.3.1-qq.8",
-    "status": "pending"
+    "product_code_baseline_commit": "e689af4489c5ecde0f004f36377575514872d12f",
+    "provider_source_commit": "8514b96b4af3c9f88ce93718bc06d8c18496f698",
+    "status": "pending fresh clean package and actual GUI/cold acceptance"
   },
   "target_host_version": "1.3.1-qq.8",
   "target_provider_version": "0.4.0-rc.8",
-  "product_source_role": "Previously tested qq7 candidate, not the un-frozen qq8 product source",
+  "product_source_role": "Clean public product code baseline before this documentation freeze; final canonical build commit and acceptance reserved for fixture40",
   "known_qq7_gui_failure": {
     "source": "qq-task14-qq7-ui-observations.json",
     "status": "failed-not-deliverable",
     "summary_archive": "docs/qqmusic-research/task14/qq-task14-qq8-pre-release-repairs-summary.json",
     "actual_source96k24_verified": true,
     "retained_position_quality_switch_timeout_ms": 5385
-  }
+  },
+  "historical_development_provenance": {
+    "source_commit": "5eb33115090fd5cb4bb6035eab3e7d99ae3afa05",
+    "implementation_slice": "28c23565ee7345cdb7dbd4e3a090f80a9f51fd42",
+    "integrated_host_commit": "ac573ac083b244d6d253ab1ae93c2b9f38fad33c",
+    "user_dsp_parent": "c99cb5bdf34ba93c8b79e3709881b84c56b05849",
+    "host_version": "1.3.1-qq.7",
+    "provider_version": "0.4.0-rc.7",
+    "normal_package_sha256": "b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2",
+    "product_source_commit": "05186af4bb6a8bbe464d4d77cc7eccc187e1f1d0",
+    "post_failure_fix_source_pins": {
+      "audio-engine/core/TwilightAudioEngine.cpp": "656a9ccb3e2981fd567e773e18e23ab043fab23c5da785b1734c60371d4d6d95",
+      "audio-engine/core/TwilightAudioEngine.h": "76340ec9aeb4125c4f8f0dd9a71edbdb2fad606b163d26409bdf76cc6c106e14",
+      "audio-engine/core/AudioPipeline.cpp": "e4948b544af19fbe334d271c74be3059ae43529bc521be4b3532acdb2e65fe93",
+      "audio-engine/core/AudioPipeline.h": "2bac1c12c1f499d751137271d7bc2b0aa2e6d9196f1dbe9cf6bb8246521b01a8",
+      "audio-engine/tests/runtime_queue_reroute_tests.cpp": "50e96362c5e0a64672119ef3cce3e2c4988710f9b22f3e1cd8ff8645693cc0d9",
+      "src/main/audioEngineServiceClient.ts": "a6b6ed142ea612310bb842c1bac8c80a3029c0e69a75f7b201c8bb39c80e59c3",
+      "src/main/audioEngineServiceClient.test.ts": "bebd035e7a24f55a4c2baacd2cb40d18740bf7305f79b00a9efbd08376f69be2"
+    },
+    "role": "Historical development candidate provenance only; not the public clean branch ancestry or acceptance",
+    "manifest_before_clean_sha256": "ee5144ab47b3c6d5e8d6e122daa7244560f0f59929843225b81d751615289f02",
+    "preserved_document_snapshot_commit": "e689af4489c5ecde0f004f36377575514872d12f",
+    "historical_source_gate_provenance": [
+      {
+        "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-final-audio-manager-tests.txt",
+        "raw_sha256": "e54f58c77aaaa195aa4a2c6793113d8b77f3d3b46a5e293efa00b26936284ac6",
+        "bytes": 140160,
+        "scope": "Core test:audio-manager506pass,0fail,0skip; producer exit0, independent tail readback",
+        "raw_log_archived": false
+      },
+      {
+        "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-private-final-build.txt",
+        "raw_sha256": "2d4caf21376265aee344fd7bc5b3fe12a82d3c9152fade20f90ac78470b5ef21",
+        "bytes": 20422,
+        "scope": "Full production typecheck/build, renderer budget630files; producer exit0, independent tail readback",
+        "raw_log_archived": false
+      }
+    ],
+    "changed_provider_mirror_entries_from_5eb": [
+      {
+        "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+        "historical_5eb_entry": {
+          "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+          "bytes": 33514,
+          "sha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+          "git_lf_sha256": "159e1fa945285be3432d7b4c1c5c43737e3aaaed19e5cef3fc20fdc32cd145ff",
+          "git_blob_sha1": "c9828905e259ca9961084e1249196f1616721500",
+          "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+          "source_sha256": "512cdc43cd52832b83137636bf76d6da3d727d12458556eb4fcbccd21f2456ad",
+          "kind": "text"
+        }
+      },
+      {
+        "path": "integrations/qqmusic/plugins/qqmusic-provider/plugin.json",
+        "historical_5eb_entry": {
+          "path": "integrations/qqmusic/plugins/qqmusic-provider/plugin.json",
+          "bytes": 1900,
+          "sha256": "3296578caca4020dfc0ef1d18e1c7565c46c72c010f1235256d39145eedb74d5",
+          "git_lf_sha256": "a97c4aef246863bb2557ad90c526c062f5ae1f35d4c8576f56eb286ed24d29ad",
+          "git_blob_sha1": "372b4acaed4320096c8c197cf91c186ad80ae6f8",
+          "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/plugin.json",
+          "source_sha256": "3296578caca4020dfc0ef1d18e1c7565c46c72c010f1235256d39145eedb74d5",
+          "kind": "text"
+        }
+      },
+      {
+        "path": "integrations/qqmusic/plugins/qqmusic-provider/README.md",
+        "historical_5eb_entry": {
+          "path": "integrations/qqmusic/plugins/qqmusic-provider/README.md",
+          "bytes": 7180,
+          "sha256": "5b69d29e630e58041dd0e3a25d1435e6ff9fcde4590feb4840600a2e952f30ff",
+          "git_lf_sha256": "31c95842568795093cfac5d9b95892b42b363a3c403100fa20d6f5e0ea202b26",
+          "git_blob_sha1": "8f50fdf4dd025ab155d6c94dd64a448faa1d74ab",
+          "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/README.md",
+          "source_sha256": "5b69d29e630e58041dd0e3a25d1435e6ff9fcde4590feb4840600a2e952f30ff",
+          "kind": "text"
+        }
+      },
+      {
+        "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+        "historical_5eb_entry": {
+          "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+          "bytes": 68518,
+          "sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
+          "git_lf_sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
+          "git_blob_sha1": "85c2b0f3708e9bed5b13ae37f639636fe08a03e0",
+          "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+          "source_sha256": "0a8d2d876b29a71bf5b6fb0d6a48032b80474ec3f41ac2ba0e1f9503649fb2b0",
+          "kind": "text"
+        }
+      }
+    ]
+  },
+  "public_source_boundary": {
+    "branch": "codex/qqmusic-streaming-fixes",
+    "product_code_baseline_commit": "e689af4489c5ecde0f004f36377575514872d12f",
+    "baseline": "Existing Task13 bd3 baseline; original QQ component adapter retained",
+    "excluded_scope": "Other-conversation independent-effects implementation, documents and tools; c99/1d35 content excluded by coordinator cherry-pick",
+    "evidence_boundary": "Branch construction reported by coordinator; no Git operations or ancestry verification by documentation owner",
+    "historical_receipts_role": "Existing39 archive entries retain their actual development source/pins; they do not establish this clean branch build, artifact or GUI acceptance"
+  },
+  "provider_mirror_index_verification": {
+    "provider_source_commit": "8514b96b4af3c9f88ce93718bc06d8c18496f698",
+    "files": 80,
+    "working_raw_and_explicit_lf_readbacks": true,
+    "changed_entries_from_prior_rc7": 4,
+    "git_content_blob_calculation": "Independently computed from canonical LF bytes; final repository-filter confirmation pending coordinator freeze",
+    "binary_package_normalized": false
+  },
+  "source_gate_provenance_role": "Historical development gates only; clean branch gates must be bound in final fixture40"
 }

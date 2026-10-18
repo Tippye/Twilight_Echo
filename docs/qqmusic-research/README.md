@@ -4,7 +4,7 @@
 
 ## 阅读入口
 
-- [Task14 取流、缓存、预加载与超时](task14/README.md)：原版已知媒体缓存整体冷测、有限重试、有界预读、native 故障与集成、混合基线与候选百秒同曲对照、ACK屏障及历史产物审计；[独立清单](task14-manifest.json)记录来源和摘要。qq.7实际96k24已见但保进度切流失败，后续renderer时钟、代理握手与native seek预算修复已独审，目标qq.8；新产物、真实GUI/单首EOF、正常冷启动和发布冻结仍待补齐。
+- [Task14 取流、缓存、预加载与超时](task14/README.md)：39项历史开发证据保留已知媒体缓存冷测、有限重试/预读、百秒混合对照及旧GUI失败，不代表新公共分支验收；[清单](task14-manifest.json)分开历史出处与当前rc.8来源。公共分支产品基准为 `e689af4489c5ecde0f004f36377575514872d12f`，目标qq.8/provider rc.8；最后一槽留新包/真实GUI/单首EOF/正常冷启动与发布冻结。
 - [Task13 高音质、收藏与本地音效](task13/README.md)：2026-10-18 的实际播放、原生处理与发布验收；[独立清单](task13-manifest.json) 固定本轮源码镜像和证据摘要。
 - [能力、证据与限制](records/aegis/work/2026-10-14-qqmusic-adaptation/90-evidence.md)：登录、请求签名、数据映射、媒体变换、实际播放与音质验证。
 - [实施计划](records/aegis/plans/2026-10-14-qqmusic-windows-adaptation.md)。

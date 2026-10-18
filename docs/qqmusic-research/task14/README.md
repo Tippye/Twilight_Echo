@@ -1,12 +1,14 @@
 # Task14：取流、缓存、预加载与超时
 
-本归档固定本轮调查和实现证据，**目标宿主已推进到 `1.3.1-qq.8`，最终源码/安装包与真实 GUI/冷启动仍待冻结，尚不可交付**。qq.7 已实际观察FLAC96kHz/24-bit，但保进度切音质仍失败；后续 renderer时钟、代理握手及native seek预算三项修复已有源码/合成审查。qq.7 当时配套 provider `0.4.0-rc.7`，来源提交 `5eb33115090fd5cb4bb6035eab3e7d99ae3afa05`，插件 SHA-256 为 `b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2`。旧 `qq.6` 安装包153,196,613 bytes，SHA-256 为 `81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088`；旧产物审计保留为历史，不能作为新版本验收。
+本归档保留本轮调查及历史开发候选证据。**目标宿主为 `1.3.1-qq.8`，当前39项记录不是新公共分支的产物/实播验收，最终一槽留给新包、GUI、冷启动和发布冻结，尚不可交付**。qq.7 已实际观察FLAC96kHz/24-bit，但保进度切音质仍失败；后续 renderer时钟、代理握手及native seek预算三项修复已有历史源码/合成审查。qq.7 当时配套 provider `0.4.0-rc.7`，来源提交 `5eb33115090fd5cb4bb6035eab3e7d99ae3afa05`，插件 SHA-256 为 `b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2`。旧 `qq.6` 安装包153,196,613 bytes，SHA-256 为 `81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088`；旧产物审计继续保留其历史角色。
 
-已审计候选产品源码为 `3bacff6e275c2333e1931373f48088e47e1fc8c3`。Task14 slice `28c23565ee7345cdb7dbd4e3a090f80a9f51fd42` 与用户 DSP 基线 `c99cb5bdf34ba93c8b79e3709881b84c56b05849` 集成后为 `ac573ac083b244d6d253ab1ae93c2b9f38fad33c`，之后补控制层 ACK 屏障。十二项 slice pins、集成 pins 和控制层审查 pins 分别保留；旧冻结审查不能冒充后来的修复或产物结果。完整来源、归档字节摘要和 Git 文本对象见[Task14 清单](../task14-manifest.json)。
+当前公共分支 `codex/qqmusic-streaming-fixes` 从既有Task13基线选择本任务修改，文档冻结前产品代码基准为 `e689af4489c5ecde0f004f36377575514872d12f`；保留原有QQ组件适配，不含另一会话的独立音效实现。当前provider为 `0.4.0-rc.8`、来源 `8514b96b4af3c9f88ce93718bc06d8c18496f698`，TEP SHA-256为 `a3e59a6d06f024ccbb9f4998b72cac529f4d74da4437bec741dd284f2e418016`，80项镜像已按实际raw/LF文本更新清单；最终canonical构建提交和安装包由最后收据绑定。
 
-历史 `qq.7` 产品源码为 `05186af4bb6a8bbe464d4d77cc7eccc187e1f1d0`，其原生 EOF/Service Pause修复见[两项修复合并证据](qq-task14-eof-and-pause-repair-summary.json)。qq.8 的10项修复文件pins、qq.7失败、独立审查及新native9项CTest见[三项修复汇总](qq-task14-qq8-pre-release-repairs-summary.json)；provider目标为rc.8，最终来源提交与产物由最后发布记录固定，不借历史摘要代表新版本。更新的行为合同见[音频引擎 API](../../audio-engine-api.md)。
+以下仅为历史开发出处：已审计旧候选源码为 `3bacff6e275c2333e1931373f48088e47e1fc8c3`；Task14 slice `28c23565ee7345cdb7dbd4e3a090f80a9f51fd42` 曾与开发树基线 `c99cb5bdf34ba93c8b79e3709881b84c56b05849` 集成为 `ac573ac083b244d6d253ab1ae93c2b9f38fad33c`。这些SHA只保留证据的实际来源，不表示当前公共分支包含该开发树的独立实现。十二项slice pins、集成pins和控制层审查pins不改写为新分支结果。完整来源及归档摘要见[Task14清单](../task14-manifest.json)。
 
-## 已有证据
+历史 `qq.7` 产品源码为 `05186af4bb6a8bbe464d4d77cc7eccc187e1f1d0`，其原生EOF/Service Pause修复见[两项修复合并证据](qq-task14-eof-and-pause-repair-summary.json)。之后开发候选的10项文件pins、qq.7失败、独立审查及native9项CTest见[三项修复汇总](qq-task14-qq8-pre-release-repairs-summary.json)，其中完整源码、DLL与构建结果仍属于切公共分支前的开发候选。当前行为合同见[音频引擎API](../../audio-engine-api.md)。
+
+## 历史开发候选的已有证据
 
 | 范围 | 结论及入口 |
 | --- | --- |
@@ -30,7 +32,7 @@
 
 真实 GUI v1 从 EOF252秒暂停状态 seek45秒，约6591ms后恢复时提示 `native seek position was not confirmed`；这不是亚秒立即恢复实验，当次实际采样率未证。原始失败记录 `qq-task14-final-sky-ui-v1.json` 保留于研究工作区，未将含推荐列表的整棵 UI 树收入安全归档；后续最终 GUI 汇总必须保留该失败及摘要来源。
 
-qq.7 在实际96k24播放后仍发生保进度切音质失败，其结构审计通过也未关闭真实门禁。后续renderer/代理/native预算三修及独立审查、新9项native CTest已通过；qq.8仍需最终source/package冻结、真实保进度切音质、单首queue自然EOF后seek/恢复、普通暂停定位、正常无调试冷启动及发布验收。现39/40项，最后一槽留给最终产物/GUI/cold/release合并收据。百秒稳定对照与Task13历史成功不能替代这些结果。
+qq.7 在实际96k24播放后仍发生保进度切音质失败，其结构审计通过也未关闭真实门禁。后续三修的历史开发门禁通过，当前公共分支仍需独立绑定新的full build/native gates/source/package、真实保进度切音质、单首queue自然EOF后seek/恢复、普通暂停定位、正常无调试冷启动及发布验收。现39/40项，最后一槽留给新公共分支的最终合并收据。百秒稳定对照与Task13历史成功不能替代这些结果。
 
 ## 归档范围与摘要
 
