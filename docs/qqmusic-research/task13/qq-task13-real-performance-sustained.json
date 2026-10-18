@@ -1,0 +1,5575 @@
+{
+  "phase": "sustained",
+  "scope": "Owned task client only; public exact song identity and decoder/time facts. No URL, key or private account data exported.",
+  "samples": [
+    {
+      "wallMs": 0.6982000000007247,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.11,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2,
+        "totalCallbackNanoseconds": 46000,
+        "meanCallbackNanoseconds": 23000,
+        "peakCallbackNanoseconds": 35000,
+        "p999DeadlineRatioUpper": 0.002,
+        "totalDeadlineNanoseconds": 110000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.0418182
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 513.0480000000007,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.54,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 45,
+        "totalCallbackNanoseconds": 701000,
+        "meanCallbackNanoseconds": 15577.8,
+        "peakCallbackNanoseconds": 35000,
+        "p999DeadlineRatioUpper": 0.003,
+        "totalDeadlineNanoseconds": 540000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.129815
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 1025.9682000000012,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.97,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 88,
+        "totalCallbackNanoseconds": 1406000,
+        "meanCallbackNanoseconds": 15977.3,
+        "peakCallbackNanoseconds": 35000,
+        "p999DeadlineRatioUpper": 0.004,
+        "totalDeadlineNanoseconds": 970000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.144948
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 1563.4431000000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 1.4586666666666668,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 122,
+        "totalCallbackNanoseconds": 1894000,
+        "meanCallbackNanoseconds": 15524.6,
+        "peakCallbackNanoseconds": 43000,
+        "p999DeadlineRatioUpper": 0.005,
+        "totalDeadlineNanoseconds": 1310000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.14458
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 2078.1386,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 1.6213333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 198,
+        "totalCallbackNanoseconds": 2821000,
+        "meanCallbackNanoseconds": 14247.5,
+        "peakCallbackNanoseconds": 43000,
+        "p999DeadlineRatioUpper": 0.005,
+        "totalDeadlineNanoseconds": 2070000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.13628
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 2597.9368000000013,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 2.1413333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 254,
+        "totalCallbackNanoseconds": 3882000,
+        "meanCallbackNanoseconds": 15283.5,
+        "peakCallbackNanoseconds": 43000,
+        "p999DeadlineRatioUpper": 0.005,
+        "totalDeadlineNanoseconds": 2630000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.147605
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 3123.276600000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 2.5713333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 297,
+        "totalCallbackNanoseconds": 4987000,
+        "meanCallbackNanoseconds": 16791.2,
+        "peakCallbackNanoseconds": 64000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 3060000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.162974
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 3646.033800000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 3.2213333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 362,
+        "totalCallbackNanoseconds": 6762000,
+        "meanCallbackNanoseconds": 18679.6,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 3710000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.182264
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 4148.441900000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 3.441333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 384,
+        "totalCallbackNanoseconds": 7257000,
+        "meanCallbackNanoseconds": 18898.4,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 3930000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.184656
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 4663.626300000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 3.9013333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 430,
+        "totalCallbackNanoseconds": 8278000,
+        "meanCallbackNanoseconds": 19251.2,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 4390000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.188565
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 5191.4292000000005,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 4.441333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 484,
+        "totalCallbackNanoseconds": 9654000,
+        "meanCallbackNanoseconds": 19946.3,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 4930000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.195822
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 5701.839000000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 4.991333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 539,
+        "totalCallbackNanoseconds": 11231000,
+        "meanCallbackNanoseconds": 20836.7,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 5480000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.204945
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 6214.678400000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 5.531333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 593,
+        "totalCallbackNanoseconds": 12534000,
+        "meanCallbackNanoseconds": 21136.6,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 6020000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.208206
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 6721.9877000000015,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 5.981333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 638,
+        "totalCallbackNanoseconds": 13783000,
+        "meanCallbackNanoseconds": 21603.4,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 6470000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213029
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 7239.6229,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 6.521333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 692,
+        "totalCallbackNanoseconds": 14959000,
+        "meanCallbackNanoseconds": 21617.1,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 7010000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.213395
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 7743.391000000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 7.061333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 746,
+        "totalCallbackNanoseconds": 16199000,
+        "meanCallbackNanoseconds": 21714.5,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 7550000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.214556
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 8260.8858,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 7.621333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 802,
+        "totalCallbackNanoseconds": 17485000,
+        "meanCallbackNanoseconds": 21801.7,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 8110000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.215598
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 8779.905600000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 8.161333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 856,
+        "totalCallbackNanoseconds": 18874000,
+        "meanCallbackNanoseconds": 22049.1,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 8650000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.218197
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 9295.964900000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 8.591333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 899,
+        "totalCallbackNanoseconds": 19993000,
+        "meanCallbackNanoseconds": 22239.2,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 9080000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.220187
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 9805.5197,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 9.151333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 955,
+        "totalCallbackNanoseconds": 21465000,
+        "meanCallbackNanoseconds": 22476.4,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 9640000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.222666
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 10314.3122,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 9.701333333333332,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1010,
+        "totalCallbackNanoseconds": 22851000,
+        "meanCallbackNanoseconds": 22624.8,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 10190000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224249
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 10828.302500000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 10.241333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1064,
+        "totalCallbackNanoseconds": 24091000,
+        "meanCallbackNanoseconds": 22641.9,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 10730000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.22452
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 11338.8429,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 10.781333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1118,
+        "totalCallbackNanoseconds": 25348000,
+        "meanCallbackNanoseconds": 22672.6,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 11270000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224916
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 11848.748600000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 11.231333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1163,
+        "totalCallbackNanoseconds": 26334000,
+        "meanCallbackNanoseconds": 22643.2,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 11720000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224693
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 12363.0114,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 11.771333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1217,
+        "totalCallbackNanoseconds": 27552000,
+        "meanCallbackNanoseconds": 22639.3,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 12260000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224731
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 12872.223300000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 12.311333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1271,
+        "totalCallbackNanoseconds": 28802000,
+        "meanCallbackNanoseconds": 22660.9,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 12800000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225016
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 13383.527900000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 12.871333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1327,
+        "totalCallbackNanoseconds": 30109000,
+        "meanCallbackNanoseconds": 22689.5,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 13360000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225367
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 13893.9817,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 13.411333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1381,
+        "totalCallbackNanoseconds": 31231000,
+        "meanCallbackNanoseconds": 22614.8,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 13900000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224683
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 14404.878700000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 13.741333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1414,
+        "totalCallbackNanoseconds": 31856000,
+        "meanCallbackNanoseconds": 22529,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 14230000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223865
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 14927.630400000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 14.171333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1457,
+        "totalCallbackNanoseconds": 32725000,
+        "meanCallbackNanoseconds": 22460.5,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 14660000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223226
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 15444.268800000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 14.721333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1512,
+        "totalCallbackNanoseconds": 34009000,
+        "meanCallbackNanoseconds": 22492.7,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 15210000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.223596
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 15956.686000000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 15.161333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1556,
+        "totalCallbackNanoseconds": 35130000,
+        "meanCallbackNanoseconds": 22577.1,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 15650000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.224473
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 16466.5276,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 15.811333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1621,
+        "totalCallbackNanoseconds": 36717000,
+        "meanCallbackNanoseconds": 22650.8,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 16300000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.225258
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 16991.8944,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 16.251333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1665,
+        "totalCallbackNanoseconds": 37932000,
+        "meanCallbackNanoseconds": 22782,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 16740000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.226595
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 17504.846700000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 16.82133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1722,
+        "totalCallbackNanoseconds": 39504000,
+        "meanCallbackNanoseconds": 22940.8,
+        "peakCallbackNanoseconds": 73000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 17310000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.228215
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 18025.6951,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 17.361333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1776,
+        "totalCallbackNanoseconds": 41149000,
+        "meanCallbackNanoseconds": 23169.5,
+        "peakCallbackNanoseconds": 74000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 17850000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.230527
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 18538.5678,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 17.921333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1832,
+        "totalCallbackNanoseconds": 43061000,
+        "meanCallbackNanoseconds": 23504.9,
+        "peakCallbackNanoseconds": 74000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 18410000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.2339
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 19051.7076,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 18.351333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1875,
+        "totalCallbackNanoseconds": 44242000,
+        "meanCallbackNanoseconds": 23595.7,
+        "peakCallbackNanoseconds": 74000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 18840000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.23483
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 19555.391600000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 18.891333333333332,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1929,
+        "totalCallbackNanoseconds": 45543000,
+        "meanCallbackNanoseconds": 23609.6,
+        "peakCallbackNanoseconds": 74000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 19380000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.235
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 20065.8103,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 19.451333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 1985,
+        "totalCallbackNanoseconds": 47019000,
+        "meanCallbackNanoseconds": 23687.2,
+        "peakCallbackNanoseconds": 74000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 19940000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.235802
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 20575.4311,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 19.991333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2039,
+        "totalCallbackNanoseconds": 48478000,
+        "meanCallbackNanoseconds": 23775.4,
+        "peakCallbackNanoseconds": 74000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 20480000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236709
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 21097.1555,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 20.421333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2082,
+        "totalCallbackNanoseconds": 49507000,
+        "meanCallbackNanoseconds": 23778.6,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 20910000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236762
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 21599.7604,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 21.091333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2149,
+        "totalCallbackNanoseconds": 50935000,
+        "meanCallbackNanoseconds": 23701.7,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 21580000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236029
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 22107.5762,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 21.521333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2192,
+        "totalCallbackNanoseconds": 52162000,
+        "meanCallbackNanoseconds": 23796.5,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 22010000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236992
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 22622.4873,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 22.061333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2246,
+        "totalCallbackNanoseconds": 53563000,
+        "meanCallbackNanoseconds": 23848.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 22550000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.23753
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 23132.4612,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 22.621333333333332,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2302,
+        "totalCallbackNanoseconds": 54939000,
+        "meanCallbackNanoseconds": 23865.8,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 23110000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237728
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 23645.1394,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 23.161333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2356,
+        "totalCallbackNanoseconds": 56314000,
+        "meanCallbackNanoseconds": 23902.4,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 23650000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.238114
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 24158.3312,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 23.601333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2400,
+        "totalCallbackNanoseconds": 57329000,
+        "meanCallbackNanoseconds": 23887.1,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 24090000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237978
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 24675.445700000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 24.151333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2455,
+        "totalCallbackNanoseconds": 58530000,
+        "meanCallbackNanoseconds": 23841.1,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 24640000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237541
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 25186.244599999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 24.691333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2509,
+        "totalCallbackNanoseconds": 59711000,
+        "meanCallbackNanoseconds": 23798.7,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 25180000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237137
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 25697.6982,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 25.251333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2565,
+        "totalCallbackNanoseconds": 61021000,
+        "meanCallbackNanoseconds": 23789.9,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 25740000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237067
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 26206.467000000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 25.461333333333332,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2586,
+        "totalCallbackNanoseconds": 61537000,
+        "meanCallbackNanoseconds": 23796.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 25950000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237137
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 26713.0985,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 26.001333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2640,
+        "totalCallbackNanoseconds": 62869000,
+        "meanCallbackNanoseconds": 23814,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 26490000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237331
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 27223.7992,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 26.561333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2696,
+        "totalCallbackNanoseconds": 64148000,
+        "meanCallbackNanoseconds": 23793.8,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 27050000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237146
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 27741.716700000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 26.991333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2739,
+        "totalCallbackNanoseconds": 65047000,
+        "meanCallbackNanoseconds": 23748.4,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 27480000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236707
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 28247.5455,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 27.531333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2793,
+        "totalCallbackNanoseconds": 66164000,
+        "meanCallbackNanoseconds": 23689.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 28020000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236131
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 28766.380400000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 28.091333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2849,
+        "totalCallbackNanoseconds": 67653000,
+        "meanCallbackNanoseconds": 23746.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 28580000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236714
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 29275.818,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 28.651333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2905,
+        "totalCallbackNanoseconds": 69020000,
+        "meanCallbackNanoseconds": 23759,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 29140000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236857
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 29783.593399999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 29.191333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 2959,
+        "totalCallbackNanoseconds": 70191000,
+        "meanCallbackNanoseconds": 23721.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 29680000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236493
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 30303.9058,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 29.631333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3003,
+        "totalCallbackNanoseconds": 71174000,
+        "meanCallbackNanoseconds": 23701,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 30120000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.236301
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 30818.0639,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 30.181333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3058,
+        "totalCallbackNanoseconds": 72788000,
+        "meanCallbackNanoseconds": 23802.5,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 30670000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237326
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 31327.3831,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 30.721333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3112,
+        "totalCallbackNanoseconds": 74196000,
+        "meanCallbackNanoseconds": 23841.9,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 31210000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237731
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 31834.1403,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 31.281333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3168,
+        "totalCallbackNanoseconds": 75499000,
+        "meanCallbackNanoseconds": 23831.8,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 31770000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.237642
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 32345.742400000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 31.82133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3222,
+        "totalCallbackNanoseconds": 76954000,
+        "meanCallbackNanoseconds": 23883.9,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 32310000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.238174
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 32860.384,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 32.251333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3265,
+        "totalCallbackNanoseconds": 78229000,
+        "meanCallbackNanoseconds": 23959.9,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.007,
+        "totalDeadlineNanoseconds": 32740000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.23894
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 33377.4001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 32.80133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3320,
+        "totalCallbackNanoseconds": 79999000,
+        "meanCallbackNanoseconds": 24096.1,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 33290000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.240309
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 33894.9727,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 33.351333333333336,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3375,
+        "totalCallbackNanoseconds": 81500000,
+        "meanCallbackNanoseconds": 24148.1,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 33840000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.240839
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 34418.471600000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 33.891333333333336,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3429,
+        "totalCallbackNanoseconds": 82833000,
+        "meanCallbackNanoseconds": 24156.6,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 34380000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.240934
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 34947.7851,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 34.431333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3483,
+        "totalCallbackNanoseconds": 84461000,
+        "meanCallbackNanoseconds": 24249.5,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 34920000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.24187
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 35460.1081,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 34.92133333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3532,
+        "totalCallbackNanoseconds": 85757000,
+        "meanCallbackNanoseconds": 24280,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 35410000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.242183
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 35971.8728,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 35.461333333333336,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3586,
+        "totalCallbackNanoseconds": 86956000,
+        "meanCallbackNanoseconds": 24248.7,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 35950000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.24188
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 36487.4753,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 36.001333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3640,
+        "totalCallbackNanoseconds": 88244000,
+        "meanCallbackNanoseconds": 24242.9,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 36490000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.241831
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 36992.1141,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 36.45133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3685,
+        "totalCallbackNanoseconds": 89594000,
+        "meanCallbackNanoseconds": 24313.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 36940000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.242539
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 37503.0842,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 36.99133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3739,
+        "totalCallbackNanoseconds": 91249000,
+        "meanCallbackNanoseconds": 24404.7,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 37480000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.243461
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 38023.4579,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 37.31133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3771,
+        "totalCallbackNanoseconds": 92183000,
+        "meanCallbackNanoseconds": 24445.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 37800000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.24387
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 38547.6467,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 37.861333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3826,
+        "totalCallbackNanoseconds": 93487000,
+        "meanCallbackNanoseconds": 24434.7,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 38350000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.243773
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 39065.0057,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 38.30133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3870,
+        "totalCallbackNanoseconds": 94491000,
+        "meanCallbackNanoseconds": 24416.3,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 38790000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.243596
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 39599.0784,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 38.961333333333336,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3936,
+        "totalCallbackNanoseconds": 96596000,
+        "meanCallbackNanoseconds": 24541.7,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 39450000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.244857
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 40110.4991,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 39.391333333333336,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 3979,
+        "totalCallbackNanoseconds": 98065000,
+        "meanCallbackNanoseconds": 24645.6,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 39880000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.2459
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 40626.7592,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 39.95133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4035,
+        "totalCallbackNanoseconds": 99901000,
+        "meanCallbackNanoseconds": 24758.6,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 40440000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.247035
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 41141.493500000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 40.38133333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4078,
+        "totalCallbackNanoseconds": 101426000,
+        "meanCallbackNanoseconds": 24871.5,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 40870000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.248167
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    },
+    {
+      "wallMs": 41654.209800000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 40.931333333333335,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "diagnostics": {
+        "underruns": 0,
+        "drops": 0,
+        "recoveries": 0
+      },
+      "renderPerformance": {
+        "callbackCount": 4133,
+        "totalCallbackNanoseconds": 103239000,
+        "meanCallbackNanoseconds": 24979.2,
+        "peakCallbackNanoseconds": 189000,
+        "p999DeadlineRatioUpper": 0.008,
+        "totalDeadlineNanoseconds": 41420000000,
+        "deadlineMissCount": 0,
+        "callbackDeadlineLoadPercent": 0.249249
+      },
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "master",
+          "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "galaxy",
+          "text": "臻品全景声"
+        },
+        {
+          "value": "excellent",
+          "text": "臻品音质（本地音效）"
+        }
+      ]
+    }
+  ],
+  "initial": {
+    "loggedIn": true,
+    "preference": "flac",
+    "proxyMode": "auto",
+    "pluginVersion": "0.4.0-dev.36"
+  },
+  "first": {
+    "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+    "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+    "state": "playing",
+    "position": 0.11,
+    "codec": "flac",
+    "rate": 96000,
+    "bits": 24,
+    "channels": 2,
+    "sourceBytes": 88129955,
+    "preferred": "hires",
+    "busy": false,
+    "diagnostics": {
+      "underruns": 0,
+      "drops": 0,
+      "recoveries": 0
+    },
+    "renderPerformance": {
+      "callbackCount": 2,
+      "totalCallbackNanoseconds": 46000,
+      "meanCallbackNanoseconds": 23000,
+      "peakCallbackNanoseconds": 35000,
+      "p999DeadlineRatioUpper": 0.002,
+      "totalDeadlineNanoseconds": 110000000,
+      "deadlineMissCount": 0,
+      "callbackDeadlineLoadPercent": 0.0418182
+    },
+    "options": [
+      {
+        "value": "128",
+        "text": "标准 MP3（128 kbps）"
+      },
+      {
+        "value": "320",
+        "text": "高品质 MP3（320 kbps）"
+      },
+      {
+        "value": "flac",
+        "text": "无损 FLAC"
+      },
+      {
+        "value": "hires",
+        "text": "Hi-Res 无损"
+      },
+      {
+        "value": "dolby",
+        "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+      },
+      {
+        "value": "surround",
+        "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+      },
+      {
+        "value": "master",
+        "text": "臻品母带（不可用：当前歌曲未提供该音质）"
+      },
+      {
+        "value": "galaxy",
+        "text": "臻品全景声"
+      },
+      {
+        "value": "excellent",
+        "text": "臻品音质（本地音效）"
+      }
+    ]
+  },
+  "startMs": 4810.873899999999,
+  "result": "failed",
+  "error": "Task client evaluation timed out"
+}

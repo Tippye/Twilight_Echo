@@ -1,0 +1,11 @@
+{
+  "scope": "Owned task audio service child and its fixed native helper; no arguments/profile/PCM exported",
+  "workerCount": 1,
+  "pids": [
+    47720
+  ],
+  "parentPid": 15060,
+  "resourceJunctionVerified": true,
+  "helperSha256": "c28b1dc41089fc978de6d9119c263bc8305e40b909b27120a4599228a2bd4d2c",
+  "nativeModulePathsVerified": true
+}

@@ -17,6 +17,14 @@ export {
   normalizeOutputConfig
 } from '../../shared/audioOutputConfig.ts'
 import { readFileSync } from 'fs'
+
+/** Queue execution specifications stay inside main/native, including events. */
+export function publicAudioQueueItem(item: AudioEngineQueueItem): AudioEngineQueueItem {
+  const result = { ...item }
+  delete result.pcmWorkerExecutable
+  delete result.pcmWorkerExpiresAt
+  return result
+}
 import type {
   AudioDeviceOption,
   AudioEngineQueueItem,

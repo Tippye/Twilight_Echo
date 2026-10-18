@@ -1,0 +1,1514 @@
+{
+  "phase": "baseline",
+  "scope": "Owned task client only; public exact song identity and decoder/time facts. No URL, key or private account data exported.",
+  "samples": [
+    {
+      "wallMs": 0.9663000000000466,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.163,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 511.9322000000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.43,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 1022.7848000000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 0.5693333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 1546.0348999999997,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 1.1193333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 2056.8167000000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 1.3846666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 2566.9941,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 1.9446666666666668,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 3081.7834999999995,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 2.252666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 3592.6656000000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 2.688,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 4099.5707,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 2.948,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 4608.1505,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 3.456,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 5120.7307,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 3.816,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 5629.7621,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 4.181333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 6144.490900000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 4.541333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 6654.052100000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 4.906666666666666,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 7165.5563999999995,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 5.346666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 7674.5118999999995,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 5.674666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 8185.656499999999,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 5.884666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 8696.2358,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 6.4,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 9207.2298,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 6.71,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 9713.9825,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 7.125333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 10224.2972,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 7.405333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 10732.2773,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 7.850666666666666,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 11243.1601,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 8.230666666666666,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 11752.0963,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 8.576,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 12265.4095,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 8.946,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 12776.2342,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 9.519666666666666,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 13288.496000000001,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 9.728666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 13801.313499999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 9.994,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 14311.7139,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 10.424,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 14825.157099999999,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 10.766666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 15337.38,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 11.196666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 15847.154199999999,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 11.439333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 16354.8444,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 11.979333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 16868.8554,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 12.232,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 17381.572099999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 12.672,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 17888.9689,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 12.852,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 18401.0689,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 13.282,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 18913.305500000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 13.562,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 19424.0265,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 13.952,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 19932.5754,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 14.477,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 20444.2894,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 14.422,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 20986.405100000004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 14.579333333333333,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 21498.483200000002,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 15.119333333333334,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "hires",
+      "busy": false,
+      "options": [
+        {
+          "value": "128",
+          "text": "标准 MP3（128 kbps）"
+        },
+        {
+          "value": "320",
+          "text": "高品质 MP3（320 kbps）"
+        },
+        {
+          "value": "flac",
+          "text": "无损 FLAC"
+        },
+        {
+          "value": "hires",
+          "text": "Hi-Res 无损"
+        },
+        {
+          "value": "dolby",
+          "text": "杜比全景声（不可用：当前歌曲未提供该音质）"
+        },
+        {
+          "value": "surround",
+          "text": "5.1 品质（不可用：当前歌曲未提供该音质）"
+        }
+      ]
+    },
+    {
+      "wallMs": 22007.7227,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 15.256666666666666,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 22526.343399999998,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 15.706666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 23029.564400000003,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 15.886666666666667,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 23542.976499999997,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 16.384,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 24053.822399999997,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 16.544,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 24563.2742,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 16.938666666666666,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    },
+    {
+      "wallMs": 25075.4004,
+      "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+      "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+      "state": "playing",
+      "position": 17.228666666666665,
+      "codec": "flac",
+      "rate": 96000,
+      "bits": 24,
+      "channels": 2,
+      "sourceBytes": 88129955,
+      "preferred": "",
+      "busy": true,
+      "options": [
+        {
+          "value": "",
+          "text": "加载中"
+        }
+      ]
+    }
+  ],
+  "initial": {
+    "loggedIn": true,
+    "preference": "flac"
+  },
+  "first": {
+    "trackId": "qq:003Rxsvb1Vwl5U:299695338",
+    "entryId": "queue:qq:003Rxsvb1Vwl5U:299695338:0",
+    "state": "playing",
+    "position": 0.163,
+    "codec": "flac",
+    "rate": 96000,
+    "bits": 24,
+    "channels": 2,
+    "sourceBytes": 88129955,
+    "preferred": "",
+    "busy": true,
+    "options": [
+      {
+        "value": "",
+        "text": "加载中"
+      }
+    ]
+  },
+  "startMs": 2897.4679,
+  "positionAdvance": 17.065666666666665,
+  "wallSeconds": 25.074434099999998,
+  "loadingSamples": 26,
+  "result": "passed"
+}

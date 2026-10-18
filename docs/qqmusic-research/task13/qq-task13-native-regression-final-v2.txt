@@ -1,0 +1,32 @@
+Test project E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64
+      Start 14: twilight_ffmpeg_decoder_unit
+ 1/12 Test #14: twilight_ffmpeg_decoder_unit ..........   Passed    0.41 sec
+      Start 15: twilight_pcm_stream_transform_unit
+ 2/12 Test #15: twilight_pcm_stream_transform_unit ....   Passed    0.13 sec
+      Start 20: twilight_queue_unit
+ 3/12 Test #20: twilight_queue_unit ...................   Passed    0.01 sec
+      Start 29: twilight_asio_backend_unit
+ 4/12 Test #29: twilight_asio_backend_unit ............   Passed    8.91 sec
+      Start 30: twilight_asio_helper_selftest
+ 5/12 Test #30: twilight_asio_helper_selftest .........   Passed    0.01 sec
+      Start 31: twilight_asio_helper_process_unit
+ 6/12 Test #31: twilight_asio_helper_process_unit .....   Passed    8.84 sec
+      Start 32: twilight_asio_abi_checks
+ 7/12 Test #32: twilight_asio_abi_checks ..............   Passed    0.01 sec
+      Start 33: twilight_asio_abi_manifest
+ 8/12 Test #33: twilight_asio_abi_manifest ............   Passed    0.01 sec
+      Start 34: twilight_asio_abi_cross_dll
+ 9/12 Test #34: twilight_asio_abi_cross_dll ...........***Skipped   0.01 sec
+      Start 35: twilight_asio_control_thread_unit
+10/12 Test #35: twilight_asio_control_thread_unit .....   Passed    6.73 sec
+      Start 37: twilight_runtime_queue_reroute_unit
+11/12 Test #37: twilight_runtime_queue_reroute_unit ...   Passed   46.44 sec
+      Start 38: twilight_audio_performance_gate
+12/12 Test #38: twilight_audio_performance_gate .......   Passed   57.21 sec
+
+100% tests passed, 0 tests failed out of 12
+
+Total Test time (real) = 128.75 sec
+
+The following tests did not run:
+	 34 - twilight_asio_abi_cross_dll (Skipped)

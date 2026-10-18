@@ -10,7 +10,8 @@ import { AudioEngineServiceBinding } from '../audioEngineServiceClient.ts'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { release } from 'node:os'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { existsSync } from 'node:fs'
 import { runtime } from '../core/runtime'
 import { sleepTimerService } from '../sleepTimer.ts'
 import { createDeviceProfileHandlers } from './deviceProfilesIpc.ts'
@@ -54,7 +55,9 @@ import {
   importDspProfileArchive
 } from '../dsp/dspProfileArchive.ts'
 import { Vst3CatalogService } from '../dsp/vst3Catalog.ts'
-import { rendererFallbackAllowed } from './nativeBinding.ts'
+import { getNativeAddonCandidates, rendererFallbackAllowed } from './nativeBinding.ts'
+import { bindProviderPcmWorker } from './providerPcmWorker.ts'
+import { publicAudioQueueItem } from './audioEngineHelpers.ts'
 import { importFrequencyResponseFromDialog } from './importFrequencyResponse.ts'
 import {
   AudioDiagnosticRecorder,
@@ -329,10 +332,11 @@ function normalizeQueueText(value: unknown, fallback?: string): string | undefin
 }
 
 async function resolveAuthorizedPlaybackSource(source: string): Promise<string> {
-  if (source.startsWith('twilight-media:')) {
-    return remoteMediaGrants.resolve(source, 'audio').source
-  }
-  return await resolveAuthorizedAudioSource(source)
+  const authorized = source.startsWith('twilight-media:')
+    ? remoteMediaGrants.resolve(source, 'audio').source
+    : await resolveAuthorizedAudioSource(source)
+  providerPlaybackIdentities.assertCurrent(authorized)
+  return authorized
 }
 
 function normalizeDspAssetKind(value: unknown): DspAssetKind {
@@ -732,6 +736,11 @@ async function initializeAudioEngineRuntime(): Promise<void> {
     )
       mixEngine.invalidateAutoMixSource()
   })
+  providerPlaybackIdentities.on('revoked', (sources: string[]) => {
+    void mixEngine.revokeProviderSources(sources).catch((error) => {
+      console.error('[AudioEngine] Failed to stop revoked provider source', error)
+    })
+  })
   if (TWILIGHT_AUTOMIX_AVAILABLE)
     await mixEngine.setAutoMixMode(effectiveAutoMixMode(runtime.appSettings.autoMixMode))
   runtime.vst3Catalog = new Vst3CatalogService(join(app.getPath('userData'), 'dsp-vst3'), {
@@ -764,7 +773,9 @@ async function initializeAudioEngineRuntime(): Promise<void> {
   })
 
   runtime.audioEngineManager.on('queue-change', (queue) => {
-    void runtime.pluginManager?.broadcastEvent('player:queue-change', { queue })
+    void runtime.pluginManager?.broadcastEvent('player:queue-change', {
+      queue: queue.map(publicAudioQueueItem)
+    })
   })
 
   runtime.audioEngineManager.on('device-profiles-changed', () => {
@@ -969,8 +980,18 @@ function registerAudioEngineIpcHandlers(): void {
         queue.map((item) => item.source),
         resolveAuthorizedPlaybackSource
       )
-      const authorizedQueue = queue.map((item) =>
-        bindPlaybackSourceMetadata(item, sources.get(item.source)!)
+      const authorizedQueue = queue.map((item) => {
+        const source = sources.get(item.source)!
+        const metadata = bindPlaybackSourceMetadata(item, source)
+        const candidates = getNativeAddonCandidates().map((file) =>
+          join(dirname(file), 'twilight-qq-excellent-worker.exe')
+        )
+        return bindProviderPcmWorker(metadata, source, {
+          workerPath: candidates.find((file) => existsSync(file)) ?? candidates[0]
+        })
+      })
+      const sourceRevisions = authorizedQueue.map((item) =>
+        providerPlaybackIdentities.revision(item.source)
       )
       const normalizedStartIndex = normalizeInteger(
         startIndex,
@@ -980,6 +1001,13 @@ function registerAudioEngineIpcHandlers(): void {
         Math.max(0, authorizedQueue.length - 1)
       )
       const engine = await ensureAudioEngineRuntime()
+      // Runtime initialization may yield to logout, disable or a newer
+      // resolution. A previously bound executable is no continuing authority.
+      for (const [index, item] of authorizedQueue.entries()) {
+        providerPlaybackIdentities.assertCurrent(item.source)
+        if (providerPlaybackIdentities.revision(item.source) !== sourceRevisions[index])
+          throw new Error('provider_source_resolution_changed')
+      }
       await engine.loadQueue(authorizedQueue, normalizedStartIndex)
       audioDiagnosticRecorder?.record('queue-loaded', {
         items: authorizedQueue.length,
@@ -1012,9 +1040,9 @@ function registerAudioEngineIpcHandlers(): void {
       normalizeIpcString(selection.source, 'audio source', MAX_AUDIO_SOURCE_LENGTH)
     )
     await outputTest.stop()
-    return await (
-      await ensureAudioEngineRuntime()
-    ).selectQueueItem({ queueToken, index, id, source })
+    const engine = await ensureAudioEngineRuntime()
+    providerPlaybackIdentities.assertCurrent(source)
+    return await engine.selectQueueItem({ queueToken, index, id, source })
   })
 
   ipcMain.handle(
@@ -1038,9 +1066,9 @@ function registerAudioEngineIpcHandlers(): void {
       })
       try {
         await outputTest.stop()
-        const result = await (
-          await ensureAudioEngineRuntime()
-        ).play(authorizedSource, normalizedStartTime, playOptions)
+        const engine = await ensureAudioEngineRuntime()
+        providerPlaybackIdentities.assertCurrent(authorizedSource)
+        const result = await engine.play(authorizedSource, normalizedStartTime, playOptions)
         audioDiagnosticRecorder?.record(
           'play-result',
           result,

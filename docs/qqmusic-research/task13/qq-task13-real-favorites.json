@@ -1,0 +1,21 @@
+{
+  "scope": "Task client official session; public candidate only. A previously unliked public song is added once then removed; no existing liked song is removed.",
+  "initial": {
+    "firstLiked": true,
+    "candidate": {
+      "id": "qq:000dxeU23XhoTB:468559261",
+      "title": "Symphony No. 5 (Arr. by Jérôme Naulais)",
+      "artist": "Marc Reift / Philharmonic Wind Orchestra / Ludwig van Beethoven",
+      "originalLiked": false
+    }
+  },
+  "add": {
+    "liked": true
+  },
+  "result": "passed",
+  "restoration": {
+    "needed": true,
+    "restored": true,
+    "finalLiked": false
+  }
+}

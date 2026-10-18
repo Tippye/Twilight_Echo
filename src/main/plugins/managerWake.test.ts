@@ -20,6 +20,7 @@ import {
 } from './rpcCoordinator.ts'
 import { ipcError, parseAppError } from '../../shared/errors/appError.ts'
 import { translate } from '../../shared/i18n/translate.ts'
+import { ProviderPlaybackIdentityRegistry } from '../audio/providerPlaybackIdentity.ts'
 import type {
   TwilightMediaProviderMethod,
   TwilightMediaProviderRegistration,
@@ -88,6 +89,8 @@ function createWakeHarness(): {
     `${stripTypeScriptTypes(classSource.replace('export class', 'class'))}\nTwilightPluginManager`,
     {
       EventEmitter,
+      AbortController,
+      AbortSignal,
       Error,
       resolve,
       randomUUID,
@@ -97,6 +100,7 @@ function createWakeHarness(): {
       getProviderMethodStats,
       resolveProviderIdempotencyKey,
       PluginRpcLifecycleError,
+      providerPlaybackIdentities: new ProviderPlaybackIdentityRegistry(),
       ipcError,
       mt: (key: string) => translate('zh-CN', key),
       isCompatibleTwilightRange: () => true,

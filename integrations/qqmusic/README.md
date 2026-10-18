@@ -1,6 +1,6 @@
 # QQ 音乐 Windows 插件源码
 
-此目录是独立插件仓库 `Twilight-Echo-plugins` 中 QQ 音乐插件的源码快照，版本为 `0.4.0-rc.4`，配套宿主为 `1.3.1-qq.4`。来源提交和逐文件哈希见 [归档清单](../../docs/qqmusic-research/archive-manifest.json)。保留上游代码、作者、LICENSE 和 THIRD_PARTY_NOTICES，不改变插件的原始来源声明。
+此目录是独立插件仓库 `Twilight-Echo-plugins` 中 QQ 音乐插件的源码快照，版本为 `0.4.0-rc.6`，配套宿主为 `1.3.1-qq.5`，来源提交为 `2de4bf293ec3abb907a2089c79602427be855f47`。本轮来源与逐文件哈希见 [Task13 归档清单](../../docs/qqmusic-research/task13-manifest.json)；原 [归档清单](../../docs/qqmusic-research/archive-manifest.json) 保留 Task12 历史，不代表本轮文件。保留上游代码、作者、LICENSE 和 THIRD_PARTY_NOTICES，不改变插件的原始来源声明。
 
 从宿主仓库根目录执行测试：
 

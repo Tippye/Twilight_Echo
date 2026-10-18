@@ -10,9 +10,12 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
 #include <fstream>
 #include <mutex>
 #include <numeric>
@@ -236,10 +239,29 @@ struct FFmpegDecoder::Impl {
   AudioStreamInfo streamInfo;
   AudioFormat outputFormat;
   bool eof = false;
+  PcmStreamTransformFactory transformFactory;
+  std::shared_ptr<IPcmStreamTransform> transform;
+  std::atomic<bool> transformCancelled{false};
   FFmpegDecoder::ResamplerQuality resamplerQuality = FFmpegDecoder::ResamplerQuality::Native;
   // ICY StreamTitle snapshot (decode-thread writes; control/status may read).
   mutable std::mutex streamTitleMutex;
   std::string streamTitle;
+
+  void cancelTransform() noexcept {
+    transformCancelled.store(true, std::memory_order_release);
+    if (const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire)) {
+      active->cancel();
+    }
+  }
+
+  bool cancelled(std::string* error) const {
+    if ((transformFactory && transformCancelled.load(std::memory_order_acquire)) ||
+        (interrupt && interrupt(interruptContext))) {
+      if (error) *error = "decode_cancelled";
+      return true;
+    }
+    return false;
+  }
 
 #if defined(TAE_HAS_FFMPEG)
   AVFormatContext* formatContext = nullptr;
@@ -248,6 +270,17 @@ struct FFmpegDecoder::Impl {
   AVPacket* packet = nullptr;
   AVFrame* frame = nullptr;
   SwrContext* swr = nullptr;
+  SwrContext* sourceFloatSwr = nullptr;
+  AudioFormat transformOutputFormat;
+  std::vector<float> sourceFloatScratch;
+  std::vector<float> transformOutputScratch;
+  bool transformPrepared = false;
+  bool transformPullPending = false;
+  bool transformInputFinished = false;
+  bool transformOutputFinished = false;
+  bool transformFailed = false;
+  bool sourceFloatFlushed = false;
+  bool codecFinished = false;
   int audioStreamIndex = -1;
   bool inputEof = false;
   bool resamplerFlushed = false;
@@ -261,6 +294,8 @@ struct FFmpegDecoder::Impl {
   std::optional<int64_t> exactInputCursor;
   int64_t exactOutputCursor = 0;
   AVChannelLayout targetLayout{};
+  AVChannelLayout transformLayout{};
+  static constexpr int kTransformPullFrames = 4096;
 
   static std::string avError(int code) {
     char buffer[AV_ERROR_MAX_STRING_SIZE] = {};
@@ -314,7 +349,25 @@ struct FFmpegDecoder::Impl {
     if (streamTitle != title) streamTitle = std::move(title);
   }
 
+  void discardTransform() {
+    cancelTransform();
+    std::atomic_store_explicit(&transform, std::shared_ptr<IPcmStreamTransform>{}, std::memory_order_release);
+    if (sourceFloatSwr) swr_free(&sourceFloatSwr);
+    av_channel_layout_uninit(&transformLayout);
+    sourceFloatScratch.clear();
+    transformOutputScratch.clear();
+    transformOutputFormat = {};
+    transformPrepared = false;
+    transformPullPending = false;
+    transformInputFinished = false;
+    transformOutputFinished = false;
+    transformFailed = false;
+    sourceFloatFlushed = false;
+    codecFinished = false;
+  }
+
   void close() {
+    discardTransform();
     if (swr) {
       swr_free(&swr);
     }
@@ -348,6 +401,258 @@ struct FFmpegDecoder::Impl {
     }
   }
 
+  bool configureOutputResampler(const AudioFormat& requestedFormat, std::string* error) {
+    const AudioFormat format = requestedFormat;
+    if (!codecContext) {
+      if (error) *error = "解码器尚未打开";
+      return false;
+    }
+    if (format.sampleRate <= 0 || format.channelCount <= 0) {
+      if (error) *error = "请求的输出格式无效";
+      return false;
+    }
+    if (streamInfo.isDsd && isTypedIntegerFormat(format.sampleFormat)) {
+      if (error) *error = "DSD PCM fallback 只能输出 Float32 工作格式";
+      return false;
+    }
+
+    if (swr) {
+      swr_free(&swr);
+    }
+    av_channel_layout_uninit(&targetLayout);
+    av_channel_layout_default(&targetLayout, format.channelCount);
+
+    AVChannelLayout* inputLayout = transformPrepared ? &transformLayout : &codecContext->ch_layout;
+    const AVSampleFormat inputSampleFormat = transformPrepared ? AV_SAMPLE_FMT_FLT : codecContext->sample_fmt;
+    const int inputRate = transformPrepared ? transformOutputFormat.sampleRate : codecContext->sample_rate;
+    const auto allocateSwr = [&]() -> int {
+      if (swr) swr_free(&swr);
+      return swr_alloc_set_opts2(
+          &swr,
+          &targetLayout,
+          swrSampleFormatFor(format.sampleFormat),
+          format.sampleRate,
+          inputLayout,
+          inputSampleFormat,
+          inputRate,
+          0,
+          nullptr);
+    };
+    const auto applySwrQuality = [&](ResamplerQuality quality) {
+      switch (quality) {
+        case ResamplerQuality::Ultra:
+          av_opt_set_int(swr, "filter_size", 64, 0);
+          av_opt_set_int(swr, "phase_shift", 10, 0);
+          av_opt_set_double(swr, "cutoff", 0.99, 0);
+          break;
+        case ResamplerQuality::High:
+          av_opt_set_int(swr, "filter_size", 32, 0);
+          av_opt_set_int(swr, "phase_shift", 10, 0);
+          av_opt_set_double(swr, "cutoff", 0.97, 0);
+          break;
+        case ResamplerQuality::Native:
+        default:
+          av_opt_set_int(swr, "filter_size", 16, 0);
+          av_opt_set_int(swr, "phase_shift", 8, 0);
+          av_opt_set_double(swr, "cutoff", 0.90, 0);
+          break;
+      }
+    };
+
+    int ret = allocateSwr();
+    if (ret < 0 || !swr) {
+      if (error) *error = "无法分配解码重采样器";
+      return false;
+    }
+
+    const bool wantsSoxr = resamplerQuality == ResamplerQuality::SoxrHq ||
+                           resamplerQuality == ResamplerQuality::SoxrVhq;
+    bool initialized = false;
+    if (wantsSoxr && soxrRuntimeAvailability() != SoxrRuntimeState::Unavailable) {
+      // Probe the SoX engine at runtime. FFmpeg accepts the "resampler"/"engine"
+      // option name even when libsoxr is absent — the failure only shows up at
+      // swr_init ("Requested resampling engine is unavailable").
+      const int engineSet = av_opt_set(swr, "resampler", "soxr", 0);
+      if (engineSet >= 0) {
+        av_opt_set_int(
+            swr,
+            "precision",
+            resamplerQuality == ResamplerQuality::SoxrVhq ? 28 : 20,
+            0);
+        if (swr_init(swr) >= 0) {
+          initialized = true;
+          reportSoxrRuntimeAvailability(true);
+        }
+      }
+      if (!initialized) {
+        reportSoxrRuntimeAvailability(false);
+        // Recreate with the default swr engine; a failed init leaves the
+        // context poisoned with the unavailable engine selection.
+        ret = allocateSwr();
+        if (ret < 0 || !swr) {
+          if (error) *error = "无法分配解码重采样器";
+          return false;
+        }
+      }
+    }
+
+    if (!initialized) {
+      // Soxr tiers degrade to the strongest built-in swr settings when the
+      // engine is unavailable, keeping playback honest instead of failing.
+      applySwrQuality(wantsSoxr ? ResamplerQuality::Ultra : resamplerQuality);
+      ret = swr_init(swr);
+      if (ret < 0) {
+        if (error) *error = "无法初始化解码重采样器，错误码：" + std::to_string(ret);
+        return false;
+      }
+    }
+
+    outputFormat = format;
+    if (outputFormat.bitDepth <= 0) {
+      outputFormat.bitDepth = effectivePcmBitDepth(outputFormat);
+    }
+    streamInfo.decodedFormat = outputFormat;
+    // A brand new swr context has nothing buffered yet, so the drain has to be re-armed.
+    resamplerFlushed = false;
+    resetPending();
+    return true;
+  }
+
+  bool transformError(std::string* error, const std::string& message) {
+    transformFailed = true;
+    if (error && error->empty()) *error = message;
+    return false;
+  }
+
+  bool ensureTransform(std::string* error) {
+    if (!transformFactory || transformPrepared) return !transformFailed && !cancelled(error);
+    if (cancelled(error) || transformFailed) return false;
+    try {
+      std::shared_ptr<IPcmStreamTransform> active = transformFactory();
+      if (!active) return transformError(error, "PCM transform factory returned no instance");
+      std::atomic_store_explicit(&transform, active, std::memory_order_release);
+      if (cancelled(error)) {
+        active->cancel();
+        return false;
+      }
+      PcmStreamTransformInput input;
+      input.format.sampleRate = codecContext->sample_rate;
+      input.format.channelCount = codecContext->ch_layout.nb_channels;
+      input.format.bitDepth = 32;
+      input.format.sampleFormat = AudioSampleFormat::Float32Interleaved;
+      input.encodedBitrate = streamInfo.bitrate;
+      if (!active->prepare(input, &transformOutputFormat, error))
+        return transformError(error, "PCM transform prepare failed");
+      if (cancelled(error)) return false;
+      if (transformOutputFormat.sampleRate <= 0 || transformOutputFormat.channelCount <= 0 ||
+          transformOutputFormat.sampleFormat != AudioSampleFormat::Float32Interleaved ||
+          transformOutputFormat.dopEncoded) {
+        return transformError(error, "PCM transform returned an invalid Float32 output format");
+      }
+      transformOutputFormat.bitDepth = 32;
+      const size_t outputChannels = static_cast<size_t>(transformOutputFormat.channelCount);
+      if (outputChannels > transformOutputScratch.max_size() / kTransformPullFrames)
+        return transformError(error, "PCM transform output channel count exceeds buffer capacity");
+      av_channel_layout_default(&transformLayout, transformOutputFormat.channelCount);
+      const int allocated = swr_alloc_set_opts2(
+          &sourceFloatSwr, &codecContext->ch_layout, AV_SAMPLE_FMT_FLT, codecContext->sample_rate,
+          &codecContext->ch_layout, codecContext->sample_fmt, codecContext->sample_rate, 0, nullptr);
+      if (allocated < 0 || !sourceFloatSwr || swr_init(sourceFloatSwr) < 0)
+        return transformError(error, "Unable to configure source-rate Float32 conversion");
+      transformOutputScratch.resize(kTransformPullFrames * outputChannels);
+      transformPrepared = true;
+      if (!configureOutputResampler(outputFormat, error))
+        return transformError(error, "Unable to configure transformed PCM output resampler");
+      return true;
+    } catch (const std::exception& exception) {
+      return transformError(error, std::string("PCM transform setup failed: ") + exception.what());
+    } catch (...) {
+      return transformError(error, "PCM transform setup failed");
+    }
+  }
+
+  bool pushSourceFloat(const uint8_t** input, int frames, std::string* error) {
+    if (cancelled(error)) return false;
+    const int capacity = swr_get_out_samples(sourceFloatSwr, frames);
+    if (capacity < 0) return transformError(error, "Invalid source Float32 conversion capacity");
+    const size_t channels = static_cast<size_t>(codecContext->ch_layout.nb_channels);
+    const size_t allocatedFrames = static_cast<size_t>(std::max(1, capacity));
+    if (channels == 0 || allocatedFrames > sourceFloatScratch.max_size() / channels)
+      return transformError(error, "Source Float32 conversion exceeds buffer capacity");
+    sourceFloatScratch.resize(allocatedFrames * channels);
+    uint8_t* output[] = {reinterpret_cast<uint8_t*>(sourceFloatScratch.data())};
+    const int produced = swr_convert(sourceFloatSwr, output, capacity, input, frames);
+    if (produced < 0) return transformError(error, "Source Float32 conversion failed");
+    if (produced == 0) {
+      if (!input) sourceFloatFlushed = true;
+      return true;
+    }
+    const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire);
+    if (!active->push(sourceFloatScratch.data(), static_cast<size_t>(produced), error))
+      return transformError(error, "PCM transform input failed");
+    if (cancelled(error)) return false;
+    transformPullPending = true;
+    return true;
+  }
+
+  bool pullTransformOutput(std::string* error) {
+    if (cancelled(error)) return false;
+    const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire);
+    PcmStreamTransformReadResult result;
+    if (!active->pull(transformOutputScratch.data(), kTransformPullFrames, &result, error))
+      return transformError(error, "PCM transform output failed");
+    if (cancelled(error)) return false;
+    if (result.frames > kTransformPullFrames)
+      return transformError(error, "PCM transform output exceeds supplied capacity");
+    if (result.status != PcmStreamTransformReadStatus::Output && result.frames != 0)
+      return transformError(error, "PCM transform returned frames without Output status");
+    switch (result.status) {
+      case PcmStreamTransformReadStatus::NeedInput:
+        if (transformInputFinished)
+          return transformError(error, "PCM transform requested input after finish");
+        transformPullPending = false;
+        return true;
+      case PcmStreamTransformReadStatus::Finished:
+        if (!transformInputFinished)
+          return transformError(error, "PCM transform finished before end of input");
+        transformOutputFinished = true;
+        transformPullPending = false;
+        return true;
+      case PcmStreamTransformReadStatus::Output: {
+        if (result.frames == 0)
+          return transformError(error, "PCM transform Output status made no progress");
+        const size_t samples = result.frames * static_cast<size_t>(transformOutputFormat.channelCount);
+        if (!std::all_of(transformOutputScratch.begin(), transformOutputScratch.begin() + samples,
+                         [](float sample) { return std::isfinite(sample); }))
+          return transformError(error, "PCM transform returned non-finite samples");
+        const int capacity = swr_get_out_samples(swr, static_cast<int>(result.frames));
+        if (capacity < 0) return transformError(error, "Invalid transformed resampler capacity");
+        if (capacity == 0) return transformError(error, "Transformed resampler has no input capacity");
+        const uint8_t* input[] = {reinterpret_cast<const uint8_t*>(transformOutputScratch.data())};
+        if (!convertSamples(input, static_cast<int>(result.frames), capacity, error))
+          return transformError(error, "Transformed PCM resampling failed");
+        return true;
+      }
+    }
+    return transformError(error, "PCM transform returned an unknown output status");
+  }
+
+  bool finishTransformInput(std::string* error) {
+    if (!sourceFloatFlushed) {
+      if (!pushSourceFloat(nullptr, 0, error)) return false;
+      if (transformPullPending) return true;
+    }
+    if (!transformInputFinished) {
+      const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire);
+      if (cancelled(error)) return false;
+      if (!active->finish(error)) return transformError(error, "PCM transform finish failed");
+      if (cancelled(error)) return false;
+      transformInputFinished = true;
+      transformPullPending = true;
+    }
+    return true;
+  }
+
   // Drains whatever the resampler still holds once the decoder has run dry. swr keeps up
   // to a filter-length of history buffered, so without this the tail of every resampled
   // track is silently dropped -- and an input shorter than the filter (Ultra uses
@@ -360,6 +665,9 @@ struct FFmpegDecoder::Impl {
   }
 
   bool convertFrame(std::string* error) {
+    if (transformFactory) {
+      return pushSourceFloat(const_cast<const uint8_t**>(frame->extended_data), frame->nb_samples, error);
+    }
     if (!swr) {
       if (error) *error = "解码重采样器尚未初始化";
       return false;
@@ -472,10 +780,27 @@ struct FFmpegDecoder::Impl {
     return flushResampler(error);
   }
 
-  bool decodeOneFrame(std::string* error) {
+  bool decodeOneFrameImpl(std::string* error) {
     resetPending();
+    if (transformFactory && !ensureTransform(error)) return false;
 
     while (true) {
+      if (cancelled(error)) return false;
+      if (transformFactory && transformPullPending) {
+        if (!pullTransformOutput(error)) return false;
+        if (!pending.empty()) return true;
+        continue;
+      }
+      if (transformFactory && codecFinished) {
+        if (!transformOutputFinished) {
+          if (!finishTransformInput(error)) return false;
+          continue;
+        }
+        if (!drainResamplerOnce(error)) return false;
+        if (!pending.empty()) return true;
+        eof = true;
+        return false;
+      }
       int ret = avcodec_receive_frame(codecContext, frame);
       if (ret == 0) {
         const bool ok = convertFrame(error);
@@ -487,6 +812,10 @@ struct FFmpegDecoder::Impl {
         return true;
       }
       if (ret == AVERROR_EOF) {
+        if (transformFactory) {
+          codecFinished = true;
+          continue;
+        }
         if (!drainResamplerOnce(error)) return false;
         if (!pending.empty()) return true;
         eof = true;
@@ -501,6 +830,10 @@ struct FFmpegDecoder::Impl {
       if (inputEof) {
         ret = avcodec_send_packet(codecContext, nullptr);
         if (ret == AVERROR_EOF) {
+          if (transformFactory) {
+            codecFinished = true;
+            continue;
+          }
           if (!drainResamplerOnce(error)) return false;
           if (!pending.empty()) return true;
           eof = true;
@@ -536,8 +869,20 @@ struct FFmpegDecoder::Impl {
       }
     }
   }
+
+  bool decodeOneFrame(std::string* error) {
+    try {
+      return decodeOneFrameImpl(error);
+    } catch (const std::exception& exception) {
+      return transformError(error, std::string("PCM decode pipeline failed: ") + exception.what());
+    } catch (...) {
+      return transformError(error, "PCM decode pipeline failed");
+    }
+  }
 #else
   void close() {
+    cancelTransform();
+    std::atomic_store_explicit(&transform, std::shared_ptr<IPcmStreamTransform>{}, std::memory_order_release);
     streamInfo = {};
     outputFormat = {};
     eof = false;
@@ -562,8 +907,32 @@ void FFmpegDecoder::setInterrupt(int (*callback)(void*), void* context) {
   impl_->interruptContext = context;
 }
 
+void FFmpegDecoder::setPcmStreamTransformFactory(PcmStreamTransformFactory factory) {
+  close();
+  impl_->transformFactory = std::move(factory);
+  impl_->transformCancelled.store(false, std::memory_order_release);
+}
+
+void FFmpegDecoder::cancelPcmStreamTransform() noexcept {
+  impl_->cancelTransform();
+}
+
+bool FFmpegDecoder::restartPcmStreamTransform(std::string* error) {
+  if (!impl_->transformFactory || !impl_->transformCancelled.load(std::memory_order_acquire)) return true;
+#if defined(TAE_HAS_FFMPEG)
+  impl_->discardTransform();
+  if (impl_->codecContext && !impl_->configureOutputResampler(impl_->outputFormat, error)) return false;
+#else
+  (void)error;
+  std::atomic_store_explicit(&impl_->transform, std::shared_ptr<IPcmStreamTransform>{}, std::memory_order_release);
+#endif
+  impl_->transformCancelled.store(false, std::memory_order_release);
+  return true;
+}
+
 bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   close();
+  impl_->transformCancelled.store(false, std::memory_order_release);
   if (impl_->interrupt && impl_->interrupt(impl_->interruptContext)) {
     if (error) *error = "decode_cancelled";
     return false;
@@ -770,116 +1139,7 @@ void FFmpegDecoder::close() {
 
 bool FFmpegDecoder::setOutputFormat(const AudioFormat& format, std::string* error) {
 #if defined(TAE_HAS_FFMPEG)
-  if (!impl_->codecContext) {
-    if (error) *error = "解码器尚未打开";
-    return false;
-  }
-  if (format.sampleRate <= 0 || format.channelCount <= 0) {
-    if (error) *error = "请求的输出格式无效";
-    return false;
-  }
-  if (impl_->streamInfo.isDsd && isTypedIntegerFormat(format.sampleFormat)) {
-    if (error) *error = "DSD PCM fallback 只能输出 Float32 工作格式";
-    return false;
-  }
-
-  if (impl_->swr) {
-    swr_free(&impl_->swr);
-  }
-  av_channel_layout_uninit(&impl_->targetLayout);
-  av_channel_layout_default(&impl_->targetLayout, format.channelCount);
-
-  const auto allocateSwr = [&]() -> int {
-    if (impl_->swr) swr_free(&impl_->swr);
-    return swr_alloc_set_opts2(
-        &impl_->swr,
-        &impl_->targetLayout,
-        swrSampleFormatFor(format.sampleFormat),
-        format.sampleRate,
-        &impl_->codecContext->ch_layout,
-        impl_->codecContext->sample_fmt,
-        impl_->codecContext->sample_rate,
-        0,
-        nullptr);
-  };
-  const auto applySwrQuality = [&](ResamplerQuality quality) {
-    switch (quality) {
-      case ResamplerQuality::Ultra:
-        av_opt_set_int(impl_->swr, "filter_size", 64, 0);
-        av_opt_set_int(impl_->swr, "phase_shift", 10, 0);
-        av_opt_set_double(impl_->swr, "cutoff", 0.99, 0);
-        break;
-      case ResamplerQuality::High:
-        av_opt_set_int(impl_->swr, "filter_size", 32, 0);
-        av_opt_set_int(impl_->swr, "phase_shift", 10, 0);
-        av_opt_set_double(impl_->swr, "cutoff", 0.97, 0);
-        break;
-      case ResamplerQuality::Native:
-      default:
-        av_opt_set_int(impl_->swr, "filter_size", 16, 0);
-        av_opt_set_int(impl_->swr, "phase_shift", 8, 0);
-        av_opt_set_double(impl_->swr, "cutoff", 0.90, 0);
-        break;
-    }
-  };
-
-  int ret = allocateSwr();
-  if (ret < 0 || !impl_->swr) {
-    if (error) *error = "无法分配解码重采样器";
-    return false;
-  }
-
-  const bool wantsSoxr = impl_->resamplerQuality == ResamplerQuality::SoxrHq ||
-                         impl_->resamplerQuality == ResamplerQuality::SoxrVhq;
-  bool initialized = false;
-  if (wantsSoxr && soxrRuntimeAvailability() != SoxrRuntimeState::Unavailable) {
-    // Probe the SoX engine at runtime. FFmpeg accepts the "resampler"/"engine"
-    // option name even when libsoxr is absent — the failure only shows up at
-    // swr_init ("Requested resampling engine is unavailable").
-    const int engineSet = av_opt_set(impl_->swr, "resampler", "soxr", 0);
-    if (engineSet >= 0) {
-      av_opt_set_int(
-          impl_->swr,
-          "precision",
-          impl_->resamplerQuality == ResamplerQuality::SoxrVhq ? 28 : 20,
-          0);
-      if (swr_init(impl_->swr) >= 0) {
-        initialized = true;
-        reportSoxrRuntimeAvailability(true);
-      }
-    }
-    if (!initialized) {
-      reportSoxrRuntimeAvailability(false);
-      // Recreate with the default swr engine; a failed init leaves the
-      // context poisoned with the unavailable engine selection.
-      ret = allocateSwr();
-      if (ret < 0 || !impl_->swr) {
-        if (error) *error = "无法分配解码重采样器";
-        return false;
-      }
-    }
-  }
-
-  if (!initialized) {
-    // Soxr tiers degrade to the strongest built-in swr settings when the
-    // engine is unavailable, keeping playback honest instead of failing.
-    applySwrQuality(wantsSoxr ? ResamplerQuality::Ultra : impl_->resamplerQuality);
-    ret = swr_init(impl_->swr);
-    if (ret < 0) {
-      if (error) *error = "无法初始化解码重采样器，错误码：" + std::to_string(ret);
-      return false;
-    }
-  }
-
-  impl_->outputFormat = format;
-  if (impl_->outputFormat.bitDepth <= 0) {
-    impl_->outputFormat.bitDepth = effectivePcmBitDepth(impl_->outputFormat);
-  }
-  impl_->streamInfo.decodedFormat = impl_->outputFormat;
-  // A brand new swr context has nothing buffered yet, so the drain has to be re-armed.
-  impl_->resamplerFlushed = false;
-  impl_->resetPending();
-  return true;
+  return impl_->configureOutputResampler(format, error);
 #else
   (void)format;
   if (error) *error = "当前构建未启用音频解码支持";
@@ -907,10 +1167,7 @@ size_t FFmpegDecoder::readFrames(float* output, size_t frameCount, std::string* 
 }
 
 size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
-  if (impl_->interrupt && impl_->interrupt(impl_->interruptContext)) {
-    if (error) *error = "decode_cancelled";
-    return 0;
-  }
+  if (impl_->cancelled(error)) return 0;
   if (!output.data || output.frames == 0) return 0;
 
 #if defined(TAE_HAS_FFMPEG)
@@ -932,6 +1189,11 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
   size_t copiedFrames = 0;
 
   while (copiedFrames < output.frames) {
+    if (impl_->cancelled(error)) break;
+    if (impl_->transformFactory && impl_->transformFailed) {
+      if (error && error->empty()) *error = "PCM transform stream has failed";
+      break;
+    }
     const size_t pendingFrames =
         impl_->pending.size() / bytesPerFrame > impl_->pendingFrameOffset
             ? impl_->pending.size() / bytesPerFrame - impl_->pendingFrameOffset
@@ -974,7 +1236,11 @@ bool FFmpegDecoder::seek(double seconds, std::string* error) {
   }
   avcodec_flush_buffers(impl_->codecContext);
   // Decoder flush does not clear swr history from the old playback position.
-  if (impl_->swr) {
+  if (impl_->transformFactory) {
+    impl_->discardTransform();
+    impl_->transformCancelled.store(false, std::memory_order_release);
+    if (!impl_->configureOutputResampler(impl_->outputFormat, error)) return false;
+  } else if (impl_->swr) {
     swr_close(impl_->swr);
     if (swr_init(impl_->swr) < 0) { if (error) *error = "Unable to reset seek resampler"; return false; }
   }
@@ -994,6 +1260,10 @@ bool FFmpegDecoder::seek(double seconds, std::string* error) {
 
 bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
 #if defined(TAE_HAS_FFMPEG)
+  if (impl_->transformFactory) {
+    if (error) *error = "Precise PCM seek is unsupported for transformed streams";
+    return false;
+  }
   if (!impl_->formatContext || !impl_->swr || impl_->outputFormat.sampleRate <= 0 ||
       frame >= static_cast<uint64_t>(INT64_MAX)) return false;
   // One second supplies codec and resampler history, bounded independent of

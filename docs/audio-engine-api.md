@@ -56,6 +56,18 @@
 
 PCM 直通无缝衔接保留实际设备的 Int16 / Int24 / Int24-in-32 / Int32 / Float32 格式：下一首预解码到相同格式，当前曲耗尽后在同一个设备回调内继续写入下一首的原始 PCM 字节，不插入静音、不经过 Float32 处理、不停止或重新打开设备。采样率、声道数和有效位深必须兼容；24-bit 的打包容器可由解码器无损匹配设备格式。格式不兼容或 DSD 曲目撤下预加载并报告阻断，随后使用正常切歌路径。无缝衔接本身不改变 `pcmPassthrough` / `outputPerfect` 判定；音频文件内原有的静音仍按源内容播放。
 
+## Source-native PCM transforms
+
+`FFmpegDecoder` accepts an optional `IPcmStreamTransform` factory before open. The decode thread normalizes the original decoded frame to source-rate interleaved Float32, prepares the transform with the actual source layout and encoded bitrate, then feeds its declared output format through the existing final SWR/output conversion. Ordinary sources retain the existing decode path. This is distinct from fixed-rate post-DSP and never runs native model work on the realtime device callback.
+
+Transforms consume whole input blocks and expose bounded `NeedInput` / `Output` / `Finished` results. At genuine decoder EOF, `finish` stops input and drains available output before final SWR flush. Stop cancels outstanding worker I/O before joining decode; seek recreates the transform. A processing failure remains distinct from EOF, reports once and prevents automatic queue promotion. Source-native processing with unproved sample alignment does not advertise an exact timeline and is excluded from exact AutoMix bounded decode/continuation. It also prevents typed passthrough and output-perfect claims.
+
+The QQ Excellent integration uses an isolated Windows x86 worker over numeric/PCM pipes. It loads only supported, pinned files from separately installed QQ Music; the application does not redistribute those DLLs/models. Current processing supports proved stereo44.1/48kHz recipes; an inactive96k handle and rejected192k creation are not support. Available native EOF output may be shorter than the theoretical source duration. No invented model-tail padding, cropping or duration-exact claim is made.
+
+The provider verifies the current signed account capability and selects an ordinary source plus an effect marker. Main binds a fixed helper path only for the current authorized provider/plugin permission and source expiry. `pcmWorkerExecutable` / `pcmWorkerExpiresAt` are internal queue fields: renderer input cannot set them, native queue exports and public queue/upcoming events omit them. A queue commit rechecks source resolution after awaited runtime initialization. Logout, QR reauthorization, disable and unexpected host exit revoke current, queued, preloaded and in-flight playback authority; stale RPC/queue acknowledgements cannot restore it. Intentional eligible provider hibernation retains its existing semantics.
+
+`PlaybackInfo.sourceEffect` is an optional descriptive local-effect label bound to the matching current queue source. Source codec/rate/encoded depth/channels and verified file bytes remain source facts. `decoded*` describes PCM entering the pipeline after transform/final decoder conversion, and `outputInfo` describes the final device. Do not infer the model's intermediate rate from either source rate or device rate, or present Float32 processing width as encoded bit depth. HiFi and visualizer share the current-source metadata projection; unknown parameters remain unknown.
+
 ## Visualization API
 
 `TAE_GetVisualizationData(engine, options_json, buffer, buffer_size, required_size)` 是只读 tap 查询接口，使用与其他 JSON 查询相同的 buffer/required-size 模式。它监听最终送往后端前的 PCM 渲染缓冲，不改变音频输出；旧的 `TAE_GetSpectrumData()` 保留为兼容入口。

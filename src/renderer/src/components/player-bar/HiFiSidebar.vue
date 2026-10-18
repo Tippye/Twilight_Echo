@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import {
+  resolvePlaybackAudioMetadata,
+  resolveVisualizerAudioMetadata
+} from '../audioVisualizerFormatting'
 import AudioDeviceProfilesPanel from '@renderer/components/settings-page/AudioDeviceProfilesPanel.vue'
 import {
   DSD_OUTPUT_MODE_OPTIONS,
@@ -85,7 +89,15 @@ const props = defineProps<{
   currentTrack: Track | null
   sourceInfo?: Pick<
     PlaybackInfo,
-    'codec' | 'sourceSampleRate' | 'sourceBitDepth' | 'bitrate'
+    | 'source'
+    | 'rendererSource'
+    | 'sourceBytes'
+    | 'codec'
+    | 'sourceSampleRate'
+    | 'sourceBitDepth'
+    | 'sourceChannels'
+    | 'sourceEffect'
+    | 'bitrate'
   > | null
   desktopLyricsOn: boolean
   lyricsReloading?: boolean
@@ -404,22 +416,19 @@ const sourceQuality = computed(() => {
       rate: '—',
       depth: '—',
       bitrate: '—',
+      channels: '—',
+      filesize: '—',
       source: '—'
     }
   }
 
-  const sampleRate = props.sourceInfo?.sourceSampleRate || track.sampleRate || 0
-  const bitDepth = props.sourceInfo?.sourceBitDepth || track.bitDepth || 0
-  const bitsPerSecond = props.sourceInfo?.bitrate || track.bitrate || 0
-  const format = (
-    props.sourceInfo?.codec ||
-    track.format ||
-    track.fileName?.split('.').pop() ||
-    'PCM'
-  ).toUpperCase()
-  const rate = sampleRate >= 1000 ? `${Math.round(sampleRate / 100) / 10} kHz` : '—'
-  const depth = bitDepth > 0 ? `${bitDepth} bit` : '—'
-  const bitrate = bitsPerSecond > 0 ? `${Math.round(bitsPerSecond / 1000)} kbps` : '—'
+  const actual = resolvePlaybackAudioMetadata(track, props.sourceInfo)
+  const display = resolveVisualizerAudioMetadata(track, props.sourceInfo)
+  const { sampleRate = 0, bitDepth = 0, bitrate: bitsPerSecond = 0 } = actual
+  const format = display.format || '—'
+  const rate = display.samplerate || '—'
+  const depth = display.bitdepth || '—'
+  const bitrate = display.bitrate || '—'
   const source = track.source === 'local' || !track.source ? '本地库' : String(track.source)
 
   let badge = 'Standard'
@@ -430,7 +439,7 @@ const sourceQuality = computed(() => {
   } else if (sampleRate >= 88200 || bitDepth >= 24) {
     badge = 'Hi-Res'
     tone = 'success'
-  } else if (format === 'ALAC' || (sampleRate >= 44100 && bitDepth >= 16 && !bitsPerSecond)) {
+  } else if (/^(FLAC|ALAC|APE|WAVPACK|TTA|PCM|WAV|AIFF|AIF)$/.test(format)) {
     badge = 'Lossless'
     tone = 'success'
   } else if (bitsPerSecond >= 320000) {
@@ -441,7 +450,17 @@ const sourceQuality = computed(() => {
     tone = 'muted'
   }
 
-  return { badge, tone, format, rate, depth, bitrate, source }
+  return {
+    badge,
+    tone,
+    format,
+    rate,
+    depth,
+    bitrate,
+    source,
+    channels: display.channels || '—',
+    filesize: display.filesize || '—'
+  }
 })
 
 const lyricsSourceLabel = computed(() => lyricSourceText(props.currentTrack?.lyricsSource))
@@ -573,7 +592,9 @@ function resetStereoImage(): void {
 /* ===== Signal Deck 展示层 ===== */
 
 const deckRateValue = computed(() => {
-  const rate = props.sourceInfo?.sourceSampleRate || props.currentTrack?.sampleRate
+  const rate = props.currentTrack
+    ? resolvePlaybackAudioMetadata(props.currentTrack, props.sourceInfo).sampleRate
+    : undefined
   if (!rate || !Number.isFinite(rate) || rate < 1000) return '--.-'
   return (Math.round(rate / 100) / 10).toFixed(1)
 })
@@ -777,8 +798,17 @@ const deckAccentVars = computed(() => {
                   <span>码率</span>
                   <strong>{{ sourceQuality.bitrate }}</strong>
                 </div>
+                <div class="deck-spec">
+                  <span>源声道</span>
+                  <strong>{{ sourceQuality.channels }}</strong>
+                </div>
+                <div class="deck-spec">
+                  <span>文件大小</span>
+                  <strong>{{ sourceQuality.filesize }}</strong>
+                </div>
               </div>
               <p class="deck-note">来源 · {{ sourceQuality.source }}</p>
+              <p v-if="sourceInfo?.sourceEffect" class="deck-note">{{ sourceInfo.sourceEffect }}</p>
             </section>
 
             <section class="deck-card">

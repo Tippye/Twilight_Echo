@@ -4,8 +4,8 @@ import { buildWindowsMediaFilename } from './lib/windows/filename.mjs'
 
 const mediaMid = '00000000000001'
 const input = { mediaMid, type: 4, sourceMode: 1, encrypted: false,
-  suffix: '', auxiliaryFlag: false }
-const output = (prefix, extension, suffix = '') => prefix + mediaMid + suffix + extension
+  otherMediaMid: '', auxiliaryFlag: false }
+const output = (prefix, extension, selectedMid = mediaMid) => prefix + selectedMid + extension
 
 // Golden templates read from the hash-pinned native export's dossier, not Android fixtures.
 const vectors = [
@@ -59,12 +59,12 @@ test('mode 111 has its native prefixes while preserving encrypted branches', () 
   assert.equal(buildWindowsMediaFilename({ ...input, sourceMode: 111, encrypted: true }), output('F0M0', '.mflac'))
 })
 
-test('source modes 112 and 113 override templates independently of encrypted flag and suffix', () => {
+test('source modes 112 and 113 override templates independently of encrypted flag and OtherMID', () => {
   for (const encrypted of [false, true]) {
-    assert.equal(buildWindowsMediaFilename({ ...input, encrypted, sourceMode: 112, suffix: 'extra' }),
+    assert.equal(buildWindowsMediaFilename({ ...input, encrypted, sourceMode: 112, otherMediaMid: 'extra' }),
       output('R500', '.mp3'))
     for (const [type, prefix] of [[3, 'KC80'], [11, 'KC40'], [4, 'KC50']]) {
-      assert.equal(buildWindowsMediaFilename({ ...input, type, encrypted, sourceMode: 113, suffix: 'extra' }),
+      assert.equal(buildWindowsMediaFilename({ ...input, type, encrypted, sourceMode: 113, otherMediaMid: 'extra' }),
         output(prefix, '.tkm'))
     }
   }
@@ -72,20 +72,46 @@ test('source modes 112 and 113 override templates independently of encrypted fla
 
 test('type 8 uses its auxiliary bit branch regardless of encrypted flag', () => {
   for (const encrypted of [false, true]) {
-    assert.equal(buildWindowsMediaFilename({ ...input, type: 8, encrypted, auxiliaryFlag: true, suffix: 'other' }),
+    assert.equal(buildWindowsMediaFilename({ ...input, type: 8, encrypted, auxiliaryFlag: true, otherMediaMid: 'other' }),
       output('VAM0', '.mflac', 'other'))
-    assert.equal(buildWindowsMediaFilename({ ...input, type: 8, encrypted, auxiliaryFlag: false, suffix: 'other' }),
+    assert.equal(buildWindowsMediaFilename({ ...input, type: 8, encrypted, auxiliaryFlag: false, otherMediaMid: 'other' }),
       output('RS02', '.mp3', 'other'))
   }
 })
 
-test('the native optional suffix belongs only to extended types, and never duplicates the MID by default', () => {
-  assert.equal(buildWindowsMediaFilename({ ...input, encrypted: true, suffix: mediaMid }).length, 24)
-  assert.equal(buildWindowsMediaFilename({ ...input, encrypted: true, suffix: mediaMid }), output('F0M0', '.mflac'))
-  assert.equal(buildWindowsMediaFilename({ ...input, type: 12, encrypted: true, suffix: mediaMid }), output('D0M1', '.mmp4'))
-  assert.equal(buildWindowsMediaFilename({ ...input, type: 14, encrypted: true, suffix: 'other' }),
-    output('AIM0', '.mflac', 'other'))
+test('nonempty OtherMID replaces the main MID only on the native extended branches', () => {
+  // Common10032ac3 ->10007234 replaces the CString buffer pointer at1000726a.
+  // This instruction proof corrects the old suffix-concatenation inference.
+  for (const sourceMode of [1, 2, 111]) {
+    for (const [type, plainPrefix, plainExtension, encPrefix, encExtension] of vectors) {
+      if (type !== 8 && type < 14) continue
+      for (const encrypted of [false, true]) {
+        assert.equal(buildWindowsMediaFilename({ ...input, type, sourceMode, encrypted,
+          otherMediaMid: '00000000000002' }), output(encrypted ? encPrefix : plainPrefix,
+          encrypted ? encExtension : plainExtension, '00000000000002'))
+      }
+    }
+  }
+  assert.equal(buildWindowsMediaFilename({ ...input, encrypted: true, otherMediaMid: 'other' }), output('F0M0', '.mflac'))
+  assert.equal(buildWindowsMediaFilename({ ...input, type: 12, encrypted: true, otherMediaMid: 'other' }), output('D0M1', '.mmp4'))
   assert.equal(buildWindowsMediaFilename({ ...input, mediaMid: 'ResolvedMediaID', type: 3 }), 'M800ResolvedMediaID.mp3')
+})
+
+test('public One Last Kiss variant identifiers produce the four native premium filenames without base-MID duplication', () => {
+  // Fixed public input from TrackInfo, cross-checked with the hash-pinned native
+  // OtherMID index switch (ev_3c9f31585c10436fc6e48302c2b6dbbf326a592bd8fdc48e83bbebd57a6a264a).
+  for (const [type, otherMediaMid, plain, encrypted] of [
+    [14, '003xkcSf3NBRlX', 'AI00003xkcSf3NBRlX.flac', 'AIM0003xkcSf3NBRlX.mflac'],
+    [15, '004astzo2Y5HDU', 'Q000004astzo2Y5HDU.flac', 'Q0M0004astzo2Y5HDU.mflac'],
+    [16, '001GZ6wJ0gJaEG', 'Q001001GZ6wJ0gJaEG.flac', 'Q0M1001GZ6wJ0gJaEG.mflac'],
+    [18, '000Eobd13nwHGJ', 'Q003000Eobd13nwHGJ.ogg', 'Q0M3000Eobd13nwHGJ.mgg']
+  ]) {
+    for (const sourceMode of [1, 2, 111]) {
+      const args = { ...input, mediaMid: '000zwUDf0KftQv', type, sourceMode, otherMediaMid }
+      assert.equal(buildWindowsMediaFilename(args), plain)
+      assert.equal(buildWindowsMediaFilename({ ...args, encrypted: true }), encrypted)
+    }
+  }
 })
 
 test('unresolved MID, missing context and unverified fallback types are rejected explicitly', () => {

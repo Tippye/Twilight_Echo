@@ -1,0 +1,3845 @@
+TAP version 13
+# Subtest: opening a 3000-video folder loads one page, with no hidden prefetch or page cap
+ok 1 - opening a 3000-video folder loads one page, with no hidden prefetch or page cap
+  ---
+  duration_ms: 10.169
+  type: 'test'
+  ...
+# Subtest: a 250-video folder is read completely one requested page at a time
+ok 2 - a 250-video folder is read completely one requested page at a time
+  ---
+  duration_ms: 23.8406
+  type: 'test'
+  ...
+# Subtest: filtered and multi-part videos advance by source page, not returned track count
+ok 3 - filtered and multi-part videos advance by source page, not returned track count
+  ---
+  duration_ms: 3.776
+  type: 'test'
+  ...
+# Subtest: shares and caches page loads, and refresh invalidates later pages only in that folder
+ok 4 - shares and caches page loads, and refresh invalidates later pages only in that folder
+  ---
+  duration_ms: 57.7303
+  type: 'test'
+  ...
+# Subtest: a rejected page is not cached or retried automatically and cannot erase a successful page
+ok 5 - a rejected page is not cached or retried automatically and cannot erase a successful page
+  ---
+  duration_ms: 16.3131
+  type: 'test'
+  ...
+# Subtest: video-detail API rejections do not masquerade as an empty page
+ok 6 - video-detail API rejections do not masquerade as an empty page
+  ---
+  duration_ms: 3.5796
+  type: 'test'
+  ...
+# Subtest: page caches stay isolated between sessions and clear at logout
+ok 7 - page caches stay isolated between sessions and clear at logout
+  ---
+  duration_ms: 2.5373
+  type: 'test'
+  ...
+# Subtest: a late page response from before refresh cannot repopulate the new folder cache
+ok 8 - a late page response from before refresh cannot repopulate the new folder cache
+  ---
+  duration_ms: 7.0061
+  type: 'test'
+  ...
+# Subtest: recovers a transient first-page network failure without losing playlist tracks
+ok 9 - recovers a transient first-page network failure without losing playlist tracks
+  ---
+  duration_ms: 310.6602
+  type: 'test'
+  ...
+# Subtest: retries only the failed page and preserves playlist ordering
+ok 10 - retries only the failed page and preserves playlist ordering
+  ---
+  duration_ms: 319.4228
+  type: 'test'
+  ...
+# Subtest: concurrent forced playlist requests share one load and login check
+ok 11 - concurrent forced playlist requests share one load and login check
+  ---
+  duration_ms: 13.3659
+  type: 'test'
+  ...
+# Subtest: uses recent tracks during a temporary refresh failure and retries the next refresh
+ok 12 - uses recent tracks during a temporary refresh failure and retries the next refresh
+  ---
+  duration_ms: 311.1562
+  type: 'test'
+  ...
+# Subtest: does not cache an incomplete playlist after a failed later page
+ok 13 - does not cache an incomplete playlist after a failed later page
+  ---
+  duration_ms: 307.4141
+  type: 'test'
+  ...
+# Subtest: does not retry authorization failures or hide them behind cached tracks
+ok 14 - does not retry authorization failures or hide them behind cached tracks
+  ---
+  duration_ms: 2.3995
+  type: 'test'
+  ...
+# Subtest: concurrent library requests share the folder list without preloading folder contents
+ok 15 - concurrent library requests share the folder list without preloading folder contents
+  ---
+  duration_ms: 7.4524
+  type: 'test'
+  ...
+# Subtest: rejects missing playlist data instead of caching a false empty playlist
+ok 16 - rejects missing playlist data instead of caching a false empty playlist
+  ---
+  duration_ms: 316.7861
+  type: 'test'
+  ...
+# Subtest: legacy full loads request pages sequentially in the original order
+ok 17 - legacy full loads request pages sequentially in the original order
+  ---
+  duration_ms: 780.8028
+  type: 'test'
+  ...
+# Subtest: keeps multi-part videos expanded when favorites require video details
+ok 18 - keeps multi-part videos expanded when favorites require video details
+  ---
+  duration_ms: 1.3426
+  type: 'test'
+  ...
+# Subtest: a cold login network failure remains a network error instead of an expired-session error
+ok 19 - a cold login network failure remains a network error instead of an expired-session error
+  ---
+  duration_ms: 301.613
+  type: 'test'
+  ...
+# (node:48292) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a recent confirmed login survives a transient probe failure but explicit rejection logs out
+ok 20 - a recent confirmed login survives a transient probe failure but explicit rejection logs out
+  ---
+  duration_ms: 615.2032
+  type: 'test'
+  ...
+# Subtest: does not reuse another account's playlist cache
+ok 21 - does not reuse another account's playlist cache
+  ---
+  duration_ms: 0.734
+  type: 'test'
+  ...
+# Subtest: JSON response body is covered by the request timeout after headers arrive
+ok 22 - JSON response body is covered by the request timeout after headers arrive
+  ---
+  duration_ms: 0.7091
+  type: 'test'
+  ...
+# Subtest: the complete load deadline bounds retries before the host RPC timeout
+ok 23 - the complete load deadline bounds retries before the host RPC timeout
+  ---
+  duration_ms: 0.2291
+  type: 'test'
+  ...
+# Subtest: does not cache an empty playlist when video detail resolution temporarily fails
+ok 24 - does not cache an empty playlist when video detail resolution temporarily fails
+  ---
+  duration_ms: 309.1148
+  type: 'test'
+  ...
+# Subtest: cold login retries a temporary connection failure and still loads favorites
+ok 25 - cold login retries a temporary connection failure and still loads favorites
+  ---
+  duration_ms: 308.0848
+  type: 'test'
+  ...
+# Subtest: long Retry-After does not trigger an immediate retry against a rate-limited server
+ok 26 - long Retry-After does not trigger an immediate retry against a rate-limited server
+  ---
+  duration_ms: 0.9306
+  type: 'test'
+  ...
+# Subtest: short Retry-After is respected before retrying
+ok 27 - short Retry-After is respected before retrying
+  ---
+  duration_ms: 0.6803
+  type: 'test'
+  ...
+# Subtest: playback fallback chain stops before the host 30s RPC timeout
+ok 28 - playback fallback chain stops before the host 30s RPC timeout
+  ---
+  duration_ms: 1.2325
+  type: 'test'
+  ...
+# Subtest: signs Bilibili WBI parameters with stable w_rid
+ok 29 - signs Bilibili WBI parameters with stable w_rid
+  ---
+  duration_ms: 1.7584
+  type: 'test'
+  ...
+# Subtest: keeps only required Bilibili cookies from Set-Cookie headers
+ok 30 - keeps only required Bilibili cookies from Set-Cookie headers
+  ---
+  duration_ms: 0.8656
+  type: 'test'
+  ...
+# Subtest: sorts default favorite folder first
+ok 31 - sorts default favorite folder first
+  ---
+  duration_ms: 9.1532
+  type: 'test'
+  ...
+# Subtest: maps Bilibili favorite media to stable provider-prefixed track
+ok 32 - maps Bilibili favorite media to stable provider-prefixed track
+  ---
+  duration_ms: 0.4084
+  type: 'test'
+  ...
+# Subtest: extracts cid from Bilibili favorite media without video detail request
+ok 33 - extracts cid from Bilibili favorite media without video detail request
+  ---
+  duration_ms: 0.1657
+  type: 'test'
+  ...
+# (node:23568) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: selects highest bandwidth DASH audio and prefers flac audio
+ok 34 - selects highest bandwidth DASH audio and prefers flac audio
+  ---
+  duration_ms: 0.3711
+  type: 'test'
+  ...
+# Subtest: sorts pinned favorite folders before unpinned folders
+ok 35 - sorts pinned favorite folders before unpinned folders
+  ---
+  duration_ms: 0.3057
+  type: 'test'
+  ...
+# Subtest: keeps legacy single pinned favorite folder input compatible
+ok 36 - keeps legacy single pinned favorite folder input compatible
+  ---
+  duration_ms: 0.143
+  type: 'test'
+  ...
+# Subtest: selects stable progressive playback url when available
+ok 37 - selects stable progressive playback url when available
+  ---
+  duration_ms: 0.3564
+  type: 'test'
+  ...
+# Subtest: extracts a cookie value from a Bilibili cookie string
+ok 38 - extracts a cookie value from a Bilibili cookie string
+  ---
+  duration_ms: 0.453
+  type: 'test'
+  ...
+# Subtest: merges refreshed cookies while keeping existing values
+ok 39 - merges refreshed cookies while keeping existing values
+  ---
+  duration_ms: 0.3574
+  type: 'test'
+  ...
+# Subtest: treats cache entry as fresh only before expiry
+ok 40 - treats cache entry as fresh only before expiry
+  ---
+  duration_ms: 0.145
+  type: 'test'
+  ...
+# Subtest: parses Bilibili search duration strings to seconds
+ok 41 - parses Bilibili search duration strings to seconds
+  ---
+  duration_ms: 0.1158
+  type: 'test'
+  ...
+# Subtest: strips HTML highlight tags from Bilibili search titles
+ok 42 - strips HTML highlight tags from Bilibili search titles
+  ---
+  duration_ms: 0.1631
+  type: 'test'
+  ...
+# Subtest: maps a multi-page video page to a provider-prefixed track
+ok 43 - maps a multi-page video page to a provider-prefixed track
+  ---
+  duration_ms: 0.1676
+  type: 'test'
+  ...
+# Subtest: falls back to P-index label when page part is missing
+ok 44 - falls back to P-index label when page part is missing
+  ---
+  duration_ms: 0.0791
+  type: 'test'
+  ...
+# Subtest: returns null for multi-page entry without valid cid
+ok 45 - returns null for multi-page entry without valid cid
+  ---
+  duration_ms: 0.0647
+  type: 'test'
+  ...
+# Subtest: returns the account signature in checkLogin and caches it for getProfile
+ok 46 - returns the account signature in checkLogin and caches it for getProfile
+  ---
+  duration_ms: 116.3594
+  type: 'test'
+  ...
+# Subtest: keeps login usable when profile details fail or contain no usable signature
+    # Subtest: empty signature
+    ok 1 - empty signature
+      ---
+      duration_ms: 7.3655
+      type: 'test'
+      ...
+    # Subtest: missing signature
+    ok 2 - missing signature
+      ---
+      duration_ms: 7.1771
+      type: 'test'
+      ...
+    # Subtest: invalid signature
+    ok 3 - invalid signature
+      ---
+      duration_ms: 6.2542
+      type: 'test'
+      ...
+    # Subtest: different account
+    ok 4 - different account
+      ---
+      duration_ms: 9.3567
+      type: 'test'
+      ...
+    # Subtest: API rejection
+    ok 5 - API rejection
+      ---
+      duration_ms: 4.6568
+      type: 'test'
+      ...
+    # Subtest: HTTP failure
+    ok 6 - HTTP failure
+      ---
+      duration_ms: 5.9232
+      type: 'test'
+      ...
+    # Subtest: network failure
+    ok 7 - network failure
+      ---
+      duration_ms: 5.8469
+      type: 'test'
+      ...
+    1..7
+ok 47 - keeps login usable when profile details fail or contain no usable signature
+  ---
+  duration_ms: 48.9653
+  type: 'test'
+  ...
+# Subtest: bounds a stalled profile request without marking the account logged out
+ok 48 - bounds a stalled profile request without marking the account logged out
+  ---
+  duration_ms: 8.2497
+  type: 'test'
+  ...
+# Subtest: does not request profile details when the session is rejected
+ok 49 - does not request profile details when the session is rejected
+  ---
+  duration_ms: 1.4241
+  type: 'test'
+  ...
+# Subtest: registers safe stubs for every capability-exposed provider method
+ok 50 - registers safe stubs for every capability-exposed provider method
+  ---
+  duration_ms: 1.932
+  type: 'test'
+  ...
+# Subtest: recognizes track-missing playurl errors for stale cids
+ok 51 - recognizes track-missing playurl errors for stale cids
+  ---
+  duration_ms: 0.3661
+  type: 'test'
+  ...
+# Subtest: falls through to backup CDN when the first candidate stalls
+ok 52 - falls through to backup CDN when the first candidate stalls
+  ---
+  duration_ms: 53.7946
+  type: 'test'
+  ...
+# Subtest: stops trying candidates when the client aborts the request
+ok 53 - stops trying candidates when the client aborts the request
+  ---
+  duration_ms: 31.703
+  type: 'test'
+  ...
+# Subtest: does not abort an in-flight stream body after headers arrive
+ok 54 - does not abort an in-flight stream body after headers arrive
+  ---
+  duration_ms: 129.6607
+  type: 'test'
+  ...
+# Subtest: plugin.json declares library:read for library provider capability
+ok 55 - plugin.json declares library:read for library provider capability
+  ---
+  duration_ms: 5.8381
+  type: 'test'
+  ...
+# Subtest: DIY form covers every config value in four live, resettable groups
+ok 56 - DIY form covers every config value in four live, resettable groups
+  ---
+  duration_ms: 2.6985
+  type: 'test'
+  ...
+# Subtest: form values parse into a typed patch without accepting unknown keys
+ok 57 - form values parse into a typed patch without accepting unknown keys
+  ---
+  duration_ms: 0.5115
+  type: 'test'
+  ...
+# Subtest: round-tripping the form is lossless and range declarations are bounded
+ok 58 - round-tripping the form is lossless and range declarations are bounded
+  ---
+  duration_ms: 0.5492
+  type: 'test'
+  ...
+# Subtest: activation registers the player button and live DIY settings panel
+ok 59 - activation registers the player button and live DIY settings panel
+  ---
+  duration_ms: 3.626
+  type: 'test'
+  ...
+# Subtest: manifest declares the permissions required by the registered library provider
+ok 60 - manifest declares the permissions required by the registered library provider
+  ---
+  duration_ms: 1.4547
+  type: 'test'
+  ...
+# Subtest: marketplace package and index match the source manifest and package checksum
+ok 61 - marketplace package and index match the source manifest and package checksum
+  ---
+  duration_ms: 89.4966
+  type: 'test'
+  ...
+# Subtest: server login persists only the session and survives a host restart
+ok 62 - server login persists only the session and survives a host restart
+  ---
+  duration_ms: 30.8648
+  type: 'test'
+  ...
+# Subtest: search and playlist pagination map tracks and preserve server-scoped identities
+ok 63 - search and playlist pagination map tracks and preserve server-scoped identities
+  ---
+  duration_ms: 9.9926
+  type: 'test'
+  ...
+# Subtest: failed login preserves the session and cancelled requests do not return media
+ok 64 - failed login preserves the session and cancelled requests do not return media
+  ---
+  duration_ms: 1.5465
+  type: 'test'
+  ...
+# Subtest: declares a scoped provider manifest
+ok 65 - declares a scoped provider manifest
+  ---
+  duration_ms: 5.7394
+  type: 'test'
+  ...
+# Subtest: registers the KuGou provider and blocks all upstream work before consent
+ok 66 - registers the KuGou provider and blocks all upstream work before consent
+  ---
+  duration_ms: 3.6
+  type: 'test'
+  ...
+# Subtest: only accepts loopback external addresses and keeps the embedded service as default
+ok 67 - only accepts loopback external addresses and keeps the embedded service as default
+  ---
+  duration_ms: 3.1371
+  type: 'test'
+  ...
+# Subtest: migrates the legacy port-3000 default while public search stays independent
+ok 68 - migrates the legacy port-3000 default while public search stays independent
+  ---
+  duration_ms: 6.8873
+  type: 'test'
+  ...
+# Subtest: maps public song search results without sending private credentials
+ok 69 - maps public song search results without sending private credentials
+  ---
+  duration_ms: 3.951
+  type: 'test'
+  ...
+# Subtest: searches public playlists and artists without starting the authenticated service
+ok 70 - searches public playlists and artists without starting the authenticated service
+  ---
+  duration_ms: 3.339
+  type: 'test'
+  ...
+# Subtest: finds KRC lyrics and exposes a normal-LRC fallback plus word lyrics
+ok 71 - finds KRC lyrics and exposes a normal-LRC fallback plus word lyrics
+  ---
+  duration_ms: 7.8514
+  type: 'test'
+  ...
+# Subtest: performs QR login and stores credentials only in private settings
+ok 72 - performs QR login and stores credentials only in private settings
+  ---
+  duration_ms: 12.2153
+  type: 'test'
+  ...
+# Subtest: uses a quality ladder and serves a Range response through the loopback audio proxy
+ok 73 - uses a quality ladder and serves a Range response through the loopback audio proxy
+  ---
+  duration_ms: 99.4265
+  type: 'test'
+  ...
+# Subtest: starts the embedded service lazily, memoizes it and closes it on deactivation
+ok 74 - starts the embedded service lazily, memoizes it and closes it on deactivation
+  ---
+  duration_ms: 11.407
+  type: 'test'
+  ...
+# Subtest: talks to the configured external loopback service without starting the embedded one
+ok 75 - talks to the configured external loopback service without starting the embedded one
+  ---
+  duration_ms: 2.0018
+  type: 'test'
+  ...
+# Subtest: polls qr check with unique per-request cache-busting timestamps
+ok 76 - polls qr check with unique per-request cache-busting timestamps
+  ---
+  duration_ms: 6.6929
+  type: 'test'
+  ...
+# Subtest: accepts qr success when credentials arrive only via Set-Cookie
+ok 77 - accepts qr success when credentials arrive only via Set-Cookie
+  ---
+  duration_ms: 3.2281
+  type: 'test'
+  ...
+# Subtest: does not report qr success when the returned credentials fail account validation
+ok 78 - does not report qr success when the returned credentials fail account validation
+  ---
+  duration_ms: 4.0995
+  type: 'test'
+  ...
+# Subtest: loads user playlists with the private auth header and never exposes it in mapped items
+ok 79 - loads user playlists with the private auth header and never exposes it in mapped items
+  ---
+  duration_ms: 2.2736
+  type: 'test'
+  ...
+# Subtest: redacts credential-shaped errors and propagates provider cancellation
+ok 80 - redacts credential-shaped errors and propagates provider cancellation
+  ---
+  duration_ms: 0.7426
+  type: 'test'
+  ...
+# Subtest: maps filename-only search results without depending on an upstream schema variant
+ok 81 - maps filename-only search results without depending on an upstream schema variant
+  ---
+  duration_ms: 0.8554
+  type: 'test'
+  ...
+# Subtest: maps playlist/track/all rows that carry singerinfo, timelen and albuminfo fields
+ok 82 - maps playlist/track/all rows that carry singerinfo, timelen and albuminfo fields
+  ---
+  duration_ms: 2.3183
+  type: 'test'
+  ...
+# Subtest: clears a stored login only after the account endpoint rejects its credentials
+ok 83 - clears a stored login only after the account endpoint rejects its credentials
+  ---
+  duration_ms: 1.7237
+  type: 'test'
+  ...
+# Subtest: surfaces actionable playback errors instead of returning an empty stream URL
+ok 84 - surfaces actionable playback errors instead of returning an empty stream URL
+  ---
+  duration_ms: 1.2387
+  type: 'test'
+  ...
+# Subtest: identifies a non-KuGou external service before accepting a stream response
+ok 85 - identifies a non-KuGou external service before accepting a stream response
+  ---
+  duration_ms: 1.0361
+  type: 'test'
+  ...
+# Subtest: homepage consent protects every new entry point before upstream requests
+ok 86 - homepage consent protects every new entry point before upstream requests
+  ---
+  duration_ms: 1.7818
+  type: 'test'
+  ...
+# Subtest: homepage loads daily songs, fresh FM batches and nested rising chart tracks without login
+ok 87 - homepage loads daily songs, fresh FM batches and nested rising chart tracks without login
+  ---
+  duration_ms: 3.5173
+  type: 'test'
+  ...
+# Subtest: Hi-Res discovery uses upstream category and has-next without inventing totals or song counts
+ok 88 - Hi-Res discovery uses upstream category and has-next without inventing totals or song counts
+  ---
+  duration_ms: 1.5876
+  type: 'test'
+  ...
+# Subtest: playlist details continue past unavailable songs to fetch every page
+ok 89 - playlist details continue past unavailable songs to fetch every page
+  ---
+  duration_ms: 3.4059
+  type: 'test'
+  ...
+# Subtest: discovery bounds upstream appended playlists to the requested page size
+ok 90 - discovery bounds upstream appended playlists to the requested page size
+  ---
+  duration_ms: 1.2465
+  type: 'test'
+  ...
+# Subtest: vendor bundle exposes the embedded server factory and a full route table
+ok 91 - vendor bundle exposes the embedded server factory and a full route table
+  ---
+  duration_ms: 1.0943
+  type: 'test'
+  ...
+# Subtest: embedded server binds loopback on an ephemeral port and closes cleanly
+ok 92 - embedded server binds loopback on an ephemeral port and closes cleanly
+  ---
+  duration_ms: 121.2318
+  type: 'test'
+  ...
+# Subtest: embedded server reaches the KuGou upstream end to end
+ok 93 - embedded server reaches the KuGou upstream end to end # SKIP
+  ---
+  duration_ms: 0.2682
+  type: 'test'
+  ...
+# Subtest: miku scrolling styles avoid global subtree selectors and fixed blurred backgrounds
+ok 94 - miku scrolling styles avoid global subtree selectors and fixed blurred backgrounds
+  ---
+  duration_ms: 34.657
+  type: 'test'
+  ...
+# Subtest: home sections bind to implemented methods and gate private favorites
+ok 95 - home sections bind to implemented methods and gate private favorites
+  ---
+  duration_ms: 10.4301
+  type: 'test'
+  ...
+# Subtest: shares concurrent public discovery requests, limits rows and refreshes on the next load
+ok 96 - shares concurrent public discovery requests, limits rows and refreshes on the next load
+  ---
+  duration_ms: 3.97
+  type: 'test'
+  ...
+# Subtest: favorites carry the login cookie and playlist type and request only one preview page
+ok 97 - favorites carry the login cookie and playlist type and request only one preview page
+  ---
+  duration_ms: 1.3216
+  type: 'test'
+  ...
+# Subtest: favorites do not issue requests when logged out or no liked playlist exists
+ok 98 - favorites do not issue requests when logged out or no liked playlist exists
+  ---
+  duration_ms: 0.9217
+  type: 'test'
+  ...
+# Subtest: one failed playlist preserves other songs but total failure stays retryable
+ok 99 - one failed playlist preserves other songs but total failure stays retryable
+  ---
+  duration_ms: 1.113
+  type: 'test'
+  ...
+# Subtest: completes the CDN prefix, resource URI and image transform for covers
+ok 100 - completes the CDN prefix, resource URI and image transform for covers
+  ---
+  duration_ms: 1.1404
+  type: 'test'
+  ...
+# Subtest: resource filenames with an extension still require a CDN transform
+ok 101 - resource filenames with an extension still require a CDN transform
+  ---
+  duration_ms: 0.279
+  type: 'test'
+  ...
+# Subtest: preserves complete signed avatar URLs without duplicating the URI or altering the query
+ok 102 - preserves complete signed avatar URLs without duplicating the URI or altering the query
+  ---
+  duration_ms: 0.1488
+  type: 'test'
+  ...
+# Subtest: keeps an existing image transform and accepts the next valid CDN base
+ok 103 - keeps an existing image transform and accepts the next valid CDN base
+  ---
+  duration_ms: 0.132
+  type: 'test'
+  ...
+# Subtest: does not return a bare CDN directory as a usable cover
+ok 104 - does not return a bare CDN directory as a usable cover
+  ---
+  duration_ms: 0.8616
+  type: 'test'
+  ...
+# Subtest: persists a session returned in the upstream auth response
+ok 105 - persists a session returned in the upstream auth response
+  ---
+  duration_ms: 44.6628
+  type: 'test'
+  ...
+# Subtest: accepts a session cookie returned by the QR status endpoint
+ok 106 - accepts a session cookie returned by the QR status endpoint
+  ---
+  duration_ms: 3.9464
+  type: 'test'
+  ...
+# Subtest: keeps the scanned state while the upstream returns a transient error code
+ok 107 - keeps the scanned state while the upstream returns a transient error code
+  ---
+  duration_ms: 5.1512
+  type: 'test'
+  ...
+# Subtest: uses the host security bridge when it is available
+ok 108 - uses the host security bridge when it is available
+  ---
+  duration_ms: 4.0577
+  type: 'test'
+  ...
+# Subtest: searches current endpoints with the login cookie and fills pages without skipping songs
+ok 109 - searches current endpoints with the login cookie and fills pages without skipping songs
+  ---
+  duration_ms: 29.9985
+  type: 'test'
+  ...
+# Subtest: loads account profile and library and carries authentication and playlist type through pagination
+ok 110 - loads account profile and library and carries authentication and playlist type through pagination
+  ---
+  duration_ms: 5.4238
+  type: 'test'
+  ...
+# Subtest: reports empty and failed upstream responses instead of showing an empty library or search
+ok 111 - reports empty and failed upstream responses instead of showing an empty library or search
+  ---
+  duration_ms: 4.4479
+  type: 'test'
+  ...
+# Subtest: resolves player metadata to audio and never forwards the login cookie to the player info host
+ok 112 - resolves player metadata to audio and never forwards the login cookie to the player info host
+  ---
+  duration_ms: 1.9377
+  type: 'test'
+  ...
+# Subtest: uses official share audio when the retired account endpoint is empty and reports previews
+ok 113 - uses official share audio when the retired account endpoint is empty and reports previews
+  ---
+  duration_ms: 1.2209
+  type: 'test'
+  ...
+# Subtest: rejects encrypted share audio and does not treat a cover URL as playback
+ok 114 - rejects encrypted share audio and does not treat a cover URL as playback
+  ---
+  duration_ms: 10.2129
+  type: 'test'
+  ...
+# Subtest: registers the QQ provider and controlled settings contribution
+ok 115 - registers the QQ provider and controlled settings contribution
+  ---
+  duration_ms: 2.659
+  type: 'test'
+  ...
+# Subtest: blocks all upstream work until the disclaimer is accepted
+ok 116 - blocks all upstream work until the disclaimer is accepted
+  ---
+  duration_ms: 1.1732
+  type: 'test'
+  ...
+# Subtest: saves versioned disclaimer consent without logging account data
+ok 117 - saves versioned disclaimer consent without logging account data
+  ---
+  duration_ms: 2.0085
+  type: 'test'
+  ...
+# Subtest: redacts credential-shaped upstream errors from provider failures
+ok 118 - redacts credential-shaped upstream errors from provider failures
+  ---
+  duration_ms: 13.0848
+  type: 'test'
+  ...
+# Subtest: maps QQ song search results to provider-prefixed tracks
+ok 119 - maps QQ song search results to provider-prefixed tracks
+  ---
+  duration_ms: 2.5887
+  type: 'test'
+  ...
+# Subtest: maps playlist and artist search results through the shared QQ search endpoint
+ok 120 - maps playlist and artist search results through the shared QQ search endpoint
+  ---
+  duration_ms: 6.1244
+  type: 'test'
+  ...
+# Subtest: loads Rain120 homepage songs and playlists through public Musicu requests
+ok 121 - loads Rain120 homepage songs and playlists through public Musicu requests
+  ---
+  duration_ms: 4.3563
+  type: 'test'
+  ...
+# Subtest: QQ homepage follows each chart current period and maps playable song metadata
+ok 122 - QQ homepage follows each chart current period and maps playable song metadata
+  ---
+  duration_ms: 8.4858
+  type: 'test'
+  ...
+# Subtest: QQ daily recommendations use the authenticated Daily 30 directory and keep playback metadata
+ok 123 - QQ daily recommendations use the authenticated Daily 30 directory and keep playback metadata
+  ---
+  duration_ms: 3.687
+  type: 'test'
+  ...
+# Subtest: QQ daily recommendations require login and do not substitute new releases
+ok 124 - QQ daily recommendations require login and do not substitute new releases
+  ---
+  duration_ms: 1.4885
+  type: 'test'
+  ...
+# Subtest: QQ chart failures and consent errors remain actionable instead of yielding empty success
+ok 125 - QQ chart failures and consent errors remain actionable instead of yielding empty success
+  ---
+  duration_ms: 1.9298
+  type: 'test'
+  ...
+# Subtest: loads Rain120 playlist categories and paged discovery playlists
+ok 126 - loads Rain120 playlist categories and paged discovery playlists
+  ---
+  duration_ms: 5.0763
+  type: 'test'
+  ...
+# Subtest: loads a public discovered playlist without requiring QQ login
+ok 127 - loads a public discovered playlist without requiring QQ login
+  ---
+  duration_ms: 1.6389
+  type: 'test'
+  ...
+# Subtest: performs QQ Music native QR login and persists only a private auth session
+ok 128 - performs QQ Music native QR login and persists only a private auth session
+  ---
+  duration_ms: 28.8133
+  type: 'test'
+  ...
+# Subtest: reports invalid native QR credentials instead of waiting forever
+ok 129 - reports invalid native QR credentials instead of waiting forever
+  ---
+  duration_ms: 4.8887
+  type: 'test'
+  ...
+# Subtest: reports native QR connection failures before a user scans
+ok 130 - reports native QR connection failures before a user scans
+  ---
+  duration_ms: 3.4127
+  type: 'test'
+  ...
+# Subtest: follows the QQ MQTT broker redirect on the handshake path
+ok 131 - follows the QQ MQTT broker redirect on the handshake path
+  ---
+  duration_ms: 2.9547
+  type: 'test'
+  ...
+# Subtest: maps scanned and expired native QR states and releases the listener
+ok 132 - maps scanned and expired native QR states and releases the listener
+  ---
+  duration_ms: 11.322
+  type: 'test'
+  ...
+# Subtest: clears uncompleted native QR sessions during deactivation
+ok 133 - clears uncompleted native QR sessions during deactivation
+  ---
+  duration_ms: 3.239
+  type: 'test'
+  ...
+# Subtest: logout clears the private session and any uncompleted native QR state
+ok 134 - logout clears the private session and any uncompleted native QR state
+  ---
+  duration_ms: 1.7488
+  type: 'test'
+  ...
+# Subtest: requires a new QR login instead of reusing a partial legacy cookie session
+ok 135 - requires a new QR login instead of reusing a partial legacy cookie session
+  ---
+  duration_ms: 0.5997
+  type: 'test'
+  ...
+# Subtest: clears a rejected native session and gives an actionable re-login message
+ok 136 - clears a rejected native session and gives an actionable re-login message
+  ---
+  duration_ms: 4.2398
+  type: 'test'
+  ...
+# Subtest: honors cancellation before creating a native QR session
+ok 137 - honors cancellation before creating a native QR session
+  ---
+  duration_ms: 2.4424
+  type: 'test'
+  ...
+# Subtest: loads user playlists and song details with private QQ session headers
+ok 138 - loads user playlists and song details with private QQ session headers
+  ---
+  duration_ms: 3.1357
+  type: 'test'
+  ...
+# Subtest: falls back from legacy lyric endpoint and requests plaintext LRC from Musicu
+ok 139 - falls back from legacy lyric endpoint and requests plaintext LRC from Musicu
+  ---
+  duration_ms: 1.4223
+  type: 'test'
+  ...
+# Subtest: uses quality fallback and serves playback through the local Range proxy
+ok 140 - uses quality fallback and serves playback through the local Range proxy
+  ---
+  duration_ms: 72.5437
+  type: 'test'
+  ...
+# Subtest: continues the quality ladder when an upstream vkey request fails
+ok 141 - continues the quality ladder when an upstream vkey request fails
+  ---
+  duration_ms: 15.8817
+  type: 'test'
+  ...
+# Subtest: refreshes one expired upstream stream URL and rejects invalid proxy tokens
+ok 142 - refreshes one expired upstream stream URL and rejects invalid proxy tokens
+  ---
+  duration_ms: 18.4178
+  type: 'test'
+  ...
+# Subtest: propagates cancellation and clears the proxy during deactivation
+ok 143 - propagates cancellation and clears the proxy during deactivation
+  ---
+  duration_ms: 1.3402
+  type: 'test'
+  ...
+# Subtest: native album producer preserves exact service/key and typed caller fields
+ok 144 - native album producer preserves exact service/key and typed caller fields
+  ---
+  duration_ms: 2.2998
+  type: 'test'
+  ...
+# Subtest: UInt32 albumID and Int32 pagination/order remain separate numeric domains
+ok 145 - UInt32 albumID and Int32 pagination/order remain separate numeric domains
+  ---
+  duration_ms: 0.3488
+  type: 'test'
+  ...
+# Subtest: native no-request branch and invalid or absent typed inputs reject
+ok 146 - native no-request branch and invalid or absent typed inputs reject
+  ---
+  duration_ms: 0.7103
+  type: 'test'
+  ...
+# Subtest: native songList/songInfo path reuses the public song mapper and omits raw extras
+ok 147 - native songList/songInfo path reuses the public song mapper and omits raw extras
+  ---
+  duration_ms: 2.231
+  type: 'test'
+  ...
+# Subtest: malformed rows are skipped without refilling and other response paths are rejected
+ok 148 - malformed rows are skipped without refilling and other response paths are rejected
+  ---
+  duration_ms: 0.6645
+  type: 'test'
+  ...
+# Subtest: actual page identity/cursor shape is bound and prior identity sets remain immutable
+ok 149 - actual page identity/cursor shape is bound and prior identity sets remain immutable
+  ---
+  duration_ms: 0.6881
+  type: 'test'
+  ...
+# Subtest: response album identity, cursor/count range, overrun and no-progress errors reject
+ok 150 - response album identity, cursor/count range, overrun and no-progress errors reject
+  ---
+  duration_ms: 0.653
+  type: 'test'
+  ...
+# Subtest: strict collection pages reject malformed tracks, duplicate pairs and either identity alias
+ok 151 - strict collection pages reject malformed tracks, duplicate pairs and either identity alias
+  ---
+  duration_ms: 0.8023
+  type: 'test'
+  ...
+# Subtest: SDK album read advances by raw rows with explicit order0 and finishes only at stable total
+ok 152 - SDK album read advances by raw rows with explicit order0 and finishes only at stable total
+  ---
+  duration_ms: 1.185
+  type: 'test'
+  ...
+# Subtest: short positive pages keep progressing from actual rows rather than imply completion
+ok 153 - short positive pages keep progressing from actual rows rather than imply completion
+  ---
+  duration_ms: 0.832
+  type: 'test'
+  ...
+# Subtest: changed totals, cross-page aliases and changed album/cursor never return a partial album
+ok 154 - changed totals, cross-page aliases and changed album/cursor never return a partial album
+  ---
+  duration_ms: 1.3305
+  type: 'test'
+  ...
+# Subtest: whole-album limits bound100pages/10000raw rows without retry or returning partial results
+ok 155 - whole-album limits bound100pages/10000raw rows without retry or returning partial results
+  ---
+  duration_ms: 4.9364
+  type: 'test'
+  ...
+# Subtest: invalid SDK inputs, abort and request failures are bounded and errors contain no raw private message
+ok 156 - invalid SDK inputs, abort and request failures are bounded and errors contain no raw private message
+  ---
+  duration_ms: 1.9848
+  type: 'test'
+  ...
+# Subtest: an external error cannot spoof the internal album validation name to export its raw message
+ok 157 - an external error cannot spoof the internal album validation name to export its raw message
+  ---
+  duration_ms: 0.4736
+  type: 'test'
+  ...
+# Subtest: album rejection rebuilds reused owned errors and snapshots external code once without evaluating unsafe name/code getters
+ok 158 - album rejection rebuilds reused owned errors and snapshots external code once without evaluating unsafe name/code getters
+  ---
+  duration_ms: 0.8788
+  type: 'test'
+  ...
+# Subtest: embedded provenance and exact three request shapes keep native transport compatibility explicit
+ok 159 - embedded provenance and exact three request shapes keep native transport compatibility explicit
+  ---
+  duration_ms: 4.4484
+  type: 'test'
+  ...
+# Subtest: source CD0 EP11 live1 tabs copy their optional one-element arrays
+ok 160 - source CD0 EP11 live1 tabs copy their optional one-element arrays
+  ---
+  duration_ms: 0.7043
+  type: 'test'
+  ...
+# Subtest: adapter caller bounds reject unsafe identifiers and unproven ordering without defaults
+ok 161 - adapter caller bounds reject unsafe identifiers and unproven ordering without defaults
+  ---
+  duration_ms: 0.6082
+  type: 'test'
+  ...
+# Subtest: bound songInfo mapping preserves rows and strips private-like raw DTO extras
+ok 162 - bound songInfo mapping preserves rows and strips private-like raw DTO extras
+  ---
+  duration_ms: 1.7556
+  type: 'test'
+  ...
+# Subtest: malformed song rows, unobserved containers and invalid overview totals reject without silently refilling
+ok 163 - malformed song rows, unobserved containers and invalid overview totals reject without silently refilling
+  ---
+  duration_ms: 0.4148
+  type: 'test'
+  ...
+# Subtest: TopSongs binds actual singerMid and rejects duplicate pairs or either song identity alias
+ok 164 - TopSongs binds actual singerMid and rejects duplicate pairs or either song identity alias
+  ---
+  duration_ms: 1.9754
+  type: 'test'
+  ...
+# Subtest: detail binds both canonical identities and returns only directly consumed description fields
+ok 165 - detail binds both canonical identities and returns only directly consumed description fields
+  ---
+  duration_ms: 1.4197
+  type: 'test'
+  ...
+# Subtest: detail rejects identity changes and missing description instead of guessing wiki or HTML
+ok 166 - detail rejects identity changes and missing description instead of guessing wiki or HTML
+  ---
+  duration_ms: 3.9052
+  type: 'test'
+  ...
+# Subtest: real albumID keys map to existing dual-ID summaries/date owner without fabricated covers or raw extras
+ok 167 - real albumID keys map to existing dual-ID summaries/date owner without fabricated covers or raw extras
+  ---
+  duration_ms: 2.9953
+  type: 'test'
+  ...
+# Subtest: album pages bind singer, totals and raw count without inventing a response cursor
+ok 168 - album pages bind singer, totals and raw count without inventing a response cursor
+  ---
+  duration_ms: 1.2863
+  type: 'test'
+  ...
+# Subtest: album pair and independent ID/MID aliases reject on a page and across previous pages
+ok 169 - album pair and independent ID/MID aliases reject on a page and across previous pages
+  ---
+  duration_ms: 0.7183
+  type: 'test'
+  ...
+# Subtest: all-albums leaf progresses by returned rows using explicit source order0 and stable actual total
+ok 170 - all-albums leaf progresses by returned rows using explicit source order0 and stable actual total
+  ---
+  duration_ms: 0.9949
+  type: 'test'
+  ...
+# Subtest: short positive album pages continue until total; no-progress/changedtotal/alias cases never return partial albums
+ok 171 - short positive album pages continue until total; no-progress/changedtotal/alias cases never return partial albums
+  ---
+  duration_ms: 1.1097
+  type: 'test'
+  ...
+# Subtest: all-albums resource limits bound requests and rejection never exports private messages
+ok 172 - all-albums resource limits bound requests and rejection never exports private messages
+  ---
+  duration_ms: 5.0212
+  type: 'test'
+  ...
+# Subtest: SDK top songs leaf uses one canonical Top10 hottest request and passes the invocation signal
+ok 173 - SDK top songs leaf uses one canonical Top10 hottest request and passes the invocation signal
+  ---
+  duration_ms: 0.4784
+  type: 'test'
+  ...
+# Subtest: SDK intro leaf returns bounded source text without querying wiki or guessed services
+ok 174 - SDK intro leaf returns bounded source text without querying wiki or guessed services
+  ---
+  duration_ms: 0.402
+  type: 'test'
+  ...
+# Subtest: intro retains the requested canonical identity when caller DTO changes during the request
+ok 175 - intro retains the requested canonical identity when caller DTO changes during the request
+  ---
+  duration_ms: 0.2457
+  type: 'test'
+  ...
+# Subtest: abort and invalid canonical input stop before a request; late abort discards returned data
+ok 176 - abort and invalid canonical input stop before a request; late abort discards returned data
+  ---
+  duration_ms: 0.6811
+  type: 'test'
+  ...
+# Subtest: request failures stay generic including same-name spoof while actual RPC errors retain numeric code only
+ok 177 - request failures stay generic including same-name spoof while actual RPC errors retain numeric code only
+  ---
+  duration_ms: 1.1636
+  type: 'test'
+  ...
+# Subtest: artist rejection rebuilds reused owned errors and snapshots genuine RPC code once with safe getter and Abort boundaries
+ok 178 - artist rejection rebuilds reused owned errors and snapshots genuine RPC code once with safe getter and Abort boundaries
+  ---
+  duration_ms: 0.7828
+  type: 'test'
+  ...
+# Subtest: loopback leases use opaque paths and expose logical bytes, GET, HEAD and byte ranges
+ok 179 - loopback leases use opaque paths and expose logical bytes, GET, HEAD and byte ranges
+  ---
+  duration_ms: 96.5991
+  type: 'test'
+  ...
+# Subtest: whole upstream 200 bodies are clipped before the caller-verified tail and can supply a range
+ok 180 - whole upstream 200 bodies are clipped before the caller-verified tail and can supply a range
+  ---
+  duration_ms: 18.282
+  type: 'test'
+  ...
+# Subtest: invalid range, unknown path, wrong Host and methods never reach the upstream
+ok 181 - invalid range, unknown path, wrong Host and methods never reach the upstream
+  ---
+  duration_ms: 20.0012
+  type: 'test'
+  ...
+# Subtest: mode2 Range uses exact uint64 offsets and original native oracle bytes, with owned keys wiped
+ok 182 - mode2 Range uses exact uint64 offsets and original native oracle bytes, with owned keys wiped
+  ---
+  duration_ms: 16.5654
+  type: 'test'
+  ...
+# Subtest: mode1 owners are per-resolution, disposed for open, HEAD and completed GET
+ok 183 - mode1 owners are per-resolution, disposed for open, HEAD and completed GET
+  ---
+  duration_ms: 10.2347
+  type: 'test'
+  ...
+# Subtest: expiry and denied upstream refresh the same lease without changing its content identity
+ok 184 - expiry and denied upstream refresh the same lease without changing its content identity
+  ---
+  duration_ms: 15.1081
+  type: 'test'
+  ...
+# Subtest: refresh cannot switch sourceId, key, dimensions or content type
+ok 185 - refresh cannot switch sourceId, key, dimensions or content type
+  ---
+  duration_ms: 32.2438
+  type: 'test'
+  ...
+# Subtest: every redirect hop obeys the exact HTTPS origin allowlist and strips cross-origin credentials
+ok 186 - every redirect hop obeys the exact HTTPS origin allowlist and strips cross-origin credentials
+  ---
+  duration_ms: 52.8402
+  type: 'test'
+  ...
+# Subtest: inconsistent boundaries, headers, compressed and truncated upstreams fail without publishing wrong lengths
+ok 187 - inconsistent boundaries, headers, compressed and truncated upstreams fail without publishing wrong lengths
+  ---
+  duration_ms: 50.3584
+  type: 'test'
+  ...
+# Subtest: revokeAll aborts active readers, disposes request owners and leaves released paths unauthorized
+ok 188 - revokeAll aborts active readers, disposes request owners and leaves released paths unauthorized
+  ---
+  duration_ms: 21.1116
+  type: 'test'
+  ...
+# Subtest: late resolution after cancellation releases transferred owners without creating a usable lease
+ok 189 - late resolution after cancellation releases transferred owners without creating a usable lease
+  ---
+  duration_ms: 4.4062
+  type: 'test'
+  ...
+# Subtest: simultaneous denied requests coalesce refresh while retaining independent decoder owners
+ok 190 - simultaneous denied requests coalesce refresh while retaining independent decoder owners
+  ---
+  duration_ms: 15.4197
+  type: 'test'
+  ...
+# Subtest: unresponsive fetches time out and a late response is canceled without reviving the request
+ok 191 - unresponsive fetches time out and a late response is canceled without reviving the request
+  ---
+  duration_ms: 45.601
+  type: 'test'
+  ...
+# Subtest: reader cancellation cannot block revocation or retain its owner
+ok 192 - reader cancellation cannot block revocation or retain its owner
+  ---
+  duration_ms: 11.0684
+  type: 'test'
+  ...
+# Subtest: a paused downstream stops upstream pulling and disconnection releases its request owner
+ok 193 - a paused downstream stops upstream pulling and disconnection releases its request owner
+  ---
+  duration_ms: 75.6133
+  type: 'test'
+  ...
+# Subtest: lease expiry, external abort and close revoke opaque addresses and reject new opens
+ok 194 - lease expiry, external abort and close revoke opaque addresses and reject new opens
+  ---
+  duration_ms: 13.7655
+  type: 'test'
+  ...
+# Subtest: asynchronous reader errors destroy the published stream and release its decoder
+ok 195 - asynchronous reader errors destroy the published stream and release its decoder
+  ---
+  duration_ms: 7.6369
+  type: 'test'
+  ...
+# Subtest: a second denied upstream is terminal and cannot create an unbounded refresh loop
+ok 196 - a second denied upstream is terminal and cannot create an unbounded refresh loop
+  ---
+  duration_ms: 5.0732
+  type: 'test'
+  ...
+# Subtest: timely upstream chunks can stream beyond the per-wait timeout without aborting at headers
+ok 197 - timely upstream chunks can stream beyond the per-wait timeout without aborting at headers
+  ---
+  duration_ms: 269.9265
+  type: 'test'
+  ...
+# Subtest: downstream pause across the upstream-wait timeout can resume and finish the same connection
+ok 198 - downstream pause across the upstream-wait timeout can resume and finish the same connection
+  ---
+  duration_ms: 302.8543
+  type: 'test'
+  ...
+# Subtest: a stalled upstream reader still times out, aborts its fetch and clears owned media keys
+ok 199 - a stalled upstream reader still times out, aborts its fetch and clears owned media keys
+  ---
+  duration_ms: 66.9056
+  type: 'test'
+  ...
+# Subtest: large Range streams its first bytes before buffering the first block and orders completed later blocks
+ok 200 - large Range streams its first bytes before buffering the first block and orders completed later blocks
+  ---
+  duration_ms: 42.1414
+  type: 'test'
+  ...
+# Subtest: large ignored Range uses exactly one whole upstream stream and clips logical tail
+ok 201 - large ignored Range uses exactly one whole upstream stream and clips logical tail
+  ---
+  duration_ms: 32.1229
+  type: 'test'
+  ...
+# Subtest: HEAD and ranges below two MiB retain the single upstream path
+ok 202 - HEAD and ranges below two MiB retain the single upstream path
+  ---
+  duration_ms: 17.5943
+  type: 'test'
+  ...
+# Subtest: parallel plain, mode1 and both mode2 sizes preserve exact uint64 offsets and dispose owned decoders
+ok 203 - parallel plain, mode1 and both mode2 sizes preserve exact uint64 offsets and dispose owned decoders
+  ---
+  duration_ms: 508.0645
+  type: 'test'
+  ...
+# Subtest: completed unread blocks retain a global eight-slot budget across leases and queued seeks cancel cleanly
+ok 204 - completed unread blocks retain a global eight-slot budget across leases and queued seeks cancel cleanly
+  ---
+  duration_ms: 55.4742
+  type: 'test'
+  ...
+# Subtest: any invalid future lane cancels the response and returns its slots without whole-file fallback
+ok 205 - any invalid future lane cancels the response and returns its slots without whole-file fallback
+  ---
+  duration_ms: 256.6999
+  type: 'test'
+  ...
+# Subtest: parallel denied lanes coalesce a single refresh and cannot replace content identity
+ok 206 - parallel denied lanes coalesce a single refresh and cannot replace content identity
+  ---
+  duration_ms: 68.9382
+  type: 'test'
+  ...
+# Subtest: overlapping encrypted seeks own independent windows and cancellation cannot affect the surviving response
+ok 207 - overlapping encrypted seeks own independent windows and cancellation cannot affect the surviving response
+  ---
+  duration_ms: 83.5819
+  type: 'test'
+  ...
+# Subtest: session rejection during future resolution aborts the window before any unauthorized subrequest
+ok 208 - session rejection during future resolution aborts the window before any unauthorized subrequest
+  ---
+  duration_ms: 8.1284
+  type: 'test'
+  ...
+# Subtest: cancelled future fetches clear keys promptly, discard late bodies and release their global slots
+ok 209 - cancelled future fetches clear keys promptly, discard late bodies and release their global slots
+  ---
+  duration_ms: 31.6
+  type: 'test'
+  ...
+# Subtest: chunked first and future blocks require EOF after exact bytes and reject trailing data, error or stall
+ok 210 - chunked first and future blocks require EOF after exact bytes and reject trailing data, error or stall
+  ---
+  duration_ms: 279.2475
+  type: 'test'
+  ...
+# Subtest: large 200 fallbacks hold the global permit through consumption or cancellation
+ok 211 - large 200 fallbacks hold the global permit through consumption or cancellation
+  ---
+  duration_ms: 42.1029
+  type: 'test'
+  ...
+# Subtest: staggered rejections from one old transport wave reuse its published refresh exactly once
+ok 212 - staggered rejections from one old transport wave reuse its published refresh exactly once
+  ---
+  duration_ms: 78.583
+  type: 'test'
+  ...
+# Subtest: a delayed old resolver snapshot cannot replace a published refresh with a shorter expiry
+ok 213 - a delayed old resolver snapshot cannot replace a published refresh with a shorter expiry
+  ---
+  duration_ms: 50.8672
+  type: 'test'
+  ...
+# Subtest: Excellent uses exact native VIP call and signed-int32 HugeVip gate, never svip/login
+ok 214 - Excellent uses exact native VIP call and signed-int32 HugeVip gate, never svip/login
+  ---
+  duration_ms: 89.1118
+  type: 'test'
+  ...
+# Subtest: Excellent late reply cannot cross same-account credential replacement or logout
+ok 215 - Excellent late reply cannot cross same-account credential replacement or logout
+  ---
+  duration_ms: 6.2308
+  type: 'test'
+  ...
+# Subtest: QQ code login signs its owned Windows bytes and commits only a complete server session
+ok 216 - QQ code login signs its owned Windows bytes and commits only a complete server session
+  ---
+  duration_ms: 2.2545
+  type: 'test'
+  ...
+# Subtest: stored credentials require restoration; cache is limited to the same session and server success
+ok 217 - stored credentials require restoration; cache is limited to the same session and server success
+  ---
+  duration_ms: 3.3824
+  type: 'test'
+  ...
+# Subtest: expiry runs exact token renewal and restores remotely before storing any result
+ok 218 - expiry runs exact token renewal and restores remotely before storing any result
+  ---
+  duration_ms: 3.5921
+  type: 'test'
+  ...
+# Subtest: renewal does not invent a partial response or claim success on credential rejection
+ok 219 - renewal does not invent a partial response or claim success on credential rejection
+  ---
+  duration_ms: 5.4876
+  type: 'test'
+  ...
+# Subtest: network failures retain credentials without exposing fetch error values or creating a login cache
+ok 220 - network failures retain credentials without exposing fetch error values or creating a login cache
+  ---
+  duration_ms: 1.4362
+  type: 'test'
+  ...
+# Subtest: login rejection cannot store a session; restoration rejection clears only recognized invalid credentials
+ok 221 - login rejection cannot store a session; restoration rejection clears only recognized invalid credentials
+  ---
+  duration_ms: 5.4905
+  type: 'test'
+  ...
+# Subtest: music-key renewal uses its exact key, fields and zero flags and clears verification cache
+ok 222 - music-key renewal uses its exact key, fields and zero flags and clears verification cache
+  ---
+  duration_ms: 2.6089
+  type: 'test'
+  ...
+# Subtest: logout aborts a late login response and serialized settings writes cannot resurrect credentials
+ok 223 - logout aborts a late login response and serialized settings writes cannot resurrect credentials
+  ---
+  duration_ms: 3.5792
+  type: 'test'
+  ...
+# Subtest: external abort and deactivation cancel pending requests and never store a session
+ok 224 - external abort and deactivation cancel pending requests and never store a session
+  ---
+  duration_ms: 1.9697
+  type: 'test'
+  ...
+# Subtest: response bytes are bounded before JSON parsing and HTTP errors expose only status
+ok 225 - response bytes are bounded before JSON parsing and HTTP errors expose only status
+  ---
+  duration_ms: 8.5961
+  type: 'test'
+  ...
+# Subtest: redirects remain HTTPS on the fixed issuer and preserve the signed POST body
+ok 226 - redirects remain HTTPS on the fixed issuer and preserve the signed POST body
+  ---
+  duration_ms: 9.149
+  type: 'test'
+  ...
+# Subtest: session changes and unsupported login modes cannot be committed by a stale restore
+ok 227 - session changes and unsupported login modes cannot be committed by a stale restore
+  ---
+  duration_ms: 6.6751
+  type: 'test'
+  ...
+# Subtest: replacing authorization cancels an already-started storage write and restores its predecessor
+ok 228 - replacing authorization cancels an already-started storage write and restores its predecessor
+  ---
+  duration_ms: 4.4199
+  type: 'test'
+  ...
+# Subtest: canonical native musicex footer trims192 and uses the separately issued Ekey
+ok 229 - canonical native musicex footer trims192 and uses the separately issued Ekey
+  ---
+  duration_ms: 3.6395
+  type: 'test'
+  ...
+# Subtest: musicex filename validation follows native UTF16 termination and dot requirement
+ok 230 - musicex filename validation follows native UTF16 termination and dot requirement
+  ---
+  duration_ms: 1.9886
+  type: 'test'
+  ...
+# Subtest: native length suffix supplies an exact key and excludes key plus length word
+ok 231 - native length suffix supplies an exact key and excludes key plus length word
+  ---
+  duration_ms: 0.7301
+  type: 'test'
+  ...
+# Subtest: a CDN stream with a server Ekey can have no disk footer, with codec proof still required
+ok 232 - a CDN stream with a server Ekey can have no disk footer, with codec proof still required
+  ---
+  duration_ms: 0.6943
+  type: 'test'
+  ...
+# Subtest: preflight recognizes supported headers and rejects an encrypted or wrong-codec prefix
+ok 233 - preflight recognizes supported headers and rejects an encrypted or wrong-codec prefix
+  ---
+  duration_ms: 0.6017
+  type: 'test'
+  ...
+# Subtest: Square literal calls keep source booleans/numbers, no sort/category/total assumption and fresh nested ownership
+ok 234 - Square literal calls keep source booleans/numbers, no sort/category/total assumption and fresh nested ownership
+  ---
+  duration_ms: 4.0764
+  type: 'test'
+  ...
+# Subtest: new taxonomy body and explicit page bodies are exact, while the five original defaults remain unchanged
+ok 235 - new taxonomy body and explicit page bodies are exact, while the five original defaults remain unchanged
+  ---
+  duration_ms: 1.3118
+  type: 'test'
+  ...
+# Subtest: taxonomy source0, array-index group keys and deterministic ambiguous labels do not invent hot tags
+ok 236 - taxonomy source0, array-index group keys and deterministic ambiguous labels do not invent hot tags
+  ---
+  duration_ms: 2.6649
+  type: 'test'
+  ...
+# Subtest: taxonomy validates excluded AI rows, duplicates, source types, sparse arrays, bounds and conflicting identities
+ok 237 - taxonomy validates excluded AI rows, duplicates, source types, sparse arrays, bounds and conflicting identities
+  ---
+  duration_ms: 2.1598
+  type: 'test'
+  ...
+# Subtest: taxonomy second-order label collisions receive stable numeric suffixes without mapping one label to two IDs
+ok 238 - taxonomy second-order label collisions receive stable numeric suffixes without mapping one label to two IDs
+  ---
+  duration_ms: 0.3522
+  type: 'test'
+  ...
+# Subtest: SDK catalogue returns only display fields, and named categories rebuild a cold deterministic mapping
+ok 239 - SDK catalogue returns only display fields, and named categories rebuild a cold deterministic mapping
+  ---
+  duration_ms: 3.6928
+  type: 'test'
+  ...
+# Subtest: feed page0/30/60 preserves true/false/true, unknown total and permits explicit page60 after false
+ok 240 - feed page0/30/60 preserves true/false/true, unknown total and permits explicit page60 after false
+  ---
+  duration_ms: 3.0145
+  type: 'test'
+  ...
+# Subtest: feed response and HasMore are read once so a changing accessor cannot publish a string as the SDK Boolean
+ok 241 - feed response and HasMore are read once so a changing accessor cannot publish a string as the SDK Boolean
+  ---
+  duration_ms: 0.8543
+  type: 'test'
+  ...
+# Subtest: window31 split and maximum unaligned60 span bounded raw pages with exact native page/offset and order
+ok 242 - window31 split and maximum unaligned60 span bounded raw pages with exact native page/offset and order
+  ---
+  duration_ms: 2.5581
+  type: 'test'
+  ...
+# Subtest: partial selected windows have known remaining raw rows; final category pages use actual total
+ok 243 - partial selected windows have known remaining raw rows; final category pages use actual total
+  ---
+  duration_ms: 1.3949
+  type: 'test'
+  ...
+# Subtest: bounded inputs reject unknown/ambiguous/AI labels and new sort without selecting fallback categories
+ok 244 - bounded inputs reject unknown/ambiguous/AI labels and new sort without selecting fallback categories
+  ---
+  duration_ms: 1.9215
+  type: 'test'
+  ...
+# Subtest: all raw rows are validated before any selected binding, including records outside the requested slice
+ok 245 - all raw rows are validated before any selected binding, including records outside the requested slice
+  ---
+  duration_ms: 1.6893
+  type: 'test'
+  ...
+# Subtest: in-page/cross-page duplicate IDs, category total drift and malformed counts reject the whole read
+ok 246 - in-page/cross-page duplicate IDs, category total drift and malformed counts reject the whole read
+  ---
+  duration_ms: 3.2762
+  type: 'test'
+  ...
+# Subtest: feed incomplete/contradictory pages, sparse records, invalid IDs and unsafe64 precision do not silently skip
+ok 247 - feed incomplete/contradictory pages, sparse records, invalid IDs and unsafe64 precision do not silently skip
+  ---
+  duration_ms: 1.3091
+  type: 'test'
+  ...
+# Subtest: native binding host0 is supplied, source empty uin is never defaulted, and mismatched or directory bindings reject
+ok 248 - native binding host0 is supplied, source empty uin is never defaulted, and mismatched or directory bindings reject
+  ---
+  duration_ms: 2.2194
+  type: 'test'
+  ...
+# Subtest: three binding workers preserve source order; first failure stops queued work and awaits already-started peers
+ok 249 - three binding workers preserve source order; first failure stops queued work and awaits already-started peers
+  ---
+  duration_ms: 16.3397
+  type: 'test'
+  ...
+# Subtest: successful workers cap concurrency at3 and retain input order despite reversed completion
+ok 250 - successful workers cap concurrency at3 and retain input order despite reversed completion
+  ---
+  duration_ms: 53.7561
+  type: 'test'
+  ...
+# Subtest: abort before request, after native page, during taxonomy and late binding rejects without partial output
+ok 251 - abort before request, after native page, during taxonomy and late binding rejects without partial output
+  ---
+  duration_ms: 3.2217
+  type: 'test'
+  ...
+# Subtest: RPC numeric status is preserved once; external names/prototypes/accessors never leak private raw messages
+ok 252 - RPC numeric status is preserved once; external names/prototypes/accessors never leak private raw messages
+  ---
+  duration_ms: 1.613
+  type: 'test'
+  ...
+# Subtest: ordinary category initial content and basic keep their distinct source zero-caller types
+ok 253 - ordinary category initial content and basic keep their distinct source zero-caller types
+  ---
+  duration_ms: 0.362
+  type: 'test'
+  ...
+# Subtest: ordinary category cursor is lossless and excludes page/use_page, with source literal order5 only
+ok 254 - ordinary category cursor is lossless and excludes page/use_page, with source literal order5 only
+  ---
+  duration_ms: 0.3641
+  type: 'test'
+  ...
+# Subtest: explicit categories cannot manufacture All/default3204 from missing/string/unsafe inputs
+ok 255 - explicit categories cannot manufacture All/default3204 from missing/string/unsafe inputs
+  ---
+  duration_ms: 0.7164
+  type: 'test'
+  ...
+# Subtest: caller and cursor input bounds reject precision loss, whitespace/private tokens and invalid range with generic errors
+ok 256 - caller and cursor input bounds reject precision loss, whitespace/private tokens and invalid range with generic errors
+  ---
+  duration_ms: 0.6125
+  type: 'test'
+  ...
+# Subtest: Ekey v1 matches original KeyDec length 16
+ok 257 - Ekey v1 matches original KeyDec length 16
+  ---
+  duration_ms: 7.6267
+  type: 'test'
+  ...
+# Subtest: Ekey v2 matches original KeyDec length 16
+ok 258 - Ekey v2 matches original KeyDec length 16
+  ---
+  duration_ms: 2.0936
+  type: 'test'
+  ...
+# Subtest: Ekey v1 matches original KeyDec length 301
+ok 259 - Ekey v1 matches original KeyDec length 301
+  ---
+  duration_ms: 0.9585
+  type: 'test'
+  ...
+# Subtest: Ekey v2 matches original KeyDec length 301
+ok 260 - Ekey v2 matches original KeyDec length 301
+  ---
+  duration_ms: 3.504
+  type: 'test'
+  ...
+# Subtest: Ekey v1 matches original KeyDec length 512
+ok 261 - Ekey v1 matches original KeyDec length 512
+  ---
+  duration_ms: 0.9157
+  type: 'test'
+  ...
+# Subtest: Ekey v2 matches original KeyDec length 512
+ok 262 - Ekey v2 matches original KeyDec length 512
+  ---
+  duration_ms: 15.8583
+  type: 'test'
+  ...
+# Subtest: malformed and damaged Ekeys fail without exposing input or partial key material
+ok 263 - malformed and damaged Ekeys fail without exposing input or partial key material
+  ---
+  duration_ms: 1.3517
+  type: 'test'
+  ...
+# Subtest: normal-song Add and Del emit the native directory fields and exact types
+ok 264 - normal-song Add and Del emit the native directory fields and exact types
+  ---
+  duration_ms: 2.075
+  type: 'test'
+  ...
+# Subtest: tid remains an exact unsigned 64-bit JSON number and songId remains UInt32
+ok 265 - tid remains an exact unsigned 64-bit JSON number and songId remains UInt32
+  ---
+  duration_ms: 2.8024
+  type: 'test'
+  ...
+# Subtest: builder preserves validated UTF8 text and does not retain caller-owned objects
+ok 266 - builder preserves validated UTF8 text and does not retain caller-owned objects
+  ---
+  duration_ms: 0.4475
+  type: 'test'
+  ...
+# Subtest: invalid identifiers and unsupported directories/types reject without leaking inputs
+ok 267 - invalid identifiers and unsupported directories/types reject without leaking inputs
+  ---
+  duration_ms: 1.6128
+  type: 'test'
+  ...
+# Subtest: text and target state require explicit valid values before dispatch
+ok 268 - text and target state require explicit valid values before dispatch
+  ---
+  duration_ms: 0.417
+  type: 'test'
+  ...
+# Subtest: native Add acknowledgement validates directory and one exact submitted song
+ok 269 - native Add acknowledgement validates directory and one exact submitted song
+  ---
+  duration_ms: 0.6708
+  type: 'test'
+  ...
+# Subtest: Add partial commits, ambiguous loc, wrong song/type and directory identity reject
+ok 270 - Add partial commits, ambiguous loc, wrong song/type and directory identity reject
+  ---
+  duration_ms: 0.5427
+  type: 'test'
+  ...
+# Subtest: native Del has no membership acknowledgement and always requires a fresh read
+ok 271 - native Del has no membership acknowledgement and always requires a fresh read
+  ---
+  duration_ms: 0.4272
+  type: 'test'
+  ...
+# Subtest: registered favorite methods accept stripped SDK IDs and send one exact Add/Del with idempotent checks
+ok 272 - registered favorite methods accept stripped SDK IDs and send one exact Add/Del with idempotent checks
+  ---
+  duration_ms: 103.7099
+  type: 'test'
+  ...
+# Subtest: malformed or mismatched native Add acknowledgements reject despite business code zero
+ok 273 - malformed or mismatched native Add acknowledgements reject despite business code zero
+  ---
+  duration_ms: 103.715
+  type: 'test'
+  ...
+# Subtest: write code zero without a confirmed fresh membership never reports success
+ok 274 - write code zero without a confirmed fresh membership never reports success
+  ---
+  duration_ms: 14.8546
+  type: 'test'
+  ...
+# Subtest: unverified directory owners, another directory and incomplete snapshots never reach writes
+ok 275 - unverified directory owners, another directory and incomplete snapshots never reach writes
+  ---
+  duration_ms: 20.0596
+  type: 'test'
+  ...
+# Subtest: fresh scene0 SongInfo server type gates the mutation instead of cached playlist metadata
+ok 276 - fresh scene0 SongInfo server type gates the mutation instead of cached playlist metadata
+  ---
+  duration_ms: 5.4879
+  type: 'test'
+  ...
+# Subtest: logout and same-account token replacement reject late reads and cannot resurrect a cached state
+ok 277 - logout and same-account token replacement reject late reads and cannot resurrect a cached state
+  ---
+  duration_ms: 13.4939
+  type: 'test'
+  ...
+# Subtest: logout and same-account token replacement reject a late write result without replay
+ok 278 - logout and same-account token replacement reject a late write result without replay
+  ---
+  duration_ms: 27.574
+  type: 'test'
+  ...
+# Subtest: membership comes from the complete snapshot and cache expires at 60 seconds
+ok 279 - membership comes from the complete snapshot and cache expires at 60 seconds
+  ---
+  duration_ms: 5.2332
+  type: 'test'
+  ...
+# Subtest: account changes and same-account token changes cannot reuse another session snapshot
+ok 280 - account changes and same-account token changes cannot reuse another session snapshot
+  ---
+  duration_ms: 0.8636
+  type: 'test'
+  ...
+# Subtest: writes refresh before checking idempotence even when the cache says otherwise
+ok 281 - writes refresh before checking idempotence even when the cache says otherwise
+  ---
+  duration_ms: 0.8676
+  type: 'test'
+  ...
+# Subtest: writes confirm a fresh snapshot before publishing the new membership
+ok 282 - writes confirm a fresh snapshot before publishing the new membership
+  ---
+  duration_ms: 5.6035
+  type: 'test'
+  ...
+# Subtest: queued toggles serialize and reads wait for the latest queued result
+ok 283 - queued toggles serialize and reads wait for the latest queued result
+  ---
+  duration_ms: 3.0437
+  type: 'test'
+  ...
+# Subtest: unknown write outcome invalidates the cache without automatic replay
+ok 284 - unknown write outcome invalidates the cache without automatic replay
+  ---
+  duration_ms: 1.0725
+  type: 'test'
+  ...
+# Subtest: an acknowledgement with unchanged membership is rejected and is never cached as liked
+ok 285 - an acknowledgement with unchanged membership is rejected and is never cached as liked
+  ---
+  duration_ms: 0.5193
+  type: 'test'
+  ...
+# Subtest: cancel after mutation may leave a server change but never replays or optimistically caches it
+ok 286 - cancel after mutation may leave a server change but never replays or optimistically caches it
+  ---
+  duration_ms: 0.7341
+  type: 'test'
+  ...
+# Subtest: canceling a queued caller does not cancel the preceding write or a later caller
+ok 287 - canceling a queued caller does not cancel the preceding write or a later caller
+  ---
+  duration_ms: 1.2946
+  type: 'test'
+  ...
+# Subtest: one canceled independent read cannot abort another caller
+ok 288 - one canceled independent read cannot abort another caller
+  ---
+  duration_ms: 0.8159
+  type: 'test'
+  ...
+# Subtest: a queued old-session intent is rejected after an account change
+ok 289 - a queued old-session intent is rejected after an account change
+  ---
+  duration_ms: 0.5797
+  type: 'test'
+  ...
+# Subtest: invalidate and dispose reject late results and prevent cache resurrection
+ok 290 - invalidate and dispose reject late results and prevent cache resurrection
+  ---
+  duration_ms: 0.6648
+  type: 'test'
+  ...
+# Subtest: failed reads prevent writes, and a rejected task releases the write queue
+ok 291 - failed reads prevent writes, and a rejected task releases the write queue
+  ---
+  duration_ms: 0.3531
+  type: 'test'
+  ...
+# Subtest: a read started before a mutation cannot publish or cache its earlier membership
+ok 292 - a read started before a mutation cannot publish or cache its earlier membership
+  ---
+  duration_ms: 1.1038
+  type: 'test'
+  ...
+# Subtest: failed post-write verification is an unknown result and is never automatically replayed
+ok 293 - failed post-write verification is an unknown result and is never automatically replayed
+  ---
+  duration_ms: 0.3983
+  type: 'test'
+  ...
+# Subtest: full64 fixture has the original implementation identity
+ok 294 - full64 fixture has the original implementation identity
+  ---
+  duration_ms: 1.1457
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 0
+ok 295 - file transform matches original full64 helper case 0
+  ---
+  duration_ms: 0.5792
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 1
+ok 296 - file transform matches original full64 helper case 1
+  ---
+  duration_ms: 0.3783
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 2
+ok 297 - file transform matches original full64 helper case 2
+  ---
+  duration_ms: 0.1832
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 3
+ok 298 - file transform matches original full64 helper case 3
+  ---
+  duration_ms: 0.2033
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 4
+ok 299 - file transform matches original full64 helper case 4
+  ---
+  duration_ms: 4.3967
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 5
+ok 300 - file transform matches original full64 helper case 5
+  ---
+  duration_ms: 0.8767
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 6
+ok 301 - file transform matches original full64 helper case 6
+  ---
+  duration_ms: 0.2171
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 7
+ok 302 - file transform matches original full64 helper case 7
+  ---
+  duration_ms: 1.9011
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 8
+ok 303 - file transform matches original full64 helper case 8
+  ---
+  duration_ms: 0.6552
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 9
+ok 304 - file transform matches original full64 helper case 9
+  ---
+  duration_ms: 0.4244
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 10
+ok 305 - file transform matches original full64 helper case 10
+  ---
+  duration_ms: 0.3652
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 11
+ok 306 - file transform matches original full64 helper case 11
+  ---
+  duration_ms: 0.1745
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 12
+ok 307 - file transform matches original full64 helper case 12
+  ---
+  duration_ms: 0.1064
+  type: 'test'
+  ...
+# Subtest: file transform matches original full64 helper case 13
+ok 308 - file transform matches original full64 helper case 13
+  ---
+  duration_ms: 3.5
+  type: 'test'
+  ...
+# Subtest: reuses all26 original signed-wrapper cases through their unsigned64 inputs
+ok 309 - reuses all26 original signed-wrapper cases through their unsigned64 inputs
+  ---
+  duration_ms: 0.4857
+  type: 'test'
+  ...
+# Subtest: full64 wrap and modulo segments retain original bytes across range reads
+ok 310 - full64 wrap and modulo segments retain original bytes across range reads
+  ---
+  duration_ms: 0.8445
+  type: 'test'
+  ...
+# Subtest: typed subview touches only its requested bytes and returns the same object
+ok 311 - typed subview touches only its requested bytes and returns the same object
+  ---
+  duration_ms: 2.9783
+  type: 'test'
+  ...
+# Subtest: invalid offset and byte types fail before caller mutation
+ok 312 - invalid offset and byte types fail before caller mutation
+  ---
+  duration_ms: 1.4806
+  type: 'test'
+  ...
+# Subtest: both ordinary source modes match every recovered plain and encrypted template
+ok 313 - both ordinary source modes match every recovered plain and encrypted template
+  ---
+  duration_ms: 4.4214
+  type: 'test'
+  ...
+# Subtest: mode 111 has its native prefixes while preserving encrypted branches
+ok 314 - mode 111 has its native prefixes while preserving encrypted branches
+  ---
+  duration_ms: 0.3528
+  type: 'test'
+  ...
+# Subtest: source modes 112 and 113 override templates independently of encrypted flag and OtherMID
+ok 315 - source modes 112 and 113 override templates independently of encrypted flag and OtherMID
+  ---
+  duration_ms: 0.2624
+  type: 'test'
+  ...
+# Subtest: type 8 uses its auxiliary bit branch regardless of encrypted flag
+ok 316 - type 8 uses its auxiliary bit branch regardless of encrypted flag
+  ---
+  duration_ms: 0.274
+  type: 'test'
+  ...
+# Subtest: nonempty OtherMID replaces the main MID only on the native extended branches
+ok 317 - nonempty OtherMID replaces the main MID only on the native extended branches
+  ---
+  duration_ms: 0.7965
+  type: 'test'
+  ...
+# Subtest: public One Last Kiss variant identifiers produce the four native premium filenames without base-MID duplication
+ok 318 - public One Last Kiss variant identifiers produce the four native premium filenames without base-MID duplication
+  ---
+  duration_ms: 0.306
+  type: 'test'
+  ...
+# Subtest: unresolved MID, missing context and unverified fallback types are rejected explicitly
+ok 319 - unresolved MID, missing context and unverified fallback types are rejected explicitly
+  ---
+  duration_ms: 0.8953
+  type: 'test'
+  ...
+# Subtest: two configured exact initial calls keep ownership and actual native-client compatibility provenance
+ok 320 - two configured exact initial calls keep ownership and actual native-client compatibility provenance
+  ---
+  duration_ms: 1.8418
+  type: 'test'
+  ...
+# Subtest: latest source preview validates43 rows and returns their first20 in source order, without private extras
+ok 321 - latest source preview validates43 rows and returns their first20 in source order, without private extras
+  ---
+  duration_ms: 4.3532
+  type: 'test'
+  ...
+# Subtest: malformed tail or duplicate ID/MID outside the preview rejects rather than silently accepting the first20
+ok 322 - malformed tail or duplicate ID/MID outside the preview rejects rather than silently accepting the first20
+  ---
+  duration_ms: 13.2171
+  type: 'test'
+  ...
+# Subtest: latest missing paths, over-limit/sparse rows and unobserved unsupported records reject
+ok 323 - latest missing paths, over-limit/sparse rows and unobserved unsupported records reject
+  ---
+  duration_ms: 32.9566
+  type: 'test'
+  ...
+# Subtest: latest leaf forwards signal and returns one preview response without retry or fabricated paging
+ok 324 - latest leaf forwards signal and returns one preview response without retry or fabricated paging
+  ---
+  duration_ms: 0.9145
+  type: 'test'
+  ...
+# Subtest: preabort and late abort cancel, while same-name/raw external errors remain generic and RPC code stays numeric
+ok 325 - preabort and late abort cancel, while same-name/raw external errors remain generic and RPC code stays numeric
+  ---
+  duration_ms: 2.0856
+  type: 'test'
+  ...
+# Subtest: a public decoder error reused and mutated by an external client is reconstructed from its owned validation code
+ok 326 - a public decoder error reused and mutated by an external client is reconstructed from its owned validation code
+  ---
+  duration_ms: 1.0518
+  type: 'test'
+  ...
+# Subtest: actual root-grids candidate keeps supplied source creator/tid without publishing a naive native host ref or count
+ok 327 - actual root-grids candidate keeps supplied source creator/tid without publishing a naive native host ref or count
+  ---
+  duration_ms: 0.7609
+  type: 'test'
+  ...
+# Subtest: grid candidate rejects missing/malformed owner and canonical ID without default owner or inherited directory identity
+ok 328 - grid candidate rejects missing/malformed owner and canonical ID without default owner or inherited directory identity
+  ---
+  duration_ms: 2.9121
+  type: 'test'
+  ...
+# Subtest: recommendation decoder accepts only observed root grids, bounds12, kind guard and exact unique canonical identities
+ok 329 - recommendation decoder accepts only observed root grids, bounds12, kind guard and exact unique canonical identities
+  ---
+  duration_ms: 1.3241
+  type: 'test'
+  ...
+# Subtest: recommendation leaf makes literal initial request then binds native ref/count using verified login and forwards signal
+ok 330 - recommendation leaf makes literal initial request then binds native ref/count using verified login and forwards signal
+  ---
+  duration_ms: 2.5388
+  type: 'test'
+  ...
+# Subtest: all12 recommendations are sequentially rebound to actual response host and complete count without publisher-namespace shortcuts
+ok 331 - all12 recommendations are sequentially rebound to actual response host and complete count without publisher-namespace shortcuts
+  ---
+  duration_ms: 6.0626
+  type: 'test'
+  ...
+# Subtest: recommendation binding failure or late abort cannot publish a partial collection or retry
+ok 332 - recommendation binding failure or late abort cannot publish a partial collection or retry
+  ---
+  duration_ms: 1.6744
+  type: 'test'
+  ...
+# Subtest: Daily Feed and Diss builders own arrays and encode explicit IDs losslessly within signed64
+ok 333 - Daily Feed and Diss builders own arrays and encode explicit IDs losslessly within signed64
+  ---
+  duration_ms: 0.9651
+  type: 'test'
+  ...
+# Subtest: Daily Feed binds one numeric201 shelf and its first niche unique exact known title without private outputs
+ok 334 - Daily Feed binds one numeric201 shelf and its first niche unique exact known title without private outputs
+  ---
+  duration_ms: 0.8974
+  type: 'test'
+  ...
+# Subtest: Daily Feed rejects malformed/sparse/oversized inputs and invalid/nonzero retcode without reading message
+ok 335 - Daily Feed rejects malformed/sparse/oversized inputs and invalid/nonzero retcode without reading message
+  ---
+  duration_ms: 0.6061
+  type: 'test'
+  ...
+# Subtest: Daily detail binds exact ID and complete counts and preserves supported/unsupported raw slots without private fields
+ok 336 - Daily detail binds exact ID and complete counts and preserves supported/unsupported raw slots without private fields
+  ---
+  duration_ms: 4.8829
+  type: 'test'
+  ...
+# Subtest: Daily detail rejects partial/mismatched or malformed counts/identities and nonzero or untyped status
+ok 337 - Daily detail rejects partial/mismatched or malformed counts/identities and nonzero or untyped status
+  ---
+  duration_ms: 35.7089
+  type: 'test'
+  ...
+# Subtest: Daily leaf is exactly Feed then device then bound Diss, forwarding one signal without another session owner
+ok 338 - Daily leaf is exactly Feed then device then bound Diss, forwarding one signal without another session owner
+  ---
+  duration_ms: 0.8857
+  type: 'test'
+  ...
+# Subtest: Daily Feed failure stops before device/Diss and signal cancellation between phases cannot dispatch Diss
+ok 339 - Daily Feed failure stops before device/Diss and signal cancellation between phases cannot dispatch Diss
+  ---
+  duration_ms: 0.5204
+  type: 'test'
+  ...
+# Subtest: Daily abort while device lookup is pending settles promptly and never starts Diss
+ok 340 - Daily abort while device lookup is pending settles promptly and never starts Diss
+  ---
+  duration_ms: 0.432
+  type: 'test'
+  ...
+# Subtest: Daily second-response late cancellation and device/external spoof errors never reveal raw values
+ok 341 - Daily second-response late cancellation and device/external spoof errors never reveal raw values
+  ---
+  duration_ms: 2.4417
+  type: 'test'
+  ...
+# Subtest: Excellent is a gated local effect on ordinary SQ, never a new Vkey file quality
+ok 342 - Excellent is a gated local effect on ordinary SQ, never a new Vkey file quality
+  ---
+  duration_ms: 180.4178
+  type: 'test'
+  ...
+# Subtest: same-track spatial fallback tries each candidate once, preserves preference, and binds one real loopback source
+ok 343 - same-track spatial fallback tries each candidate once, preserves preference, and binds one real loopback source
+  ---
+  duration_ms: 64.6775
+  type: 'test'
+  ...
+# Subtest: zero-size quality flags cause no issuer attempts while unknown metadata can verify and play
+ok 344 - zero-size quality flags cause no issuer attempts while unknown metadata can verify and play
+  ---
+  duration_ms: 15.4453
+  type: 'test'
+  ...
+# Subtest: ordinary fallback does not upgrade and spatial fallback never tries the other spatial preference
+ok 345 - ordinary fallback does not upgrade and spatial fallback never tries the other spatial preference
+  ---
+  duration_ms: 50.55
+  type: 'test'
+  ...
+# Subtest: HTTP, transport, unknown issuer codes and invalid bytes or keys terminate without quality retries
+ok 346 - HTTP, transport, unknown issuer codes and invalid bytes or keys terminate without quality retries
+  ---
+  duration_ms: 27.5202
+  type: 'test'
+  ...
+# Subtest: abort, logout, deactivation or account change during a failed attempt cannot continue the fallback chain
+ok 347 - abort, logout, deactivation or account change during a failed attempt cannot continue the fallback chain
+  ---
+  duration_ms: 21.3191
+  type: 'test'
+  ...
+# Subtest: login, cancellation, closed provider and invalid arguments all carry the terminal playback contract
+ok 348 - login, cancellation, closed provider and invalid arguments all carry the terminal playback contract
+  ---
+  duration_ms: 6.6055
+  type: 'test'
+  ...
+# Subtest: a lease created before late cancellation or account replacement is revoked without publishing or retrying
+ok 349 - a lease created before late cancellation or account replacement is revoked without publishing or retrying
+  ---
+  duration_ms: 33.8523
+  type: 'test'
+  ...
+# Subtest: same-account token replacement after a trusted quality refusal stops before the next candidate
+ok 350 - same-account token replacement after a trusted quality refusal stops before the next candidate
+  ---
+  duration_ms: 5.2707
+  type: 'test'
+  ...
+# Subtest: same-account token replacement after lease creation revokes the lease instead of publishing it
+ok 351 - same-account token replacement after lease creation revokes the lease instead of publishing it
+  ---
+  duration_ms: 7.6692
+  type: 'test'
+  ...
+# Subtest: Windows entry registers observed search and remotely verified login methods
+ok 352 - Windows entry registers observed search and remotely verified login methods
+  ---
+  duration_ms: 1.9448
+  type: 'test'
+  ...
+# Subtest: registered artist methods use the current Windows session and shared canonical album identities
+ok 353 - registered artist methods use the current Windows session and shared canonical album identities
+  ---
+  duration_ms: 3.3073
+  type: 'test'
+  ...
+# Subtest: logout during a public artist request cannot commit an earlier account response
+ok 354 - logout during a public artist request cannot commit an earlier account response
+  ---
+  duration_ms: 3.5184
+  type: 'test'
+  ...
+# Subtest: Home sections dispatch distinct current-session Daily and latest reads and real-supplied playlist references
+ok 355 - Home sections dispatch distinct current-session Daily and latest reads and real-supplied playlist references
+  ---
+  duration_ms: 8.5987
+  type: 'test'
+  ...
+# Subtest: public playlist search binds the actual native owner instead of its source creator
+ok 356 - public playlist search binds the actual native owner instead of its source creator
+  ---
+  duration_ms: 2.9677
+  type: 'test'
+  ...
+# Subtest: logout during a public search playlist binding cannot publish earlier account references
+ok 357 - logout during a public search playlist binding cannot publish earlier account references
+  ---
+  duration_ms: 5.1613
+  type: 'test'
+  ...
+# Subtest: logout while the bound Daily detail is pending cannot publish its earlier account tracks
+ok 358 - logout while the bound Daily detail is pending cannot publish its earlier account tracks
+  ---
+  duration_ms: 2.0475
+  type: 'test'
+  ...
+# Subtest: registered discovery uses source taxonomy, unknown feed totals and the shared native playlist identity binder
+ok 359 - registered discovery uses source taxonomy, unknown feed totals and the shared native playlist identity binder
+  ---
+  duration_ms: 5.8894
+  type: 'test'
+  ...
+# Subtest: persisted dual IDs resolve native scene0 details and play through a revocable loopback URL
+ok 360 - persisted dual IDs resolve native scene0 details and play through a revocable loopback URL
+  ---
+  duration_ms: 13.4872
+  type: 'test'
+  ...
+# Subtest: per-track qualities use fresh exact scene0 details and do not alter the global preference
+ok 361 - per-track qualities use fresh exact scene0 details and do not alter the global preference
+  ---
+  duration_ms: 2.7902
+  type: 'test'
+  ...
+# Subtest: per-track quality queries reject canceled or revoked account responses without publishing stale options
+ok 362 - per-track quality queries reject canceled or revoked account responses without publishing stale options
+  ---
+  duration_ms: 3.3398
+  type: 'test'
+  ...
+# Subtest: per-track qualities reject an unrelated detail and explicit absent media never reaches Vkey
+ok 363 - per-track qualities reject an unrelated detail and explicit absent media never reaches Vkey
+  ---
+  duration_ms: 3.2494
+  type: 'test'
+  ...
+# Subtest: normal encrypted playback envelope reports decrypted bytes after footer removal without leaking upstream identity
+ok 364 - normal encrypted playback envelope reports decrypted bytes after footer removal without leaking upstream identity
+  ---
+  duration_ms: 11.008
+  type: 'test'
+  ...
+# Subtest: concurrent authorized polls exchange the official one-shot code once
+ok 365 - concurrent authorized polls exchange the official one-shot code once
+  ---
+  duration_ms: 4.9156
+  type: 'test'
+  ...
+# Subtest: partial-page offset is applied once and invalid DTOs cannot cause unlimited pagination
+ok 366 - partial-page offset is applied once and invalid DTOs cannot cause unlimited pagination
+  ---
+  duration_ms: 1.9311
+  type: 'test'
+  ...
+# Subtest: persisted track lyrics use native scene0 context and the verified plaintext Windows call
+ok 367 - persisted track lyrics use native scene0 context and the verified plaintext Windows call
+  ---
+  duration_ms: 1.8261
+  type: 'test'
+  ...
+# Subtest: a CDN status is reported as source validation failure without inventing account rights
+ok 368 - a CDN status is reported as source validation failure without inventing account rights
+  ---
+  duration_ms: 3.6297
+  type: 'test'
+  ...
+# Subtest: library and complete native playlist retain an unsupported record without losing the rest
+ok 369 - library and complete native playlist retain an unsupported record without losing the rest
+  ---
+  duration_ms: 2.9268
+  type: 'test'
+  ...
+# Subtest: incomplete library snapshots and an account change cannot commit a partial library
+ok 370 - incomplete library snapshots and an account change cannot commit a partial library
+  ---
+  duration_ms: 2.1404
+  type: 'test'
+  ...
+# Subtest: displayable search metadata without a media MID reaches the existing native detail lookup
+ok 371 - displayable search metadata without a media MID reaches the existing native detail lookup
+  ---
+  duration_ms: 2.2568
+  type: 'test'
+  ...
+# Subtest: actual Windows QR producer has exactly three fields and preserves numeric ID precision
+ok 372 - actual Windows QR producer has exactly three fields and preserves numeric ID precision
+  ---
+  duration_ms: 2.1306
+  type: 'test'
+  ...
+# Subtest: QQ code branch keeps native integer flags, default appid and caller device name
+ok 373 - QQ code branch keeps native integer flags, default appid and caller device name
+  ---
+  duration_ms: 0.445
+  type: 'test'
+  ...
+# Subtest: QQ restore request retains native misspelling and all server fields
+ok 374 - QQ restore request retains native misspelling and all server fields
+  ---
+  duration_ms: 0.4937
+  type: 'test'
+  ...
+# Subtest: native signed64 JSON numbers normalize decimals and reject lossy inputs
+ok 375 - native signed64 JSON numbers normalize decimals and reject lossy inputs
+  ---
+  duration_ms: 0.9816
+  type: 'test'
+  ...
+# Subtest: builders reject wrong DTO types without including private values in errors
+ok 376 - builders reject wrong DTO types without including private values in errors
+  ---
+  duration_ms: 0.8279
+  type: 'test'
+  ...
+# Subtest: C-string fields reject silent native truncation and preserve empty values
+ok 377 - C-string fields reject silent native truncation and preserve empty values
+  ---
+  duration_ms: 0.3308
+  type: 'test'
+  ...
+# Subtest: exact native refresh builders use Login with distinct request keys and token flags
+ok 378 - exact native refresh builders use Login with distinct request keys and token flags
+  ---
+  duration_ms: 0.534
+  type: 'test'
+  ...
+# Subtest: Windows producer uses its qualified key and numeric inner desktop profile
+ok 379 - Windows producer uses its qualified key and numeric inner desktop profile
+  ---
+  duration_ms: 4.5478
+  type: 'test'
+  ...
+# Subtest: native mode0/3 couples four zero flags and every other mode couples ones
+ok 380 - native mode0/3 couples four zero flags and every other mode couples ones
+  ---
+  duration_ms: 0.5886
+  type: 'test'
+  ...
+# Subtest: native UInt32 songID and signed fields retain their boundary types
+ok 381 - native UInt32 songID and signed fields retain their boundary types
+  ---
+  duration_ms: 0.1663
+  type: 'test'
+  ...
+# Subtest: metadata text and numeric errors never include supplied private values
+ok 382 - metadata text and numeric errors never include supplied private values
+  ---
+  duration_ms: 1.1825
+  type: 'test'
+  ...
+# Subtest: plaintext Base64 UTF8 maps the SDK lyric fields without mutating response
+ok 383 - plaintext Base64 UTF8 maps the SDK lyric fields without mutating response
+  ---
+  duration_ms: 1.4718
+  type: 'test'
+  ...
+# Subtest: empty or absent plaintext values return null without inventing word lyrics
+ok 384 - empty or absent plaintext values return null without inventing word lyrics
+  ---
+  duration_ms: 0.1591
+  type: 'test'
+  ...
+# Subtest: encrypted or QRC responses fail explicitly before exposing a plaintext result
+ok 385 - encrypted or QRC responses fail explicitly before exposing a plaintext result
+  ---
+  duration_ms: 0.2586
+  type: 'test'
+  ...
+# Subtest: malformed canonical Base64, invalid UTF8 and oversized text are rejected generically
+ok 386 - malformed canonical Base64, invalid UTF8 and oversized text are rejected generically
+  ---
+  duration_ms: 0.4119
+  type: 'test'
+  ...
+# Subtest: UTF8 BOM and non-ASCII synthetic text preserve valid Unicode bytes
+ok 387 - UTF8 BOM and non-ASCII synthetic text preserve valid Unicode bytes
+  ---
+  duration_ms: 0.4489
+  type: 'test'
+  ...
+# Subtest: only current trusted quality failures authorize fallback; spoofed, replayed, and transport errors do not
+ok 388 - only current trusted quality failures authorize fallback; spoofed, replayed, and transport errors do not
+  ---
+  duration_ms: 24.2921
+  type: 'test'
+  ...
+# Subtest: playback rejection privately owns codes and rebuilds mutable/spoofed errors without leaking unsafe getters
+ok 389 - playback rejection privately owns codes and rebuilds mutable/spoofed errors without leaking unsafe getters
+  ---
+  duration_ms: 3.8977
+  type: 'test'
+  ...
+# Subtest: Vkey retcode/result are each snapshotted once before numeric business error reconstruction and never start CDN fetch
+ok 390 - Vkey retcode/result are each snapshotted once before numeric business error reconstruction and never start CDN fetch
+  ---
+  duration_ms: 1.5528
+  type: 'test'
+  ...
+# Subtest: plain MP3 uses verified session, native call, real length and bounded CDN ranges
+ok 391 - plain MP3 uses verified session, native call, real length and bounded CDN ranges
+  ---
+  duration_ms: 9.1129
+  type: 'test'
+  ...
+# Subtest: explicit quality mappings preserve their native filename and encrypted service
+ok 392 - explicit quality mappings preserve their native filename and encrypted service
+  ---
+  duration_ms: 36.2777
+  type: 'test'
+  ...
+# Subtest: premium native OtherMID replaces the filename identity while Vkey still binds the canonical song MID
+ok 393 - premium native OtherMID replaces the filename identity while Vkey still binds the canonical song MID
+  ---
+  duration_ms: 11.7102
+  type: 'test'
+  ...
+# Subtest: premium identities must belong to this exact TrackInfo; missing identities never fall back to the base MID
+ok 394 - premium identities must belong to this exact TrackInfo; missing identities never fall back to the base MID
+  ---
+  duration_ms: 11.8422
+  type: 'test'
+  ...
+# Subtest: explicit absent formats fail before issuer or media requests while unknown metadata remains testable
+ok 395 - explicit absent formats fail before issuer or media requests while unknown metadata remains testable
+  ---
+  duration_ms: 6.8104
+  type: 'test'
+  ...
+# Subtest: unavailable, empty issuer, service refusal, HTTP and content failures have distinct safe explanations
+ok 396 - unavailable, empty issuer, service refusal, HTTP and content failures have distinct safe explanations
+  ---
+  duration_ms: 5.5173
+  type: 'test'
+  ...
+# Subtest: modern key validates the decoded FLAC header and verified footer trim
+ok 397 - modern key validates the decoded FLAC header and verified footer trim
+  ---
+  duration_ms: 11.5006
+  type: 'test'
+  ...
+# Subtest: each resolve transfers an independent key while cache still rechecks login
+ok 398 - each resolve transfers an independent key while cache still rechecks login
+  ---
+  duration_ms: 2.8998
+  type: 'test'
+  ...
+# Subtest: refresh revalidates CDN identity; TTL and session changes invalidate transport cache
+ok 399 - refresh revalidates CDN identity; TTL and session changes invalidate transport cache
+  ---
+  duration_ms: 6.3853
+  type: 'test'
+  ...
+# Subtest: HEAD unsupported takes only one prefix Range and one bounded tail Range
+ok 400 - HEAD unsupported takes only one prefix Range and one bounded tail Range
+  ---
+  duration_ms: 1.0813
+  type: 'test'
+  ...
+# Subtest: HTTP native issuer can upgrade only to the same official HTTPS host after preflight
+ok 401 - HTTP native issuer can upgrade only to the same official HTTPS host after preflight
+  ---
+  duration_ms: 0.9527
+  type: 'test'
+  ...
+# Subtest: rights errors preserve only numeric code and skip all media fetches
+ok 402 - rights errors preserve only numeric code and skip all media fetches
+  ---
+  duration_ms: 0.8153
+  type: 'test'
+  ...
+# Subtest: mismatched filename/MID, malformed result and empty purl never create a source
+ok 403 - mismatched filename/MID, malformed result and empty purl never create a source
+  ---
+  duration_ms: 1.0288
+  type: 'test'
+  ...
+# Subtest: relative Vkey without sip uses the explicit official compatibility base and validates bytes
+ok 404 - relative Vkey without sip uses the explicit official compatibility base and validates bytes
+  ---
+  duration_ms: 1.8658
+  type: 'test'
+  ...
+# Subtest: origin, userinfo, fragment, ports and redirect destinations have a closed issuer set
+ok 405 - origin, userinfo, fragment, ports and redirect destinations have a closed issuer set
+  ---
+  duration_ms: 1.5636
+  type: 'test'
+  ...
+# Subtest: range total mismatch, compressed bytes, ignored ranges and damaged headers reject
+ok 406 - range total mismatch, compressed bytes, ignored ranges and damaged headers reject
+  ---
+  duration_ms: 2.5722
+  type: 'test'
+  ...
+# Subtest: actual received Range byte cap cancels an oversized body without reading media
+ok 407 - actual received Range byte cap cancels an oversized body without reading media
+  ---
+  duration_ms: 2.193
+  type: 'test'
+  ...
+# Subtest: failed remote login, network errors and missing keys cannot use cached authorization
+ok 408 - failed remote login, network errors and missing keys cannot use cached authorization
+  ---
+  duration_ms: 10.0885
+  type: 'test'
+  ...
+# (node:3984) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: abort/dispose cancel pending preflight and release a late body; disposed resolver stays closed
+ok 409 - abort/dispose cancel pending preflight and release a late body; disposed resolver stays closed
+  ---
+  duration_ms: 15.3521
+  type: 'test'
+  ...
+# Subtest: bounded resolver timeout aborts an unresponsive fetch and cancels its late body
+ok 410 - bounded resolver timeout aborts an unresponsive fetch and cancels its late body
+  ---
+  duration_ms: 3.1507
+  type: 'test'
+  ...
+# Subtest: a delayed encrypted preflight cannot publish a revoked or changed session/device
+ok 411 - a delayed encrypted preflight cannot publish a revoked or changed session/device
+  ---
+  duration_ms: 5.635
+  type: 'test'
+  ...
+# Subtest: a cache hit straddling session revocation cannot transfer its key or authorization
+ok 412 - a cache hit straddling session revocation cannot transfer its key or authorization
+  ---
+  duration_ms: 2.6749
+  type: 'test'
+  ...
+# Subtest: uint64 preflight lengths and suffix offsets remain exact beyond JavaScript safe integer
+ok 413 - uint64 preflight lengths and suffix offsets remain exact beyond JavaScript safe integer
+  ---
+  duration_ms: 1.862
+  type: 'test'
+  ...
+# Subtest: resolver integrates with the real loopback proxy and excludes encrypted footer bytes
+ok 414 - resolver integrates with the real loopback proxy and excludes encrypted footer bytes
+  ---
+  duration_ms: 45.9053
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 0
+ok 415 - media internal key matches original DLL v1 case 0
+  ---
+  duration_ms: 3.1098
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 1
+ok 416 - media internal key matches original DLL v1 case 1
+  ---
+  duration_ms: 0.6865
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 2
+ok 417 - media internal key matches original DLL v1 case 2
+  ---
+  duration_ms: 1.1199
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 3
+ok 418 - media internal key matches original DLL v1 case 3
+  ---
+  duration_ms: 0.4906
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 4
+ok 419 - media internal key matches original DLL v1 case 4
+  ---
+  duration_ms: 0.394
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 5
+ok 420 - media internal key matches original DLL v1 case 5
+  ---
+  duration_ms: 0.2144
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 6
+ok 421 - media internal key matches original DLL v1 case 6
+  ---
+  duration_ms: 0.29
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 7
+ok 422 - media internal key matches original DLL v1 case 7
+  ---
+  duration_ms: 0.2151
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 8
+ok 423 - media internal key matches original DLL v1 case 8
+  ---
+  duration_ms: 0.7379
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 9
+ok 424 - media internal key matches original DLL v1 case 9
+  ---
+  duration_ms: 2.6192
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 10
+ok 425 - media internal key matches original DLL v1 case 10
+  ---
+  duration_ms: 0.9314
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 11
+ok 426 - media internal key matches original DLL v1 case 11
+  ---
+  duration_ms: 0.4771
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 12
+ok 427 - media internal key matches original DLL v1 case 12
+  ---
+  duration_ms: 0.4105
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 13
+ok 428 - media internal key matches original DLL v1 case 13
+  ---
+  duration_ms: 3.5664
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 14
+ok 429 - media internal key matches original DLL v1 case 14
+  ---
+  duration_ms: 0.5533
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL v1 case 15
+ok 430 - media internal key matches original DLL v1 case 15
+  ---
+  duration_ms: 0.8935
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL zero-v2 case 0
+ok 431 - media internal key matches original DLL zero-v2 case 0
+  ---
+  duration_ms: 1.2157
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL zero-v2 case 1
+ok 432 - media internal key matches original DLL zero-v2 case 1
+  ---
+  duration_ms: 0.3461
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL zero-v2 case 2
+ok 433 - media internal key matches original DLL zero-v2 case 2
+  ---
+  duration_ms: 0.394
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL zero-v2 case 3
+ok 434 - media internal key matches original DLL zero-v2 case 3
+  ---
+  duration_ms: 1.363
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL zero-v2 case 4
+ok 435 - media internal key matches original DLL zero-v2 case 4
+  ---
+  duration_ms: 0.5273
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL zero-v2 case 5
+ok 436 - media internal key matches original DLL zero-v2 case 5
+  ---
+  duration_ms: 0.2611
+  type: 'test'
+  ...
+# Subtest: media internal key matches original DLL zero-v2 case 6
+ok 437 - media internal key matches original DLL zero-v2 case 6
+  ---
+  duration_ms: 1.0462
+  type: 'test'
+  ...
+# Subtest: retains key ownership and rejects unsafe native key indexing before mutation
+ok 438 - retains key ownership and rejects unsafe native key indexing before mutation
+  ---
+  duration_ms: 1.0138
+  type: 'test'
+  ...
+# Subtest: rejects lossy offsets and invalid resource sizes
+ok 439 - rejects lossy offsets and invalid resource sizes
+  ---
+  duration_ms: 0.357
+  type: 'test'
+  ...
+# Subtest: revoking a stream prevents later transforms without altering caller buffers
+ok 440 - revoking a stream prevents later transforms without altering caller buffers
+  ---
+  duration_ms: 0.5055
+  type: 'test'
+  ...
+# Subtest: small keys retain exact native positions across periods, unsafe Numbers and uint64 wrap
+ok 441 - small keys retain exact native positions across periods, unsafe Numbers and uint64 wrap
+  ---
+  duration_ms: 7.8486
+  type: 'test'
+  ...
+# Subtest: small-key whole and irregular split reads match through multiple periods and uint64 wrap
+ok 442 - small-key whole and irregular split reads match through multiple periods and uint64 wrap
+  ---
+  duration_ms: 3.2122
+  type: 'test'
+  ...
+# Subtest: public lookup explicitly uses verified login for both native UIN fields and derives final ref only from bound actual response
+ok 443 - public lookup explicitly uses verified login for both native UIN fields and derives final ref only from bound actual response
+  ---
+  duration_ms: 7.6201
+  type: 'test'
+  ...
+# Subtest: provided signed64 IDs and UInt64 response identities remain lossless, including explicit zero without a default
+ok 444 - provided signed64 IDs and UInt64 response identities remain lossless, including explicit zero without a default
+  ---
+  duration_ms: 4.4201
+  type: 'test'
+  ...
+# Subtest: reply binds requested ID and actual host to creator.musicid and requires complete existing strict detail
+ok 445 - reply binds requested ID and actual host to creator.musicid and requires complete existing strict detail
+  ---
+  duration_ms: 6.1641
+  type: 'test'
+  ...
+# Subtest: response identity/status accessors are snapshotted once before strict owned projection
+ok 446 - response identity/status accessors are snapshotted once before strict owned projection
+  ---
+  duration_ms: 2.3965
+  type: 'test'
+  ...
+# Subtest: external mutable/name/getter errors remain generic and genuine RPC code is snapshotted once
+ok 447 - external mutable/name/getter errors remain generic and genuine RPC code is snapshotted once
+  ---
+  duration_ms: 2.5625
+  type: 'test'
+  ...
+# Subtest: preabort, late abort and external AbortError discard the reply without retries
+ok 448 - preabort, late abort and external AbortError discard the reply without retries
+  ---
+  duration_ms: 0.883
+  type: 'test'
+  ...
+# Subtest: native public detail branch emits the exact RPC and three numeric fields
+ok 449 - native public detail branch emits the exact RPC and three numeric fields
+  ---
+  duration_ms: 1.6088
+  type: 'test'
+  ...
+# Subtest: native directory branch emits dirid and requires the session UIN as host
+ok 450 - native directory branch emits dirid and requires the session UIN as host
+  ---
+  duration_ms: 2.4413
+  type: 'test'
+  ...
+# Subtest: UInt64 and Int64 wire numbers preserve all decimal digits at their boundaries
+ok 451 - UInt64 and Int64 wire numbers preserve all decimal digits at their boundaries
+  ---
+  duration_ms: 0.3279
+  type: 'test'
+  ...
+# Subtest: user playlist producer emits one string field, with no inferred paging or favorites
+ok 452 - user playlist producer emits one string field, with no inferred paging or favorites
+  ---
+  duration_ms: 0.1837
+  type: 'test'
+  ...
+# Subtest: native favorite producer uses its module-only outer key and one string UIN field
+ok 453 - native favorite producer uses its module-only outer key and one string UIN field
+  ---
+  duration_ms: 0.2917
+  type: 'test'
+  ...
+# Subtest: favorite UIN stays a bounded exact string without retaining caller input
+ok 454 - favorite UIN stays a bounded exact string without retaining caller input
+  ---
+  duration_ms: 0.3144
+  type: 'test'
+  ...
+# Subtest: wrong types, whitespace, NUL, oversized input and missing values reject without leaking IDs
+ok 455 - wrong types, whitespace, NUL, oversized input and missing values reject without leaking IDs
+  ---
+  duration_ms: 0.9671
+  type: 'test'
+  ...
+# Subtest: unsigned negatives and integer overflow reject before creating any wire body
+ok 456 - unsigned negatives and integer overflow reject before creating any wire body
+  ---
+  duration_ms: 0.3458
+  type: 'test'
+  ...
+# Subtest: observed created-directory fields map to the SDK summary without private DTO extras
+ok 457 - observed created-directory fields map to the SDK summary without private DTO extras
+  ---
+  duration_ms: 9.0895
+  type: 'test'
+  ...
+# Subtest: directory ID survives a JSON-only restart and reconstructs all native detail parameters
+ok 458 - directory ID survives a JSON-only restart and reconstructs all native detail parameters
+  ---
+  duration_ms: 5.546
+  type: 'test'
+  ...
+# Subtest: public references and UInt64/signed64 extremes remain exact without Number conversion
+ok 459 - public references and UInt64/signed64 extremes remain exact without Number conversion
+  ---
+  duration_ms: 0.5781
+  type: 'test'
+  ...
+# Subtest: partial responses retain finished=false and never invent liked folders or status semantics
+ok 460 - partial responses retain finished=false and never invent liked folders or status semantics
+  ---
+  duration_ms: 0.633
+  type: 'test'
+  ...
+# Subtest: strict canonical parser rejects aliases, foreign providers and malformed native IDs
+ok 461 - strict canonical parser rejects aliases, foreign providers and malformed native IDs
+  ---
+  duration_ms: 0.7879
+  type: 'test'
+  ...
+# Subtest: shared reference generator rejects whitespace/delimiters in every numeric component
+ok 462 - shared reference generator rejects whitespace/delimiters in every numeric component
+  ---
+  duration_ms: 1.0209
+  type: 'test'
+  ...
+# Subtest: malformed/unsafe identity, incomplete DTO and foreign-owner records reject with generic errors
+ok 463 - malformed/unsafe identity, incomplete DTO and foreign-owner records reject with generic errors
+  ---
+  duration_ms: 1.5975
+  type: 'test'
+  ...
+# Subtest: cover selection accepts bounded credential-free HTTP URLs and rejects unsafe schemes/credentials
+ok 464 - cover selection accepts bounded credential-free HTTP URLs and rejects unsafe schemes/credentials
+  ---
+  duration_ms: 0.5446
+  type: 'test'
+  ...
+# Subtest: initial snapshot decoder rejects deltas, duplicates and malformed/inconsistent containers
+ok 465 - initial snapshot decoder rejects deltas, duplicates and malformed/inconsistent containers
+  ---
+  duration_ms: 0.984
+  type: 'test'
+  ...
+# Subtest: favorite DTO preserves creator identity without selecting the caller directory branch
+ok 466 - favorite DTO preserves creator identity without selecting the caller directory branch
+  ---
+  duration_ms: 1.1422
+  type: 'test'
+  ...
+# Subtest: favorite tombstones and paging remain explicit without deleting records or inventing cursors
+ok 467 - favorite tombstones and paging remain explicit without deleting records or inventing cursors
+  ---
+  duration_ms: 0.3511
+  type: 'test'
+  ...
+# Subtest: favorite lossless IDs/tombstones stay signed64 and mutable DTO input is not retained
+ok 468 - favorite lossless IDs/tombstones stay signed64 and mutable DTO input is not retained
+  ---
+  duration_ms: 0.2634
+  type: 'test'
+  ...
+# Subtest: malformed favorites and unobserved failure-list entries reject rather than silently disappearing
+ok 469 - malformed favorites and unobserved failure-list entries reject rather than silently disappearing
+  ---
+  duration_ms: 0.7042
+  type: 'test'
+  ...
+# Subtest: explicit server-visible adapter policy filters only display0 and never invents a blank owner
+ok 470 - explicit server-visible adapter policy filters only display0 and never invents a blank owner
+  ---
+  duration_ms: 0.5563
+  type: 'test'
+  ...
+# Subtest: visible1 remains visible even with status0/opType5 and matching native deletion ID
+ok 471 - visible1 remains visible even with status0/opType5 and matching native deletion ID
+  ---
+  duration_ms: 0.2266
+  type: 'test'
+  ...
+# Subtest: whole-favorites hide is a separate adapter policy and reports the native total as hidden
+ok 472 - whole-favorites hide is a separate adapter policy and reports the native total as hidden
+  ---
+  duration_ms: 0.3231
+  type: 'test'
+  ...
+# Subtest: server-visible preflight validates hidden rows and exact display enums before filtering
+ok 473 - server-visible preflight validates hidden rows and exact display enums before filtering
+  ---
+  duration_ms: 1.3598
+  type: 'test'
+  ...
+# Subtest: default decoder keeps the forward contract and does not apply display or whole-hide policy
+ok 474 - default decoder keeps the forward contract and does not apply display or whole-hide policy
+  ---
+  duration_ms: 0.1697
+  type: 'test'
+  ...
+# Subtest: native detail binds the requested reference and maps standard songs plus playback metadata
+ok 475 - native detail binds the requested reference and maps standard songs plus playback metadata
+  ---
+  duration_ms: 1.5873
+  type: 'test'
+  ...
+# Subtest: detail preserves order/duplicates and larger native totals remain explicitly incomplete
+ok 476 - detail preserves order/duplicates and larger native totals remain explicitly incomplete
+  ---
+  duration_ms: 0.4838
+  type: 'test'
+  ...
+# Subtest: detail identity comparison preserves unsafe numeric IDs and public references omit directory matching
+ok 477 - detail identity comparison preserves unsafe numeric IDs and public references omit directory matching
+  ---
+  duration_ms: 1.3873
+  type: 'test'
+  ...
+# Subtest: detail business failures never propagate server messages or other private fields
+ok 478 - detail business failures never propagate server messages or other private fields
+  ---
+  duration_ms: 0.3748
+  type: 'test'
+  ...
+# Subtest: detail malformed containers/song/media reject without reducing native cursor counts
+ok 479 - detail malformed containers/song/media reject without reducing native cursor counts
+  ---
+  duration_ms: 0.4858
+  type: 'test'
+  ...
+# Subtest: only observed current-session directory201 accepts a zero response host placeholder
+ok 480 - only observed current-session directory201 accepts a zero response host placeholder
+  ---
+  duration_ms: 0.432
+  type: 'test'
+  ...
+# Subtest: all directory detail decodes require a matching verified-session input even with exact response ownership
+ok 481 - all directory detail decodes require a matching verified-session input even with exact response ownership
+  ---
+  duration_ms: 0.1527
+  type: 'test'
+  ...
+# Subtest: mixed native detail preserves unsupported records, source order and same-index media gaps
+ok 482 - mixed native detail preserves unsupported records, source order and same-index media gaps
+  ---
+  duration_ms: 0.5141
+  type: 'test'
+  ...
+# Subtest: artificial 544-record directory keeps all records and counts three unsupported identities
+ok 483 - artificial 544-record directory keeps all records and counts three unsupported identities
+  ---
+  duration_ms: 28.6615
+  type: 'test'
+  ...
+# Subtest: unsupported record policy does not excuse other malformed or unobserved record shapes
+ok 484 - unsupported record policy does not excuse other malformed or unobserved record shapes
+  ---
+  duration_ms: 1.663
+  type: 'test'
+  ...
+# Subtest: login response keeps the exact native fields, names and time roles
+ok 485 - login response keeps the exact native fields, names and time roles
+  ---
+  duration_ms: 2.4524
+  type: 'test'
+  ...
+# Subtest: large native integer literals survive response parsing and session extraction
+ok 486 - large native integer literals survive response parsing and session extraction
+  ---
+  duration_ms: 1.6468
+  type: 'test'
+  ...
+# Subtest: top-level and item errors never commit otherwise valid session data
+ok 487 - top-level and item errors never commit otherwise valid session data
+  ---
+  duration_ms: 0.7323
+  type: 'test'
+  ...
+# Subtest: success-shaped malformed responses are rejected instead of reporting login
+ok 488 - success-shaped malformed responses are rejected instead of reporting login
+  ---
+  duration_ms: 0.54
+  type: 'test'
+  ...
+# Subtest: partial or invalid login data cannot become a session
+ok 489 - partial or invalid login data cannot become a session
+  ---
+  duration_ms: 0.7608
+  type: 'test'
+  ...
+# Subtest: parse and business errors contain no upstream strings or credentials
+ok 490 - parse and business errors contain no upstream strings or credentials
+  ---
+  duration_ms: 0.4027
+  type: 'test'
+  ...
+# Subtest: Windows Desktop search preserves its native RPC key, fields and integer types
+ok 491 - Windows Desktop search preserves its native RPC key, fields and integer types
+  ---
+  duration_ms: 2.9534
+  type: 'test'
+  ...
+# Subtest: nqc flag is absent by default and uses integer one only when requested
+ok 492 - nqc flag is absent by default and uses integer one only when requested
+  ---
+  duration_ms: 0.7676
+  type: 'test'
+  ...
+# Subtest: search ID and placement are caller values without capture-derived length restrictions
+ok 493 - search ID and placement are caller values without capture-derived length restrictions
+  ---
+  duration_ms: 0.1723
+  type: 'test'
+  ...
+# Subtest: missing caller fields and non-native values are rejected before serialization
+ok 494 - missing caller fields and non-native values are rejected before serialization
+  ---
+  duration_ms: 1.8057
+  type: 'test'
+  ...
+# Subtest: native catalog semantics map exact observed fields to canonical SDK summaries
+ok 495 - native catalog semantics map exact observed fields to canonical SDK summaries
+  ---
+  duration_ms: 5.2873
+  type: 'test'
+  ...
+# Subtest: observed artist songNum and albumNum distinguish real zero from missing catalogue counts
+ok 496 - observed artist songNum and albumNum distinguish real zero from missing catalogue counts
+  ---
+  duration_ms: 0.7812
+  type: 'test'
+  ...
+# Subtest: public playlists retain native host and signed64 dissid without exporting creator account fields
+ok 497 - public playlists retain native host and signed64 dissid without exporting creator account fields
+  ---
+  duration_ms: 2.349
+  type: 'test'
+  ...
+# Subtest: lossless IDs preserve native range boundaries and require real identifiers
+ok 498 - lossless IDs preserve native range boundaries and require real identifiers
+  ---
+  duration_ms: 0.5804
+  type: 'test'
+  ...
+# Subtest: canonical album and artist IDs reject alternate or incomplete references
+ok 499 - canonical album and artist IDs reject alternate or incomplete references
+  ---
+  duration_ms: 0.8446
+  type: 'test'
+  ...
+# Subtest: optional display fields omit invalid dates/counts and unsafe artwork
+ok 500 - optional display fields omit invalid dates/counts and unsafe artwork
+  ---
+  duration_ms: 0.4443
+  type: 'test'
+  ...
+# Subtest: catalog containers and real server totals are required; verification errors stay numeric
+ok 501 - catalog containers and real server totals are required; verification errors stay numeric
+  ---
+  duration_ms: 0.8316
+  type: 'test'
+  ...
+# Subtest: offset across two pages skips raw slots once and uses the single desktop call builder
+ok 502 - offset across two pages skips raw slots once and uses the single desktop call builder
+  ---
+  duration_ms: 1.3506
+  type: 'test'
+  ...
+# Subtest: invalid rows consume their original offset slots without unbounded refill
+ok 503 - invalid rows consume their original offset slots without unbounded refill
+  ---
+  duration_ms: 1.0864
+  type: 'test'
+  ...
+# Subtest: short page and total exhaustion stop paging independently of invalid-row count
+ok 504 - short page and total exhaustion stop paging independently of invalid-row count
+  ---
+  duration_ms: 1.0683
+  type: 'test'
+  ...
+# Subtest: abort and invalid inputs stop before request, and late abort rejects the returned page
+ok 505 - abort and invalid inputs stop before request, and late abort rejects the returned page
+  ---
+  duration_ms: 1.5311
+  type: 'test'
+  ...
+# Subtest: RPC or network failures propagate without retries or fallback categories
+ok 506 - RPC or network failures propagate without retries or fallback categories
+  ---
+  duration_ms: 0.3052
+  type: 'test'
+  ...
+# Subtest: quality and auth mutations share one read-modify-write owner without losing unrelated keys
+ok 507 - quality and auth mutations share one read-modify-write owner without losing unrelated keys
+  ---
+  duration_ms: 8.5879
+  type: 'test'
+  ...
+# Subtest: a failed preference write rejects and does not poison subsequent auth storage
+ok 508 - a failed preference write rejects and does not poison subsequent auth storage
+  ---
+  duration_ms: 1.0298
+  type: 'test'
+  ...
+# Subtest: a legacy-secret migration during get cannot overwrite a concurrent quality save
+ok 509 - a legacy-secret migration during get cannot overwrite a concurrent quality save
+  ---
+  duration_ms: 1.9256
+  type: 'test'
+  ...
+# Subtest: the settings form exposes only quality and valid saves do not return other storage values
+ok 510 - the settings form exposes only quality and valid saves do not return other storage values
+  ---
+  duration_ms: 1.0744
+  type: 'test'
+  ...
+# Subtest: invalid quality values reject without overwriting an existing preference
+ok 511 - invalid quality values reject without overwriting an existing preference
+  ---
+  duration_ms: 0.7023
+  type: 'test'
+  ...
+# Subtest: playback quality DTO uses every shared option and only reads the preference key
+ok 512 - playback quality DTO uses every shared option and only reads the preference key
+  ---
+  duration_ms: 0.9415
+  type: 'test'
+  ...
+# Subtest: direct setters reject aliases, unsafe types and alternate spellings without a queued write
+ok 513 - direct setters reject aliases, unsafe types and alternate spellings without a queued write
+  ---
+  duration_ms: 1.0172
+  type: 'test'
+  ...
+# Subtest: concurrent player and form saves share the SDK queue and return each committed selection
+ok 514 - concurrent player and form saves share the SDK queue and return each committed selection
+  ---
+  duration_ms: 4.7454
+  type: 'test'
+  ...
+# Subtest: a queued preference write checks lifecycle before touching SDK storage
+ok 515 - a queued preference write checks lifecycle before touching SDK storage
+  ---
+  duration_ms: 0.9118
+  type: 'test'
+  ...
+# Subtest: registered quality methods and settings command use one preference and reject closed or aborted invocations
+ok 516 - registered quality methods and settings command use one preference and reject closed or aborted invocations
+  ---
+  duration_ms: 3.2188
+  type: 'test'
+  ...
+# Subtest: a cancelled settings command queued behind a read does not start a host write
+ok 517 - a cancelled settings command queued behind a read does not start a host write
+  ---
+  duration_ms: 0.9617
+  type: 'test'
+  ...
+# Subtest: registered late reads reject after deactivation instead of publishing a quality DTO
+ok 518 - registered late reads reject after deactivation instead of publishing a quality DTO
+  ---
+  duration_ms: 0.7593
+  type: 'test'
+  ...
+# Subtest: a quality write already started in the host does not publish success after deactivation
+ok 519 - a quality write already started in the host does not publish success after deactivation
+  ---
+  duration_ms: 0.8145
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-1
+ok 520 - Windows signature matches original DLL: body-1
+  ---
+  duration_ms: 3.8987
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-2
+ok 521 - Windows signature matches original DLL: body-2
+  ---
+  duration_ms: 0.6906
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-7
+ok 522 - Windows signature matches original DLL: body-7
+  ---
+  duration_ms: 1.7714
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-55
+ok 523 - Windows signature matches original DLL: body-55
+  ---
+  duration_ms: 0.42
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-56
+ok 524 - Windows signature matches original DLL: body-56
+  ---
+  duration_ms: 0.4442
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-57
+ok 525 - Windows signature matches original DLL: body-57
+  ---
+  duration_ms: 0.2288
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-58
+ok 526 - Windows signature matches original DLL: body-58
+  ---
+  duration_ms: 0.2895
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-59
+ok 527 - Windows signature matches original DLL: body-59
+  ---
+  duration_ms: 0.1946
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-128
+ok 528 - Windows signature matches original DLL: body-128
+  ---
+  duration_ms: 0.5712
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: body-512
+ok 529 - Windows signature matches original DLL: body-512
+  ---
+  duration_ms: 0.6683
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-1
+ok 530 - Windows signature matches original DLL: metadata-1
+  ---
+  duration_ms: 0.3057
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-8
+ok 531 - Windows signature matches original DLL: metadata-8
+  ---
+  duration_ms: 0.1506
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-15
+ok 532 - Windows signature matches original DLL: metadata-15
+  ---
+  duration_ms: 0.1248
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-16
+ok 533 - Windows signature matches original DLL: metadata-16
+  ---
+  duration_ms: 0.1012
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-17
+ok 534 - Windows signature matches original DLL: metadata-17
+  ---
+  duration_ms: 0.0885
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-31
+ok 535 - Windows signature matches original DLL: metadata-31
+  ---
+  duration_ms: 0.1175
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-32
+ok 536 - Windows signature matches original DLL: metadata-32
+  ---
+  duration_ms: 0.1013
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: metadata-33
+ok 537 - Windows signature matches original DLL: metadata-33
+  ---
+  duration_ms: 0.1039
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: json-fake-fields
+ok 538 - Windows signature matches original DLL: json-fake-fields
+  ---
+  duration_ms: 0.1203
+  type: 'test'
+  ...
+# Subtest: Windows signature matches original DLL: repeat-json-fake-fields
+ok 539 - Windows signature matches original DLL: repeat-json-fake-fields
+  ---
+  duration_ms: 3.949
+  type: 'test'
+  ...
+# Subtest: TEA block has native 16-cycle and big-endian semantics
+ok 540 - TEA block has native 16-cycle and big-endian semantics
+  ---
+  duration_ms: 0.2525
+  type: 'test'
+  ...
+# Subtest: serialized views preserve their byte offset
+ok 541 - serialized views preserve their byte offset
+  ---
+  duration_ms: 0.5699
+  type: 'test'
+  ...
+# Subtest: production randomness returns NUL-free header strings
+ok 542 - production randomness returns NUL-free header strings
+  ---
+  duration_ms: 1.6008
+  type: 'test'
+  ...
+# Subtest: signing requires bytes and a bounded random integer source
+ok 543 - signing requires bytes and a bounded random integer source
+  ---
+  duration_ms: 0.8648
+  type: 'test'
+  ...
+# Subtest: native TrackInfo preserves the request key, module and four typed fields
+ok 544 - native TrackInfo preserves the request key, module and four typed fields
+  ---
+  duration_ms: 2.0479
+  type: 'test'
+  ...
+# Subtest: UInt32 IDs and signed Int32 caller fields preserve their boundaries in JSON
+ok 545 - UInt32 IDs and signed Int32 caller fields preserve their boundaries in JSON
+  ---
+  duration_ms: 0.3606
+  type: 'test'
+  ...
+# Subtest: builder owns its arrays and emits no unresolved or Android fields
+ok 546 - builder owns its arrays and emits no unresolved or Android fields
+  ---
+  duration_ms: 0.382
+  type: 'test'
+  ...
+# Subtest: provider rejects malformed parallel arrays instead of dropping unmatched IDs
+ok 547 - provider rejects malformed parallel arrays instead of dropping unmatched IDs
+  ---
+  duration_ms: 2.9399
+  type: 'test'
+  ...
+# Subtest: MID strings, overflow, fractions and missing caller values reject before serialization
+ok 548 - MID strings, overflow, fractions and missing caller values reject before serialization
+  ---
+  duration_ms: 1.2344
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-1
+ok 549 - inverse recovers original DLL metadata: body-1
+  ---
+  duration_ms: 3.4327
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-2
+ok 550 - inverse recovers original DLL metadata: body-2
+  ---
+  duration_ms: 0.5243
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-7
+ok 551 - inverse recovers original DLL metadata: body-7
+  ---
+  duration_ms: 0.3486
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-55
+ok 552 - inverse recovers original DLL metadata: body-55
+  ---
+  duration_ms: 0.204
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-56
+ok 553 - inverse recovers original DLL metadata: body-56
+  ---
+  duration_ms: 0.2052
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-57
+ok 554 - inverse recovers original DLL metadata: body-57
+  ---
+  duration_ms: 0.2315
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-58
+ok 555 - inverse recovers original DLL metadata: body-58
+  ---
+  duration_ms: 0.1991
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-59
+ok 556 - inverse recovers original DLL metadata: body-59
+  ---
+  duration_ms: 0.1874
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-128
+ok 557 - inverse recovers original DLL metadata: body-128
+  ---
+  duration_ms: 0.8198
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: body-512
+ok 558 - inverse recovers original DLL metadata: body-512
+  ---
+  duration_ms: 0.6672
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-1
+ok 559 - inverse recovers original DLL metadata: metadata-1
+  ---
+  duration_ms: 0.2635
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-8
+ok 560 - inverse recovers original DLL metadata: metadata-8
+  ---
+  duration_ms: 0.1457
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-15
+ok 561 - inverse recovers original DLL metadata: metadata-15
+  ---
+  duration_ms: 0.2474
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-16
+ok 562 - inverse recovers original DLL metadata: metadata-16
+  ---
+  duration_ms: 0.1575
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-17
+ok 563 - inverse recovers original DLL metadata: metadata-17
+  ---
+  duration_ms: 0.0974
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-31
+ok 564 - inverse recovers original DLL metadata: metadata-31
+  ---
+  duration_ms: 0.089
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-32
+ok 565 - inverse recovers original DLL metadata: metadata-32
+  ---
+  duration_ms: 0.0845
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: metadata-33
+ok 566 - inverse recovers original DLL metadata: metadata-33
+  ---
+  duration_ms: 0.1537
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: json-fake-fields
+ok 567 - inverse recovers original DLL metadata: json-fake-fields
+  ---
+  duration_ms: 0.1987
+  type: 'test'
+  ...
+# Subtest: inverse recovers original DLL metadata: repeat-json-fake-fields
+ok 568 - inverse recovers original DLL metadata: repeat-json-fake-fields
+  ---
+  duration_ms: 0.1366
+  type: 'test'
+  ...
+# Subtest: inverse block direction agrees with statically derived 16-cycle examples
+ok 569 - inverse block direction agrees with statically derived 16-cycle examples
+  ---
+  duration_ms: 0.1608
+  type: 'test'
+  ...
+# Subtest: invalid lengths and damaged native framing produce no partial plaintext
+ok 570 - invalid lengths and damaged native framing produce no partial plaintext
+  ---
+  duration_ms: 0.9345
+  type: 'test'
+  ...
+# Subtest: quality fallback chains stay bounded, never upgrade ordinary selections or cross spatial formats
+ok 571 - quality fallback chains stay bounded, never upgrade ordinary selections or cross spatial formats
+  ---
+  duration_ms: 3.1101
+  type: 'test'
+  ...
+# Subtest: observed Windows song DTO maps a stable Track without persisting media credentials
+ok 572 - observed Windows song DTO maps a stable Track without persisting media credentials
+  ---
+  duration_ms: 1.7522
+  type: 'test'
+  ...
+# Subtest: native UInt32 song IDs remain exact and reject incompatible detail IDs
+ok 573 - native UInt32 song IDs remain exact and reject incompatible detail IDs
+  ---
+  duration_ms: 0.843
+  type: 'test'
+  ...
+# Subtest: per-track qualities retain native format candidates, explicit zero and unknown separately from rights
+ok 574 - per-track qualities retain native format candidates, explicit zero and unknown separately from rights
+  ---
+  duration_ms: 2.1677
+  type: 'test'
+  ...
+# Subtest: premium sizes keep zero, candidate and unknown distinct and require their exact native vs identity
+ok 575 - premium sizes keep zero, candidate and unknown distinct and require their exact native vs identity
+  ---
+  duration_ms: 2.4174
+  type: 'test'
+  ...
+# Subtest: malformed or missing format sizes cannot turn unknown into unavailable or permission success
+ok 576 - malformed or missing format sizes cannot turn unknown into unavailable or permission success
+  ---
+  duration_ms: 1.3211
+  type: 'test'
+  ...
+# Subtest: offset windows retain partial-page skip and require real server totals
+ok 577 - offset windows retain partial-page skip and require real server totals
+  ---
+  duration_ms: 0.5872
+  type: 'test'
+  ...
+# Subtest: invalid identifiers and incomplete metadata fail before a playback request
+ok 578 - invalid identifiers and incomplete metadata fail before a playback request
+  ---
+  duration_ms: 0.4709
+  type: 'test'
+  ...
+# Subtest: the observed native type21 empty-MID shape retains real identity and visible metadata
+ok 579 - the observed native type21 empty-MID shape retains real identity and visible metadata
+  ---
+  duration_ms: 1.1141
+  type: 'test'
+  ...
+# Subtest: native unsupported identities refuse playback without inventing a normal MID
+ok 580 - native unsupported identities refuse playback without inventing a normal MID
+  ---
+  duration_ms: 1.0722
+  type: 'test'
+  ...
+# Subtest: type21 exception is narrow and malformed empty-MID records remain rejected
+ok 581 - type21 exception is narrow and malformed empty-MID records remain rejected
+  ---
+  duration_ms: 1.1213
+  type: 'test'
+  ...
+# Subtest: Windows comm uses the recorded desktop types and excludes Android device fields
+ok 582 - Windows comm uses the recorded desktop types and excludes Android device fields
+  ---
+  duration_ms: 1.9483
+  type: 'test'
+  ...
+# Subtest: optional native fields preserve unsigned text and signed64 JSON numbers
+ok 583 - optional native fields preserve unsigned text and signed64 JSON numbers
+  ---
+  duration_ms: 0.4737
+  type: 'test'
+  ...
+# Subtest: native version int32 formatting retains arithmetic wrapping
+ok 584 - native version int32 formatting retains arithmetic wrapping
+  ---
+  duration_ms: 0.1677
+  type: 'test'
+  ...
+# Subtest: signature metadata preserves native delimiters, UTF8 and 64-bit precision
+ok 585 - signature metadata preserves native delimiters, UTF8 and 64-bit precision
+  ---
+  duration_ms: 0.2661
+  type: 'test'
+  ...
+# Subtest: wire signatures match original DLL vectors and own the bytes they sign
+ok 586 - wire signatures match original DLL vectors and own the bytes they sign
+  ---
+  duration_ms: 7.5485
+  type: 'test'
+  ...
+# Subtest: profile and metadata reject lossy values and C-string truncation without exposing inputs
+ok 587 - profile and metadata reject lossy values and C-string truncation without exposing inputs
+  ---
+  duration_ms: 1.2199
+  type: 'test'
+  ...
+# Subtest: plugin exports activate and deactivate functions
+ok 588 - plugin exports activate and deactivate functions
+  ---
+  duration_ms: 33.0814
+  type: 'test'
+  ...
+# Subtest: activate registers provider with correct id and capabilities
+ok 589 - activate registers provider with correct id and capabilities
+  ---
+  duration_ms: 1.809
+  type: 'test'
+  ...
+# Subtest: account settings command returns an HTML form without leaking stored cookie
+ok 590 - account settings command returns an HTML form without leaking stored cookie
+  ---
+  duration_ms: 30.4631
+  type: 'test'
+  ...
+# Subtest: settings endpoint rejects missing token, missing SAPISID, and cross-origin posts
+ok 591 - settings endpoint rejects missing token, missing SAPISID, and cross-origin posts
+  ---
+  duration_ms: 44.4039
+  type: 'test'
+  ...
+# Subtest: settings endpoint accepts raw cookie and complete request headers
+ok 592 - settings endpoint accepts raw cookie and complete request headers
+  ---
+  duration_ms: 16.1829
+  type: 'test'
+  ...
+# Subtest: settings endpoint saves user supplied OAuth client credentials
+ok 593 - settings endpoint saves user supplied OAuth client credentials
+  ---
+  duration_ms: 5.5202
+  type: 'test'
+  ...
+# Subtest: stored OAuth client is preferred when refreshing tokens
+ok 594 - stored OAuth client is preferred when refreshing tokens
+  ---
+  duration_ms: 0.9813
+  type: 'test'
+  ...
+# Subtest: WEB_REMIX search does not send OAuth bearer token
+ok 595 - WEB_REMIX search does not send OAuth bearer token
+  ---
+  duration_ms: 1.4493
+  type: 'test'
+  ...
+# Subtest: fetchUserLibrary sends SAPISIDHASH authorization when cookie auth is available
+ok 596 - fetchUserLibrary sends SAPISIDHASH authorization when cookie auth is available
+  ---
+  duration_ms: 1.4056
+  type: 'test'
+  ...
+# Subtest: fetchUserLibrary returns an actionable message when cookie auth is missing
+ok 597 - fetchUserLibrary returns an actionable message when cookie auth is missing
+  ---
+  duration_ms: 1.2181
+  type: 'test'
+  ...
+# Subtest: deactivate cleans up state without throwing
+ok 598 - deactivate cleans up state without throwing
+  ---
+  duration_ms: 0.584
+  type: 'test'
+  ...
+# Subtest: getQrLogin is a function registered on provider
+ok 599 - getQrLogin is a function registered on provider
+  ---
+  duration_ms: 0.5088
+  type: 'test'
+  ...
+# Subtest: checkQrLogin returns error when no OAuth flow initiated
+ok 600 - checkQrLogin returns error when no OAuth flow initiated
+  ---
+  duration_ms: 0.5092
+  type: 'test'
+  ...
+# Subtest: checkLogin returns not logged in when no cookie
+ok 601 - checkLogin returns not logged in when no cookie
+  ---
+  duration_ms: 0.4293
+  type: 'test'
+  ...
+# Subtest: checkLogin treats a stored OAuth token as logged in when profile fetch fails
+ok 602 - checkLogin treats a stored OAuth token as logged in when profile fetch fails
+  ---
+  duration_ms: 0.4469
+  type: 'test'
+  ...
+# Subtest: checkLogin uses OAuth userinfo when the token includes profile scope
+ok 603 - checkLogin uses OAuth userinfo when the token includes profile scope
+  ---
+  duration_ms: 0.6302
+  type: 'test'
+  ...
+# Subtest: plugin.json has correct manifest fields
+ok 604 - plugin.json has correct manifest fields
+  ---
+  duration_ms: 2.1622
+  type: 'test'
+  ...
+# EdgeOne mirror built: C:\\Users\\Payne\\AppData\\Local\\Temp\\edgeone-mirror-test-k2KQo2\\dist (1 local packages, 1 external URLs preserved)
+# Subtest: publishes only referenced files, preserving bytes and external discovery entries
+ok 605 - publishes only referenced files, preserving bytes and external discovery entries
+  ---
+  duration_ms: 36.6539
+  type: 'test'
+  ...
+# Subtest: rejects missing index and missing referenced package
+ok 606 - rejects missing index and missing referenced package
+  ---
+  duration_ms: 11.0134
+  type: 'test'
+  ...
+# Subtest: rejects oversized packages before reading their contents
+ok 607 - rejects oversized packages before reading their contents
+  ---
+  duration_ms: 9.2593
+  type: 'test'
+  ...
+# Subtest: rejects checksum mismatches and paths outside the distribution allowlist
+ok 608 - rejects checksum mismatches and paths outside the distribution allowlist
+  ---
+  duration_ms: 16.3985
+  type: 'test'
+  ...
+# Subtest: discovers releases from two publishers and generates unverified searchable entries
+ok 609 - discovers releases from two publishers and generates unverified searchable entries
+  ---
+  duration_ms: 192.8727
+  type: 'test'
+  ...
+# com.example.tool: 多个仓库声明同一插件 ID，已跳过
+# Subtest: quarantines duplicate plugin IDs from different new publishers
+ok 610 - quarantines duplicate plugin IDs from different new publishers
+  ---
+  duration_ms: 93.799
+  type: 'test'
+  ...
+# com.example.tool: 版本回退或同版本安装包变更，已跳过
+# Subtest: keeps publisher ownership and rejects an asset replacement at the same version
+ok 611 - keeps publisher ownership and rejects an asset replacement at the same version
+  ---
+  duration_ms: 101.5934
+  type: 'test'
+  ...
+# com.example.tool: 版本回退或同版本安装包变更，已跳过
+# Subtest: rejects a publisher release rollback and remembers the prior version
+ok 612 - rejects a publisher release rollback and remembers the prior version
+  ---
+  duration_ms: 64.8279
+  type: 'test'
+  ...
+# com.example.tool: 版本回退或同版本安装包变更，已跳过
+# Subtest: remembers the highest version after a repository leaves and rejoins the topic
+ok 613 - remembers the highest version after a repository leaves and rejoins the topic
+  ---
+  duration_ms: 59.9386
+  type: 'test'
+  ...
+# Subtest: gives a reviewed catalog entry precedence over automatic discovery
+ok 614 - gives a reviewed catalog entry precedence over automatic discovery
+  ---
+  duration_ms: 63.5759
+  type: 'test'
+  ...
+# https://github.com/alice/tool: com.example.tool main 路径超出插件目录
+# Subtest: skips a package whose manifest path escapes the plugin root
+ok 615 - skips a package whose manifest path escapes the plugin root
+  ---
+  duration_ms: 36.8272
+  type: 'test'
+  ...
+# Subtest: does not rewrite the market when GitHub search fails
+ok 616 - does not rewrite the market when GitHub search fails
+  ---
+  duration_ms: 6.5754
+  type: 'test'
+  ...
+# Subtest: packs and indexes declarative themes with their stylesheet and icon
+ok 617 - packs and indexes declarative themes with their stylesheet and icon
+  ---
+  duration_ms: 242.4972
+  type: 'test'
+  ...
+# Subtest: rejects themes with executable entries or missing contributions and entryless tools
+ok 618 - rejects themes with executable entries or missing contributions and entryless tools
+  ---
+  duration_ms: 145.6612
+  type: 'test'
+  ...
+# Subtest: generates plugins.json from packaged tep files
+ok 619 - generates plugins.json from packaged tep files
+  ---
+  duration_ms: 33.9967
+  type: 'test'
+  ...
+# Subtest: preserves packaged metadata and rejects index-only metadata overrides
+ok 620 - preserves packaged metadata and rejects index-only metadata overrides
+  ---
+  duration_ms: 126.0462
+  type: 'test'
+  ...
+# Subtest: validate mode rejects a stale plugins.json
+ok 621 - validate mode rejects a stale plugins.json
+  ---
+  duration_ms: 25.6735
+  type: 'test'
+  ...
+# Subtest: keeps only the latest package for each plugin id
+ok 622 - keeps only the latest package for each plugin id
+  ---
+  duration_ms: 52.925
+  type: 'test'
+  ...
+# Subtest: adds the QQ Music tag for QQ Music provider packages
+ok 623 - adds the QQ Music tag for QQ Music provider packages
+  ---
+  duration_ms: 31.2837
+  type: 'test'
+  ...
+# Subtest: adds the KuGou tag for KuGou provider packages
+ok 624 - adds the KuGou tag for KuGou provider packages
+  ---
+  duration_ms: 35.2315
+  type: 'test'
+  ...
+# Subtest: rejects packages without plugin README and bundled plugin ids
+ok 625 - rejects packages without plugin README and bundled plugin ids
+  ---
+  duration_ms: 62.8123
+  type: 'test'
+  ...
+# Subtest: merges release packages from two independent publishers
+ok 626 - merges release packages from two independent publishers
+  ---
+  duration_ms: 152.3705
+  type: 'test'
+  ...
+# Subtest: rejects duplicate external ids, checksum mismatch, manifest mismatch and unavailable assets
+ok 627 - rejects duplicate external ids, checksum mismatch, manifest mismatch and unavailable assets
+  ---
+  duration_ms: 85.5882
+  type: 'test'
+  ...
+# Subtest: rejects a version rollback and a change of publisher repository
+ok 628 - rejects a version rollback and a change of publisher repository
+  ---
+  duration_ms: 40.0295
+  type: 'test'
+  ...
+# Subtest: treats a prerelease as older than its stable version
+ok 629 - treats a prerelease as older than its stable version
+  ---
+  duration_ms: 30.1668
+  type: 'test'
+  ...
+# Subtest: rejects an oversized external release before reading its body
+ok 630 - rejects an oversized external release before reading its body
+  ---
+  duration_ms: 7.9026
+  type: 'test'
+  ...
+1..630
+# tests 637
+# suites 0
+# pass 636
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 4147.791

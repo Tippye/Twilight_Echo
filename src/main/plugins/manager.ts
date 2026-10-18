@@ -168,6 +168,7 @@ interface RunningPlugin {
   ui: TwilightUiContribution[]
   themes: TwilightThemeContribution[]
   hasPlaybackProxy: boolean
+  playbackSession: AbortController
 }
 
 interface InstallFromPathOptions {
@@ -787,6 +788,14 @@ export class TwilightPluginManager extends EventEmitter {
         },
         dispatch: () => {
           this.assertRunningPlugin(running)
+          // These calls invalidate the provider session before asynchronous
+          // cleanup can finish, including when that cleanup rejects.
+          if (method === 'logout' || method === 'getQrLogin') {
+            const previousSession = running.playbackSession
+            running.playbackSession = new AbortController()
+            previousSession.abort()
+            providerPlaybackIdentities.revokePlugin(running.descriptor.id)
+          }
           running.process.postMessage({
             kind: 'provider-call',
             requestId,
@@ -808,7 +817,12 @@ export class TwilightPluginManager extends EventEmitter {
           } satisfies PluginHostRequest)
         },
         cancel: (reason) => this.cancelHostRpc(running, requestId, reason),
-        signal: options.signal,
+        signal:
+          method === 'getPlaybackUrl'
+            ? options.signal
+              ? AbortSignal.any([options.signal, running.playbackSession.signal])
+              : running.playbackSession.signal
+            : options.signal,
         onTimeout: () => {
           this.recordProviderCallFailure(
             normalizedProviderId,
@@ -1030,7 +1044,10 @@ export class TwilightPluginManager extends EventEmitter {
   }
 
   private assertRunningPlugin(running: RunningPlugin): void {
-    if (this.running.get(running.descriptor.id) !== running) {
+    if (
+      this.running.get(running.descriptor.id) !== running ||
+      this.stopOperations.has(running.descriptor.id)
+    ) {
       throw new Error(`Plugin ${running.descriptor.id} is no longer running.`)
     }
   }
@@ -1235,7 +1252,8 @@ export class TwilightPluginManager extends EventEmitter {
       providers: [],
       ui: [],
       themes: this.normalizeDeclarativeThemeContributions(descriptor),
-      hasPlaybackProxy: false
+      hasPlaybackProxy: false,
+      playbackSession: new AbortController()
     }
     this.running.set(descriptor.id, running)
     child.on('message', (message: PluginHostResponse) => {
@@ -1243,6 +1261,8 @@ export class TwilightPluginManager extends EventEmitter {
     })
     child.on('exit', (code) => {
       if (this.running.get(descriptor.id) !== running) return
+      if (!this.hibernating.has(descriptor.id))
+        providerPlaybackIdentities.revokePlugin(descriptor.id)
       const wasStopping = this.stopOperations.has(descriptor.id)
       this.rpcCalls.cancelPlugin(
         descriptor.id,
@@ -1312,6 +1332,7 @@ export class TwilightPluginManager extends EventEmitter {
   }
 
   private async stopPlugin(id: string): Promise<void> {
+    if (!this.hibernating.has(id)) providerPlaybackIdentities.revokePlugin(id)
     const existingStop = this.stopOperations.get(id)
     if (existingStop) return existingStop
     this.hostIdle?.clear(id)
@@ -1903,7 +1924,9 @@ export class TwilightPluginManager extends EventEmitter {
           metadata.providerId,
           metadata.playbackTrackId,
           metadata.playbackQuality ?? 'auto',
-          message.value
+          message.value,
+          pluginId,
+          this.running.get(pluginId)?.descriptor.permissions.includes('dsp:native') === true
         )
       }
       if (metadata.method === 'getPlaybackUrl' && isPluginHostedPlaybackUrl(playbackSource)) {

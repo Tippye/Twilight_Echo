@@ -1221,27 +1221,71 @@ TAE_Result TwilightAudioEngine::loadQueue(const std::string& queueJson, int star
   if (pipeline_) pipeline_->cancelAutoMix("queue_changed");
   const ClockWake wake(*this);
   std::string error;
-  std::lock_guard lock(mutex_);
-  if (!queue_.loadFromJson(queueJson, startIndex, &error)) {
-    emitError(error.empty() ? "播放队列加载失败" : error, TAE_RESULT_INVALID_ARGUMENT, "queue");
-    return TAE_RESULT_INVALID_ARGUMENT;
+  std::optional<QueueItem> current;
+  std::optional<QueueItem> upcoming;
+  std::vector<QueueItem> removedWorkers;
+  bool playing = false;
+  bool changedUpcoming = false;
+  const auto sameWorker = [](const std::optional<PcmWorkerSpec>& left,
+                             const std::optional<PcmWorkerSpec>& right) {
+    if (left.has_value() != right.has_value()) return false;
+    return !left || (left->executable == right->executable &&
+                     left->arguments == right->arguments && left->expiresAt == right->expiresAt);
+  };
+  {
+    std::lock_guard lock(mutex_);
+    const auto oldCurrent = queue_.findBySource(info_.source);
+    const auto oldUpcoming = queue_.upcoming();
+    if (!queue_.loadFromJson(queueJson, startIndex, &error)) {
+      emitError(error.empty() ? "播放队列加载失败" : error, TAE_RESULT_INVALID_ARGUMENT, "queue");
+      return TAE_RESULT_INVALID_ARGUMENT;
+    }
+    current = queue_.current();
+    upcoming = queue_.upcoming();
+    for (const auto& previous : {oldCurrent, oldUpcoming}) {
+      if (!previous || !previous->pcmWorker) continue;
+      const auto replacement = queue_.findBySource(previous->source);
+      if (!replacement || !sameWorker(previous->pcmWorker, replacement->pcmWorker))
+        removedWorkers.push_back(*previous);
+    }
+    changedUpcoming = oldUpcoming.has_value() != upcoming.has_value() ||
+        (oldUpcoming && upcoming &&
+         (oldUpcoming->source != upcoming->source ||
+          oldUpcoming->cueStartSeconds != upcoming->cueStartSeconds ||
+          oldUpcoming->cueEndSeconds != upcoming->cueEndSeconds ||
+          oldUpcoming->cueVirtualPregapSeconds != upcoming->cueVirtualPregapSeconds ||
+          !sameWorker(oldUpcoming->pcmWorker, upcoming->pcmWorker)));
+    info_.queueIndex = queue_.currentIndex();
+    info_.playMode = queue_.playModeId();
+    info_.hasUpcomingTrack = upcoming.has_value();
+    info_.upcomingTrack = upcoming.value_or(QueueItem{});
+    playing = info_.state != PlaybackState::Stopped;
   }
-  info_.queueIndex = queue_.currentIndex();
-  info_.playMode = queue_.playModeId();
-  const auto upcoming = queue_.upcoming();
-  info_.hasUpcomingTrack = upcoming.has_value();
-  info_.upcomingTrack = upcoming.value_or(QueueItem{});
-  // Mid-play loudnorm / library RG injection: overlay measurements onto the
-  // active (and matching preload) stream without reopening the device.
+  // Decode retirement may join workers and publish state; never hold the
+  // engine state mutex across it. The transport mutex preserves queue order.
   if (pipeline_) {
-    if (const auto current = queue_.current()) {
-      pipeline_->refreshQueueReplayGainTags(*current);
+    if (changedUpcoming || !playing) pipeline_->preloadNext(std::nullopt, nullptr);
+    // Clearing preload synchronizes a concurrent render-side promotion. A
+    // worker removed from the queue must not survive as that newly active lane.
+    const auto activeSource = pipeline_->status().stream.source;
+    const bool revokedActiveWorker = std::any_of(removedWorkers.begin(), removedWorkers.end(),
+        [&](const QueueItem& item) { return item.source == activeSource; });
+    if (revokedActiveWorker) {
+      pipeline_->stop();
+      std::lock_guard lock(mutex_);
+      info_.state = PlaybackState::Stopped;
+      info_.positionSeconds = 0.0;
+      applyPipelineStatusLocked(pipeline_->status());
+      playing = false;
     }
-    if (upcoming) {
-      pipeline_->refreshQueueReplayGainTags(*upcoming);
-    }
+    if (current) pipeline_->refreshQueueReplayGainTags(*current);
+    if (upcoming) pipeline_->refreshQueueReplayGainTags(*upcoming);
+    if (playing) pipeline_->preloadNext(upcoming, nullptr);
   }
-  emit("queue-change", queue_.queueJson());
+  {
+    std::lock_guard lock(mutex_);
+    emit("queue-change", queue_.queueJson());
+  }
   return TAE_RESULT_OK;
 }
 

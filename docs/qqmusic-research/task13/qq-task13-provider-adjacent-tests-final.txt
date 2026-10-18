@@ -1,0 +1,232 @@
+TAP version 13
+# Subtest: native oracle fixture refers to the reconstructed DLL identity and 32-bit runtime
+ok 1 - native oracle fixture refers to the reconstructed DLL identity and 32-bit runtime
+  ---
+  duration_ms: 0.9366
+  type: 'test'
+  ...
+# Subtest: matches original native output: p0_n0
+ok 2 - matches original native output: p0_n0
+  ---
+  duration_ms: 0.2167
+  type: 'test'
+  ...
+# Subtest: matches original native output: p0_n1
+ok 3 - matches original native output: p0_n1
+  ---
+  duration_ms: 0.1288
+  type: 'test'
+  ...
+# Subtest: matches original native output: p0_n32
+ok 4 - matches original native output: p0_n32
+  ---
+  duration_ms: 0.0988
+  type: 'test'
+  ...
+# Subtest: matches original native output: p0_n512
+ok 5 - matches original native output: p0_n512
+  ---
+  duration_ms: 0.2282
+  type: 'test'
+  ...
+# Subtest: matches original native output: p1_n0
+ok 6 - matches original native output: p1_n0
+  ---
+  duration_ms: 0.0665
+  type: 'test'
+  ...
+# Subtest: matches original native output: p1_n1
+ok 7 - matches original native output: p1_n1
+  ---
+  duration_ms: 0.0995
+  type: 'test'
+  ...
+# Subtest: matches original native output: p1_n32
+ok 8 - matches original native output: p1_n32
+  ---
+  duration_ms: 0.0533
+  type: 'test'
+  ...
+# Subtest: matches original native output: p1_n512
+ok 9 - matches original native output: p1_n512
+  ---
+  duration_ms: 0.2705
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32767_n0
+ok 10 - matches original native output: p32767_n0
+  ---
+  duration_ms: 0.2485
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32767_n1
+ok 11 - matches original native output: p32767_n1
+  ---
+  duration_ms: 0.1089
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32767_n32
+ok 12 - matches original native output: p32767_n32
+  ---
+  duration_ms: 0.1145
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32767_n512
+ok 13 - matches original native output: p32767_n512
+  ---
+  duration_ms: 0.0716
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32768_n0
+ok 14 - matches original native output: p32768_n0
+  ---
+  duration_ms: 0.0242
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32768_n1
+ok 15 - matches original native output: p32768_n1
+  ---
+  duration_ms: 0.0222
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32768_n32
+ok 16 - matches original native output: p32768_n32
+  ---
+  duration_ms: 0.0237
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32768_n512
+ok 17 - matches original native output: p32768_n512
+  ---
+  duration_ms: 0.0609
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-1_n0
+ok 18 - matches original native output: p-1_n0
+  ---
+  duration_ms: 0.0213
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-1_n1
+ok 19 - matches original native output: p-1_n1
+  ---
+  duration_ms: 0.0208
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-1_n32
+ok 20 - matches original native output: p-1_n32
+  ---
+  duration_ms: 0.0224
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-1_n512
+ok 21 - matches original native output: p-1_n512
+  ---
+  duration_ms: 0.0641
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-2147483648_n0
+ok 22 - matches original native output: p-2147483648_n0
+  ---
+  duration_ms: 0.0208
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-2147483648_n1
+ok 23 - matches original native output: p-2147483648_n1
+  ---
+  duration_ms: 0.0204
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-2147483648_n32
+ok 24 - matches original native output: p-2147483648_n32
+  ---
+  duration_ms: 0.0242
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-2147483648_n512
+ok 25 - matches original native output: p-2147483648_n512
+  ---
+  duration_ms: 0.2192
+  type: 'test'
+  ...
+# Subtest: matches original native output: p-16_n64
+ok 26 - matches original native output: p-16_n64
+  ---
+  duration_ms: 0.0333
+  type: 'test'
+  ...
+# Subtest: matches original native output: p32760_n64
+ok 27 - matches original native output: p32760_n64
+  ---
+  duration_ms: 0.0268
+  type: 'test'
+  ...
+# Subtest: matches native output on a subview without touching surrounding storage
+ok 28 - matches native output on a subview without touching surrounding storage
+  ---
+  duration_ms: 0.6199
+  type: 'test'
+  ...
+# Subtest: segment positions agree with the native whole result across modulo and signed boundaries
+ok 29 - segment positions agree with the native whole result across modulo and signed boundaries
+  ---
+  duration_ms: 0.1238
+  type: 'test'
+  ...
+# Subtest: rejects invalid native input before mutating the caller buffer
+ok 30 - rejects invalid native input before mutating the caller buffer
+  ---
+  duration_ms: 0.5046
+  type: 'test'
+  ...
+# Subtest: preserves the Windows playback parameter contract and uint64 UIN precision
+ok 31 - preserves the Windows playback parameter contract and uint64 UIN precision
+  ---
+  duration_ms: 1.3823
+  type: 'test'
+  ...
+# Subtest: selects all four observed service branches without an Android fallback
+ok 32 - selects all four observed service branches without an Android fallback
+  ---
+  duration_ms: 1.382
+  type: 'test'
+  ...
+# Subtest: maps any nonempty native download source to the observed fixed literal
+ok 33 - maps any nonempty native download source to the observed fixed literal
+  ---
+  duration_ms: 0.1822
+  type: 'test'
+  ...
+# Subtest: copies only native song fields and detaches them from caller mutation
+ok 34 - copies only native song fields and detaches them from caller mutation
+  ---
+  duration_ms: 0.2271
+  type: 'test'
+  ...
+# Subtest: rejects lossy account identifiers and invalid native control inputs
+ok 35 - rejects lossy account identifiers and invalid native control inputs
+  ---
+  duration_ms: 0.6226
+  type: 'test'
+  ...
+# Subtest: rejects values JSON serialization would silently change and ignores inherited members
+ok 36 - rejects values JSON serialization would silently change and ignores inherited members
+  ---
+  duration_ms: 0.3962
+  type: 'test'
+  ...
+# Subtest: does not execute accessors and safely copies JSON __proto__ properties
+ok 37 - does not execute accessors and safely copies JSON __proto__ properties
+  ---
+  duration_ms: 0.1702
+  type: 'test'
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 93.5156

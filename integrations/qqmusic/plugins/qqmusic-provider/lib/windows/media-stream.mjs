@@ -17,6 +17,24 @@ function offset(value) {
   return result
 }
 
+function transformSmallKeySpan(buffer, key, begin, end, position) {
+  let x = Number(position % 32767n)
+  // Native retains the first 32767 but reduces every later multiple to zero.
+  const special = position <= 32767n ? 32767 - Number(position) : -1
+  const size = key.length
+  for (let index = begin; index < end; index += 1) {
+    const value = index - begin === special ? 32767 : x
+    // value <= 32767, so this arithmetic is exact and stays below 2**31.
+    const keyIndex = (value * value + 71214) % size
+    const shift = ((keyIndex & 7) + 4) & 7
+    // Both native SHR and SHL use this same count; this is not a rotate.
+    const byte = key[keyIndex]
+    buffer[index] ^= ((byte >>> shift) | (byte << shift)) & 255
+    x += 1
+    if (x === 32767) x = 0
+  }
+}
+
 /** Internal-key transform only. Ekey decoding and container boundaries are separate. */
 export class WindowsMediaStream {
   #key
@@ -55,15 +73,11 @@ export class WindowsMediaStream {
     let position = offset(absoluteOffset)
     const size = this.#key.length
     if (size <= 300) {
-      for (let index = 0; index < buffer.length; index += 1) {
-        let x = (position + BigInt(index)) & UINT64_MASK
-        if (x > 32767n) x %= 32767n
-        const keyIndex = Number((x * x + 71214n) % BigInt(size))
-        const shift = ((keyIndex & 7) + 4) & 7
-        // Both native SHR and SHL use this same count; this is not a rotate.
-        const byte = this.#key[keyIndex]
-        buffer[index] ^= ((byte >>> shift) | (byte << shift)) & 255
-      }
+      // A signed-length buffer can cross the uint64 boundary at most once.
+      const untilWrap = UINT64_MASK - position + 1n
+      const split = untilWrap < BigInt(buffer.length) ? Number(untilWrap) : buffer.length
+      transformSmallKeySpan(buffer, this.#key, 0, split, position)
+      if (split < buffer.length) transformSmallKeySpan(buffer, this.#key, split, buffer.length, 0n)
       return buffer
     }
 

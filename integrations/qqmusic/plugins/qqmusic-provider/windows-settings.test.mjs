@@ -87,7 +87,7 @@ test('invalid quality values reject without overwriting an existing preference',
   await assert.rejects(windowsPlaybackQuality(s), /无效/)
 })
 
-test('playback quality DTO uses the shared six exact options and only reads the preference key', async () => {
+test('playback quality DTO uses every shared option and only reads the preference key', async () => {
   const reads = [], writes = []
   const disk = new Map()
   const sdk = { get: async key => { reads.push(key); return disk.get(key) },
@@ -103,8 +103,8 @@ test('playback quality DTO uses the shared six exact options and only reads the 
     assert.equal(saved.options, WINDOWS_QUALITY_OPTIONS)
   }
   assert.deepEqual(reads, [WINDOWS_QUALITY_KEY])
-  assert.deepEqual(writes.map(([key]) => key), Array(6).fill(WINDOWS_QUALITY_KEY))
-  assert.equal(await windowsPlaybackQuality(owner), 'surround')
+  assert.deepEqual(writes.map(([key]) => key), Array(WINDOWS_QUALITY_OPTIONS.length).fill(WINDOWS_QUALITY_KEY))
+  assert.equal(await windowsPlaybackQuality(owner), WINDOWS_QUALITY_OPTIONS.at(-1).value)
 })
 
 test('direct setters reject aliases, unsafe types and alternate spellings without a queued write', async () => {

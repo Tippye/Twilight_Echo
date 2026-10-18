@@ -20,11 +20,12 @@ const HEADERS = Object.freeze({ 'User-Agent': WINDOWS_USER_AGENT, Accept: '*/*' 
 const failureCodes = new Set(['SOURCE', 'LOGIN', 'DEVICE', 'LENGTH', 'URL', 'ORIGIN',
   'VKEY_RESPONSE', 'VKEY_RETCODE', 'VKEY_ITEMS', 'VKEY_FILENAME', 'VKEY_SONGMID', 'VKEY_EMPTY',
   'REDIRECT', 'ENCODING', 'BODY', 'TRUNCATED', 'RANGE', 'HEADER', 'IDENTITY', 'KEY',
-  'CONFIG', 'QUALITY', 'QUALITY_UNAVAILABLE', 'SONG', 'TIME', 'SESSION', 'CLOSED', 'CONTAINER'])
+  'CONFIG', 'QUALITY', 'QUALITY_UNAVAILABLE', 'QUALITY_IDENTITY', 'SONG', 'TIME', 'SESSION', 'CLOSED', 'CONTAINER'])
 const ownedFailureCodes = new WeakMap()
 
 function failureMessage(code, phase) {
   if (code === 'QUALITY_UNAVAILABLE') return '当前歌曲未提供所选音质'
+  if (code === 'QUALITY_IDENTITY') return '当前歌曲缺少所选音质的媒体标识'
   if (code === 'LOGIN') return '请先使用手机 QQ 扫码登录'
   if (code === 'VKEY_EMPTY') return 'QQ 音乐未返回所选音质的播放地址'
   if (Number.isSafeInteger(code)) return phase === 'http' ? `QQ 音乐音频请求失败（HTTP ${code}）`
@@ -271,8 +272,18 @@ export function createWindowsPlaybackResolver({ client, getDevice, song, quality
   if (song.sizes?.[selected.sizeKey] === 0) throw failure('QUALITY_UNAVAILABLE', 'source', true)
   const descriptor = { songmid: song.songmid, songid: BigInt(song.songid).toString(),
     mediaMid: song.mediaMid, songtype: song.songtype }
+  let otherMediaMid = ''
+  if (selected.otherMidIndex !== undefined) {
+    const variant = song.qualityMedia?.[quality]
+    if (!variant || typeof variant.otherMediaMid !== 'string' || variant.otherMediaMid.length !== 14 ||
+      !MID.test(variant.otherMediaMid)) throw failure('QUALITY_IDENTITY', 'source', true)
+    if (variant.songmid !== descriptor.songmid || variant.songid !== descriptor.songid ||
+      variant.songtype !== descriptor.songtype || variant.mediaMid !== descriptor.mediaMid ||
+      variant.type !== selected.type) throw failure('SONG')
+    otherMediaMid = variant.otherMediaMid
+  }
   const filename = buildWindowsMediaFilename({ mediaMid: descriptor.mediaMid, type: selected.type,
-    sourceMode: 1, encrypted: selected.encrypted, suffix: '', auxiliaryFlag: false })
+    sourceMode: 1, encrypted: selected.encrypted, otherMediaMid, auxiliaryFlag: false })
   let closed = false
   let cache = null
   let queue = Promise.resolve()

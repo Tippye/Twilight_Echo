@@ -32,7 +32,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 if(MSVC)
-  add_compile_options(/utf-8)
+  add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>")
 endif()
 
 set(TAE_WASAPI_AVAILABLE OFF)
@@ -82,6 +82,7 @@ set(TAE_ENGINE_SOURCES
   decoder/SacdDstDecoderProvider.cpp
   decoder/vendor/dstdec/dstdec.cpp
   decoder/FFmpegDecoder.cpp
+  decoder/Win32PcmWorkerTransform.cpp
   decoder/SacdIsoDemuxer.cpp
   decoder/ScarletbookToc.cpp
   devices/DeviceCatalog.cpp
@@ -175,7 +176,10 @@ endif()
 
 set(TAE_FFMPEG_EXTRA_LIBS)
 if(WIN32)
-  list(APPEND TAE_FFMPEG_EXTRA_LIBS ws2_32 secur32 ncrypt crypt32 bcrypt user32 atomic)
+  list(APPEND TAE_FFMPEG_EXTRA_LIBS ws2_32 secur32 ncrypt crypt32 bcrypt user32)
+  if(MINGW)
+    list(APPEND TAE_FFMPEG_EXTRA_LIBS atomic)
+  endif()
 elseif(UNIX AND NOT APPLE)
   list(APPEND TAE_FFMPEG_EXTRA_LIBS atomic)
 endif()
@@ -490,6 +494,21 @@ if(TAE_BUILD_TESTS)
     target_link_libraries(twilight_ffmpeg_decoder_tests PRIVATE ${FFMPEG_LIBRARIES} ${TAE_FFMPEG_EXTRA_LIBS})
   endif()
   add_test(NAME twilight_ffmpeg_decoder_unit COMMAND twilight_ffmpeg_decoder_tests)
+
+  add_executable(twilight_pcm_stream_transform_tests
+    tests/pcm_stream_transform_tests.cpp
+    tests/AudioFixtureLibrary.cpp
+    decoder/FFmpegDecoder.cpp
+    core/AudioTypes.cpp
+  )
+  target_include_directories(twilight_pcm_stream_transform_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  if(FFMPEG_FOUND)
+    target_compile_definitions(twilight_pcm_stream_transform_tests PRIVATE TAE_HAS_FFMPEG=1)
+    target_include_directories(twilight_pcm_stream_transform_tests PRIVATE ${FFMPEG_INCLUDE_DIRS})
+    target_link_libraries(twilight_pcm_stream_transform_tests PRIVATE ${FFMPEG_LIBRARIES} ${TAE_FFMPEG_EXTRA_LIBS})
+  endif()
+  add_test(NAME twilight_pcm_stream_transform_unit COMMAND twilight_pcm_stream_transform_tests)
+  set_tests_properties(twilight_pcm_stream_transform_unit PROPERTIES SKIP_RETURN_CODE 77)
 
   add_executable(twilight_dsd_dop_tests
     tests/dsd_dop_tests.cpp
@@ -979,6 +998,7 @@ if(TAE_BUILD_TESTS)
     twilight_metadata_tests
     twilight_bitperfect_tests
     twilight_ffmpeg_decoder_tests
+    twilight_pcm_stream_transform_tests
     twilight_dsd_dop_tests
     twilight_dsd_mute_guard_tests
     twilight_dsd_downrate_tests
@@ -1013,4 +1033,26 @@ if(TAE_BUILD_TESTS)
     endif()
   endforeach()
 
+endif()
+
+if(TAE_BUILD_TESTS)
+  foreach(target twilight_runtime_queue_reroute_tests twilight_audio_performance_gate)
+    target_sources(${target} PRIVATE decoder/Win32PcmWorkerTransform.cpp)
+  endforeach()
+endif()
+
+if(TAE_BUILD_TESTS AND FFMPEG_FOUND)
+  add_executable(twilight_pcm_worker_integration_tests
+    tests/pcm_worker_integration_tests.cpp tests/AudioFixtureLibrary.cpp
+    decoder/FFmpegDecoder.cpp decoder/Win32PcmWorkerTransform.cpp core/AudioTypes.cpp)
+  target_compile_definitions(twilight_pcm_worker_integration_tests PRIVATE TAE_HAS_FFMPEG=1)
+  if(MSVC)
+    target_compile_options(twilight_pcm_worker_integration_tests PRIVATE /UNDEBUG)
+  else()
+    target_compile_options(twilight_pcm_worker_integration_tests PRIVATE -UNDEBUG)
+  endif()
+  target_include_directories(twilight_pcm_worker_integration_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${FFMPEG_INCLUDE_DIRS})
+  target_link_libraries(twilight_pcm_worker_integration_tests PRIVATE ${FFMPEG_LIBRARIES} ${TAE_FFMPEG_EXTRA_LIBS})
+  add_test(NAME twilight_pcm_worker_installed_integration COMMAND twilight_pcm_worker_integration_tests)
+  set_tests_properties(twilight_pcm_worker_installed_integration PROPERTIES SKIP_RETURN_CODE 77)
 endif()

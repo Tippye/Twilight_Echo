@@ -1,0 +1,75 @@
+Test project E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64
+      Start 14: twilight_ffmpeg_decoder_unit
+ 1/12 Test #14: twilight_ffmpeg_decoder_unit ..........   Passed    0.37 sec
+      Start 15: twilight_pcm_stream_transform_unit
+ 2/12 Test #15: twilight_pcm_stream_transform_unit ....   Passed    0.10 sec
+      Start 20: twilight_queue_unit
+ 3/12 Test #20: twilight_queue_unit ...................   Passed    0.01 sec
+      Start 29: twilight_asio_backend_unit
+Could not find executable E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_backend_tests.exe
+Looked in the following places:
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_backend_tests.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_backend_tests.exe.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_backend_tests.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_backend_tests.exe.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_backend_tests.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_backend_tests.exe.exe
+Unable to find executable: E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_backend_tests.exe
+ 4/12 Test #29: twilight_asio_backend_unit ............***Not Run   0.00 sec
+      Start 30: twilight_asio_helper_selftest
+ 5/12 Test #30: twilight_asio_helper_selftest .........   Passed    0.02 sec
+      Start 31: twilight_asio_helper_process_unit
+Could not find executable E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_helper_process_tests.exe
+Looked in the following places:
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_helper_process_tests.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_helper_process_tests.exe.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_helper_process_tests.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_helper_process_tests.exe.exe
+Unable to find executable: E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_helper_process_tests.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_helper_process_tests.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_helper_process_tests.exe.exe
+ 6/12 Test #31: twilight_asio_helper_process_unit .....***Not Run   0.00 sec
+      Start 32: twilight_asio_abi_checks
+ 7/12 Test #32: twilight_asio_abi_checks ..............   Passed    0.02 sec
+      Start 33: twilight_asio_abi_manifest
+Could not find executable E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_abi_manifest.exe
+Looked in the following places:
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_abi_manifest.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_abi_manifest.exe.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_abi_manifest.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_abi_manifest.exe.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_abi_manifest.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_abi_manifest.exe.exe
+Unable to find executable: E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_abi_manifest.exe
+ 8/12 Test #33: twilight_asio_abi_manifest ............***Not Run   0.00 sec
+      Start 34: twilight_asio_abi_cross_dll
+ 9/12 Test #34: twilight_asio_abi_cross_dll ...........***Skipped   0.01 sec
+      Start 35: twilight_asio_control_thread_unit
+Could not find executable E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_control_thread_tests.exe
+Looked in the following places:
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_control_thread_tests.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_control_thread_tests.exe.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_control_thread_tests.exe
+E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/Release/twilight_asio_control_thread_tests.exe.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_control_thread_tests.exe
+Release/E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_control_thread_tests.exe.exe
+Unable to find executable: E:/PycharmProjects/MusicAnyClient/Twilight_Echo/audio-engine/build/qq-task13-vs18-x64/Release/twilight_asio_control_thread_tests.exe
+10/12 Test #35: twilight_asio_control_thread_unit .....***Not Run   0.00 sec
+      Start 37: twilight_runtime_queue_reroute_unit
+11/12 Test #37: twilight_runtime_queue_reroute_unit ...   Passed   26.50 sec
+      Start 38: twilight_audio_performance_gate
+12/12 Test #38: twilight_audio_performance_gate .......   Passed   57.42 sec
+
+67% tests passed, 4 tests failed out of 12
+
+Total Test time (real) =  84.46 sec
+
+The following tests did not run:
+	 34 - twilight_asio_abi_cross_dll (Skipped)
+
+The following tests FAILED:
+	 29 - twilight_asio_backend_unit (Not Run)
+	 31 - twilight_asio_helper_process_unit (Not Run)
+	 33 - twilight_asio_abi_manifest (Not Run)
+	 35 - twilight_asio_control_thread_unit (Not Run)
+Errors while running CTest

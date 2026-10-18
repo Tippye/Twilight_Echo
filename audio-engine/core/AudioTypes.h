@@ -1,4 +1,5 @@
 #pragma once
+#include "PcmWorkerSpec.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -107,6 +108,7 @@ struct AudioStreamInfo {
 };
 
 struct QueueItem {
+  std::optional<PcmWorkerSpec> pcmWorker;
   std::string id;
   std::string source;
   std::string title;

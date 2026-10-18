@@ -4591,6 +4591,255 @@ test('a superseded paused play cannot pause the newer source after delayed Play 
   }
 })
 
+test('provider revocation stops only the matching source and cannot overwrite a newer play', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  service.Play = (source = '', position = 0) => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      position,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  await manager.play('revoked.flac', 4)
+  assert.equal(await manager.revokeProviderSources(['other.flac']), false)
+  assert.equal(service.stopCalls, 0)
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    const result = await original(method, args)
+    if (method === 'Stop') {
+      announce()
+      await wait
+    }
+    return result
+  }
+  const pending = manager.revokeProviderSources(['revoked.flac'])
+  await started
+  // A confirmed newer safe queue supersedes the old revocation transaction
+  // even if that transaction's Stop acknowledgement is still in flight.
+  await manager.loadQueue([{ id: 'new', source: 'new.flac' }])
+  await manager.play('new.flac', 9)
+  release()
+  assert.equal(await pending, true)
+  assert.equal((await manager.getPlaybackInfo()).source, 'new.flac')
+  assert.equal((await manager.getPlaybackInfo()).state, 'playing')
+  assert.equal(service.stopCalls, 1)
+})
+
+test('provider revocation removes queued workers while preserving unrelated paused playback', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  await manager.loadQueue(
+    [
+      {
+        id: 'revoked',
+        source: 'revoked.flac',
+        pcmWorkerExecutable: 'C:/public/worker.exe',
+        pcmWorkerExpiresAt: Date.now() + 60000
+      },
+      { id: 'keep', source: 'keep.flac' },
+      { id: 'next', source: 'next.flac' }
+    ],
+    1
+  )
+  await manager.play('keep.flac', 19, { paused: true })
+  const oldToken = manager.getQueueToken()
+  const revoking = manager.revokeProviderSources(['revoked.flac'])
+  assert.notEqual(manager.getQueueToken(), oldToken, 'invalidate selections before yielding')
+  assert.equal(await revoking, true)
+  assert.deepEqual(
+    native.lastLoadedQueue.map((item) => item.source),
+    ['keep.flac', 'next.flac']
+  )
+  assert.equal(
+    native.lastLoadedQueue.some((item) => !!item.pcmWorkerExecutable),
+    false
+  )
+  const preserved = await manager.getPlaybackInfo()
+  assert.equal(preserved.source, 'keep.flac')
+  assert.equal(preserved.state, 'paused')
+  assert.equal(preserved.position, 19)
+  assert.equal(preserved.queueIndex, 0)
+  assert.equal(native.stopCalls, 0)
+  await manager.next()
+  assert.equal(native.playCalls.at(-1)?.source, 'next.flac')
+  assert.equal(await manager.revokeProviderSources(['unknown.flac']), false)
+})
+
+test('a revoked pending LoadQueue acknowledgement cannot publish or roll back its worker queue', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  await manager.loadQueue([{ id: 'keep', source: 'keep.flac' }])
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  let held = false
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    const result = await original(method, args)
+    if (method === 'LoadQueue' && !held) {
+      held = true
+      announce()
+      await wait
+    }
+    return result
+  }
+  const pending = manager.loadQueue([
+    {
+      id: 'revoked',
+      source: 'revoked.flac',
+      pcmWorkerExecutable: 'C:/public/worker.exe',
+      pcmWorkerExpiresAt: Date.now() + 60000
+    }
+  ])
+  const rejected = assert.rejects(pending, /audio_queue_load_superseded/)
+  await started
+  await manager.revokeProviderSources(['revoked.flac'])
+  const safeToken = manager.getQueueToken()
+  assert.deepEqual(
+    service.queue.map((item) => item.source),
+    ['keep.flac']
+  )
+  release()
+  await rejected
+  assert.equal(manager.getQueueToken(), safeToken)
+  assert.deepEqual(
+    service.queue.map((item) => item.source),
+    ['keep.flac']
+  )
+})
+
+test('revocation stops a dispatched Play even while its acknowledgement leaves the main mirror idle', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  service.Play = (source = '', position = 0) => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      position,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    const result = await original(method, args)
+    if (method === 'Play' && args[0] === 'revoked.flac') {
+      announce()
+      await wait
+    }
+    return result
+  }
+  const playing = manager.play('revoked.flac', 4)
+  await started
+  assert.equal(service.playbackInfo.state, 'playing')
+  assert.equal(await manager.revokeProviderSources(['revoked.flac']), true)
+  assert.equal(service.stopCalls, 1)
+  assert.equal(service.playbackInfo.state, 'stopped')
+  release()
+  assert.equal((await playing).superseded, true)
+  assert.equal((await manager.getPlaybackInfo()).nativePlaybackActive, false)
+})
+
+test('revoking before native dispatch cancels preparation without stopping an unrelated source', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  await manager.loadQueue([
+    { id: 'keep', source: 'keep.flac' },
+    { id: 'revoked', source: 'revoked.flac' }
+  ])
+  await manager.play('keep.flac', 17, { paused: true })
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  ;(
+    manager as unknown as { prepareLoudnormForPlay(source: string): Promise<void> }
+  ).prepareLoudnormForPlay = async (source) => {
+    if (source === 'revoked.flac') {
+      announce()
+      await wait
+    }
+  }
+  const preparing = manager.play('revoked.flac')
+  await started
+  await manager.revokeProviderSources(['revoked.flac'])
+  release()
+  assert.equal((await preparing).superseded, true)
+  assert.equal(native.stopCalls, 0)
+  assert.equal(
+    native.playCalls.some((call) => call.source === 'revoked.flac'),
+    false
+  )
+  const info = await manager.getPlaybackInfo()
+  assert.equal(info.source, 'keep.flac')
+  assert.equal(info.state, 'paused')
+  assert.equal(info.position, 17)
+})
+
+test('a failed revocation queue reload stops playback and blocks restart until a confirmed safe load', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  service.Play = (source = '') => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  await manager.loadQueue([
+    { id: 'keep', source: 'keep.flac' },
+    { id: 'revoked', source: 'revoked.flac' }
+  ])
+  await manager.play('keep.flac')
+  let rejectQueue = true
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'LoadQueue' && rejectQueue) throw new Error('public queue rejection')
+    return original(method, args)
+  }
+  await assert.rejects(manager.revokeProviderSources(['revoked.flac']))
+  assert.equal(service.playbackInfo.state, 'stopped')
+  await assert.rejects(manager.play('keep.flac'), /provider_queue_authorization_pending/)
+  await assert.rejects(manager.next(), /provider_queue_authorization_pending/)
+  await assert.rejects(manager.togglePause(), /provider_queue_authorization_pending/)
+  rejectQueue = false
+  await manager.loadQueue([{ id: 'keep', source: 'keep.flac' }])
+  await manager.play('keep.flac')
+  assert.equal(service.playbackInfo.state, 'playing')
+  assert.deepEqual(
+    service.queue.map((item) => item.source),
+    ['keep.flac']
+  )
+})
+
 test('a paused Play with delayed Pause acknowledgement cannot overwrite a newer play, next or stop', async (t) => {
   for (const action of ['play', 'next', 'stop']) {
     const service = new FakeAudioServiceBinding()

@@ -1,7 +1,16 @@
-import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
+import {
+  computed,
+  getCurrentScope,
+  onScopeDispose,
+  ref,
+  watch,
+  type ComputedRef,
+  type Ref
+} from 'vue'
 import type { Track } from '../../types/music.ts'
 import { syncPluginProviders } from '../../providers/index.ts'
 import { useAppNoticeStore } from '../../stores/useAppNoticeStore.ts'
+import { parseAppError } from '../../../../shared/errors/appError.ts'
 import {
   notifyProviderFavoriteChange,
   providerFavoriteChange,
@@ -9,6 +18,7 @@ import {
 } from '../../providers/providerFavoriteChanges.ts'
 import {
   getTrackProviderId,
+  isPluginProviderEnabled,
   resolveProviderTrackId,
   type MediaProviderRegistry
 } from '../../providers/mediaProvider.ts'
@@ -64,6 +74,20 @@ export function useFavoriteButton({
   // 显示到新曲目上（心动模式等场景会频繁快速切歌）。
   const providerFavoriteTrackId = ref<string | null>(null)
   let providerFavoriteRequestId = 0
+  let active = true
+  let favoriteOwner = ''
+
+  function ownerKey(providerId: string): string {
+    const provider = mediaProviders.get(providerId)
+    return JSON.stringify([
+      providerId,
+      mediaProviders.getGeneration?.(providerId) ?? 0,
+      provider?.health?.pluginId,
+      !!provider?.likeTrack,
+      !!provider?.isTrackLiked,
+      !!provider && isPluginProviderEnabled(provider.health)
+    ])
+  }
 
   const defaultFavoritePlaylist = computed(
     () =>
@@ -101,8 +125,7 @@ export function useFavoriteButton({
     return (
       !!track &&
       !isLocalTrack(track) &&
-      (providerFavoriteLoading.value ||
-        (getTrackProviderId(track) === 'bili' && providerFavoriteReading.value))
+      (providerFavoriteLoading.value || providerFavoriteReading.value)
     )
   })
 
@@ -128,6 +151,7 @@ export function useFavoriteButton({
     providerFavoriteLiked.value = false
     providerFavoriteReading.value = false
     providerFavoriteTrackId.value = null
+    favoriteOwner = ''
     if (!track || isLocalTrack(track)) return
 
     const providerId = getTrackProviderId(track)
@@ -137,17 +161,22 @@ export function useFavoriteButton({
 
     if (typeof window !== 'undefined' && window.api?.providers) {
       await syncPluginProviders()
-      if (requestId !== providerFavoriteRequestId) return
+      if (!active || requestId !== providerFavoriteRequestId) return
     }
 
     const provider = mediaProviders.get(providerId)
-    providerFavoriteAvailable.value = Boolean(provider?.likeTrack)
+    const owner = ownerKey(providerId)
+    favoriteOwner = owner
+    providerFavoriteAvailable.value = Boolean(
+      provider?.likeTrack && isPluginProviderEnabled(provider.health)
+    )
+    if (provider && !isPluginProviderEnabled(provider.health)) return
     if (!provider?.isTrackLiked) return
 
     providerFavoriteReading.value = true
     try {
       const liked = await provider.isTrackLiked(providerTrackId)
-      if (requestId === providerFavoriteRequestId) {
+      if (active && requestId === providerFavoriteRequestId && ownerKey(providerId) === owner) {
         providerFavoriteLiked.value = liked
         providerFavoriteTrackId.value = track.id
       }
@@ -186,24 +215,35 @@ export function useFavoriteButton({
     if (providerFavoriteLoading.value) return
     const providerId = getTrackProviderId(track)
     if (!providerId) return
-    if (providerId === 'bili' && providerFavoriteReading.value) return
+    if (providerFavoriteReading.value) return
     const providerTrackId = resolveProviderTrackId(track, providerId)
     if (providerTrackId == null) return
 
     const trackId = track.id
+    const owner = ownerKey(providerId)
     const nextLiked = !favoriteButtonLiked.value
-    ++providerFavoriteRequestId
+    const requestId = ++providerFavoriteRequestId
     providerFavoriteLoading.value = true
     try {
       if (typeof window !== 'undefined' && window.api?.providers) {
         await syncPluginProviders()
       }
       const provider = mediaProviders.get(providerId)
-      if (!provider?.likeTrack) return
+      if (
+        !active ||
+        requestId !== providerFavoriteRequestId ||
+        !provider?.likeTrack ||
+        !isPluginProviderEnabled(provider.health) ||
+        currentTrack.value?.id !== trackId ||
+        ownerKey(providerId) !== owner
+      )
+        return
 
       await provider.likeTrack(providerTrackId, nextLiked)
+      if (!active || requestId !== providerFavoriteRequestId || ownerKey(providerId) !== owner)
+        return
       notifyProviderFavoriteChange(providerId, providerTrackId, nextLiked)
-      if (currentTrack.value?.id === trackId) {
+      if (active && currentTrack.value?.id === trackId && ownerKey(providerId) === owner) {
         providerFavoriteLiked.value = nextLiked
         providerFavoriteTrackId.value = trackId
       }
@@ -211,7 +251,7 @@ export function useFavoriteButton({
       console.warn(`Failed to toggle ${providerId} favorite state`, error)
       useAppNoticeStore().pushNotice({
         kind: 'error',
-        message: error instanceof Error ? error.message : '修改收藏失败，请稍后重试'
+        message: parseAppError(error).message || '修改收藏失败，请稍后重试'
       })
     } finally {
       providerFavoriteLoading.value = false
@@ -231,13 +271,35 @@ export function useFavoriteButton({
   }
 
   watch(
-    () =>
-      [currentTrack.value?.id, currentTrack.value?.source, currentTrack.value?.ncmSongId] as const,
+    [
+      () => currentTrack.value?.id,
+      () => currentTrack.value?.source,
+      () => currentTrack.value?.ncmSongId
+    ],
     () => {
       void refreshProviderFavoriteState(currentTrack.value)
     },
     { immediate: true }
   )
+
+  if (getCurrentScope() && typeof window !== 'undefined' && window.api?.plugins?.onChanged) {
+    const unsubscribe = window.api.plugins.onChanged(() => {
+      void syncPluginProviders()
+        .then(() => {
+          const track = currentTrack.value
+          const providerId = track && getTrackProviderId(track)
+          if (active && providerId && ownerKey(providerId) !== favoriteOwner) {
+            void refreshProviderFavoriteState(track)
+          }
+        })
+        .catch(() => undefined)
+    })
+    onScopeDispose(() => {
+      active = false
+      providerFavoriteRequestId++
+      unsubscribe()
+    })
+  }
 
   watch(
     providerFavoriteChange,

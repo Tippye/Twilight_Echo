@@ -6,6 +6,8 @@ import {
   buildVisualizerQualityString,
   formatVisualizerBitrate,
   formatVisualizerSource,
+  matchesPlaybackAudioSource,
+  resolvePlaybackAudioMetadata,
   resolveVisualizerAudioMetadata
 } from './audioVisualizerFormatting.ts'
 
@@ -13,8 +15,88 @@ test('visualizer bitrate formatting converts bps to kbps', () => {
   assert.equal(formatVisualizerBitrate(1737220), '1737 kbps')
 })
 
+test('HiFi and visualizer share current-grant facts through the renderer grant identity', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/current',
+    size: 3_460_301,
+    sampleRate: 44100,
+    bitDepth: 16,
+    bitrate: 128000
+  }
+  const info = {
+    source: 'http://127.0.0.1:1234/audio/current',
+    rendererSource: track.streamUrl,
+    sourceBytes: 88_129_955,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceChannels: 6,
+    sourceBitDepth: 24,
+    bitrate: 2800000
+  }
+  assert.equal(matchesPlaybackAudioSource(track, info), true)
+  assert.deepEqual(resolvePlaybackAudioMetadata(track, info), {
+    format: 'FLAC',
+    sampleRate: 96000,
+    bitDepth: 24,
+    channels: 6,
+    bitrate: 2800000,
+    size: 88_129_955
+  })
+  assert.equal(matchesPlaybackAudioSource(track, { ...info, rendererSource: 'old-grant' }), false)
+  const lossy = resolvePlaybackAudioMetadata(track, {
+    ...info,
+    codec: 'mp3float',
+    sourceBytes: undefined,
+    sourceSampleRate: 0,
+    sourceBitDepth: 32,
+    bitrate: 128000
+  })
+  assert.equal(lossy.sampleRate, undefined)
+  assert.equal(lossy.bitDepth, undefined)
+  assert.equal(lossy.size, undefined)
+})
+
 test('visualizer bitrate formatting keeps existing kbps values', () => {
   assert.equal(formatVisualizerBitrate(320), '320 kbps')
+})
+
+test('shared source facts normalize lowercase local lossless formats for HiFi badges', () => {
+  assert.equal(
+    resolvePlaybackAudioMetadata({
+      id: 'D:/Music/fixture.flac',
+      filePath: 'D:/Music/fixture.flac',
+      fileName: 'fixture.flac',
+      size: 1,
+      format: 'flac'
+    }).format,
+    'FLAC'
+  )
+})
+
+test('inferred transport suffixes can never become source format labels', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture',
+    size: 0,
+    format: '1:1234/audio/public-fixture'
+  }
+  assert.equal(resolvePlaybackAudioMetadata(track).format, '')
+  assert.equal(
+    resolvePlaybackAudioMetadata(track, {
+      source: track.filePath,
+      codec: 'http://127.0.0.1:1234/audio/public-fixture',
+      sourceSampleRate: 48000,
+      sourceBitDepth: 24,
+      bitrate: 1000000
+    }).format,
+    ''
+  )
 })
 
 test('visualizer quality string includes normalized bitrate and source fields', () => {

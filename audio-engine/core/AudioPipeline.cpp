@@ -1,4 +1,5 @@
 #include "AudioPipeline.h"
+#include "../decoder/Win32PcmWorkerTransform.h"
 #include "AudioPipelineDsdUtils.h"
 #include "AudioPipelineRenderUtils.h"
 #include "CrossfadePolicy.h"
@@ -789,6 +790,8 @@ struct AudioPipeline::DecodeStream {
   std::vector<uint8_t> floatReadScratch;
   std::atomic<bool> running{false};
   std::atomic<bool> eof{false};
+  std::atomic<bool> processingFailed{false};
+  std::atomic<bool> processingFailureReported{false};
   std::atomic<uint64_t> crossfadeConsumedFrames{0};
   std::thread decodeThread;
   Mode mode = Mode::Pcm;
@@ -805,9 +808,15 @@ struct AudioPipeline::DecodeStream {
     stop();
     dsdReader.reset();
     item = queueItem;
+    processingFailed = false;
+    processingFailureReported = false;
     routingSourceToken.store(nextRoutingSourceToken(), std::memory_order_release);
     mode = Mode::Pcm;
     decoder = std::make_unique<FFmpegDecoder>();
+    if (item.pcmWorker) {
+      const auto spec = *item.pcmWorker;
+      decoder->setPcmStreamTransformFactory([spec] { return createPcmWorkerTransform(spec); });
+    }
     ta_am_source_stamp before{}, after{};
     const bool hadBefore = ta_am_source_snapshot(item.source.c_str(), &before) != 0;
     decoder->setInterrupt([](void* p) { return ta_am_cancelled(static_cast<const ta_am_cancel*>(p)); },
@@ -823,7 +832,7 @@ struct AudioPipeline::DecodeStream {
     // Local CUE segments share an absolute output-frame grid with prepared
     // lanes. A packet-boundary seek can start early and shift every later
     // logical position, even when its timestamp is labelled as the cue start.
-    precisePcmSeek = sourceStampKnown && hasCueRange();
+    precisePcmSeek = !item.pcmWorker && sourceStampKnown && hasCueRange();
     stream.source = item.source;
     if (hasCueRange()) {
       stream.durationSeconds = cueLogicalDurationSeconds();
@@ -937,7 +946,8 @@ struct AudioPipeline::DecodeStream {
     } else if (sourceStart > 0.0 && !(precisePcmSeek
         ? decoder->seekOutputFrame(preciseSourceFrame(sourceStart), error)
         : decoder->seek(sourceStart, error))) return false;
-    sourceTimelineExact = exactLogicalStart.has_value() || sourceStart == 0 || precisePcmSeek;
+    sourceTimelineExact = !item.pcmWorker &&
+        (exactLogicalStart.has_value() || sourceStart == 0 || precisePcmSeek);
 
     if (hasCueRange()) {
       remainingSegmentFrames = remainingFramesForSourcePosition(sourceStart);
@@ -1062,12 +1072,21 @@ struct AudioPipeline::DecodeStream {
 
   void start() {
     if ((!decoder && !dsdReader) || running.load() || eof.load()) return;
+    if (decoder && item.pcmWorker) {
+      std::string error;
+      if (!decoder->restartPcmStreamTransform(&error)) {
+        processingFailed = true;
+        markEof();
+        return;
+      }
+    }
     running = true;
     decodeThread = std::thread([this] { decodeLoop(); });
   }
 
   void requestStop() {
     running = false;
+    if (decoder) decoder->cancelPcmStreamTransform();
     buffer.notifyAll();
   }
 
@@ -1092,7 +1111,9 @@ struct AudioPipeline::DecodeStream {
       start();
       return false;
     }
-    sourceTimelineExact = precisePcmSeek || sourceSeconds == 0;
+    sourceTimelineExact = !item.pcmWorker && (precisePcmSeek || sourceSeconds == 0);
+    processingFailed = false;
+    processingFailureReported = false;
     // A DoP stream has an alternating 0x05/0xfa marker phase.  The decoder may
     // have filled far ahead of the render cursor before a seek, so retaining
     // that internal phase would make the first carrier frame after the seek
@@ -1181,7 +1202,7 @@ struct AudioPipeline::DecodeStream {
   }
 
   bool readyForRender() const {
-    return buffer.availableFrames() > 0 || eof.load();
+    return !processingFailed.load() && (buffer.availableFrames() > 0 || eof.load());
   }
 
   bool waitForPreroll(size_t targetFrames, std::chrono::milliseconds timeout) const {
@@ -1316,6 +1337,7 @@ struct AudioPipeline::DecodeStream {
         decoded = std::min(decoded, static_cast<size_t>(*remainingSegmentFrames));
       }
       if (decoded == 0) {
+        if (running.load() && item.pcmWorker && !error.empty()) processingFailed = true;
         markEof();
         break;
       }
@@ -1743,7 +1765,7 @@ bool AudioPipeline::setAutoMixMode(const std::string& mode, std::string* error) 
     // Enabling on an existing PCM stream also affects later user seeks.
     // An already approximate cursor remains inexact until the engine realigns it.
     for (const auto& stream : {activeStream_, preloadStream_}) {
-      if (stream && stream->sourceStampKnown && stream->mode == DecodeStream::Mode::Pcm)
+      if (stream && !stream->item.pcmWorker && stream->sourceStampKnown && stream->mode == DecodeStream::Mode::Pcm)
         stream->precisePcmSeek = true;
     }
   }
@@ -2191,13 +2213,13 @@ bool AudioPipeline::retireDecodeStreamLocked(std::shared_ptr<DecodeStream> strea
 size_t AudioPipeline::takeReclaimableRetiredStreamsLocked(
     std::array<std::shared_ptr<DecodeStream>, kRetiredStreamSlots>& retired,
     std::vector<std::shared_ptr<DecodeStream>>& deferred) const {
-  // Stopped means stopUnlocked() nulled the render pointers and the callback
-  // no longer dereferences streams, so everything is reclaimable regardless of
-  // ACK progress (the backend may already have ceased calling us).
-  const bool stopped = renderState_.load(std::memory_order_acquire) == PipelineState::Stopped;
+  // Logical Stopped can be published while a callback still holds a stream.
+  // Only stopUnlocked(), after the backend has stopped, clears the active raw
+  // pointer. Otherwise the render epoch is required even after an error/EOF.
+  const bool callbacksQuiescent = renderActiveStream_.load(std::memory_order_acquire) == nullptr;
   const uint64_t acked = renderAckedStreamEpoch_.load(std::memory_order_acquire);
-  const auto reclaimable = [stopped, acked](const RetiredDecodeStream& entry) {
-    return stopped || entry.epoch <= acked;
+  const auto reclaimable = [callbacksQuiescent, acked](const RetiredDecodeStream& entry) {
+    return callbacksQuiescent || entry.epoch <= acked;
   };
 
   size_t retiredCount = 0;
@@ -2802,6 +2824,7 @@ TAE_Result AudioPipeline::playInternal(
     // sample-format enum here sent every 24-bit track through Float32 on devices
     // that only accept the 32-bit container.
     const bool canUseTypedPassthrough =
+        !item.pcmWorker &&
         requestedAutoMixMode_.load(std::memory_order_acquire) == TA_AM_OFF &&
         !outputConfig.continuityFirst && !pcmToDsdPath && !active->stream.isDsd && !processingRequiresPcm &&
         backendCanTypedPassthrough(backendId) && formatCanTypedPassthrough(active->stream.sourceFormat) &&
@@ -2817,7 +2840,7 @@ TAE_Result AudioPipeline::playInternal(
 
     active->setResamplerQuality(
         outputStageRequest.targetSampleRate > 0 ? outputStageRequest.resamplerQuality : requestedDspConfig.resamplerQuality);
-    if (active->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
+    if (!active->item.pcmWorker && active->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
       active->precisePcmSeek = true;
     if (!active->configure(decodeFormat, startTimeSeconds, error, canUseTypedPassthrough)) {
       output->close();
@@ -3179,11 +3202,26 @@ TAE_Result AudioPipeline::playInternal(
     publishStatusLocked();
   }
 
-  const size_t prerollFrames = outputInfo_.bufferSizeFrames > 0
+  size_t prerollFrames = outputInfo_.bufferSizeFrames > 0
                                    ? static_cast<size_t>(outputInfo_.bufferSizeFrames)
                                    : static_cast<size_t>(std::max(1, outputFormat_.sampleRate / 100));
+  auto prerollTimeout = std::chrono::milliseconds(500);
+  // Queue duration is a display fallback; it cannot prove a finite HTTP source.
+  const double decodedDuration = active->decoder ? active->decoder->streamInfo().durationSeconds : 0.0;
+  const bool finiteHighRateHttpPcm = !dopPath && !nativeDsdPath && !pcmToDsdPath &&
+      !active->stream.isDsd && active->stream.sourceFormat.sampleRate > 48000 &&
+      std::isfinite(decodedDuration) && decodedDuration > 0 &&
+      (active->item.source.rfind("http://", 0) == 0 || active->item.source.rfind("https://", 0) == 0);
+  if (finiteHighRateHttpPcm) {
+    // Fill the existing ring before the first device callback. Source rate can
+    // differ from the decoded/device rate, so count decoded frames and cap the
+    // target by the empty ring's actual capacity before starting its producer.
+    prerollFrames = std::min(active->buffer.freeFrames(),
+        static_cast<size_t>(std::max(1, active->decodeFormat.sampleRate)) * 2);
+    prerollTimeout = std::chrono::milliseconds(3000);
+  }
   active->start();
-  active->waitForPreroll(prerollFrames, std::chrono::milliseconds(500));
+  active->waitForPreroll(prerollFrames, prerollTimeout);
   if ((gaplessEnabled || requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF) &&
       !dopPath && !nativeDsdPath && !pcmToDsdPath) {
     std::string preloadError;
@@ -4033,7 +4071,7 @@ bool AudioPipeline::setOutputConfig(const OutputConfig& config, std::string* err
     routingCommand.type = ControlCommandType::Routing;
     routingCommand.routingMode = nextConfig.routingMode;
     routingCommand.upmix = upmixConfigFromOutputConfig(nextConfig);
-    if (renderState_.load(std::memory_order_acquire) == PipelineState::Stopped) {
+    if (renderActiveStream_.load(std::memory_order_acquire) == nullptr) {
       renderRoutingMode_.store(static_cast<uint32_t>(routingCommand.routingMode), std::memory_order_release);
       channelRouter_.setUpmixConfig(routingCommand.upmix);
       preloadChannelRouter_.setUpmixConfig(routingCommand.upmix);
@@ -4898,6 +4936,11 @@ void AudioPipeline::setRerouteInProgress(bool active, const std::string& reason)
 }
 
 bool AudioPipeline::consumeEnded() {
+  std::lock_guard lock(mutex_);
+  if (activeStream_ && activeStream_->processingFailed.load()) {
+    ended_ = false;
+    return false;
+  }
   return ended_.exchange(false);
 }
 
@@ -4910,8 +4953,19 @@ bool AudioPipeline::consumeDeviceInvalidated(std::string* message) {
 }
 
 bool AudioPipeline::consumeRenderError(std::string* message) {
-  if (!renderError_.exchange(false)) return false;
   std::lock_guard lock(mutex_);
+  if (activeStream_ && activeStream_->processingFailed.load()) {
+    ended_ = false;
+    state_ = PipelineState::Stopped;
+    renderState_.store(PipelineState::Stopped, std::memory_order_release);
+    // Reporting is not recovery. The failed stream stays ineligible for EOF
+    // promotion until a successful seek or a newly opened source replaces it.
+    if (!activeStream_->processingFailureReported.exchange(true)) {
+      if (message) *message = "当前音源的 PCM 音效处理失败或授权已结束";
+      return true;
+    }
+  }
+  if (!renderError_.exchange(false)) return false;
   if (message) *message = outputEventMessage_.empty() ? "音频渲染失败" : outputEventMessage_;
   outputEventMessage_.clear();
   return true;
@@ -4952,7 +5006,7 @@ bool AudioPipeline::configureActiveStreamLocked(
     std::string* error) {
   if (!stream) return false;
   if (!stream->openSource(item, error)) return false;
-  if (stream->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
+  if (!stream->item.pcmWorker && stream->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
     stream->precisePcmSeek = true;
   if (!stream->configure(decodeFormat_, startTimeSeconds, error)) return false;
   return true;
@@ -5020,7 +5074,7 @@ bool AudioPipeline::updatePerfectLocked() {
   evaluation.eqActive = dspStatus_.eqActive;
   evaluation.convolverActive = dspStatus_.convolverActive;
   evaluation.crossfeedActive = dspStatus_.crossfeedActive;
-  evaluation.nativeDspActive = dspStatus_.nativeDspActive;
+  evaluation.nativeDspActive = dspStatus_.nativeDspActive || currentItem_.pcmWorker.has_value();
   evaluation.crossfadeActive = (dspStatus_.crossfadeActive || dspConfig_.crossfadeSeconds > 0.0001);
   evaluation.routingMode = outputConfig_.routingMode;
   evaluation.pcmPassthrough =
@@ -5189,7 +5243,7 @@ void AudioPipeline::commitPreparedRenderDspGraphsLocked(
   command.crossfadeSeconds = dspConfig_.crossfadeSeconds;
   publishedActiveDspGraph_ = activeGraphPtr;
   publishedPreloadDspGraph_ = preloadGraphPtr;
-  if (renderState_.load(std::memory_order_acquire) == PipelineState::Stopped) {
+  if (renderActiveStream_.load(std::memory_order_acquire) == nullptr) {
     renderActiveDspGraph_.store(activeGraphPtr, std::memory_order_release);
     renderPreloadDspGraph_.store(preloadGraphPtr, std::memory_order_release);
     renderGaplessEnabled_.store(gaplessEnabled_, std::memory_order_release);
@@ -5278,7 +5332,7 @@ bool AudioPipeline::publishPreparedRenderPreloadDspGraphLocked(std::string* erro
   command.preloadDspGraph = preloadGraphPtr;
   command.gaplessEnabled = gaplessEnabled_;
   command.crossfadeSeconds = dspConfig_.crossfadeSeconds;
-  if (renderState_.load(std::memory_order_acquire) == PipelineState::Stopped) {
+  if (renderActiveStream_.load(std::memory_order_acquire) == nullptr) {
     renderPreloadDspGraph_.store(preloadGraphPtr, std::memory_order_release);
     appliedRenderDspEpoch_.store(dspEpoch, std::memory_order_release);
     reclaimRetiredRenderDspGraphsLocked();
@@ -5301,7 +5355,7 @@ void AudioPipeline::publishRenderDspPointerTransitionLocked(
   command.crossfadeSeconds = dspConfig_.crossfadeSeconds;
   publishedActiveDspGraph_ = active;
   publishedPreloadDspGraph_ = preload;
-  if (renderState_.load(std::memory_order_acquire) == PipelineState::Stopped) {
+  if (renderActiveStream_.load(std::memory_order_acquire) == nullptr) {
     renderActiveDspGraph_.store(active, std::memory_order_release);
     renderPreloadDspGraph_.store(preload, std::memory_order_release);
     appliedRenderDspEpoch_.store(dspEpoch, std::memory_order_release);
@@ -5320,6 +5374,23 @@ void AudioPipeline::synchronizeRenderPromotionLocked() {
   for (auto& g : retiredAutoMix_)
     if (g->continuation.get() == promoted) mixOwner = g.get();
   if (!mixOwner && (!preloadStream_ || preloadStream_.get() != promoted)) return;
+
+  if (activeStream_ && activeStream_->processingFailed.load()) {
+    // A decoder can fail just after the callback checked promotion eligibility
+    // (for example at the end of a crossfade). Keep the failed source as the
+    // control owner so status synchronization cannot retire its pending error.
+    state_ = PipelineState::Stopped;
+    renderState_.store(PipelineState::Stopped, std::memory_order_release);
+    renderActiveStream_.store(activeStream_.get(), std::memory_order_release);
+    renderPreloadStream_.store(preloadStream_.get(), std::memory_order_release);
+    renderActiveUsesPreloadDspChain_.store(activeUsesPreloadDspChain_, std::memory_order_release);
+    renderActiveDspGraph_.store(publishedActiveDspGraph_, std::memory_order_release);
+    renderPreloadDspGraph_.store(publishedPreloadDspGraph_, std::memory_order_release);
+    renderCrossfadeResetRequested_.store(true, std::memory_order_release);
+    trackStarted_ = false;
+    ended_ = false;
+    return;
+  }
 
   std::shared_ptr<DecodeStream> previous = std::move(activeStream_);
   if (mixOwner) {
@@ -5562,7 +5633,8 @@ size_t AudioPipeline::renderTyped(PcmBlock& output) {
       read += segmentRead;
       renderedFrames_ += dsdRenderedFrameUnits(segmentRead, output.format);
       if (read == requestedFrames || !active->drained()) break;
-      if (!renderGaplessEnabled_.load(std::memory_order_acquire) || !preload ||
+      if (active->processingFailed.load() ||
+          !renderGaplessEnabled_.load(std::memory_order_acquire) || !preload ||
           !preload->typedPassthrough || !preload->readyForRender() ||
           !pcmFormatsExactMatch(preload->bufferFormat(), output.format)) break;
 
@@ -5943,7 +6015,8 @@ size_t AudioPipeline::render(float* output, size_t frameCount) {
       }
 
       const bool canPromotePreload = preload && renderPreloadStream_.load(std::memory_order_acquire)==preload && preload->readyForRender();
-      if ((!renderGaplessEnabled_.load(std::memory_order_acquire) && !renderCrossfadeMixActive_) ||
+      if (active->processingFailed.load() ||
+          (!renderGaplessEnabled_.load(std::memory_order_acquire) && !renderCrossfadeMixActive_) ||
           !canPromotePreload) {
         break;
       }

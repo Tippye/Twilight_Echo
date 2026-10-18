@@ -1,0 +1,101 @@
+{
+  "schema": "qq-task13-parallel-range-independent-review/v1",
+  "scope": "Read-only two-stage review: spec compliance, then code quality",
+  "productionEditsByReviewer": false,
+  "initial": {
+    "sourceSha256": "eb4f73b1b32653f4665ccf19b8229b49561963520969687d5c2edd3d09bfe214",
+    "testsSha256": "30b95da9a7ec02ea356b4aa9d07ce8f2714078b64cd566f94ddb42d67ee4ad33",
+    "frozenSerialSha256": "d5e5542f8f1822bbbf33ca7f2e66015ba877333488b9fa4cce87c6352dae060b",
+    "freshProxyTests": "31/31, Node v22.23.3, node --test windows-audio-proxy.test.mjs",
+    "probe": "qq-task13-range-review-probes.mjs",
+    "observation": "qq-task13-range-review-probes-eb4f73b1b326.json",
+    "findings": [
+      {
+        "severity": "P2",
+        "lines": "522-528,564-570",
+        "title": "Validate terminal EOF after exactly filling each 206 block",
+        "observed": "Both first and future lanes accepted exact payload followed by an extra chunk, a transport error, or a missing EOF; six probes each completed all 2097152 bytes with only one read of the bad body",
+        "expected": "After the bounded block bytes, a timed terminal read must establish EOF before treating the lane as complete; any extra bytes/error/stall aborts the full response"
+      },
+      {
+        "severity": "P2",
+        "lines": "621",
+        "title": "Retain a large 200 fallback permit through body consumption",
+        "observed": "Nine simultaneous same-lease large 200 streams each supplied one byte then stalled; all nine entered upstream fetch before consumption",
+        "expected": "The ninth large body waits for one of the eight held permits; 200 compatibility still issues one upstream stream per request"
+      },
+      {
+        "severity": "P2",
+        "lines": "470-472",
+        "title": "Reuse a newly published transport for late denials from the same old wave",
+        "observed": "Three future old-transport 403s staggered by 30ms triggered three refreshes even though every new-transport retry succeeded",
+        "expected": "A late denial from the replaced old transport reuses the already published fresh transport for its single retry"
+      }
+    ],
+    "parentDisposition": "Root accepted all three concrete P2 findings and assigned the original audio-proxy owner to fix them"
+  },
+  "current": {
+    "observedAtUtc": "2026-10-18T08:55:34Z",
+    "status": "clear-for-code-review-scope",
+    "sourceSha256": "4cd88eeba6010bac420283023670314fb03ec5c394f11b8ad7d736dadc65d056",
+    "testsSha256": "09382bcc1cebf7a9a2a856902fef5354f2d886f95057449a6cac585334641e74",
+    "spec": {
+      "status": "pass",
+      "directProbeCases": 9,
+      "observations": "qq-task13-range-review-probes-4cd88eeba601.json",
+      "delayedResolver": "qq-task13-range-review-delayed-resolver-4cd88eeba601.json",
+      "checked": [
+        "Large GET threshold >=2MiB; ordered rolling 4x512KiB window",
+        "First bytes streamed before the first complete block",
+        "Exact 206 offset/length/total/encoding and bounded terminal EOF check",
+        "Six chunk-boundary extra-byte/error/stall cases rejected for both first and future lanes",
+        "Global eight permits held through large 200 fallback consumption; ninth body waits; cancellation restores slots",
+        "Staggered old denials share one refresh; delayed old snapshots cannot replace a live published refresh",
+        "Each future block still resolves and verifies the complete session and stable content identity",
+        "Mode1 and mode2 use the response-owned ordered transform, <=64KiB slices and exact uint64 offsets",
+        "Existing small-range/HEAD and whole-200 clipping compatibility retained"
+      ]
+    },
+    "codeQuality": {
+      "status": "pass",
+      "remainingP0P1P2": [],
+      "checked": [
+        "Permit FIFO cancellation, idempotent release, ordered discard and abort paths",
+        "Late fetch/resolve cleanup and media key/decoder owner disposal",
+        "Backpressure does not count as upstream read timeout; EOF checks retain per-wait timeout",
+        "Refresh revision is owned by the existing lease and published only after stable identity verification",
+        "Source is revalidated even when an existing refreshed transport is selected",
+        "No new persistent cache, download authorization, session/preference or transport owner",
+        "Original assertions retained; changed large-stream test servers now reply to the requested bounded range"
+      ]
+    },
+    "freshTests": {
+      "nodeVersion": "v22.23.3",
+      "command": "node --test windows-audio-proxy.test.mjs windows-media-stream.test.mjs windows-media-source.test.mjs windows-file-transform.test.mjs lib/windows/data-transform.test.mjs",
+      "exitCode": 0,
+      "passed": 139,
+      "failed": 0,
+      "skipped": 0,
+      "log": "qq-task13-range-review-final-tests.txt"
+    },
+    "performance": "No final-pin throughput claim from reviewer. Original implementer owns a fresh pin-checked encrypted loopback oracle; actual player validation remains with Root.",
+    "confidence": "B: direct source review plus 139 targeted tests and nine independent public probes; no live playback acceptance claim"
+  },
+  "limits": [
+    "Synthetic loopback/injected-fetch review only; real-player sustained throughput, pause/seek/quality-switch and service behavior remain for Root runtime acceptance",
+    "Eight 512KiB permits bound retained block payloads, not process RSS; existing fetch/socket/OS/current-chunk/write-copy overhead remains",
+    "Reviewer wrote independent evidence scripts/reports only; no production source, Git, package, client, QQ, profile or native-build operation"
+  ],
+  "intermediate": {
+    "sourceSha256": "0a3d227da72328b925143852ef341effc9faf7399fc5e36834e7dd6223cbe3f8",
+    "testsSha256": "2caadbc3979ba978bc7b20f01acb45de632e1e983dc1afaf7993d88363acadbb",
+    "originalThreeFindings": "closed by independent probes; proxy 34/34 passed",
+    "codeQualityRemaining": {
+      "title": "Late old resolver snapshot with longer expiry could receive a newly published revision",
+      "evidence": "qq-task13-range-review-delayed-resolver-0a3d227da723.json",
+      "observed": "3 old future fetches and 3 refreshes; all bytes correct",
+      "applicability": "Current canonical media-source resolver serializes calls, so this was a generic callback boundary, not a claimed real-client timing",
+      "disposition": "Original implementer accepted a local transport-selection refinement and added an equal-shape regression"
+    }
+  }
+}

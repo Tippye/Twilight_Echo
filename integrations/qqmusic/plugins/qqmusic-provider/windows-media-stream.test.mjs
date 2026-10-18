@@ -53,3 +53,46 @@ test('revoking a stream prevents later transforms without altering caller buffer
     assert.ok(key.every(value => value === 7))
   }
 })
+
+test('small keys retain exact native positions across periods, unsafe Numbers and uint64 wrap', () => {
+  const mask = 0xffffffffffffffffn
+  const offsets = [0n, 32766n, 32767n, 32768n, 65533n, 65534n, 65535n,
+    9007199254740993n, mask - 5n, mask]
+  for (const size of [1, 3, 16, 255, 256, 299, 300]) {
+    const key = Buffer.from(Array.from({ length: size }, (_, index) => (index * 17 + 12) & 255))
+    for (const position of offsets) {
+      const cipher = new WindowsMediaStream(key)
+      const actual = Buffer.alloc(129, 0x5a)
+      const expected = Buffer.from(actual)
+      for (let index = 0; index < expected.length; index += 1) {
+        let x = (position + BigInt(index)) & mask
+        if (x > 32767n) x %= 32767n
+        const keyIndex = Number((x * x + 71214n) % BigInt(size))
+        const shift = ((keyIndex & 7) + 4) & 7
+        expected[index] ^= ((key[keyIndex] >>> shift) | (key[keyIndex] << shift)) & 255
+      }
+      cipher.transform(actual, position.toString())
+      assert.deepEqual(actual, expected, `key length ${size}, offset ${position}`)
+      cipher.dispose()
+    }
+  }
+})
+
+test('small-key whole and irregular split reads match through multiple periods and uint64 wrap', () => {
+  const mask = 0xffffffffffffffffn
+  const key = Buffer.from(native.vectors[1].key_hex, 'hex')
+  for (const position of [32760n, mask - 32770n]) {
+    const whole = Buffer.alloc(131080, 0x5a)
+    const split = Buffer.from(whole)
+    const cipher = new WindowsMediaStream(key)
+    cipher.transform(whole, position.toString())
+    let index = 0
+    for (const size of [7, 1, 65536, 32767, 32769]) {
+      cipher.transform(split.subarray(index, index + size), ((position + BigInt(index)) & mask).toString())
+      index += size
+    }
+    assert.equal(index, split.length)
+    assert.deepEqual(split, whole)
+    cipher.dispose()
+  }
+})

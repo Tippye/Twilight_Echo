@@ -202,8 +202,9 @@ void assertDecoderOpensUtf8Path() {
   std::filesystem::create_directories(unicodeDir, fsError);
   assert(!fsError);
 
+  const auto fixtureName = (unicodeDir / pathFromUtf8Bytes("twilight-" + chinesePath + "-s16.wav")).u8string();
   auto fixture = writePcmWavFixture(
-      {(unicodeDir / pathFromUtf8Bytes("twilight-" + chinesePath + "-s16.wav")).string(), 48000, 2, 16, 32, false});
+      {std::string(reinterpret_cast<const char*>(fixtureName.data()), fixtureName.size()), 48000, 2, 16, 32, false});
   assert(std::filesystem::exists(fixture.path()));
 
   FFmpegDecoder decoder;

@@ -30,6 +30,7 @@ import { useLocale } from '../app/useLocale.ts'
 import type { LyricLayerSourceSelection } from '../../../shared/lyricsManagement.ts'
 import CoverImg from './CoverImg.vue'
 import HiFiSidebar from './player-bar/HiFiSidebar.vue'
+import { matchesPlaybackAudioSource } from './audioVisualizerFormatting'
 import repeatIcon from '../assets/icons/single-song-repeat.svg'
 import listLoopIcon from '../assets/icons/list-loop-repeat.svg'
 import sequentialIcon from '../assets/icons/sequential-playback.svg'
@@ -205,7 +206,10 @@ const currentTrack = computed(() =>
 const currentSourceInfo = computed(() => {
   const track = currentTrack.value
   const info = playbackInfo.value
-  return !props.preview && track && info?.nativePlaybackActive && info.source === track.filePath
+  return !props.preview &&
+    track &&
+    info?.nativePlaybackActive &&
+    matchesPlaybackAudioSource(track, info)
     ? info
     : null
 })

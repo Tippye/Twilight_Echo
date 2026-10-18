@@ -1,0 +1,1535 @@
+TAP version 13
+# Subtest: packaging overlays an isolated fresh engine and dependencies while preserving live files and bundled assets
+ok 1 - packaging overlays an isolated fresh engine and dependencies while preserving live files and bundled assets
+  ---
+  duration_ms: 83.7996
+  type: 'test'
+  ...
+# Subtest: an incomplete isolated engine cannot silently package an older live engine
+ok 2 - an incomplete isolated engine cannot silently package an older live engine
+  ---
+  duration_ms: 1.9981
+  type: 'test'
+  ...
+# Subtest: release configuration is intentionally unsigned and does not advertise a placeholder updater
+ok 3 - release configuration is intentionally unsigned and does not advertise a placeholder updater
+  ---
+  duration_ms: 0.5796
+  type: 'test'
+  ...
+# Subtest: macOS hardened runtime permits bundled native code under local signatures
+ok 4 - macOS hardened runtime permits bundled native code under local signatures
+  ---
+  duration_ms: 2.2793
+  type: 'test'
+  ...
+# Subtest: Windows packaging strips copied native binaries while unsigned releases stay fail-closed
+ok 5 - Windows packaging strips copied native binaries while unsigned releases stay fail-closed
+  ---
+  duration_ms: 2.9016
+  type: 'test'
+  ...
+# Subtest: Linux packaging fails closed when native engine artifacts are missing
+ok 6 - Linux packaging fails closed when native engine artifacts are missing
+  ---
+  duration_ms: 0.6642
+  type: 'test'
+  ...
+# Wrote release checksum: C:\\Users\\Payne\\AppData\\Local\\Temp\\twilight-release-checksum-XugSkt\\TwilightEcho-1.0.2-setup.exe.sha256
+# Subtest: release packaging writes an SHA-256 companion file for the installer
+ok 7 - release packaging writes an SHA-256 companion file for the installer
+  ---
+  duration_ms: 51.3559
+  type: 'test'
+  ...
+# Subtest: Windows packages use maximum compression
+ok 8 - Windows packages use maximum compression
+  ---
+  duration_ms: 0.6022
+  type: 'test'
+  ...
+# Subtest: update checks download GitHub release installers without electron-updater
+ok 9 - update checks download GitHub release installers without electron-updater
+  ---
+  duration_ms: 4.9937
+  type: 'test'
+  ...
+# Subtest: release docs keep non-Windows audio backends explicitly unverified
+ok 10 - release docs keep non-Windows audio backends explicitly unverified
+  ---
+  duration_ms: 1.1122
+  type: 'test'
+  ...
+# Subtest: staged addon observations bind engine capability facts to every artifact hash
+ok 11 - staged addon observations bind engine capability facts to every artifact hash
+  ---
+  duration_ms: 2.2545
+  type: 'test'
+  ...
+# Subtest: an unloadable staged addon provides no capability fact
+ok 12 - an unloadable staged addon provides no capability fact
+  ---
+  duration_ms: 0.342
+  type: 'test'
+  ...
+# Subtest: production inspection uses a hidden bounded child and never loads the staging DLL in the parent
+ok 13 - production inspection uses a hidden bounded child and never loads the staging DLL in the parent
+  ---
+  duration_ms: 1.08
+  type: 'test'
+  ...
+# Subtest: timed-out and invalid child observations remain unknown
+ok 14 - timed-out and invalid child observations remain unknown
+  ---
+  duration_ms: 1.539
+  type: 'test'
+  ...
+# Subtest: only the named isolated effect worker uses the x86 ABI
+ok 15 - only the named isolated effect worker uses the x86 ABI
+  ---
+  duration_ms: 11.0812
+  type: 'test'
+  ...
+# Subtest: release artifact arguments require a native directory and installer target
+ok 16 - release artifact arguments require a native directory and installer target
+  ---
+  duration_ms: 1.0771
+  type: 'test'
+  ...
+# Subtest: PE inspection finds stripped and retained debug metadata
+ok 17 - PE inspection finds stripped and retained debug metadata
+  ---
+  duration_ms: 5.0386
+  type: 'test'
+  ...
+# Subtest: native PE verification requires AMD64 binaries
+ok 18 - native PE verification requires AMD64 binaries
+  ---
+  duration_ms: 3.6337
+  type: 'test'
+  ...
+# Subtest: size checks reject unsafe release inputs
+ok 19 - size checks reject unsafe release inputs
+  ---
+  duration_ms: 1.7004
+  type: 'test'
+  ...
+# Subtest: all shipped native DLL/EXE/NODE files receive a size budget while strip checks remain product-only
+ok 20 - all shipped native DLL/EXE/NODE files receive a size budget while strip checks remain product-only
+  ---
+  duration_ms: 2.9728
+  type: 'test'
+  ...
+# Subtest: release verification requires every imported runtime dependency beside the binaries
+ok 21 - release verification requires every imported runtime dependency beside the binaries
+  ---
+  duration_ms: 14.2972
+  type: 'test'
+  ...
+# Subtest: native binary verification keeps capability fixtures flexible but release output requires VST3
+ok 22 - native binary verification keeps capability fixtures flexible but release output requires VST3
+  ---
+  duration_ms: 10.7286
+  type: 'test'
+  ...
+# (node:40460) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///E:/PycharmProjects/MusicAnyClient/Twilight_Echo/src/main/audioEngineIpcQueue.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:40460) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# Subtest: plugin queue events omit main-only worker paths and expiry without mutating native queue
+ok 23 - plugin queue events omit main-only worker paths and expiry without mutating native queue
+  ---
+  duration_ms: 4.3882
+  type: 'test'
+  ...
+# Subtest: audioEngine loadQueue IPC accepts renderer queue items with source field
+ok 24 - audioEngine loadQueue IPC accepts renderer queue items with source field
+  ---
+  duration_ms: 0.4183
+  type: 'test'
+  ...
+# Subtest: queue normalization drops untrusted renderer source aliases and byte counts
+ok 25 - queue normalization drops untrusted renderer source aliases and byte counts
+  ---
+  duration_ms: 1.472
+  type: 'test'
+  ...
+# Subtest: audio engine cold start passes persisted software volume into the manager
+ok 26 - audio engine cold start passes persisted software volume into the manager
+  ---
+  duration_ms: 0.1312
+  type: 'test'
+  ...
+# Subtest: audioEngine play IPC forwards validated paused options and preserves the omitted option
+ok 27 - audioEngine play IPC forwards validated paused options and preserves the omitted option
+  ---
+  duration_ms: 1.824
+  type: 'test'
+  ...
+# Subtest: audioEngine IPC normalizes untrusted renderer parameters
+ok 28 - audioEngine IPC normalizes untrusted renderer parameters
+  ---
+  duration_ms: 0.4085
+  type: 'test'
+  ...
+# Subtest: loadQueue authorizes duplicate sources once, retains CUE entries, and awaits native completion
+ok 29 - loadQueue authorizes duplicate sources once, retains CUE entries, and awaits native completion
+  ---
+  duration_ms: 29.9685
+  type: 'test'
+  ...
+# Subtest: queue authorization is checked again after awaited runtime startup
+ok 30 - queue authorization is checked again after awaited runtime startup
+  ---
+  duration_ms: 4.6294
+  type: 'test'
+  ...
+# Subtest: the native queue ceiling is one shared constant on both sides of the IPC
+ok 31 - the native queue ceiling is one shared constant on both sides of the IPC
+  ---
+  duration_ms: 2.9168
+  type: 'test'
+  ...
+# Subtest: queue cursor IPC freshly authorizes its source before forwarding the main-owned token
+ok 32 - queue cursor IPC freshly authorizes its source before forwarding the main-owned token
+  ---
+  duration_ms: 2.0065
+  type: 'test'
+  ...
+# Subtest: loadQueue outcomes reach the audio diagnostics log
+ok 33 - loadQueue outcomes reach the audio diagnostics log
+  ---
+  duration_ms: 0.4869
+  type: 'test'
+  ...
+# Subtest: config-applied crosses the manager, IPC, and preload boundary
+ok 34 - config-applied crosses the manager, IPC, and preload boundary
+  ---
+  duration_ms: 0.2651
+  type: 'test'
+  ...
+# Subtest: offline analysis is routed away from the playback audio service
+ok 35 - offline analysis is routed away from the playback audio service
+  ---
+  duration_ms: 5.7721
+  type: 'test'
+  ...
+# Subtest: main window installs Windows audio device hotplug watcher
+ok 36 - main window installs Windows audio device hotplug watcher
+  ---
+  duration_ms: 0.1588
+  type: 'test'
+  ...
+# Subtest: audio hotplug watcher listens for ALSA hw device node changes on Linux
+ok 37 - audio hotplug watcher listens for ALSA hw device node changes on Linux
+  ---
+  duration_ms: 0.1002
+  type: 'test'
+  ...
+# 原生音频模块加载失败： C:\\Users\\Payne\\AppData\\Local\\Temp\\twilight-addon-9xw0Zt\\twilight_audio_node.node Error: \\\\?\\C:\\Users\\Payne\\AppData\\Local\\Temp\\twilight-addon-9xw0Zt\\twilight_audio_node.node is not a valid Win32 application.
+# \\\\?\\C:\\Users\\Payne\\AppData\\Local\\Temp\\twilight-addon-9xw0Zt\\twilight_audio_node.node
+#     at Object..node (node:internal/modules/cjs/loader:1939:18)
+#     at Module.load (node:internal/modules/cjs/loader:1505:32)
+#     at Function._load (node:internal/modules/cjs/loader:1309:12)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+#     at Module.require (node:internal/modules/cjs/loader:1527:12)
+#     at require (node:internal/modules/helpers:147:16)
+#     at loadNativeBindingWithDiagnostics (file:///E:/PycharmProjects/MusicAnyClient/Twilight_Echo/src/main/audio/nativeBinding.ts:113:18)
+#     at TestContext.<anonymous> (file:///E:/PycharmProjects/MusicAnyClient/Twilight_Echo/src/main/audioEngineManager.test.ts:1881:20)
+#     at Test.runInAsyncScope (node:async_hooks:214:14)
+#     at Test.run (node:internal/test_runner/test:1047:25) {
+#   code: 'ERR_DLOPEN_FAILED'
+# }
+# 原生音频引擎更新输出采样率锁失败： native DSP graph rejected by service
+# 原生音频引擎输出级回滚失败： native DSP graph rejected by service
+# 原生音频引擎更新 DSP 配置失败： native DSP graph rejected by service
+# 原生音频引擎DSP configuration rollback失败： native DSP graph rejected by service
+# 原生音频引擎audio-output 输出切换事务应用 config失败，已阻止 HTMLAudio 静默降级： target ready timeout
+# 原生音频引擎audio-output 输出切换事务应用 config失败，已阻止 HTMLAudio 静默降级： target open failed
+# 原生音频引擎audio-output rollback 输出切换事务应用 device失败，已阻止 HTMLAudio 静默降级： device dac-1 unavailable
+# (node:39660) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///E:/PycharmProjects/MusicAnyClient/Twilight_Echo/src/main/audioEngineManager.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: plain Node diagnostics never load the Electron SDK or trigger binary discovery
+ok 38 - plain Node diagnostics never load the Electron SDK or trigger binary discovery
+  ---
+  duration_ms: 6.1993
+  type: 'test'
+  ...
+# Subtest: Electron diagnostics use its app API and tolerate non-app or failed loaders
+ok 39 - Electron diagnostics use its app API and tolerate non-app or failed loaders
+  ---
+  duration_ms: 3.4126
+  type: 'test'
+  ...
+# Subtest: playback fanout signature changes when config revisions advance
+ok 40 - playback fanout signature changes when config revisions advance
+  ---
+  duration_ms: 0.7709
+  type: 'test'
+  ...
+# Subtest: playback fanout signature publishes canonical output-perfect transitions
+ok 41 - playback fanout signature publishes canonical output-perfect transitions
+  ---
+  duration_ms: 0.693
+  type: 'test'
+  ...
+# Subtest: playback fanout signature ignores native tick position changes
+ok 42 - playback fanout signature ignores native tick position changes
+  ---
+  duration_ms: 0.2026
+  type: 'test'
+  ...
+# Subtest: playback fanout signature changes for non-position playback facts
+ok 43 - playback fanout signature changes for non-position playback facts
+  ---
+  duration_ms: 0.7675
+  type: 'test'
+  ...
+# Subtest: leaving loudnorm while cache lookup is pending cannot apply measurements or restart analysis
+ok 44 - leaving loudnorm while cache lookup is pending cannot apply measurements or restart analysis
+  ---
+  duration_ms: 4.0268
+  type: 'test'
+  ...
+# Subtest: normalizing explicit DSD Auto is not overridden by legacy dsdToPcm flag
+ok 45 - normalizing explicit DSD Auto is not overridden by legacy dsdToPcm flag
+  ---
+  duration_ms: 0.125
+  type: 'test'
+  ...
+# Subtest: legacy dsdToPcm still maps to PCM when dsdOutputMode is absent
+ok 46 - legacy dsdToPcm still maps to PCM when dsdOutputMode is absent
+  ---
+  duration_ms: 0.3494
+  type: 'test'
+  ...
+# Subtest: DSD rate policy defaults fail-compatibly and preserves valid strict policies
+ok 47 - DSD rate policy defaults fail-compatibly and preserves valid strict policies
+  ---
+  duration_ms: 0.3212
+  type: 'test'
+  ...
+# Subtest: loudnorm is preserved as a distinct volumeNormalization mode
+ok 48 - loudnorm is preserved as a distinct volumeNormalization mode
+  ---
+  duration_ms: 0.2214
+  type: 'test'
+  ...
+# Subtest: Settings and HiFi shared options both require loudnorm (no forbid-loudnorm regression)
+ok 49 - Settings and HiFi shared options both require loudnorm (no forbid-loudnorm regression)
+  ---
+  duration_ms: 6.4288
+  type: 'test'
+  ...
+# Subtest: gapless runtime fields and HiFi Active/Preload/Blocked wiring stay present
+ok 50 - gapless runtime fields and HiFi Active/Preload/Blocked wiring stay present
+  ---
+  duration_ms: 3.7747
+  type: 'test'
+  ...
+# Subtest: setStereoImage patches default scene balance/phase and preserves it across setAudioProcessing
+ok 51 - setStereoImage patches default scene balance/phase and preserves it across setAudioProcessing
+  ---
+  duration_ms: 5.0541
+  type: 'test'
+  ...
+# Subtest: setOutputStage patches default scene graph.outputStage and preserves it across setAudioProcessing
+ok 52 - setOutputStage patches default scene graph.outputStage and preserves it across setAudioProcessing
+  ---
+  duration_ms: 3.5556
+  type: 'test'
+  ...
+# Subtest: default audio service mode applies DSP graph revisions and exposes native node/output evidence
+ok 53 - default audio service mode applies DSP graph revisions and exposes native node/output evidence
+  ---
+  duration_ms: 1.416
+  type: 'test'
+  ...
+# Subtest: native binding failures name the real loader error instead of a bare 未加载
+ok 54 - native binding failures name the real loader error instead of a bare 未加载
+  ---
+  duration_ms: 3.9429
+  type: 'test'
+  ...
+# Subtest: direct native mode remains fail-closed when no addon candidate exists
+ok 55 - direct native mode remains fail-closed when no addon candidate exists
+  ---
+  duration_ms: 0.5364
+  type: 'test'
+  ...
+# Subtest: DSP graph ACK failures remain observable and reject renderer-facing mutations
+ok 56 - DSP graph ACK failures remain observable and reject renderer-facing mutations
+  ---
+  duration_ms: 1.5539
+  type: 'test'
+  ...
+# Subtest: direct mode submits an identity graph and restores rate/routing without changing volume
+ok 57 - direct mode submits an identity graph and restores rate/routing without changing volume
+  ---
+  duration_ms: 2.7188
+  type: 'test'
+  ...
+# Subtest: startup with stale directMode and enabled EQ heals to an active DSP graph
+ok 58 - startup with stale directMode and enabled EQ heals to an active DSP graph
+  ---
+  duration_ms: 0.9367
+  type: 'test'
+  ...
+# Subtest: module switches gate matching nodes in an active custom scene
+ok 59 - module switches gate matching nodes in an active custom scene
+  ---
+  duration_ms: 1.2126
+  type: 'test'
+  ...
+# Subtest: audio service restart replays the DSP graph and verifies the new applied revision
+ok 60 - audio service restart replays the DSP graph and verifies the new applied revision
+  ---
+  duration_ms: 3.0096
+  type: 'test'
+  ...
+# Subtest: audio service restart restores graph-owned processors through one DSP state transaction
+ok 61 - audio service restart restores graph-owned processors through one DSP state transaction
+  ---
+  duration_ms: 1.2174
+  type: 'test'
+  ...
+# Subtest: DSD DSP scenes remain bypassed until the active graph receives an explicit PCM confirmation
+ok 62 - DSD DSP scenes remain bypassed until the active graph receives an explicit PCM confirmation
+  ---
+  duration_ms: 1.168
+  type: 'test'
+  ...
+# Subtest: VST3 graph payloads materialize only a managed catalog resolution
+ok 63 - VST3 graph payloads materialize only a managed catalog resolution
+  ---
+  duration_ms: 0.7521
+  type: 'test'
+  ...
+# Subtest: a missing managed VST3 state asset bypasses the node instead of passing a path to the host
+ok 64 - a missing managed VST3 state asset bypasses the node instead of passing a path to the host
+  ---
+  duration_ms: 0.4985
+  type: 'test'
+  ...
+# Subtest: a service crash requires explicit recovery for each active VST3 node
+ok 65 - a service crash requires explicit recovery for each active VST3 node
+  ---
+  duration_ms: 1.3011
+  type: 'test'
+  ...
+# Subtest: audio processing normalization preserves advanced replaygain, fft, and crossfeed settings
+ok 66 - audio processing normalization preserves advanced replaygain, fft, and crossfeed settings
+  ---
+  duration_ms: 0.1541
+  type: 'test'
+  ...
+# Subtest: setExclusiveMode refreshes backend facts immediately
+ok 67 - setExclusiveMode refreshes backend facts immediately
+  ---
+  duration_ms: 3.7125
+  type: 'test'
+  ...
+# Subtest: getPlaybackInfo preserves canonical 192 kHz PCM output-perfect facts
+ok 68 - getPlaybackInfo preserves canonical 192 kHz PCM output-perfect facts
+  ---
+  duration_ms: 0.46
+  type: 'test'
+  ...
+# Subtest: setAudioOutput rejects a stale ASIO snapshot after switching to WASAPI
+ok 69 - setAudioOutput rejects a stale ASIO snapshot after switching to WASAPI
+  ---
+  duration_ms: 0.7102
+  type: 'test'
+  ...
+# Subtest: setAudioOutput rejects a stale WASAPI snapshot after switching to ASIO
+ok 70 - setAudioOutput rejects a stale WASAPI snapshot after switching to ASIO
+  ---
+  duration_ms: 0.63
+  type: 'test'
+  ...
+# Subtest: setExclusiveMode skips native calls and playback fanout when mode is unchanged
+ok 71 - setExclusiveMode skips native calls and playback fanout when mode is unchanged
+  ---
+  duration_ms: 0.9316
+  type: 'test'
+  ...
+# Subtest: setOutputConfig forwards and keeps advanced upmix parameters
+ok 72 - setOutputConfig forwards and keeps advanced upmix parameters
+  ---
+  duration_ms: 0.8618
+  type: 'test'
+  ...
+# Subtest: setOutputConfig skips native call and playback fanout when normalized config is unchanged
+ok 73 - setOutputConfig skips native call and playback fanout when normalized config is unchanged
+  ---
+  duration_ms: 0.6229
+  type: 'test'
+  ...
+# Subtest: coreaudio exclusive mode maps to coreaudio-exclusive backend
+ok 74 - coreaudio exclusive mode maps to coreaudio-exclusive backend
+  ---
+  duration_ms: 0.5704
+  type: 'test'
+  ...
+# Subtest: coreaudio shared mode stays coreaudio with shared_mixer reason
+ok 75 - coreaudio shared mode stays coreaudio with shared_mixer reason
+  ---
+  duration_ms: 0.1947
+  type: 'test'
+  ...
+# Subtest: setAudioDevice refreshes canonical device names immediately
+ok 76 - setAudioDevice refreshes canonical device names immediately
+  ---
+  duration_ms: 0.6109
+  type: 'test'
+  ...
+# Subtest: setAudioDevice skips native call and playback fanout when normalized device is unchanged
+ok 77 - setAudioDevice skips native call and playback fanout when normalized device is unchanged
+  ---
+  duration_ms: 0.6465
+  type: 'test'
+  ...
+# Subtest: default output device display labels normalize to auto
+ok 78 - default output device display labels normalize to auto
+  ---
+  duration_ms: 0.9036
+  type: 'test'
+  ...
+# Subtest: setOutputConfig uses the actual native buffer size and latency facts
+ok 79 - setOutputConfig uses the actual native buffer size and latency facts
+  ---
+  duration_ms: 1.8304
+  type: 'test'
+  ...
+# Subtest: ASIO output config uses the native applied buffer and capability facts
+ok 80 - ASIO output config uses the native applied buffer and capability facts
+  ---
+  duration_ms: 1.1633
+  type: 'test'
+  ...
+# Subtest: ASIO legacy display ids migrate only when the catalog has a unique canonical CLSID id
+ok 81 - ASIO legacy display ids migrate only when the catalog has a unique canonical CLSID id
+  ---
+  duration_ms: 3.0757
+  type: 'test'
+  ...
+# Subtest: audio device options expose runtime-probed DSD support states without forcing boolean support
+ok 82 - audio device options expose runtime-probed DSD support states without forcing boolean support
+  ---
+  duration_ms: 0.2487
+  type: 'test'
+  ...
+# Subtest: audio device options preserve additive stable catalog identity fields
+ok 83 - audio device options preserve additive stable catalog identity fields
+  ---
+  duration_ms: 0.3408
+  type: 'test'
+  ...
+# Subtest: an unreadable ASIO catalog keeps the persisted driver instead of dropping to auto
+ok 84 - an unreadable ASIO catalog keeps the persisted driver instead of dropping to auto
+  ---
+  duration_ms: 0.1534
+  type: 'test'
+  ...
+# Subtest: a backend switch restores the device last used on that backend
+ok 85 - a backend switch restores the device last used on that backend
+  ---
+  duration_ms: 1.0428
+  type: 'test'
+  ...
+# Subtest: the output device picker only offers devices the selected backend can open
+ok 86 - the output device picker only offers devices the selected backend can open
+  ---
+  duration_ms: 0.15
+  type: 'test'
+  ...
+# Subtest: output route switches apply backend device config between mute and unmute
+ok 87 - output route switches apply backend device config between mute and unmute
+  ---
+  duration_ms: 0.5493
+  type: 'test'
+  ...
+# Subtest: output route switch rejects a target device that disappears after prepare
+ok 88 - output route switch rejects a target device that disappears after prepare
+  ---
+  duration_ms: 0.4102
+  type: 'test'
+  ...
+# Subtest: output route verification uses stable device ids when labels are duplicated
+ok 89 - output route verification uses stable device ids when labels are duplicated
+  ---
+  duration_ms: 2.0039
+  type: 'test'
+  ...
+# Subtest: output route switch rolls back after target open failure without auto replay
+ok 90 - output route switch rolls back after target open failure without auto replay
+  ---
+  duration_ms: 1.2625
+  type: 'test'
+  ...
+# Subtest: output route switch safe-stops when rollback device is gone
+ok 91 - output route switch safe-stops when rollback device is gone
+  ---
+  duration_ms: 0.866
+  type: 'test'
+  ...
+# Subtest: paused output route switch preserves paused state and queue position
+ok 92 - paused output route switch preserves paused state and queue position
+  ---
+  duration_ms: 1.5938
+  type: 'test'
+  ...
+# Subtest: setAudioOutput skips native calls and playback fanout when output and device are unchanged
+ok 93 - setAudioOutput skips native calls and playback fanout when output and device are unchanged
+  ---
+  duration_ms: 0.5718
+  type: 'test'
+  ...
+# Subtest: audio service output switches wait for route RPCs before marking synced
+ok 94 - audio service output switches wait for route RPCs before marking synced
+  ---
+  duration_ms: 88.5373
+  type: 'test'
+  ...
+# Subtest: audio service startup waits for route RPCs before emitting ready
+ok 95 - audio service startup waits for route RPCs before emitting ready
+  ---
+  duration_ms: 30.1452
+  type: 'test'
+  ...
+# Subtest: audio service device switches wait for device RPC before marking synced
+ok 96 - audio service device switches wait for device RPC before marking synced
+  ---
+  duration_ms: 62.3641
+  type: 'test'
+  ...
+# Subtest: audio service exclusive mode switches wait for backend and config RPCs before marking synced
+ok 97 - audio service exclusive mode switches wait for backend and config RPCs before marking synced
+  ---
+  duration_ms: 92.8277
+  type: 'test'
+  ...
+# Subtest: audio service output config changes wait for config RPC before marking synced
+ok 98 - audio service output config changes wait for config RPC before marking synced
+  ---
+  duration_ms: 48.6631
+  type: 'test'
+  ...
+# 原生音频引擎output-config 输出切换事务应用 config失败，已阻止 HTMLAudio 静默降级： candidate topology failed; rollback restored previous output
+# Subtest: failed topology config RPC leaves the last applied config and reports a failed revision
+ok 99 - failed topology config RPC leaves the last applied config and reports a failed revision
+  ---
+  duration_ms: 61.0931
+  type: 'test'
+  ...
+# Subtest: backend and device switches do not leave stale output facts
+ok 100 - backend and device switches do not leave stale output facts
+  ---
+  duration_ms: 5.241
+  type: 'test'
+  ...
+# Subtest: switching to ASIO does not keep a WASAPI endpoint device id
+ok 101 - switching to ASIO does not keep a WASAPI endpoint device id
+  ---
+  duration_ms: 1.067
+  type: 'test'
+  ...
+# Subtest: ASIO play failure falls back to native WASAPI instead of throwing to HTMLAudio
+ok 102 - ASIO play failure falls back to native WASAPI instead of throwing to HTMLAudio
+  ---
+  duration_ms: 2.2161
+  type: 'test'
+  ...
+# Subtest: audio service ASIO play fallback waits for WASAPI route RPCs before retrying playback
+ok 103 - audio service ASIO play fallback waits for WASAPI route RPCs before retrying playback
+  ---
+  duration_ms: 67.6087
+  type: 'test'
+  ...
+# Subtest: next falls back to Play when native Next advances but does not keep playback active
+ok 104 - next falls back to Play when native Next advances but does not keep playback active
+  ---
+  duration_ms: 1.3008
+  type: 'test'
+  ...
+# Subtest: switching to shuffle preserves the active stream and only updates native policy
+ok 105 - switching to shuffle preserves the active stream and only updates native policy
+  ---
+  duration_ms: 0.6812
+  type: 'test'
+  ...
+# Subtest: a native stop mid-queue is not reported as a queue end while an upcoming track exists
+ok 106 - a native stop mid-queue is not reported as a queue end while an upcoming track exists
+  ---
+  duration_ms: 0.7687
+  type: 'test'
+  ...
+# Subtest: a delegated listLoop queue reports trackEnd then queueEnd when it wraps
+ok 107 - a delegated listLoop queue reports trackEnd then queueEnd when it wraps
+  ---
+  duration_ms: 0.6398
+  type: 'test'
+  ...
+# Subtest: a delegated sequential queue does not report a queue end on an ordinary advance
+ok 108 - a delegated sequential queue does not report a queue end on an ordinary advance
+  ---
+  duration_ms: 0.4286
+  type: 'test'
+  ...
+# Subtest: shuffle next accepts the native non-adjacent queue target
+ok 109 - shuffle next accepts the native non-adjacent queue target
+  ---
+  duration_ms: 0.4599
+  type: 'test'
+  ...
+# Subtest: next falls back to target track when native Next reports stale playback info
+ok 110 - next falls back to target track when native Next reports stale playback info
+  ---
+  duration_ms: 0.5417
+  type: 'test'
+  ...
+# 原生音频引擎撤销音源后同步队列失败，已阻止 HTMLAudio 静默降级： public queue rejection
+# Subtest: audio service next waits for Next ack before falling back to Play
+ok 111 - audio service next waits for Next ack before falling back to Play
+  ---
+  duration_ms: 2.318
+  type: 'test'
+  ...
+# Subtest: a delayed startup play cannot replace the song selected by next
+ok 112 - a delayed startup play cannot replace the song selected by next
+  ---
+  duration_ms: 1.3484
+  type: 'test'
+  ...
+# Subtest: paused play confirms native pause before publishing and keeps normal callers playing
+ok 113 - paused play confirms native pause before publishing and keeps normal callers playing
+  ---
+  duration_ms: 1.9361
+  type: 'test'
+  ...
+# Subtest: paused play restores the real native position advanced before the pause acknowledgement
+    # Subtest: sync at 0
+    ok 1 - sync at 0
+      ---
+      duration_ms: 1.3616
+      type: 'test'
+      ...
+    # Subtest: sync at 30.2
+    ok 2 - sync at 30.2
+      ---
+      duration_ms: 0.5653
+      type: 'test'
+      ...
+    # Subtest: service at 0
+    ok 3 - service at 0
+      ---
+      duration_ms: 0.6191
+      type: 'test'
+      ...
+    # Subtest: service at 30.2
+    ok 4 - service at 30.2
+      ---
+      duration_ms: 0.5105
+      type: 'test'
+      ...
+    1..4
+ok 114 - paused play restores the real native position advanced before the pause acknowledgement
+  ---
+  duration_ms: 3.6687
+  type: 'test'
+  ...
+# Subtest: paused position restore uses the second CUE entry relative boundary and rejects a different same-source entry
+ok 115 - paused position restore uses the second CUE entry relative boundary and rejects a different same-source entry
+  ---
+  duration_ms: 1.5785
+  type: 'test'
+  ...
+# Subtest: paused position restore accepts only the native timeline frame rounding
+ok 116 - paused position restore accepts only the native timeline frame rounding
+  ---
+  duration_ms: 0.7528
+  type: 'test'
+  ...
+# Subtest: paused position restore rejects failed or unconfirmed seeks and cleans up only its owned source
+    # Subtest: throw
+    ok 1 - throw
+      ---
+      duration_ms: 0.6542
+      type: 'test'
+      ...
+    # Subtest: noop
+    ok 2 - noop
+      ---
+      duration_ms: 0.7037
+      type: 'test'
+      ...
+    # Subtest: playing
+    ok 3 - playing
+      ---
+      duration_ms: 0.4801
+      type: 'test'
+      ...
+    # Subtest: other-source
+    ok 4 - other-source
+      ---
+      duration_ms: 1.0494
+      type: 'test'
+      ...
+    1..4
+ok 117 - paused position restore rejects failed or unconfirmed seeks and cleans up only its owned source
+  ---
+  duration_ms: 3.5838
+  type: 'test'
+  ...
+# Subtest: a superseded paused position restore cannot change or stop a newer transport after its seek acknowledgement
+    # Subtest: Seek then play
+    ok 1 - Seek then play
+      ---
+      duration_ms: 2.0368
+      type: 'test'
+      ...
+    # Subtest: Seek then next
+    ok 2 - Seek then next
+      ---
+      duration_ms: 0.9885
+      type: 'test'
+      ...
+    # Subtest: Seek then stop
+    ok 3 - Seek then stop
+      ---
+      duration_ms: 0.6181
+      type: 'test'
+      ...
+    # Subtest: GetPlaybackInfo then play
+    ok 4 - GetPlaybackInfo then play
+      ---
+      duration_ms: 0.6396
+      type: 'test'
+      ...
+    # Subtest: GetPlaybackInfo then next
+    ok 5 - GetPlaybackInfo then next
+      ---
+      duration_ms: 0.5131
+      type: 'test'
+      ...
+    # Subtest: GetPlaybackInfo then stop
+    ok 6 - GetPlaybackInfo then stop
+      ---
+      duration_ms: 0.438
+      type: 'test'
+      ...
+    1..6
+ok 118 - a superseded paused position restore cannot change or stop a newer transport after its seek acknowledgement
+  ---
+  duration_ms: 6.3483
+  type: 'test'
+  ...
+# Subtest: paused play does not toggle an already paused native source or pause a different source
+ok 119 - paused play does not toggle an already paused native source or pause a different source
+  ---
+  duration_ms: 0.5813
+  type: 'test'
+  ...
+# Subtest: a failed paused start stops only its current owned source without publishing playing
+ok 120 - a failed paused start stops only its current owned source without publishing playing
+  ---
+  duration_ms: 0.5256
+  type: 'test'
+  ...
+# Subtest: a superseded paused play cannot pause the newer source after delayed Play or info acknowledgement
+ok 121 - a superseded paused play cannot pause the newer source after delayed Play or info acknowledgement
+  ---
+  duration_ms: 0.9339
+  type: 'test'
+  ...
+# Subtest: provider revocation stops only the matching source and cannot overwrite a newer play
+ok 122 - provider revocation stops only the matching source and cannot overwrite a newer play
+  ---
+  duration_ms: 0.8203
+  type: 'test'
+  ...
+# Subtest: provider revocation removes queued workers while preserving unrelated paused playback
+ok 123 - provider revocation removes queued workers while preserving unrelated paused playback
+  ---
+  duration_ms: 0.9685
+  type: 'test'
+  ...
+# Subtest: a revoked pending LoadQueue acknowledgement cannot publish or roll back its worker queue
+ok 124 - a revoked pending LoadQueue acknowledgement cannot publish or roll back its worker queue
+  ---
+  duration_ms: 0.4313
+  type: 'test'
+  ...
+# Subtest: revocation stops a dispatched Play even while its acknowledgement leaves the main mirror idle
+ok 125 - revocation stops a dispatched Play even while its acknowledgement leaves the main mirror idle
+  ---
+  duration_ms: 0.356
+  type: 'test'
+  ...
+# Subtest: revoking before native dispatch cancels preparation without stopping an unrelated source
+ok 126 - revoking before native dispatch cancels preparation without stopping an unrelated source
+  ---
+  duration_ms: 0.6459
+  type: 'test'
+  ...
+# Subtest: a failed revocation queue reload stops playback and blocks restart until a confirmed safe load
+ok 127 - a failed revocation queue reload stops playback and blocks restart until a confirmed safe load
+  ---
+  duration_ms: 1.0318
+  type: 'test'
+  ...
+# Subtest: a paused Play with delayed Pause acknowledgement cannot overwrite a newer play, next or stop
+ok 128 - a paused Play with delayed Pause acknowledgement cannot overwrite a newer play, next or stop
+  ---
+  duration_ms: 1.1969
+  type: 'test'
+  ...
+# Subtest: a delayed Play acknowledgement cannot publish the previous song after next
+ok 129 - a delayed Play acknowledgement cannot publish the previous song after next
+  ---
+  duration_ms: 0.7581
+  type: 'test'
+  ...
+# Subtest: next cannot restart playback after a newer stop
+ok 130 - next cannot restart playback after a newer stop
+  ---
+  duration_ms: 0.6177
+  type: 'test'
+  ...
+# Subtest: previous cannot restart playback after a newer stop
+ok 131 - previous cannot restart playback after a newer stop
+  ---
+  duration_ms: 0.5042
+  type: 'test'
+  ...
+# 原生音频引擎初始化输出后端失败，已阻止 HTMLAudio 静默降级： audio service not ready
+# 原生音频引擎初始化输出设备失败，已阻止 HTMLAudio 静默降级： audio service not ready
+# 原生音频引擎初始化输出配置失败，已阻止 HTMLAudio 静默降级： audio service not ready
+# 原生音频引擎初始化软件音量失败，已阻止 HTMLAudio 静默降级： audio service not ready
+# 原生音频引擎音频服务恢复后应用输出后端失败，已阻止 HTMLAudio 静默降级： output route restore failed persistently
+# 原生音频引擎音频服务恢复后应用输出设备失败，已阻止 HTMLAudio 静默降级： output route restore failed persistently
+# 原生音频引擎音频服务恢复后应用输出配置失败，已阻止 HTMLAudio 静默降级： output route restore failed persistently
+# Subtest: audio service loadQueue waits for queue and play mode confirmations in order
+ok 132 - audio service loadQueue waits for queue and play mode confirmations in order
+  ---
+  duration_ms: 10.9237
+  type: 'test'
+  ...
+# Subtest: queue cursor reuse verifies content token and CUE identity before native selection
+ok 133 - queue cursor reuse verifies content token and CUE identity before native selection
+  ---
+  duration_ms: 1.2655
+  type: 'test'
+  ...
+# Subtest: playback snapshots expose queue authority only for a matching native source
+ok 134 - playback snapshots expose queue authority only for a matching native source
+  ---
+  duration_ms: 0.7937
+  type: 'test'
+  ...
+# Subtest: playback snapshots bind public source metadata to the committed queue and reject stale native owners
+ok 135 - playback snapshots bind public source metadata to the committed queue and reject stale native owners
+  ---
+  duration_ms: 1.2353
+  type: 'test'
+  ...
+# Subtest: loadQueue skips native call and queue fanout when normalized queue is unchanged
+ok 136 - loadQueue skips native call and queue fanout when normalized queue is unchanged
+  ---
+  duration_ms: 0.3083
+  type: 'test'
+  ...
+# Subtest: same-source CUE queue preserves its logical index and clamps relative seek/play positions
+ok 137 - same-source CUE queue preserves its logical index and clamps relative seek/play positions
+  ---
+  duration_ms: 1.1079
+  type: 'test'
+  ...
+# Subtest: native tick recognizes a same-source CUE boundary by queue index
+ok 138 - native tick recognizes a same-source CUE boundary by queue index
+  ---
+  duration_ms: 0.5734
+  type: 'test'
+  ...
+# Subtest: loadQueue reapplies play mode to clear stale native repeat mode
+ok 139 - loadQueue reapplies play mode to clear stale native repeat mode
+  ---
+  duration_ms: 0.1977
+  type: 'test'
+  ...
+# Subtest: Native queue handoff publishes incoming identity and position before scalar progress and start-file
+ok 140 - Native queue handoff publishes incoming identity and position before scalar progress and start-file
+  ---
+  duration_ms: 0.5253
+  type: 'test'
+  ...
+# Subtest: getPlaybackInfo reuses fresh native playback info from the manager tick
+ok 141 - getPlaybackInfo reuses fresh native playback info from the manager tick
+  ---
+  duration_ms: 0.4664
+  type: 'test'
+  ...
+# Subtest: native tick skips full playback-info fanout when only position changes
+ok 142 - native tick skips full playback-info fanout when only position changes
+  ---
+  duration_ms: 0.4633
+  type: 'test'
+  ...
+# Subtest: native tick keeps time-pos moving when GetPlaybackInfo briefly fails
+ok 143 - native tick keeps time-pos moving when GetPlaybackInfo briefly fails
+  ---
+  duration_ms: 0.8402
+  type: 'test'
+  ...
+# Subtest: native tick preserves explicit paused and stopped transport states
+ok 144 - native tick preserves explicit paused and stopped transport states
+  ---
+  duration_ms: 0.6461
+  type: 'test'
+  ...
+# Subtest: native tick soft-advances past stale service GetPlaybackInfo cache
+ok 145 - native tick soft-advances past stale service GetPlaybackInfo cache
+  ---
+  duration_ms: 0.6749
+  type: 'test'
+  ...
+# Subtest: AutoMix progress and frozen native source positions bypass wall-clock smoothing
+ok 146 - AutoMix progress and frozen native source positions bypass wall-clock smoothing
+  ---
+  duration_ms: 1.1219
+  type: 'test'
+  ...
+# Subtest: AutoMix preparation status reads the service instead of its stale synchronous cache
+ok 147 - AutoMix preparation status reads the service instead of its stale synchronous cache
+  ---
+  duration_ms: 0.4884
+  type: 'test'
+  ...
+# Subtest: AutoMix context waits for decoded next-source duration and preserves fractional bounds
+ok 148 - AutoMix context waits for decoded next-source duration and preserves fractional bounds
+  ---
+  duration_ms: 0.7391
+  type: 'test'
+  ...
+# Subtest: play publishes decoded source bounds immediately despite rounded queue duration and stale service cache
+ok 149 - play publishes decoded source bounds immediately despite rounded queue duration and stale service cache
+  ---
+  duration_ms: 0.7154
+  type: 'test'
+  ...
+# Subtest: native tick rejects pre-seek cached positions until the requested position arrives
+ok 150 - native tick rejects pre-seek cached positions until the requested position arrives
+  ---
+  duration_ms: 0.8301
+  type: 'test'
+  ...
+# Subtest: native tick continues the new track while service cache still reports the previous track
+ok 151 - native tick continues the new track while service cache still reports the previous track
+  ---
+  duration_ms: 1.0039
+  type: 'test'
+  ...
+# Subtest: native tick publishes playback-info when non-position playback facts change
+ok 152 - native tick publishes playback-info when non-position playback facts change
+  ---
+  duration_ms: 0.419
+  type: 'test'
+  ...
+# Subtest: native tick emits one trackEnd before queueEnd for a delegated native single-track queue
+ok 153 - native tick emits one trackEnd before queueEnd for a delegated native single-track queue
+  ---
+  duration_ms: 0.7351
+  type: 'test'
+  ...
+# Subtest: native tick emits one trackEnd before queueEnd for the final item in a delegated native queue
+ok 154 - native tick emits one trackEnd before queueEnd for the final item in a delegated native queue
+  ---
+  duration_ms: 0.3688
+  type: 'test'
+  ...
+# Subtest: manager emits config-applied only after the applied revision advances
+ok 155 - manager emits config-applied only after the applied revision advances
+  ---
+  duration_ms: 0.5805
+  type: 'test'
+  ...
+# Subtest: manager publishes matching playback info before config-applied
+ok 156 - manager publishes matching playback info before config-applied
+  ---
+  duration_ms: 0.4471
+  type: 'test'
+  ...
+# Subtest: manager keeps config revisions monotonic across a native service revision reset
+ok 157 - manager keeps config revisions monotonic across a native service revision reset
+  ---
+  duration_ms: 0.5291
+  type: 'test'
+  ...
+# Subtest: service replacement rebases raw zero without claiming an unapplied request
+ok 158 - service replacement rebases raw zero without claiming an unapplied request
+  ---
+  duration_ms: 0.6553
+  type: 'test'
+  ...
+# Subtest: native tick skips repeated duration property changes until duration changes
+ok 159 - native tick skips repeated duration property changes until duration changes
+  ---
+  duration_ms: 0.4685
+  type: 'test'
+  ...
+# Subtest: cold start applies configured software volume before reporting the engine ready
+ok 160 - cold start applies configured software volume before reporting the engine ready
+  ---
+  duration_ms: 0.3376
+  type: 'test'
+  ...
+# Subtest: setVolume skips native call and playback fanout when normalized volume is unchanged
+ok 161 - setVolume skips native call and playback fanout when normalized volume is unchanged
+  ---
+  duration_ms: 0.2093
+  type: 'test'
+  ...
+# 原生音频引擎初始化软件音量失败，已阻止 HTMLAudio 静默降级： volume restore rejected before service ready
+# 原生音频引擎音频服务恢复后应用音量失败，已阻止 HTMLAudio 静默降级： volume restore rejected before service ready
+# Subtest: service-ready restore applies the saved volume even when the output route restore fails
+ok 162 - service-ready restore applies the saved volume even when the output route restore fails
+  ---
+  duration_ms: 11.2322
+  type: 'test'
+  ...
+# Subtest: setVolume re-dispatches while the service native volume is not confirmed synced
+ok 163 - setVolume re-dispatches while the service native volume is not confirmed synced
+  ---
+  duration_ms: 13.9628
+  type: 'test'
+  ...
+# Subtest: seek skips native call and fanout when paused position is unchanged
+ok 164 - seek skips native call and fanout when paused position is unchanged
+  ---
+  duration_ms: 0.3781
+  type: 'test'
+  ...
+# Subtest: stop skips native call and playback fanout when already idle
+ok 165 - stop skips native call and playback fanout when already idle
+  ---
+  duration_ms: 0.1495
+  type: 'test'
+  ...
+# Subtest: setPlayMode skips native call and playback fanout when mode is unchanged
+ok 166 - setPlayMode skips native call and playback fanout when mode is unchanged
+  ---
+  duration_ms: 0.1786
+  type: 'test'
+  ...
+# Subtest: getUpcomingTrack reuses native result briefly and invalidates on play mode change
+ok 167 - getUpcomingTrack reuses native result briefly and invalidates on play mode change
+  ---
+  duration_ms: 0.279
+  type: 'test'
+  ...
+# Subtest: getMetadata reuses native metadata for the same source within the cache window
+ok 168 - getMetadata reuses native metadata for the same source within the cache window
+  ---
+  duration_ms: 0.2912
+  type: 'test'
+  ...
+# Subtest: getMetadata bounds expired and unique metadata cache entries
+ok 169 - getMetadata bounds expired and unique metadata cache entries
+  ---
+  duration_ms: 6.3552
+  type: 'test'
+  ...
+# Subtest: getMetadataAsync reuses service metadata for the same source within the cache window
+ok 170 - getMetadataAsync reuses service metadata for the same source within the cache window
+  ---
+  duration_ms: 0.3824
+  type: 'test'
+  ...
+# Subtest: setOutputConfig keeps routing and non-perfect reasons in sync
+ok 171 - setOutputConfig keeps routing and non-perfect reasons in sync
+  ---
+  duration_ms: 0.6412
+  type: 'test'
+  ...
+# Subtest: ASIO diagnostics and recovery facts propagate through manager refresh
+ok 172 - ASIO diagnostics and recovery facts propagate through manager refresh
+  ---
+  duration_ms: 0.7229
+  type: 'test'
+  ...
+# Subtest: getAudioOutputState can use injected device options without native enumeration
+ok 173 - getAudioOutputState can use injected device options without native enumeration
+  ---
+  duration_ms: 0.5707
+  type: 'test'
+  ...
+# Subtest: native ASIO device names become labels and stale selected devices stay out of the list
+ok 174 - native ASIO device names become labels and stale selected devices stay out of the list
+  ---
+  duration_ms: 0.2852
+  type: 'test'
+  ...
+# Subtest: getAudioOutputState reuses native device options within the output state cache window
+ok 175 - getAudioOutputState reuses native device options within the output state cache window
+  ---
+  duration_ms: 0.2292
+  type: 'test'
+  ...
+# Subtest: native device recovery diagnostics invalidate device options cache
+ok 176 - native device recovery diagnostics invalidate device options cache
+  ---
+  duration_ms: 0.6379
+  type: 'test'
+  ...
+# Subtest: device hotplug polling refreshes device options while playback is stopped
+ok 177 - device hotplug polling refreshes device options while playback is stopped
+  ---
+  duration_ms: 0.376
+  type: 'test'
+  ...
+# Subtest: platform device change notifications refresh device options immediately
+ok 178 - platform device change notifications refresh device options immediately
+  ---
+  duration_ms: 0.3169
+  type: 'test'
+  ...
+# Subtest: auto device follows OS default endpoint changes while playing
+ok 179 - auto device follows OS default endpoint changes while playing
+  ---
+  duration_ms: 1.9725
+  type: 'test'
+  ...
+# Subtest: auto device records OS default endpoint changes without reopening while stopped
+ok 180 - auto device records OS default endpoint changes without reopening while stopped
+  ---
+  duration_ms: 1.9477
+  type: 'test'
+  ...
+# Subtest: pinned device does not rebind when OS default endpoint changes
+ok 181 - pinned device does not rebind when OS default endpoint changes
+  ---
+  duration_ms: 1.0966
+  type: 'test'
+  ...
+# Subtest: getSpectrumData reuses native spectrum data within one visual frame
+ok 182 - getSpectrumData reuses native spectrum data within one visual frame
+  ---
+  duration_ms: 0.769
+  type: 'test'
+  ...
+# Subtest: getVisualizationData normalizes native visualization data
+ok 183 - getVisualizationData normalizes native visualization data
+  ---
+  duration_ms: 0.8121
+  type: 'test'
+  ...
+# Subtest: getVisualizationData preserves high-resolution spectrum requests for the visualizer
+ok 184 - getVisualizationData preserves high-resolution spectrum requests for the visualizer
+  ---
+  duration_ms: 2.9555
+  type: 'test'
+  ...
+# Subtest: getVisualizationData caps native maxFrequency at Nyquist
+ok 185 - getVisualizationData caps native maxFrequency at Nyquist
+  ---
+  duration_ms: 0.6094
+  type: 'test'
+  ...
+# Subtest: getVisualizationData can precompute visualizer bars without returning the full spectrum payload
+ok 186 - getVisualizationData can precompute visualizer bars without returning the full spectrum payload
+  ---
+  duration_ms: 2.4396
+  type: 'test'
+  ...
+# Subtest: mapSpectrumToVisualizerBars keeps flat spectrum visually flat
+ok 187 - mapSpectrumToVisualizerBars keeps flat spectrum visually flat
+  ---
+  duration_ms: 0.4913
+  type: 'test'
+  ...
+# Subtest: mapSpectrumToVisualizerBars maps a 1kHz peak near the 1kHz visual band
+ok 188 - mapSpectrumToVisualizerBars maps a 1kHz peak near the 1kHz visual band
+  ---
+  duration_ms: 0.5405
+  type: 'test'
+  ...
+# Subtest: mapSpectrumToVisualizerBars caps visual frequency range at Nyquist
+ok 189 - mapSpectrumToVisualizerBars caps visual frequency range at Nyquist
+  ---
+  duration_ms: 0.2871
+  type: 'test'
+  ...
+# Subtest: getVisualizationData can omit unused visualization payloads
+ok 190 - getVisualizationData can omit unused visualization payloads
+  ---
+  duration_ms: 1.1822
+  type: 'test'
+  ...
+# Subtest: getVisualizationData reuses native visualization data within one visual frame
+ok 191 - getVisualizationData reuses native visualization data within one visual frame
+  ---
+  duration_ms: 0.6985
+  type: 'test'
+  ...
+# Subtest: getVisualizationData returns inactive shape when native visualization is unavailable while stopped
+ok 192 - getVisualizationData returns inactive shape when native visualization is unavailable while stopped
+  ---
+  duration_ms: 0.289
+  type: 'test'
+  ...
+# Subtest: getVisualizationData returns animated fallback data when native visualization is unavailable while playing
+ok 193 - getVisualizationData returns animated fallback data when native visualization is unavailable while playing
+  ---
+  duration_ms: 0.9721
+  type: 'test'
+  ...
+# Subtest: getVisualizationData falls back while playback is active but native visualization is inactive
+ok 194 - getVisualizationData falls back while playback is active but native visualization is inactive
+  ---
+  duration_ms: 1.1671
+  type: 'test'
+  ...
+# Subtest: DSP module updates enable the native DSP chain instead of only toggling UI state
+ok 195 - DSP module updates enable the native DSP chain instead of only toggling UI state
+  ---
+  duration_ms: 2.3375
+  type: 'test'
+  ...
+# Subtest: setAudioProcessing skips native DSP fanout when normalized settings are unchanged
+ok 196 - setAudioProcessing skips native DSP fanout when normalized settings are unchanged
+  ---
+  duration_ms: 0.4964
+  type: 'test'
+  ...
+# Subtest: unloadImpulseResponse skips native fanout when no impulse response is loaded
+ok 197 - unloadImpulseResponse skips native fanout when no impulse response is loaded
+  ---
+  duration_ms: 0.2349
+  type: 'test'
+  ...
+# Subtest: getConvolverInfo reuses idle native convolver info within the polling cache window
+ok 198 - getConvolverInfo reuses idle native convolver info within the polling cache window
+  ---
+  duration_ms: 0.2165
+  type: 'test'
+  ...
+# Subtest: specialized DSP setters skip native calls when normalized settings are unchanged
+ok 199 - specialized DSP setters skip native calls when normalized settings are unchanged
+  ---
+  duration_ms: 0.7165
+  type: 'test'
+  ...
+# Subtest: setEqPreset skips native calls when normalized preset is unchanged
+ok 200 - setEqPreset skips native calls when normalized preset is unchanged
+  ---
+  duration_ms: 0.4581
+  type: 'test'
+  ...
+# Subtest: turning the DSP master switch off still bypasses processing modules
+ok 201 - turning the DSP master switch off still bypasses processing modules
+  ---
+  duration_ms: 0.3455
+  type: 'test'
+  ...
+# Subtest: canonical outputInfo clears stale DoP mirrors on PCM DSD fallback
+ok 202 - canonical outputInfo clears stale DoP mirrors on PCM DSD fallback
+  ---
+  duration_ms: 0.4102
+  type: 'test'
+  ...
+# Subtest: switching DSD output mode to PCM does not leave stale DoP state
+ok 203 - switching DSD output mode to PCM does not leave stale DoP state
+  ---
+  duration_ms: 0.4987
+  type: 'test'
+  ...
+# Subtest: audio service crash stops native playback and keeps manager usable
+ok 204 - audio service crash stops native playback and keeps manager usable
+  ---
+  duration_ms: 1.1009
+  type: 'test'
+  ...
+# Subtest: audio service play waits for utility process confirmation before marking playing
+ok 205 - audio service play waits for utility process confirmation before marking playing
+  ---
+  duration_ms: 0.3323
+  type: 'test'
+  ...
+# Subtest: audio service stop waits for utility process confirmation before marking stopped
+ok 206 - audio service stop waits for utility process confirmation before marking stopped
+  ---
+  duration_ms: 1.6949
+  type: 'test'
+  ...
+# Subtest: destroy skips duplicate native Stop after the manager is already destroyed
+ok 207 - destroy skips duplicate native Stop after the manager is already destroyed
+  ---
+  duration_ms: 0.1719
+  type: 'test'
+  ...
+# Subtest: destroy skips duplicate audio service teardown after the manager is already destroyed
+ok 208 - destroy skips duplicate audio service teardown after the manager is already destroyed
+  ---
+  duration_ms: 0.1443
+  type: 'test'
+  ...
+# Subtest: setNativeDspPluginChain skips native calls when chain JSON is unchanged
+ok 209 - setNativeDspPluginChain skips native calls when chain JSON is unchanged
+  ---
+  duration_ms: 0.135
+  type: 'test'
+  ...
+# Subtest: getNativeDspPluginStatus reuses native status within the polling cache window
+ok 210 - getNativeDspPluginStatus reuses native status within the polling cache window
+  ---
+  duration_ms: 0.2279
+  type: 'test'
+  ...
+# Subtest: audio service ready after restart restores configuration and queue without auto-resume
+ok 211 - audio service ready after restart restores configuration and queue without auto-resume
+  ---
+  duration_ms: 1.8258
+  type: 'test'
+  ...
+# Subtest: audio service ready keeps output route unsynced until restore RPCs acknowledge
+ok 212 - audio service ready keeps output route unsynced until restore RPCs acknowledge
+  ---
+  duration_ms: 157.4226
+  type: 'test'
+  ...
+# Subtest: audio service ready waits for DSP and queue restore RPCs before enabling manual resume
+ok 213 - audio service ready waits for DSP and queue restore RPCs before enabling manual resume
+  ---
+  duration_ms: 200.185
+  type: 'test'
+  ...
+# 原生音频引擎音频服务恢复后应用输出设备失败，已阻止 HTMLAudio 静默降级： device disappeared
+# Subtest: audio service ready reports output route restore failures without enabling resume
+ok 214 - audio service ready reports output route restore failures without enabling resume
+  ---
+  duration_ms: 123.8525
+  type: 'test'
+  ...
+# Subtest: setPlaybackRate clamps, fans out to native, and marks non-unity rate imperfect
+ok 215 - setPlaybackRate clamps, fans out to native, and marks non-unity rate imperfect
+  ---
+  duration_ms: 0.9378
+  type: 'test'
+  ...
+# Subtest: play preserves non-unity playbackRate and reasserts SetPlaybackRate on native
+ok 216 - play preserves non-unity playbackRate and reasserts SetPlaybackRate on native
+  ---
+  duration_ms: 0.7386
+  type: 'test'
+  ...
+# Subtest: play preserves saved volume and reasserts SetVolume on native
+ok 217 - play preserves saved volume and reasserts SetVolume on native
+  ---
+  duration_ms: 0.5614
+  type: 'test'
+  ...
+# 原生音频引擎加载队列后同步播放模式失败，已阻止 HTMLAudio 静默降级： transient play-mode failure
+# Subtest: getPlaybackInfo refresh never lets a native unity report clobber the saved volume
+ok 218 - getPlaybackInfo refresh never lets a native unity report clobber the saved volume
+  ---
+  duration_ms: 27.9703
+  type: 'test'
+  ...
+# Subtest: loudnorm status event, library RG queue fields, and cancel IPC are wired end-to-end
+ok 219 - loudnorm status event, library RG queue fields, and cancel IPC are wired end-to-end
+  ---
+  duration_ms: 16.7735
+  type: 'test'
+  ...
+# Subtest: paused native polling throttles service refreshes to one per four ticks
+ok 220 - paused native polling throttles service refreshes to one per four ticks
+  ---
+  duration_ms: 0.7725
+  type: 'test'
+  ...
+# Subtest: failed service-mode queue load rolls the native queue back to the local mirror
+ok 221 - failed service-mode queue load rolls the native queue back to the local mirror
+  ---
+  duration_ms: 0.9419
+  type: 'test'
+  ...
+# (node:13112) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///E:/PycharmProjects/MusicAnyClient/Twilight_Echo/src/main/audio/providerPcmWorker.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: only the current authorized QQ source binds the main-selected executable
+ok 222 - only the current authorized QQ source binds the main-selected executable
+  ---
+  duration_ms: 2.898
+  type: 'test'
+  ...
+# Subtest: cross-provider/owner/format, expired and absent worker cannot execute
+ok 223 - cross-provider/owner/format, expired and absent worker cannot execute
+  ---
+  duration_ms: 1.0604
+  type: 'test'
+  ...
+# Subtest: explicit plugin revocation removes execution authority and retains a stale alias
+ok 224 - explicit plugin revocation removes execution authority and retains a stale alias
+  ---
+  duration_ms: 0.885
+  type: 'test'
+  ...
+# Subtest: plugin revocation includes an older playing quality alias and preserves other plugins
+ok 225 - plugin revocation includes an older playing quality alias and preserves other plugins
+  ---
+  duration_ms: 0.2639
+  type: 'test'
+  ...
+# Subtest: bounded alias eviction retires existing queue authority before owner information is forgotten
+ok 226 - bounded alias eviction retires existing queue authority before owner information is forgotten
+  ---
+  duration_ms: 40.0496
+  type: 'test'
+  ...
+# (node:46220) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///E:/PycharmProjects/MusicAnyClient/Twilight_Echo/src/main/audio/providerPlaybackIdentity.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: requested quality never substitutes for unknown actual quality
+ok 227 - requested quality never substitutes for unknown actual quality
+  ---
+  duration_ms: 1.8183
+  type: 'test'
+  ...
+# Subtest: refresh, actual quality, and exact cache path changes revoke old resolution
+ok 228 - refresh, actual quality, and exact cache path changes revoke old resolution
+  ---
+  duration_ms: 0.569
+  type: 'test'
+  ...
+# Subtest: expired addresses cannot prepare, but cached bytes do not inherit URL expiry
+ok 229 - expired addresses cannot prepare, but cached bytes do not inherit URL expiry
+  ---
+  duration_ms: 1.0373
+  type: 'test'
+  ...
+# Subtest: authorized queue metadata owns a plaintext byte snapshot across provider refresh
+ok 230 - authorized queue metadata owns a plaintext byte snapshot across provider refresh
+  ---
+  duration_ms: 0.8115
+  type: 'test'
+  ...
+# Subtest: queue metadata never trusts renderer bytes or unsafe provider byte values
+ok 231 - queue metadata never trusts renderer bytes or unsafe provider byte values
+  ---
+  duration_ms: 0.4419
+  type: 'test'
+  ...
+1..231
+# tests 245
+# suites 0
+# pass 245
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1502.5994

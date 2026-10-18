@@ -26,7 +26,10 @@ class TempAudioFixture {
   ~TempAudioFixture();
 
   const std::filesystem::path& path() const { return path_; }
-  std::string string() const { return path_.string(); }
+  std::string string() const {
+    const auto utf8 = path_.u8string();
+    return std::string(reinterpret_cast<const char*>(utf8.data()), utf8.size());
+  }
   void cleanup();
 
  private:

@@ -1,0 +1,16 @@
+Windows release is intentionally unsigned; publish the generated SHA-256 and expect SmartScreen warnings.
+  • electron-builder  version=26.8.1 os=10.0.22631
+  • loaded configuration  file=C:\Users\Payne\AppData\Local\Temp\twilight-packaged-audio-FsOA05\electron-builder.yml
+  • skipped dependencies rebuild  reason=npmRebuild is set to false
+  • packaging       platform=win32 arch=x64 electron=43.5.0 appOutDir=dist\win-unpacked
+  • searching for node modules  pm=pnpm searchDir=E:\PycharmProjects\MusicAnyClient\Twilight_Echo
+  • updating asar integrity executable resource  executablePath=dist\win-unpacked\TwilightEcho.exe
+  • building        target=nsis file=dist\TwilightEcho-1.3.1-qq.5-setup.exe archs=x64 oneClick=false perMachine=false
+  • signing with signtool.exe  path=dist\TwilightEcho-1.3.1-qq.5-setup.__uninstaller.exe
+  • signing with signtool.exe  path=dist\TwilightEcho-1.3.1-qq.5-setup.exe
+  • building block map  blockMapFile=dist\TwilightEcho-1.3.1-qq.5-setup.exe.blockmap
+Windows executable branding verified: TwilightEcho
+Packaged dependency closure verified: 269 packages
+twilight-qq-excellent-worker.exe retains a PE debug directory
+
+116928 !== 0

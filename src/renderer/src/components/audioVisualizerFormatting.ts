@@ -72,7 +72,10 @@ function positiveNumber(value: number | undefined): number | undefined {
 }
 
 function formatCodec(codec: string, fileName: string): string {
-  const normalized = codec.trim().toLowerCase()
+  const candidate = codec.trim().toLowerCase()
+  // Metadata may contain an inferred URL suffix before the native probe settles.
+  // Only codec tokens may become display text; transport identities are never formats.
+  const normalized = /^[a-z0-9_+-]{1,32}$/.test(candidate) ? candidate : ''
   if (normalized.startsWith('mp3')) return 'MP3'
   if (normalized.startsWith('pcm_')) {
     const extension = fileName.match(/\.(wav|wave|aif|aiff)$/i)?.[1]?.toUpperCase()
@@ -85,23 +88,31 @@ function formatCodec(codec: string, fileName: string): string {
   )
 }
 
-export function resolveVisualizerAudioMetadata(
-  track: VisualizerTrackMetadata,
+export function matchesPlaybackAudioSource(
+  track: Pick<VisualizerTrackMetadata, 'filePath' | 'streamUrl'>,
   playbackInfo?: VisualizerPlaybackMetadata | null
-): {
-  quality: string
-  samplerate: string
-  bitdepth: string
-  channels: string
-  bitrate: string
-  filesize: string
-  format: string
-} {
-  const sourceMatches =
+): boolean {
+  return (
     !!playbackInfo?.source &&
     [playbackInfo.rendererSource, playbackInfo.source].some(
       (source) => !!source && (source === track.streamUrl || source === track.filePath)
     )
+  )
+}
+
+/** Current-stream facts shared by the visualizer and the HiFi source panel. */
+export function resolvePlaybackAudioMetadata(
+  track: VisualizerTrackMetadata,
+  playbackInfo?: VisualizerPlaybackMetadata | null
+): {
+  format: string
+  sampleRate?: number
+  bitDepth?: number
+  channels?: number
+  bitrate?: number
+  size?: number
+} {
+  const sourceMatches = matchesPlaybackAudioSource(track, playbackInfo)
   const source = sourceMatches ? playbackInfo : null
   const codec = source?.codec.trim().toLowerCase() ?? ''
   const losslessCodec = /^(flac|alac|ape|wavpack|tta|dsd|dst|pcm_)/.test(codec)
@@ -117,7 +128,7 @@ export function resolveVisualizerAudioMetadata(
   const channels = positiveNumber(source?.sourceChannels)
   const format = source
     ? formatCodec(source.codec, track.fileName)
-    : track.format?.trim() || formatCodec('', track.fileName)
+    : formatCodec(track.format ?? '', track.fileName)
   const sourceBytes = source?.sourceBytes
   const size =
     sourceBytes !== undefined && Number.isSafeInteger(sourceBytes) && sourceBytes > 0
@@ -126,6 +137,25 @@ export function resolveVisualizerAudioMetadata(
         ? positiveNumber(track.size)
         : undefined
 
+  return { format, sampleRate, bitDepth, channels, bitrate, size }
+}
+
+export function resolveVisualizerAudioMetadata(
+  track: VisualizerTrackMetadata,
+  playbackInfo?: VisualizerPlaybackMetadata | null
+): {
+  quality: string
+  samplerate: string
+  bitdepth: string
+  channels: string
+  bitrate: string
+  filesize: string
+  format: string
+} {
+  const { format, sampleRate, bitDepth, channels, bitrate, size } = resolvePlaybackAudioMetadata(
+    track,
+    playbackInfo
+  )
   return {
     quality: buildVisualizerQualityString({ format, sampleRate, bitDepth, bitrate }),
     samplerate: sampleRate ? `${(sampleRate / 1000).toFixed(1)} kHz` : '',

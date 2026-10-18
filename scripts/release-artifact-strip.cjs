@@ -9,13 +9,16 @@ const NATIVE_RUNTIME_FILES = Object.freeze([
   'twilight_smtc_node.node',
   'twilight-asio-helper.exe',
   'twilight-vst3-host.exe',
-  'twilight-vst3-scanner.exe'
+  'twilight-vst3-scanner.exe',
+  'twilight-qq-excellent-worker.exe'
 ])
 
 // The core playback runtime and isolated VST3 helper pair are required in a
 // Windows package. Packaging prepares the pair before electron-builder runs and
 // strips every shipped product binary from the copied package payload.
-const REQUIRED_NATIVE_RUNTIME_FILES = Object.freeze([...NATIVE_RUNTIME_FILES])
+const REQUIRED_NATIVE_RUNTIME_FILES = Object.freeze(
+  NATIVE_RUNTIME_FILES.filter((name) => name !== 'twilight-qq-excellent-worker.exe')
+)
 
 function executableCandidates(environment = process.env) {
   const candidates = []

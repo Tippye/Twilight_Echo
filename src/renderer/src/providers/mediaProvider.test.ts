@@ -365,6 +365,61 @@ test('optional playback quality bridge forwards provider values and refreshes ad
   )
 })
 
+test('library capability only exposes declared favorite methods, including after reload', async (t) => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  const { syncPluginProviders, useMediaProviders } = await import('./index.ts')
+  let supportedMethods: string[] = []
+  let capabilities = ['library']
+  let listed = true
+  const calls: unknown[][] = []
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: {
+      api: {
+        providers: {
+          list: async () =>
+            listed
+              ? [{ id: 'favorite-test', name: 'Favorite', capabilities, supportedMethods }]
+              : [],
+          call: async (...args: unknown[]) => {
+            calls.push(args)
+            return args[1] === 'isTrackLiked' ? true : undefined
+          }
+        }
+      }
+    }
+  })
+  const registry = useMediaProviders()
+  t.after(async () => {
+    listed = false
+    await syncPluginProviders()
+    registry.unregister('favorite-test')
+    if (previous) Object.defineProperty(globalThis, 'window', previous)
+    else Reflect.deleteProperty(globalThis, 'window')
+  })
+  await syncPluginProviders()
+  assert.equal(registry.get('favorite-test')?.likeTrack, undefined)
+  assert.equal(registry.get('favorite-test')?.isTrackLiked, undefined)
+  supportedMethods = ['isTrackLiked', 'likeTrack']
+  await syncPluginProviders()
+  assert.equal(await registry.get('favorite-test')?.isTrackLiked?.('public-song'), true)
+  await registry.get('favorite-test')?.likeTrack?.('public-song', false)
+  assert.deepEqual(
+    calls.map((call) => call.slice(0, 3)),
+    [
+      ['favorite-test', 'isTrackLiked', ['public-song']],
+      ['favorite-test', 'likeTrack', ['public-song', false]]
+    ]
+  )
+  supportedMethods = ['isTrackLiked']
+  await syncPluginProviders()
+  assert.equal(registry.get('favorite-test')?.likeTrack, undefined)
+  assert.equal(typeof registry.get('favorite-test')?.isTrackLiked, 'function')
+  capabilities = []
+  await syncPluginProviders()
+  assert.equal(registry.get('favorite-test')?.isTrackLiked, undefined)
+})
+
 test('resolveLyricsAcrossProviders fans out to NCM for local tracks', async () => {
   const registry = new MediaProviderRegistry()
   let ncmSearchCalls = 0

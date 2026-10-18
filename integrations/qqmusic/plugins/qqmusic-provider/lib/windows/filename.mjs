@@ -42,14 +42,17 @@ function string(value, name, required = false) {
 }
 
 /**
- * Native filename leaf after the caller resolves its media MID and optional suffix.
+ * Native filename leaf after the caller resolves its media MID and optional OtherMID.
+ * Common10032ac3 calls CString copy assignment10007234: a nonempty OtherMID
+ * replaces the main MID for extended types; it is never appended as a suffix.
+ * See qq-task13-quality-static.json and ev_3c9f31585c10436fc6e48302c2b6dbbf326a592bd8fdc48e83bbebd57a6a264a.
  * auxiliaryFlag is the leaf's seventh argument; type 8 derives it from SongItem bit 0x40000.
  * All context is explicit. This function does not resolve song IDs or claim format support.
  */
 export function buildWindowsMediaFilename({ mediaMid, type, sourceMode, encrypted,
-  suffix, auxiliaryFlag } = {}) {
+  otherMediaMid, auxiliaryFlag } = {}) {
   mediaMid = string(mediaMid, 'mediaMid', true)
-  suffix = string(suffix, 'suffix')
+  otherMediaMid = string(otherMediaMid, 'otherMediaMid')
   if (!SOURCE_MODES.has(sourceMode)) throw new RangeError('sourceMode has no verified Windows filename rule')
   if (!TYPES.has(type) && !(sourceMode === 113 && type === 11)) {
     throw new RangeError('type has no verified Windows filename rule')
@@ -60,7 +63,7 @@ export function buildWindowsMediaFilename({ mediaMid, type, sourceMode, encrypte
 
   let prefix
   let extension
-  let appendSuffix = false
+  let replaceMediaMid = false
   if (sourceMode === 112) {
     prefix = 'R500'
     extension = '.mp3'
@@ -80,7 +83,7 @@ export function buildWindowsMediaFilename({ mediaMid, type, sourceMode, encrypte
   } else if (type === 8) {
     prefix = auxiliaryFlag ? 'VAM0' : 'RS02'
     extension = auxiliaryFlag ? '.mflac' : '.mp3'
-    appendSuffix = true
+    replaceMediaMid = true
   } else if (type === 9) {
     prefix = encrypted ? 'O4M0' : sourceMode === 111 ? 'M500' : 'O400'
     extension = encrypted ? '.mgg' : sourceMode === 111 ? '.mp3' : '.ogg'
@@ -89,7 +92,7 @@ export function buildWindowsMediaFilename({ mediaMid, type, sourceMode, encrypte
     const offset = encrypted ? 2 : 0
     prefix = template[offset]
     extension = template[offset + 1]
-    appendSuffix = type >= 14
+    replaceMediaMid = type >= 14
   }
-  return prefix + mediaMid + (appendSuffix ? suffix : '') + extension
+  return prefix + (replaceMediaMid && otherMediaMid ? otherMediaMid : mediaMid) + extension
 }

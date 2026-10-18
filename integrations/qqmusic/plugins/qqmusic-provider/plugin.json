@@ -1,17 +1,17 @@
 {
   "id": "com.twilightecho.provider.qqmusic",
   "name": "QQ 音乐 Windows 音源",
-  "version": "0.4.0-rc.4",
-  "description": "Windows QQ 音乐音源：官方扫码、资料库、歌手与专辑、每日推荐与分类歌单、同步歌词，支持 MP3、FLAC、Hi-Res 与杜比音频。",
+  "version": "0.4.0-rc.6",
+  "description": "Windows QQ 音乐音源：官方扫码、资料库、喜欢状态同步、歌手专辑、推荐歌单与歌词，支持 MP3、FLAC、Hi-Res、杜比、臻品母带、臻品全景声音源及已安装组件上的本地臻品音效。",
   "author": "Px-asen",
   "license": "Apache-2.0",
   "type": ["provider", "ui"],
   "main": "windows-index.mjs",
   "engines": {
-    "twilightEcho": ">=1.3.1-qq.4"
+    "twilightEcho": ">=1.3.1-qq.5"
   },
   "apiVersion": 3,
-  "permissions": ["network", "settings", "ui:inject", "library:read"],
+  "permissions": ["network", "settings", "ui:inject", "library:read", "dsp:native"],
   "runtimeFiles": [
     "lib/windows/client.mjs",
     "lib/windows/comm.mjs",
@@ -27,6 +27,8 @@
     "lib/windows/artist-call.mjs",
     "lib/windows/home-call.mjs",
     "lib/windows/discovery-call.mjs",
+    "lib/windows/favorite-call.mjs",
+    "lib/windows/favorite-state.mjs",
     "lib/windows/lyric-call.mjs",
     "lib/windows/settings.mjs",
     "lib/windows/quality.mjs",

@@ -133,6 +133,14 @@ export async function syncPluginProviders(): Promise<void> {
         type SupportedMethod = NonNullable<(typeof provider)['supportedMethods']>[number]
         const supports = (method: SupportedMethod): boolean =>
           provider.supportedMethods?.includes(method) === true
+        const likeTrack: MediaProvider['likeTrack'] =
+          provider.capabilities.includes('library') && supports('likeTrack')
+            ? (trackId, like) => callProvider<void>('likeTrack', [trackId, like])
+            : undefined
+        const isTrackLiked: MediaProvider['isTrackLiked'] =
+          provider.capabilities.includes('library') && supports('isTrackLiked')
+            ? (trackId) => callProvider<boolean>('isTrackLiked', [trackId])
+            : undefined
         const searchAlbums: MediaProvider['searchAlbums'] =
           provider.capabilities.includes('search') && supports('searchAlbums')
             ? (keywords, limit, offset, options) =>
@@ -185,7 +193,9 @@ export async function syncPluginProviders(): Promise<void> {
             searchAlbums,
             getPlaybackQuality,
             setPlaybackQuality,
-            getTrackPlaybackQualities
+            getTrackPlaybackQualities,
+            likeTrack,
+            isTrackLiked
           })
           continue
         }
@@ -372,12 +382,8 @@ export async function syncPluginProviders(): Promise<void> {
           followUser: provider.capabilities.includes('library')
             ? (userId, follow) => callProvider<void>('followUser', [userId, follow])
             : undefined,
-          likeTrack: provider.capabilities.includes('library')
-            ? (trackId, like) => callProvider<void>('likeTrack', [trackId, like])
-            : undefined,
-          isTrackLiked: provider.capabilities.includes('library')
-            ? (trackId) => callProvider<boolean>('isTrackLiked', [trackId])
-            : undefined,
+          likeTrack,
+          isTrackLiked,
           createPlaylist: provider.capabilities.includes('library')
             ? (name, options) =>
                 callProvider<MediaProviderPlaylistSummary>('createPlaylist', [name, options])

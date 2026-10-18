@@ -1,0 +1,134 @@
+{
+  "schema": "qq-task13-native-failure-fence-receipt/v1",
+  "observedAtUtc": "2026-10-18T10:20:17.612016+00:00",
+  "scope": "Task13 native spec review, then Root-authorized two-file canonical failure fence and actual pipeline regressions; Root retains independent review of this implementation",
+  "sourcePins": [
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\core\\AudioPipeline.cpp",
+      "sha256": "6673dd579cfff3bd14a279037d317d48fad2925d9ea07d49fd3e433ffd39045e"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\tests\\runtime_queue_reroute_tests.cpp",
+      "sha256": "12d77f11a11dde61faf20eeebb805542546b648f59d7a4ef1621db19cbca9ca3"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\core\\TwilightAudioEngine.cpp",
+      "sha256": "e5a9c790a4dc223396495313f9b982e3661057b0817f3dbef4a0e9088386c4ef"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\decoder\\FFmpegDecoder.cpp",
+      "sha256": "42644ae3fe69573e23606edfb124823a6a2659ad445a289daaf573aa9f41bae5"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\decoder\\FFmpegDecoder.h",
+      "sha256": "bdd09227fb2822030eb687150a279dfbb0084a721a8fd84a7f28386409af684e"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\decoder\\PcmStreamTransform.h",
+      "sha256": "269e32ded4d75602fd23fbbed3a54fb660346fcd3586feb227bdb9192ba7bb4b"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\decoder\\Win32PcmWorkerTransform.cpp",
+      "sha256": "3c1ec77e2aefd4db59ecaba2a51e2f980c87b2c36582536ee9d6e968fae2defc"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\decoder\\Win32PcmWorkerTransform.h",
+      "sha256": "02452d4e6de91af861c5b67582ec304cf92a2ddd387b79566e79556f82adccf4"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\core\\PcmWorkerSpec.h",
+      "sha256": "a4d3ed1f01b974aeac4b295a28bceb6b3bec0ac950e78a16ac01025f13d9a7e5"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\core\\AudioTypes.h",
+      "sha256": "aca5aa5908090b499cfef19e5ad4ff7bf2ea588c700f8acf55d96b7a8abbe53b"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\playlist\\QueueManager.cpp",
+      "sha256": "a5506a14e265d4b203e3b01991e1abf341b7be39e8c3424acae66954268dd1e9"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\pcm-worker\\PcmWorkerProtocol.h",
+      "sha256": "77f26c64c908858a77bc566be2d5cf790a0f722b60b20b414333af7320c771e9"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\pcm-worker\\QqExcellentWorker.cpp",
+      "sha256": "62bfb2f77f3afeadc6c323f0bfa6f8ecdd8ac32e4cf4d92df0e1c03377fa7733"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\automix-native\\AutoMixAdapter.cpp",
+      "sha256": "e49429b682b4b80d9e1c45be1c96d375f7e93c174c9cb2d9161e788e718c56ae"
+    },
+    {
+      "path": "E:\\PycharmProjects\\MusicAnyClient\\Twilight_Echo\\audio-engine\\CMakeLists.txt",
+      "sha256": "b3e68c1b358919df335209a6339557ebb15f0791f6ea12bbb26f24c3a8c6a369"
+    }
+  ],
+  "ownedProductionFiles": [
+    "core/AudioPipeline.cpp",
+    "tests/runtime_queue_reroute_tests.cpp"
+  ],
+  "changeNecessity": {
+    "trigger": "A source-bound PCM worker error was marked as ordinary EOF. A ready next stream could be promoted before the engine consumed the error, dropping the failed owner and its pending error. Consuming an error also cleared failure eligibility.",
+    "decision": "Code change at the existing decode stream/pipeline owner; settings cannot preserve a failed source across automatic EOF promotion. No service, global watchdog, second decoder or media cache added."
+  },
+  "behavior": [
+    "Per-stream failure stays sticky; a separate reported flag emits one error. Successful seek/source reopening resets both.",
+    "A failed preload is not ready; ordinary empty-EOF readiness is preserved.",
+    "Float and typed automatic promotion reject a failed current stream. Control-side acknowledgement preserves a failed outgoing owner if failure races render promotion.",
+    "Root manager queue revocation is exercised with actual loadQueue, a fake backend and transform-bound decoder lifetime/cancel counters.",
+    "The existing pause test uses a thread-start handshake, yields fake callback progress and joins after a silent block. All original envelope, monotonicity, silence, resume and new-play assertions remain; production pause timing is unchanged."
+  ],
+  "verification": {
+    "toolchain": "Visual Studio18 x64 Release, assertions enabled, libebur128 ON",
+    "build": {
+      "file": "qq-task13-native-failure-fence-build-v4.txt",
+      "exitCode": 0,
+      "target": "twilight_runtime_queue_reroute_tests"
+    },
+    "counterexample": {
+      "file": "qq-task13-native-failure-fence-counterexample.json",
+      "beforeExitCode": 3,
+      "beforeAssertion": "pipeline.status().currentItem.id == current.id",
+      "afterExitCode": 0,
+      "afterCases": 8,
+      "baseline": "Exact captured pre-fence AudioPipeline source64f0a0ca; same current fake decoder/backend and dependency objects. Process-local CRT stderr mode prevents assertion dialogs."
+    },
+    "fullRuntime": {
+      "file": "qq-task13-native-failure-fence-runtime-full-v3.txt",
+      "exitCode": 0,
+      "cases": 139
+    },
+    "pauseComparison": {
+      "originalPacing": "qq-task13-native-pause-comparison-before-pacing.json",
+      "originalResult": "Both pre-fence and current pipeline fail the original end-silence assertion with only5120/5376 simulated frames supplied before the control deadline.",
+      "correctedPacing": "qq-task13-native-pause-comparison.json",
+      "correctedResult": "Both pipelines pass all original assertions at both volumes;9216 simulated frames and exact zero ending.",
+      "confidence": "Controlled same test/dependency objects exclude this failure fence as the cause. The original1ms sleep is sensitive to Windows timer granularity; no production timeout was increased."
+    },
+    "genericTransform": {
+      "file": "qq-task13-review-native-automix.json",
+      "exitCode": 0,
+      "scenarios": 17,
+      "scope": "Separately compiled source-rate F32 transform tests; decoder42644ae3 unchanged."
+    }
+  },
+  "nativeSpecReview": {
+    "sourceNativeF32BeforeFinalSwr": "pass by source and independent17-scenario test",
+    "ordinaryFastPath": "no worker factory on ordinary sources; full runtime controls and prior ordinary decoder regression retained",
+    "finiteBoundedProtocol": "source review matches current pinned worker23-case receipt; no new installed-resource run in this review",
+    "nativeRateRecipeAndEof": "Current62bfb2f7 helper matches pinned build/23-case receipt. HQ44100/48000 and SQ->96000 use actual returned rate; unproved96000/192000 sources reject; Finish exposes native available output without invented zero input extension/crop.",
+    "seekAndCancellation": "Generic tests plus unchanged parent3c1ec77e source and prior independent descendant-pipe cancellation fixture. Seek uses a new transform/process.",
+    "authorityBoundary": "No credentials or source URLs passed to child; bounded PCM commands only; restricted environment/handle list; source expiry checked in parent. Installed DLL/model bytes are hash pinned and retained in place.",
+    "autoMix": "Root exactness/precise-seek fences and explicit bounded decode rejection preserved in current source. Extracted function proof confirms old reconstructed branch returned4096 dry frames and current rejection.",
+    "remainingReview": "Root independent review of the two changed files and final DLL/package/real playback remain outside this receipt."
+  },
+  "retainedFailedChecks": [
+    "qq-task13-native-failure-fence-run.txt: mistakenly launched previous binary before rebuild completed; not verification of the new source.",
+    "qq-task13-native-failure-fence-runtime-full.txt and runtime-idle.txt: original pause pacing end-silence failure.",
+    "qq-task13-native-failure-fence-runtime-full-v2.txt: yield-only pacing exhausted the fake source before pause acknowledgement, failing resume level.",
+    "qq-task13-native-failure-fence-run-v3.txt: immediate cached engine preloadReady assertion; corrected to await the existing clock publication while cancellation/progress/pause remain checked immediately.",
+    "One refreshed baseline assertion run timed out at15s with the default CRT fault UI; final counterexample uses process-local stderr/no-fault-dialog setup and exits3 directly."
+  ],
+  "authority": "Only the assigned two source files and task-local evidence/harnesses changed. No Git, original QQ/user profile/client process, credential logging, or native DLL/model redistribution."
+}

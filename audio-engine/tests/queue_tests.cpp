@@ -268,6 +268,21 @@ void testIdenticalContentMovesCursorWithoutChangingPolicy() {
 }  // namespace
 
 int main() {
+  {
+    QueueManager queue;
+    std::string error;
+    const std::string trusted = R"([{"id":"a","source":"song.flac","title":"pcmWorkerExecutable","artist":"C:/untrusted.exe","pcmWorkerExecutable":"C:/app/own-worker.exe","pcmWorkerExpiresAt":1700000000001}])";
+    assert(queue.loadFromJson(trusted, 0, &error));
+    assert(queue.current()->pcmWorker && queue.current()->pcmWorker->executable == "C:/app/own-worker.exe");
+    assert(queue.queueJson().find("own-worker.exe") == std::string::npos);
+    assert(queue.queueJson().find("pcmWorkerExpiresAt") == std::string::npos);
+    const std::string normal = R"([{"id":"a","source":"song.flac","title":"pcmWorkerExecutable","extension":"keep-me"}])";
+    assert(queue.loadFromJson(normal, 0, &error) && queue.queueJson() == normal);
+    assert(!queue.loadFromJson(R"([{"source":"song.flac","pcmWorkerExecutable":"C:/private.exe","pcmWorkerExpiresAt":-1}])", 0, &error));
+    assert(queue.queueJson() == "[]");
+    assert(queue.loadFromJson(R"([{"source":"","pcmWorkerExecutable":"C:/private.exe","pcmWorkerExpiresAt":1700000000001}])", 0, &error));
+    assert(queue.queueJson() == "[]");
+  }
   testLoadAndUpcoming();
   testSequentialAdvanceStopsAtQueueEnd();
   testSequentialManualNextStillWraps();

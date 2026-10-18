@@ -114,6 +114,14 @@ window.runQualityTests=async()=>{
  check(option('spatial').disabled&&option('spatial').textContent.includes('当前歌曲未提供此音质'),'unavailable option is disabled and explains why')
  check(option('lossless').textContent.includes('待验证')&&!option('lossless').disabled,'unknown remains attemptable and honestly labelled')
  check(!option('low').disabled,'candidate is selectable')
+ let metadataRefreshCalls=0
+ const initialQuery=f.query
+ f.query=async(...args)=>{metadataRefreshCalls++;return initialQuery(...args)}
+ for(let index=0;index<3;index++){
+  track.value={...track.value,bitrate:128000+index};await flush()
+ }
+ check(metadataRefreshCalls===0,'same-identity metadata updates cannot reload the quality catalogue')
+ f.query=initialQuery
  await choose('low')
  check(f.notices.length===1&&f.notices[0].message==='QQ音乐当前歌曲未提供所选音质','provider copy survives without Electron IPC wrapper')
  for(const message of [
@@ -151,6 +159,8 @@ window.runQualityTests=async()=>{
   return {quality:value,options:choices}
  }
  await choose('lossless')
+ track.value={...track.value,bitrate:960000};await flush()
+ check(!selectionSignal.aborted&&select().disabled,'same-track metadata cannot abort an in-flight quality selection')
  changed();await flush()
  check(!selectionSignal.aborted,'an unrelated plugin change cannot cancel the current provider selection')
  check(select().disabled,'unrelated change must retain the pending selection busy state')

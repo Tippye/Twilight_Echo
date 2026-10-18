@@ -5,7 +5,14 @@ import { normalizeCueRange } from '../shared/cue.ts'
 import { stripTypeScriptTypes } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { resolveAuthorizationBatch } from './security/authorizationBatch.ts'
-import { bindPlaybackSourceMetadata } from './audio/providerPlaybackIdentity.ts'
+import {
+  bindPlaybackSourceMetadata,
+  providerPlaybackIdentities,
+  ProviderPlaybackIdentityRegistry
+} from './audio/providerPlaybackIdentity.ts'
+import { bindProviderPcmWorker } from './audio/providerPcmWorker.ts'
+import { dirname, join } from 'node:path'
+import { publicAudioQueueItem } from './audio/audioEngineHelpers.ts'
 
 function readPreloadSources(): string {
   const root = new URL('../preload/', import.meta.url)
@@ -39,6 +46,51 @@ const deviceHotplugSource = readFileSync(
   'utf8'
 )
 const windowSource = readFileSync(new URL('./app/window.ts', import.meta.url), 'utf8')
+
+test('plugin queue events omit main-only worker paths and expiry without mutating native queue', () => {
+  const start = source.indexOf("runtime.audioEngineManager.on('queue-change'")
+  const declaration = source.slice(
+    start,
+    source.indexOf('\n  runtime.audioEngineManager.on(', start + 1)
+  )
+  let callback!: (queue: unknown[]) => void
+  let received: unknown
+  runInNewContext(stripTypeScriptTypes(declaration), {
+    runtime: {
+      audioEngineManager: {
+        on: (_event: string, value: typeof callback) => {
+          callback = value
+        }
+      },
+      pluginManager: {
+        broadcastEvent: (_event: string, payload: unknown) => {
+          received = payload
+        }
+      }
+    },
+    publicAudioQueueItem
+  })
+  const item = {
+    id: 'public-song',
+    source: 'public.flac',
+    pcmWorkerExecutable: 'C:/private/worker.exe',
+    pcmWorkerExpiresAt: 123456,
+    sourceEffect: 'local effect',
+    rendererSource: 'twilight-media://public'
+  }
+  callback([item])
+  assert.deepEqual(JSON.parse(JSON.stringify(received)), {
+    queue: [
+      {
+        id: 'public-song',
+        source: 'public.flac',
+        sourceEffect: 'local effect',
+        rendererSource: 'twilight-media://public'
+      }
+    ]
+  })
+  assert.equal(item.pcmWorkerExecutable, 'C:/private/worker.exe')
+})
 
 test('audioEngine loadQueue IPC accepts renderer queue items with source field', () => {
   const start = source.indexOf('function toQueueItem')
@@ -76,13 +128,16 @@ test('queue normalization drops untrusted renderer source aliases and byte count
   runInNewContext(
     stripTypeScriptTypes(`${textDeclaration}\n${declaration}\nresult = toQueueItem({
     id: 'qq:fixture', source: 'twilight-media://audio/fixture',
-    rendererSource: 'twilight-media://audio/forged', sourceBytes: 123
+    rendererSource: 'twilight-media://audio/forged', sourceBytes: 123,
+    pcmWorkerExecutable: 'C:/forged.exe', pcmWorkerExpiresAt: 9999999999999, sourceEffect: 'fake'
   })`),
     context
   )
   assert.equal(context.result?.source, 'twilight-media://audio/fixture')
   assert.equal(Object.hasOwn(context.result!, 'rendererSource'), false)
   assert.equal(Object.hasOwn(context.result!, 'sourceBytes'), false)
+  for (const key of ['pcmWorkerExecutable', 'pcmWorkerExpiresAt', 'sourceEffect'])
+    assert.equal(Object.hasOwn(context.result!, key), false)
 })
 
 test('audio engine cold start passes persisted software volume into the manager', () => {
@@ -123,6 +178,7 @@ test('audioEngine play IPC forwards validated paused options and preserves the o
       return value
     },
     audioDiagnosticRecorder: null,
+    providerPlaybackIdentities,
     outputTest: { stop: async () => {} },
     ensureAudioEngineRuntime: async () => ({
       play: async (...args: unknown[]) => {
@@ -165,7 +221,7 @@ test('audioEngine IPC normalizes untrusted renderer parameters', () => {
   )
   assert.match(source, /queue\.length !== items\.length/)
   assert.match(source, /await resolveAuthorizationBatch\(/)
-  assert.match(source, /bindPlaybackSourceMetadata\(item, sources\.get\(item\.source\)!\)/)
+  assert.match(source, /bindPlaybackSourceMetadata\(item, source\)/)
   assert.match(source, /normalizeIpcString\(source, 'audio source'/)
   assert.match(source, /await resolveAuthorizedPlaybackSource\(/)
   assert.match(source, /normalizeFiniteNumber\(time, 'seek time', 0, 0, Number\.MAX_SAFE_INTEGER\)/)
@@ -212,6 +268,12 @@ test('loadQueue authorizes duplicate sources once, retains CUE entries, and awai
     normalizeInteger: (index: number) => index,
     resolveAuthorizationBatch,
     bindPlaybackSourceMetadata,
+    bindProviderPcmWorker,
+    providerPlaybackIdentities,
+    getNativeAddonCandidates: () => ['C:/app/audio-engine/twilight_audio_node.node'],
+    dirname,
+    join,
+    existsSync: () => true,
     resolveAuthorizedPlaybackSource: async () => {
       resolutions++
       return 'canonical.flac'
@@ -245,6 +307,107 @@ test('loadQueue authorizes duplicate sources once, retains CUE entries, and awai
   finish()
   await pending
   assert.deepEqual(diagnostics, ['queue-loaded'])
+})
+
+test('queue authorization is checked again after awaited runtime startup', async () => {
+  const start = source.indexOf('ipcMain.handle(IPC.audioEngine.loadQueue')
+  const declaration = source.slice(start, source.indexOf('\n  ipcMain.handle(', start + 1))
+  for (const mutation of ['revoke', 'replace', 'expire']) {
+    const identities = new ProviderPlaybackIdentityRegistry()
+    const stream = 'http://127.0.0.1:1234/audio/public-' + mutation
+    const plugin = 'com.twilightecho.provider.qqmusic'
+    identities.record(
+      'qq',
+      'song',
+      'excellent',
+      {
+        streamUrl: stream,
+        providerSource: {
+          effect: 'qq-excellent',
+          actualQuality: 'flac',
+          expiresAt: Date.now() + 60000
+        }
+      },
+      plugin,
+      true
+    )
+    let handler!: (event: unknown, items: unknown[], index: number) => Promise<unknown>
+    let ready!: () => void, announce!: () => void
+    const runtime = new Promise<void>((resolve) => {
+      ready = resolve
+    })
+    const entered = new Promise<void>((resolve) => {
+      announce = resolve
+    })
+    let committed = 0
+    runInNewContext(stripTypeScriptTypes(declaration), {
+      IPC: { audioEngine: { loadQueue: 'queue' } },
+      ipcMain: {
+        handle: (_channel: string, callback: typeof handler) => {
+          handler = callback
+        }
+      },
+      assertTrustedIpcSender: () => {},
+      MAX_AUDIO_QUEUE_ITEMS: 5000,
+      normalizeIpcArray: (items: unknown[]) => items,
+      toQueueItem: () => {},
+      normalizeInteger: (value: number) => value,
+      resolveAuthorizationBatch,
+      bindPlaybackSourceMetadata: (
+        item: Parameters<typeof bindPlaybackSourceMetadata>[0],
+        value: string
+      ) => bindPlaybackSourceMetadata(item, value, identities),
+      bindProviderPcmWorker: (
+        item: Parameters<typeof bindProviderPcmWorker>[0],
+        value: string,
+        options: Parameters<typeof bindProviderPcmWorker>[2]
+      ) =>
+        bindProviderPcmWorker(item, value, {
+          ...options,
+          identities,
+          platform: 'win32',
+          exists: () => true
+        }),
+      providerPlaybackIdentities: identities,
+      getNativeAddonCandidates: () => ['C:/app/audio-engine/twilight_audio_node.node'],
+      dirname,
+      join,
+      existsSync: () => true,
+      resolveAuthorizedPlaybackSource: async () => stream,
+      ensureAudioEngineRuntime: async () => {
+        announce()
+        await runtime
+        return {
+          loadQueue: async () => {
+            committed++
+          }
+        }
+      },
+      audioDiagnosticRecorder: null
+    })
+    const pending = handler({}, [{ id: 'song', source: 'twilight-media://audio/public' }], 0)
+    await entered
+    if (mutation === 'revoke') identities.revokePlugin(plugin)
+    else
+      identities.record(
+        'qq',
+        'song',
+        'excellent',
+        {
+          streamUrl: stream,
+          providerSource: {
+            effect: 'qq-excellent',
+            actualQuality: '128',
+            expiresAt: mutation === 'expire' ? 1 : Date.now() + 60000
+          }
+        },
+        plugin,
+        true
+      )
+    ready()
+    await assert.rejects(pending, /resolution_changed|expired/, mutation)
+    assert.equal(committed, 0, mutation)
+  }
 })
 
 test('the native queue ceiling is one shared constant on both sides of the IPC', () => {
@@ -297,6 +460,7 @@ test('queue cursor IPC freshly authorizes its source before forwarding the main-
       return 'canonical.flac'
     },
     outputTest: { stop: async () => calls.push('stop-test') },
+    providerPlaybackIdentities,
     ensureAudioEngineRuntime: async () => ({
       selectQueueItem: async (selection: unknown) => {
         calls.push('select')

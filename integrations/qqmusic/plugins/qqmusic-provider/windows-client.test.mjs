@@ -48,6 +48,54 @@ function deferred() {
   return { promise, resolve, reject }
 }
 
+test('Excellent uses exact native VIP call and signed-int32 HugeVip gate, never svip/login', async () => {
+  for (const [value, known, available] of [
+    [1, true, true], [-1, true, true], [0, true, false],
+    ['1', false, false], [true, false, false], [1.5, false, false],
+    [2147483648, false, false], [undefined, false, false]
+  ]) {
+    let vipCalls = 0
+    const h = harness({ stored: publicSession, fetch: async (_url, options) => {
+      const body = JSON.parse(options.body.toString())
+      const vipKey = 'VipLogin.VipLoginInter.vip_login_base'
+      if (!body[vipKey]) return response(key)
+      vipCalls++
+      assert.deepEqual(body[vipKey], { module: 'VipLogin.VipLoginInter', method: 'vip_login_base', param: {} })
+      return new Response(JSON.stringify({ code: 0, [vipKey]: { code: 0,
+        data: { identity: { svip: 1, ...(value === undefined ? {} : { HugeVip: value }) } } } }))
+    } })
+    const first = await h.client.getExcellentCapability()
+    assert.equal(first.known, known)
+    assert.equal(first.available, available)
+    first.available = !available
+    assert.equal((await h.client.getExcellentCapability()).available, available)
+    assert.equal(vipCalls, 1)
+    h.client.close()
+  }
+})
+
+test('Excellent late reply cannot cross same-account credential replacement or logout', async () => {
+  for (const replace of ['credentials', 'logout']) {
+    const ready = deferred(), reply = deferred()
+    const vipKey = 'VipLogin.VipLoginInter.vip_login_base'
+    const h = harness({ stored: publicSession, fetch: async (_url, options) => {
+      const body = JSON.parse(options.body.toString())
+      if (!body[vipKey]) return response(key)
+      ready.resolve()
+      return reply.promise
+    } })
+    const result = h.client.getExcellentCapability()
+    const rejected = assert.rejects(result, { name: 'AbortError' })
+    await ready.promise
+    if (replace === 'logout') await h.client.logout()
+    else h.values.set(WINDOWS_AUTH_KEY, { ...publicSession, musickey: 'public-replacement-key' })
+    reply.resolve(new Response(JSON.stringify({ code: 0, [vipKey]: { code: 0,
+      data: { identity: { HugeVip: 1 } } } })))
+    await rejected
+    h.client.close()
+  }
+})
+
 test('QQ code login signs its owned Windows bytes and commits only a complete server session', async () => {
   const h = harness({ fetch: async (url, options) => {
     assert.equal(url, 'https://u6.y.qq.com/cgi-bin/musics.fcg')

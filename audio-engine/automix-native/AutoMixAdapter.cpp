@@ -96,6 +96,12 @@ bool decodeAutoMixFrames(const QueueItem &item, const AudioFormat &format,
                          uint64_t first, size_t frames, std::vector<float> *pcm,
                          std::string *error, const ta_am_cancel *cancel,
                          DspResamplerQuality quality) {
+  // The bounded analysis decoder has no source transform binding. Its exact
+  // timeline must never substitute dry samples for a transformed stream.
+  if (item.pcmWorker) {
+    if (error) *error = "transformed source timeline is not exact";
+    return false;
+  }
   if (!pcm || format.sampleRate < 8000 || format.sampleRate > 384000 ||
       format.channelCount < 1 || format.channelCount > 8 ||
       frames > static_cast<size_t>(format.sampleRate) * 40 ||

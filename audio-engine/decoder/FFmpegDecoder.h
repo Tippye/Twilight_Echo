@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../core/AudioTypes.h"
+#include "PcmStreamTransform.h"
 
 #include <cstddef>
 #include <memory>
@@ -30,6 +31,18 @@ class FFmpegDecoder {
   /* Set before open. Callback/context must outlive decoder IO; callback must
    * be thread-safe and nonblocking. Used by bounded background preparation. */
   void setInterrupt(int (*callback)(void*), void* context);
+  // Set before open, with the decode reader stopped; changing it closes a source.
+  // Empty restores ordinary decode.
+  // The factory survives close/open and creates a fresh transform after seek.
+  void setPcmStreamTransformFactory(PcmStreamTransformFactory factory);
+  // Thread-safe wakeup before stopping/joining a blocked decode worker. A
+  // successful seek/open clears cancellation and starts a fresh transform.
+  void cancelPcmStreamTransform() noexcept;
+  // Call only after the decode reader stops. If cancelled, discard the old
+  // transform and pending processed PCM; next read creates a fresh instance.
+  // Otherwise no-op, including after seek/open. This does not seek the source:
+  // the transport owner must position it when exact continuation is required.
+  bool restartPcmStreamTransform(std::string* error);
   void close();
 
   bool setOutputFormat(const AudioFormat& format, std::string* error);

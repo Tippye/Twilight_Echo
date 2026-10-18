@@ -9,6 +9,7 @@ const {
   REQUIRED_RELEASE_NATIVE_BINARIES,
   assertBudget,
   assertX64Pe,
+  assertShippedArchitecture,
   listNativeBinaries,
   listReleaseNativeBinaries,
   listRuntimeDependencies,
@@ -17,6 +18,22 @@ const {
   readPeHeader
 } = require('./verify-release-artifacts.cjs')
 const { createMinimalPe } = require('./pe-fixture.cjs')
+
+test('only the named isolated effect worker uses the x86 ABI', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'twilight-worker-pe-'))
+  try {
+    const worker = path.join(dir, 'twilight-qq-excellent-worker.exe')
+    const engine = path.join(dir, 'twilight-audio-engine.dll')
+    fs.writeFileSync(worker, createMinimalPe({ machine: 0x14c }))
+    fs.writeFileSync(engine, createMinimalPe({ machine: 0x14c }))
+    assert.doesNotThrow(() => assertShippedArchitecture(worker))
+    assert.throws(() => assertShippedArchitecture(engine), /not a Windows x64/)
+    fs.writeFileSync(worker, createMinimalPe())
+    assert.throws(() => assertShippedArchitecture(worker), /Windows x86 effect ABI/)
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
 
 test('release artifact arguments require a native directory and installer target', () => {
   assert.throws(() => parseArgs([]), /--native-dir is required/)

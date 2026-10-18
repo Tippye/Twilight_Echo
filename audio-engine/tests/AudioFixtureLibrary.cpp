@@ -1,4 +1,5 @@
 #include "AudioFixtureLibrary.h"
+#include "../core/Utf8Path.h"
 
 #include <algorithm>
 #include <array>
@@ -30,7 +31,7 @@ void writeLe64(std::ofstream& out, uint64_t value) {
 }
 
 std::filesystem::path tempPathFor(const std::string& name) {
-  return std::filesystem::temp_directory_path() / name;
+  return std::filesystem::temp_directory_path() / utf8Path(name);
 }
 
 std::string lowercaseExtension(const std::filesystem::path& path) {
