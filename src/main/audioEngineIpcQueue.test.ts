@@ -13,6 +13,7 @@ import {
 import { bindProviderPcmWorker } from './audio/providerPcmWorker.ts'
 import { dirname, join } from 'node:path'
 import { publicAudioQueueItem } from './audio/audioEngineHelpers.ts'
+import { normalizeFiniteNumber } from './security/ipcValidation.ts'
 
 function readPreloadSources(): string {
   const root = new URL('../preload/', import.meta.url)
@@ -211,6 +212,97 @@ test('audioEngine play IPC forwards validated paused options and preserves the o
     /ipcRenderer\.invoke\(IPC\.audioEngine\.play, filePath, startTime, options\)/
   )
   assert.match(preloadDeclaration, /options\?: AudioEnginePlayOptions/)
+})
+
+function registerSeekIpcHandler(
+  seek: (position: number) => Promise<void>
+): (event: unknown, position: number) => Promise<void> {
+  const start = source.indexOf('ipcMain.handle(IPC.audioEngine.seek,')
+  assert.ok(start >= 0)
+  const declaration = source.slice(start, source.indexOf('\n  ipcMain.handle(', start + 1))
+  let handler!: (event: unknown, position: number) => Promise<void>
+  runInNewContext(stripTypeScriptTypes(declaration), {
+    IPC: { audioEngine: { seek: 'audio:seek' } },
+    ipcMain: {
+      handle: (channel: string, callback: typeof handler) => {
+        assert.equal(channel, 'audio:seek')
+        handler = callback
+      }
+    },
+    assertTrustedIpcSender: () => {},
+    normalizeFiniteNumber,
+    ensureAudioEngineRuntime: async () => ({ seek })
+  })
+  return handler
+}
+
+test('audioEngine seek IPC waits for the controller acknowledgement and position readback', async () => {
+  let acknowledge!: () => void
+  let confirmPosition!: () => void
+  let entered!: () => void
+  const started = new Promise<void>((resolve) => {
+    entered = resolve
+  })
+  const acknowledgement = new Promise<void>((resolve) => {
+    acknowledge = resolve
+  })
+  const readback = new Promise<void>((resolve) => {
+    confirmPosition = resolve
+  })
+  let position = 209
+  const requested: number[] = []
+  const handler = registerSeekIpcHandler(async (target) => {
+    requested.push(target)
+    entered()
+    await acknowledgement
+    await readback
+    position = target
+  })
+  let completed = false
+  let positionWhenResolved = Number.NaN
+  const pending = handler({}, 45).then(() => {
+    completed = true
+    positionWhenResolved = position
+  })
+  try {
+    await started
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(completed, false, 'IPC must not resolve while native Seek is in flight')
+    acknowledge()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(completed, false, 'IPC must wait for controller position confirmation too')
+    confirmPosition()
+    await pending
+    assert.deepEqual(requested, [45])
+    assert.equal(positionWhenResolved, 45)
+  } finally {
+    acknowledge()
+    confirmPosition()
+    await pending
+  }
+})
+
+test('audioEngine seek IPC propagates a rejected controller position confirmation', async () => {
+  let rejectSeek!: (error: Error) => void
+  let entered!: () => void
+  const started = new Promise<void>((resolve) => {
+    entered = resolve
+  })
+  const completion = new Promise<void>((_resolve, reject) => {
+    rejectSeek = reject
+  })
+  // Observe the synthetic promise even when the old handler discards it. The
+  // regression concerns IPC rejection, rather than an unhandled test rejection.
+  void completion.catch(() => {})
+  const handler = registerSeekIpcHandler(() => {
+    entered()
+    return completion
+  })
+  const pending = handler({}, 45)
+  await started
+  const failure = new Error('native seek position was not confirmed')
+  rejectSeek(failure)
+  await assert.rejects(pending, (error) => error === failure)
 })
 
 test('audioEngine IPC normalizes untrusted renderer parameters', () => {

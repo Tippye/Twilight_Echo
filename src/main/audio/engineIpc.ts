@@ -1099,9 +1099,9 @@ function registerAudioEngineIpcHandlers(): void {
 
   ipcMain.handle(IPC.audioEngine.seek, async (_event, time: number) => {
     assertTrustedIpcSender(_event, 'audio engine IPC')
-    ;(await ensureAudioEngineRuntime()).seek(
-      normalizeFiniteNumber(time, 'seek time', 0, 0, Number.MAX_SAFE_INTEGER)
-    )
+    await (
+      await ensureAudioEngineRuntime()
+    ).seek(normalizeFiniteNumber(time, 'seek time', 0, 0, Number.MAX_SAFE_INTEGER))
   })
 
   ipcMain.handle(IPC.audioEngine.setVolume, async (_event, volume: number) => {
