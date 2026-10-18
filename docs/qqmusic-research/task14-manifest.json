@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "archive_date": "2026-10-18",
-  "status": "Public branch selected from existing Task13 baseline; provider rc8 fixed and80 mirrors indexed;39 historical development receipts retained, fresh clean package/GUI/cold/release acceptance pending, not deliverable",
+  "status": "scoped-source-artifact-GUI-functional-cold-acceptance-passed; delivery verified; Core documentation ref publication pending",
   "source_repository": "Twilight-Echo-plugins",
   "source_commit": "8514b96b4af3c9f88ce93718bc06d8c18496f698",
-  "host_version": "1.3.1-qq.8",
+  "host_version": "1.3.1-qq.9",
   "provider_version": "0.4.0-rc.8",
   "normal_package_sha256": "a3e59a6d06f024ccbb9f4998b72cac529f4d74da4437bec741dd284f2e418016",
-  "normalization": "Original sources.raw_sha256/source_sha256 remain raw bytes; sha256 records actual archive/mirror working bytes, git_lf_sha256 records explicit LF text. Historical objects were checked through read-only Git filters; updated README and rc8 mirror/new summary blobs are independently computed canonical UTF-8/LF content objects pending final repository-filter confirmation. All80 mirror entries are verified text. Binary TEP is hashed raw and never normalized.",
+  "normalization": "Source raw_sha256/source_sha256 remain original bytes; sha256 records actual archive/mirror bytes, git_lf_sha256 explicit LF text, git_blob_sha1 actual read-only Git filter confirmations. New summary/README UTF-8/LF. All80 mirrors are verified text with explicit78provider/2inherited-Core provenance. Binary packages are hashed raw and never normalized.",
   "privacy": "Curated numeric/public-source facts; no audio/cache contents, profiles, accounts, credentials, actual URLs, QQ DLLs/models or build binaries. Absolute local paths reduced to basenames, with redaction JSON pointers recorded.",
   "research_files": [
     {
@@ -738,24 +738,24 @@
     },
     {
       "path": "docs/qqmusic-research/task14/README.md",
-      "bytes": 11521,
-      "sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
-      "git_lf_sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
-      "git_blob_sha1": "27309ca99f5ac9e49f699241ab3f0ddaebafc040",
+      "bytes": 11612,
+      "sha256": "8bd562612b6fb630ede065d7658fc0ba0cc8c808175963c3ea46bb2641cddc0c",
+      "git_lf_sha256": "8bd562612b6fb630ede065d7658fc0ba0cc8c808175963c3ea46bb2641cddc0c",
+      "git_blob_sha1": "2101bef9fec90af20afd5a5daab29456a314bce3",
       "kind": "archive-entrypoint",
       "source": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-archive-readme-draft.md",
-      "source_sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
+      "source_sha256": "8bd562612b6fb630ede065d7658fc0ba0cc8c808175963c3ea46bb2641cddc0c",
       "sources": [
         {
           "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-archive-readme-draft.md",
-          "raw_sha256": "baafeb2119a28f07d0dc1ba417941eec25c63733b8a41dd04fcbaffb863b7bc0",
-          "bytes": 11521,
+          "raw_sha256": "8bd562612b6fb630ede065d7658fc0ba0cc8c808175963c3ea46bb2641cddc0c",
+          "bytes": 11612,
           "source_kind": "generated UTF-8 text"
         }
       ],
       "transform": "UTF-8/LF serialization; no binary normalization",
       "redactions": [],
-      "git_blob_verification": "Canonical UTF-8/LF content blob independently computed; final repository-filter check pending coordinator source freeze"
+      "git_blob_verification": "Actual read-only Git filter hash-object confirmation"
     },
     {
       "path": "docs/qqmusic-research/task14/qq-task14-real-streaming-candidate.json",
@@ -1021,6 +1021,100 @@
           "action": "Field omitted; no screenshots copied"
         }
       ]
+    },
+    {
+      "path": "docs/qqmusic-research/task14/qq-task14-final-release-summary.json",
+      "bytes": 171555,
+      "sha256": "3cfa13ea4b836004680bea04e4f49b30e1a6edc532464e52e2c34e160926b00e",
+      "git_lf_sha256": "3cfa13ea4b836004680bea04e4f49b30e1a6edc532464e52e2c34e160926b00e",
+      "git_blob_sha1": "e5d213f63125712e8b7b4250d21c165b6cbb60f0",
+      "kind": "final-public-release-evidence-summary",
+      "sources": [
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-clean-final-artifact-independent-audit.json",
+          "raw_sha256": "674f9aca507b6b5dd84b777b6a2fc6ed9ee319ce2c9481fd1028f903d40eec4d",
+          "bytes": 89209,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-clean-ui-observations.json",
+          "raw_sha256": "be0e7475eef50a752857c3cd0f1430e646d5a05cbc58ae696abb7bdae355e2ed",
+          "bytes": 13604,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-clean-ui-native-log-summary.json",
+          "raw_sha256": "66b416ab41292b89eff25558e3edb86ece97f7570c39400a1f19608354e29659",
+          "bytes": 35389,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-final-ui-evidence-independent-review.json",
+          "raw_sha256": "8370806e90e34521890ccde376d3fb970de0d5419dd62d1c49f0e5c7db3713ba",
+          "bytes": 15797,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-clean-normal-launch.json",
+          "raw_sha256": "23efcd84b13482beb8b3cb6625e25a574a4c399d9910aa443cdaeda3a422023d",
+          "bytes": 475,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-clean-cold-launch.json",
+          "raw_sha256": "4ceab501afeeb32885e8efd19ae87e5dec884c1d4be0ffe9a49ee2d136b57811",
+          "bytes": 444,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-clean-standalone-process-check.json",
+          "raw_sha256": "5b85f40c91fa76be48e2a40673346afb3740bdf220e61075257556b8c0617362",
+          "bytes": 457,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-ipc-seek-fix-receipt-v2.json",
+          "raw_sha256": "953722839c45f3c95f693bdc65ecff411710607f7f099056b458b6124da965ae",
+          "bytes": 2993,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-ipc-seek-independent-review.json",
+          "raw_sha256": "25ed96a332320db762201311d65a501aede0c113e52ba4f08cb3c39fa7ad4977",
+          "bytes": 4258,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq8-clean-ui-observations.json",
+          "raw_sha256": "5257c453229a7499e52fd05a75b0ae6a838b67ef81579e4cb6c0de76294a5dc0",
+          "bytes": 6142,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq8-clean-final-artifact-independent-audit.json",
+          "raw_sha256": "c5d64cb6546971c728caee5d55c3b8060b437d7d61dd915dbef1b85804136332",
+          "bytes": 85581,
+          "source_kind": "UTF-8 JSON; technical facts only"
+        },
+        {
+          "path": "docs/aegis/work/2026-10-14-qqmusic-adaptation/qq-task14-qq9-delivery-receipt.json",
+          "raw_sha256": "f9497bb2f859e641532d8d29508b16467d9d3f6e5e5c3a59a575f7aa2507fc8e",
+          "bytes": 1317,
+          "source_kind": "UTF-8 JSON; destination absolute path omitted from archive"
+        }
+      ],
+      "transform": "Merged safe artifact/IPC/native-log/review/process receipts and allowlisted UI fields; image/full-tree/audio/profile/sourceURL contents omitted; UTF-8/LF",
+      "redactions": [
+        {
+          "pointer": "/realGui/observations/*/screenshotPath",
+          "action": "Field omitted; screenshot hashes and six-image review retained separately without image contents"
+        },
+        {
+          "pointer": "/retainedFailures/qq8/observations/*/screenshotPath",
+          "action": "Field omitted; no full UI tree/image copied"
+        }
+      ],
+      "git_blob_verification": "Actual read-only Git filter hash-object confirmation"
     }
   ],
   "provider_mirror_files": [
@@ -1032,7 +1126,9 @@
       "git_blob_sha1": "c5fe5afd3db575a0d8a4c9ddc5c7cf43f4ce12eb",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/index.mjs",
       "source_sha256": "60b6cd82808ad6bd45bed2bf633c419972783f0d38ddf69edffd8e3d6dd75669",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/index.test.mjs",
@@ -1042,7 +1138,9 @@
       "git_blob_sha1": "3c1c3dbd4a2d878fbdc753175c1fda8b2f5232fa",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/index.test.mjs",
       "source_sha256": "c11c27c392d0da1cbba894940ac53b3c77b246cc9e6676106b204fa6e1084b7f",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/album-call.mjs",
@@ -1052,7 +1150,9 @@
       "git_blob_sha1": "e62d90f482f2fd333705df7014214168e562a1c8",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/album-call.mjs",
       "source_sha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/artist-call.mjs",
@@ -1062,7 +1162,9 @@
       "git_blob_sha1": "4d3c58dd7cd8592cdad227d614212fdb90faf855",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/artist-call.mjs",
       "source_sha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
@@ -1072,7 +1174,9 @@
       "git_blob_sha1": "924f631dae780d8d55b1a0a1fa21a88dd8750d43",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
       "source_sha256": "ea44755e3267f3f6cfdfb3c1014b1ed7004011c0d6294510700cb738bfdf7695",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/client.mjs",
@@ -1082,7 +1186,9 @@
       "git_blob_sha1": "cc103cf2aa263aa7ac13aed2c43bbba696f49f15",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/client.mjs",
       "source_sha256": "71259f3c170ddf78e4252a80188e3fce5edcde33ee025c7bf8e0d88e63c7b3d3",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/comm.mjs",
@@ -1092,7 +1198,9 @@
       "git_blob_sha1": "03c508229ce32e50903cbe147236d5cf4707bfe5",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/comm.mjs",
       "source_sha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/container.mjs",
@@ -1102,7 +1210,9 @@
       "git_blob_sha1": "6e8a02028eec5aaaa132c4b84c7214587831c7b8",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/container.mjs",
       "source_sha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform-vectors.json",
@@ -1112,7 +1222,9 @@
       "git_blob_sha1": "95d52c78a7fdc96f2294d9fd0b7cb5ee390e22e9",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/data-transform-vectors.json",
       "source_sha256": "b1cd30aa7de40b26c0c389835e40fd16164910a45ebe7844c932a156326e4549",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform.mjs",
@@ -1122,7 +1234,9 @@
       "git_blob_sha1": "09f040a7c636477678f96047f9f5e764390c8c9d",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/data-transform.mjs",
       "source_sha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform.test.mjs",
@@ -1132,7 +1246,9 @@
       "git_blob_sha1": "d825bdb77af10cc0b39c72bda97993fe66e0e8ea",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/data-transform.test.mjs",
       "source_sha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/discovery-call.mjs",
@@ -1142,7 +1258,9 @@
       "git_blob_sha1": "9ba7ea45da3811b7258815bcca7da69fb7238cb7",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/discovery-call.mjs",
       "source_sha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/ekey.mjs",
@@ -1152,7 +1270,9 @@
       "git_blob_sha1": "2c9ea2b2023ab652e9fdb5f0353dc7cc8a666ba8",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/ekey.mjs",
       "source_sha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/favorite-call.mjs",
@@ -1162,7 +1282,9 @@
       "git_blob_sha1": "f46361802abbc6ebfa62d998f3db6cb125a01024",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/favorite-call.mjs",
       "source_sha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/favorite-state.mjs",
@@ -1172,7 +1294,9 @@
       "git_blob_sha1": "6fb4deb6358297f5591b0abf2cc84b73197ae79c",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/favorite-state.mjs",
       "source_sha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/file-transform.mjs",
@@ -1182,7 +1306,9 @@
       "git_blob_sha1": "a819d0e9bad010b8c87c20afb6917e0900d277b7",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/file-transform.mjs",
       "source_sha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/filename.mjs",
@@ -1192,7 +1318,9 @@
       "git_blob_sha1": "aeeb6ddd1b7d74446f9bb19ae15f1f3de035cde0",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/filename.mjs",
       "source_sha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/home-call.mjs",
@@ -1202,7 +1330,9 @@
       "git_blob_sha1": "98a817e0cd5feada6ed8c1ac72e5cc372acab287",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/home-call.mjs",
       "source_sha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/json-integer.mjs",
@@ -1212,7 +1342,9 @@
       "git_blob_sha1": "a076cdd57154f7ba1fabcb87e178d25324b9b9b0",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/json-integer.mjs",
       "source_sha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/login-request.mjs",
@@ -1222,7 +1354,9 @@
       "git_blob_sha1": "fab7d41340484df804c6ec8cbf35c66162194ccf",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/login-request.mjs",
       "source_sha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/lyric-call.mjs",
@@ -1232,7 +1366,9 @@
       "git_blob_sha1": "3cbc8991a57633e2d5abb6d96ed35b668bde0e7f",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/lyric-call.mjs",
       "source_sha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/media-source.mjs",
@@ -1242,7 +1378,9 @@
       "git_blob_sha1": "3cc92e3a85a134886b33a26e13fdb8dc4e1d55b9",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/media-source.mjs",
       "source_sha256": "f803349af69457a86be4de101f9fdb6b67dcd9897e1e32dbe01712e51adb4ecc",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/media-stream.mjs",
@@ -1252,7 +1390,9 @@
       "git_blob_sha1": "91adc9e85b762468d008841f122e790ffce88c2a",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/media-stream.mjs",
       "source_sha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-binding.mjs",
@@ -1262,7 +1402,9 @@
       "git_blob_sha1": "1dc1bf975a69953418d6e420893e9541cdb5b0d2",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/playlist-binding.mjs",
       "source_sha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-call.mjs",
@@ -1272,7 +1414,9 @@
       "git_blob_sha1": "c3da37fefe6661677b76ae6ae217ac907009548d",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/playlist-call.mjs",
       "source_sha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-data.mjs",
@@ -1282,7 +1426,9 @@
       "git_blob_sha1": "795c5a644e58c37183422e4dea976478f1b6b97c",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/playlist-data.mjs",
       "source_sha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/quality.mjs",
@@ -1292,7 +1438,9 @@
       "git_blob_sha1": "77c4f8b2c7619760be6242e51b696b607a4d8d9f",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/quality.mjs",
       "source_sha256": "e15c7016f089b818f06835d081de52cf6640bd83d26c1a02dd73ba8edd438c8e",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/response.mjs",
@@ -1302,7 +1450,9 @@
       "git_blob_sha1": "179235e0d6afb1b683b5def91e848d51c63fb583",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/response.mjs",
       "source_sha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/search-call.mjs",
@@ -1312,7 +1462,9 @@
       "git_blob_sha1": "6af5a502937bcf111c62d3c26e277200b222b85e",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/search-call.mjs",
       "source_sha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/search-catalog.mjs",
@@ -1322,7 +1474,9 @@
       "git_blob_sha1": "5cc2adbdf55d648504660fdcc7a5d4074aad3b14",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/search-catalog.mjs",
       "source_sha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/settings.mjs",
@@ -1332,7 +1486,9 @@
       "git_blob_sha1": "6d6111899584ad9f470a87882b9a5be88aa168ec",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/settings.mjs",
       "source_sha256": "291bcba6505bc9868d632d3a057dc7743a1ddb84777c69f115e3b58c4e028d88",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/signature.mjs",
@@ -1342,7 +1498,9 @@
       "git_blob_sha1": "e7719605aef27a6abf9b555c040521a1d22585c4",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/signature.mjs",
       "source_sha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/song-detail-call.mjs",
@@ -1352,7 +1510,9 @@
       "git_blob_sha1": "4e58a8cf6d590ddd36879186195848becd606a63",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/song-detail-call.mjs",
       "source_sha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/tea.mjs",
@@ -1362,7 +1522,9 @@
       "git_blob_sha1": "a4aef83256ea7fb1437cf56c8a97bd340bc11e1c",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/tea.mjs",
       "source_sha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/tracks.mjs",
@@ -1372,7 +1534,9 @@
       "git_blob_sha1": "913ac9a600b6d8b2e58afe7fac1549b4bc55d80e",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/tracks.mjs",
       "source_sha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/vkey-request.mjs",
@@ -1382,7 +1546,9 @@
       "git_blob_sha1": "9f213191a5f44a748666b1e1ee75ed6b5f295dee",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/vkey-request.mjs",
       "source_sha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/vkey-request.test.mjs",
@@ -1392,7 +1558,9 @@
       "git_blob_sha1": "c8cd9ae147ee11bc45a35cc8efaad25e13595b50",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/vkey-request.test.mjs",
       "source_sha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/wire.mjs",
@@ -1402,7 +1570,9 @@
       "git_blob_sha1": "df27b2285258e938c6f89a228bdfbab9ef0e6093",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/lib/windows/wire.mjs",
       "source_sha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/plugin.json",
@@ -1412,7 +1582,9 @@
       "git_blob_sha1": "8c8155f4258cd77d685e9330b6ac5cfd47f60860",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/plugin.json",
       "source_sha256": "f8fb85f0d554d704c9905a98703cb22aad3a227f4849757afccdf981481587c2",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/README.md",
@@ -1422,7 +1594,9 @@
       "git_blob_sha1": "ac950ed51c0792d2e3aa89f1aae022fa3f776589",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/README.md",
       "source_sha256": "28597258451be090fc7ae506f424034b1b94da1a22cad71b47a888a15a2ce81e",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-ekey-native-v1.json",
@@ -1432,7 +1606,9 @@
       "git_blob_sha1": "638432337759dfec6811b34913f2e287e8001bf3",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-ekey-native-v1.json",
       "source_sha256": "6bd984365bcd17c92b4237b598da625c2293317c5374bafc9167d9a4ef5ec360",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-file-transform-native-v1.json",
@@ -1442,7 +1618,9 @@
       "git_blob_sha1": "af8fdc046ce93b1c6b4be64ad06bc2d5d68455c4",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-file-transform-native-v1.json",
       "source_sha256": "5b891c2f41880056093969cfeebe6314d295a7e1e985497da1b81b28bae27710",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v1.json",
@@ -1452,7 +1630,9 @@
       "git_blob_sha1": "cfe727eee66ace59f9a0163f6895c90c39f883a2",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v1.json",
       "source_sha256": "38fe2eed518ac7e3790ae13de8f13ae5851d467e159fdafeb7f9d5c373665637",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v2.json",
@@ -1462,7 +1642,9 @@
       "git_blob_sha1": "62e8c792a8b9c78a7e0933f7bbcc8697c7b1d28e",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v2.json",
       "source_sha256": "31034aafb62b287394006b5f3675a6e5656ea00b9f32703d45a2f3be8757e2f9",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-public-search-songs.json",
@@ -1472,7 +1654,9 @@
       "git_blob_sha1": "81575861bbe3bddfcb73d0bd35853519f1e30f45",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-public-search-songs.json",
       "source_sha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-signature-native-v2.json",
@@ -1482,7 +1666,9 @@
       "git_blob_sha1": "69b8d2bff5a73c6f5c74cb046a0e155b26b35ee4",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/test/fixtures/windows-signature-native-v2.json",
       "source_sha256": "9672f940af9340687aeb5cb2c63d07241ab3b8b8c7eff48641290b45b9076f29",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/THIRD_PARTY_NOTICES.md",
@@ -1492,7 +1678,9 @@
       "git_blob_sha1": "c720276393ac08d4c87dbdabf2f9bccba2f705be",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/THIRD_PARTY_NOTICES.md",
       "source_sha256": "c2bd1f24c38c4e83d25cecfb3a857d7bd8f41ed762878ad86ec771abe0726525",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-album-call.test.mjs",
@@ -1502,7 +1690,9 @@
       "git_blob_sha1": "92636890db55e0d54b319ecb8726d4d7308b8a1b",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-album-call.test.mjs",
       "source_sha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-artist-call.test.mjs",
@@ -1512,7 +1702,9 @@
       "git_blob_sha1": "46bdc177c68462ca4121368b1a943ccbb6d69b8a",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-artist-call.test.mjs",
       "source_sha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
@@ -1522,7 +1714,9 @@
       "git_blob_sha1": "d799549376b24a361657696f59e753ddb28d2e13",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
       "source_sha256": "4a4a7f43de195fc27211fffe422a3812558fe21d202229c750d731f07d5b0c5d",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-client.test.mjs",
@@ -1532,7 +1726,9 @@
       "git_blob_sha1": "43dde1ff4d3c1533c18cac889fa59f0c785b32bd",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-client.test.mjs",
       "source_sha256": "ad0cb04b85207742abccd295e90a5ffb3c02c1db5ab19501df63a98945308d14",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-container.test.mjs",
@@ -1542,7 +1738,9 @@
       "git_blob_sha1": "6fcd2d3a9b8fd53470989d892bb630d3a9983a72",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-container.test.mjs",
       "source_sha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-discovery-call.test.mjs",
@@ -1552,7 +1750,9 @@
       "git_blob_sha1": "236b04c349483c3701722e7ef5bb1f1a9efe3b3f",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-discovery-call.test.mjs",
       "source_sha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-ekey.test.mjs",
@@ -1562,7 +1762,9 @@
       "git_blob_sha1": "92711a5af4d9036d7a15675f53f154da4de82fa8",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-ekey.test.mjs",
       "source_sha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-call.test.mjs",
@@ -1572,7 +1774,9 @@
       "git_blob_sha1": "ee79c85eef086252d1f4a3a1acfd065c40f0dd2b",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-favorite-call.test.mjs",
       "source_sha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-integration.test.mjs",
@@ -1582,7 +1786,9 @@
       "git_blob_sha1": "20369881df7cbd616855723bb34d6f0f7252a8d3",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-favorite-integration.test.mjs",
       "source_sha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-state.test.mjs",
@@ -1592,7 +1798,9 @@
       "git_blob_sha1": "6b89b1217be9f25cb2b0add3ed1835fafad5a67f",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-favorite-state.test.mjs",
       "source_sha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-file-transform.test.mjs",
@@ -1602,7 +1810,9 @@
       "git_blob_sha1": "b94ee147b59476ff1e245845f1a46a04e1f508f5",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-file-transform.test.mjs",
       "source_sha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-filename.test.mjs",
@@ -1612,7 +1822,9 @@
       "git_blob_sha1": "b4d6777aaabc6ae44470a5d021083881363523f5",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-filename.test.mjs",
       "source_sha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-home-call.test.mjs",
@@ -1622,7 +1834,9 @@
       "git_blob_sha1": "0186c13b8eb20541a0e9aebd2ef72934ebdfe326",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-home-call.test.mjs",
       "source_sha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-index.mjs",
@@ -1632,7 +1846,9 @@
       "git_blob_sha1": "d47ddbac7b403ca524233785f50f52ad2e65584b",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-index.mjs",
       "source_sha256": "e9c760c744a4ff444e40001a4a9f901b1c1d9ea56739cbce50b500ba2ac8da4e",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-index.test.mjs",
@@ -1642,7 +1858,9 @@
       "git_blob_sha1": "4d6d89b4e8754f5e69901d4c139bfa5da6d6e56f",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-index.test.mjs",
       "source_sha256": "2075f91ebc419cda5f1fb4f6b7f4bb7dbb0d7ef0494da60ef0e58eb327d68428",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-login-request.test.mjs",
@@ -1652,7 +1870,9 @@
       "git_blob_sha1": "56750a138e8a4a7bb36af8f796878695ee34b208",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-login-request.test.mjs",
       "source_sha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-lyric-call.test.mjs",
@@ -1662,7 +1882,9 @@
       "git_blob_sha1": "b5ed94c5a42ed289fd8d67fdab210dfad3b77bcb",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-lyric-call.test.mjs",
       "source_sha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-media-source.test.mjs",
@@ -1672,7 +1894,9 @@
       "git_blob_sha1": "fc0f2b750d4432ecdef7e90687602d47e0fc139e",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-media-source.test.mjs",
       "source_sha256": "3cf2e440d75b03abd1d54271a604fc4d3a50feb7dd6e4fa85722b9ea2ea14ac4",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-media-stream.test.mjs",
@@ -1682,7 +1906,9 @@
       "git_blob_sha1": "6e58ce675d90f964464b3a8a366060a88f777c31",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-media-stream.test.mjs",
       "source_sha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-binding.test.mjs",
@@ -1692,7 +1918,9 @@
       "git_blob_sha1": "fdc48402a36daf068c9b8788766081f0c71a33f1",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-playlist-binding.test.mjs",
       "source_sha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-call.test.mjs",
@@ -1702,7 +1930,9 @@
       "git_blob_sha1": "013d0efd798f490472e84b946b308ec97137730f",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-playlist-call.test.mjs",
       "source_sha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-data.test.mjs",
@@ -1712,7 +1942,9 @@
       "git_blob_sha1": "4f84ee444db0bac882350c1cda2cd05c4d23b78e",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-playlist-data.test.mjs",
       "source_sha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-probe-index.mjs",
@@ -1722,7 +1954,9 @@
       "git_blob_sha1": "1e62bd5d9f692d6a915c36a492e886dbdc46b48b",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-probe-index.mjs",
       "source_sha256": "01ce6631b17595adf064c6307acc97681c6ef6aceb605e6945542bf3946a749c",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": false,
+      "source_origin": "Unchanged inherited Core bd3 diagnostic; provider working-copy bytes only, excluded normal TEP/ASAR"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-quality-probe-helper.mjs",
@@ -1732,7 +1966,9 @@
       "git_blob_sha1": "6a0707a1746c5eaf162e39f0c755b3d604ce30c7",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-quality-probe-helper.mjs",
       "source_sha256": "d2d2e37a36da92904c38b73f33b845553e30ec711ca72c1945aad3ed523b6f77",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": false,
+      "source_origin": "Unchanged inherited Core bd3 diagnostic; provider working-copy bytes only, excluded normal TEP/ASAR"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-response.test.mjs",
@@ -1742,7 +1978,9 @@
       "git_blob_sha1": "dd17348b7143850ac5e0da3f8f5f1126c26d62a0",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-response.test.mjs",
       "source_sha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-search-call.test.mjs",
@@ -1752,7 +1990,9 @@
       "git_blob_sha1": "fd8dca3ae5d4e7b5ce461ab72c1ca7996956e6b8",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-search-call.test.mjs",
       "source_sha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-search-catalog.test.mjs",
@@ -1762,7 +2002,9 @@
       "git_blob_sha1": "074c3755112f36b21ed9d7f14ee31af8cae8d335",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-search-catalog.test.mjs",
       "source_sha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-settings.test.mjs",
@@ -1772,7 +2014,9 @@
       "git_blob_sha1": "aebffa4fbbe322f480a0ac8318366f2595cebcd8",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-settings.test.mjs",
       "source_sha256": "2881883fd627ac44bd0403fac929420021e3e5772bcaa680d2b8086371bb1c08",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-signature.test.mjs",
@@ -1782,7 +2026,9 @@
       "git_blob_sha1": "dc96146dfb6ebb493aac563b4b61f00119e16896",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-signature.test.mjs",
       "source_sha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-song-detail-call.test.mjs",
@@ -1792,7 +2038,9 @@
       "git_blob_sha1": "39794b463916b7fecf46cc01f8e5a427ec0196aa",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-song-detail-call.test.mjs",
       "source_sha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-tea-decrypt.test.mjs",
@@ -1802,7 +2050,9 @@
       "git_blob_sha1": "9e6d7a53230de4889d22af3006da7bd3f3aa1ef3",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-tea-decrypt.test.mjs",
       "source_sha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-tracks.test.mjs",
@@ -1812,7 +2062,9 @@
       "git_blob_sha1": "b3f255bbd7e966b61967fa061aa497bb4f3135f3",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-tracks.test.mjs",
       "source_sha256": "8dcec3fdeea93e76d8c1ea977dfeab0e679860b3e2baa274ee40327eab59f0b4",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     },
     {
       "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-wire.test.mjs",
@@ -1822,19 +2074,17 @@
       "git_blob_sha1": "f636fffe9310474da9c9bb9e65d6585d22d03570",
       "source": "Twilight-Echo-plugins/plugins/qqmusic-provider/windows-wire.test.mjs",
       "source_sha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
-      "kind": "text"
+      "kind": "text",
+      "provider_source_committed": true,
+      "source_origin": "Provider committed source8514"
     }
   ],
   "pending": [
-    "Final canonical clean product build/source/package freeze",
-    "Fresh clean native/production gates and installer payload/native/source audit",
-    "Real quality switching at retained position with actual source formats",
-    "Single-track queue natural EOF then seek/resume",
-    "Normal no-debug cold launch/playback and final release/skill/archive freeze"
+    "Coordinator Core documentation commit and task ref push/readback only; delivery copy, provider push/readback and scoped real GUI acceptance complete"
   ],
-  "archive_fixture_count": 39,
+  "archive_fixture_count": 40,
   "archive_fixture_budget": 40,
-  "reserved_final_fixture_slots": 1,
+  "reserved_final_fixture_slots": 0,
   "actual_runtime": {
     "baseline": "task14/qq-task14-real-streaming-baseline.json",
     "candidate": "task14/qq-task14-real-streaming-candidate.json",
@@ -1844,18 +2094,20 @@
     "candidate_composition": "Integrated Task14 native + provider rc.7; predates final acknowledged-seek GUI acceptance",
     "historical_development_only": true
   },
-  "product_source_commit": "e689af4489c5ecde0f004f36377575514872d12f",
+  "product_source_commit": "20f47dfbcb298070ff3bf4b619911783d14836eb",
   "artifact_verification": {
-    "receipt": "task14/qq-task14-final-artifact-independent-audit.json",
-    "installer_bytes": 153196613,
-    "installer_sha256": "81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088",
+    "receipt": "docs/qqmusic-research/task14/qq-task14-final-release-summary.json",
+    "raw_artifact_audit_sha256": "674f9aca507b6b5dd84b777b6a2fc6ed9ee319ce2c9481fd1028f903d40eec4d",
+    "host": "1.3.1-qq.9",
+    "product_source_commit": "20f47dfbcb298070ff3bf4b619911783d14836eb",
+    "installer_bytes": 153196508,
+    "installer_sha256": "49f4bbbfc5d56470ba68d5d997eeca345fceccbe3beba806dde04cbba57aea19",
+    "app_asar_sha256": "499a7a7fd4d7b7d8d511ae74ca6f73d5b2e3c563f7c190ca7a85fe79bc5544ea",
     "passed": true,
     "installer_executed_by_auditor": false,
-    "final_gui_complete": false,
-    "historical_candidate_only": true,
-    "release_ready": false,
-    "host": "1.3.1-qq.6",
-    "product_source_commit": "3bacff6e275c2333e1931373f48088e47e1fc8c3"
+    "final_gui_complete": true,
+    "historical_candidate_only": false,
+    "release_ready_for_recorded_scope": true
   },
   "source_gate_provenance": [
     {
@@ -1888,14 +2140,22 @@
   "historical_candidate_product_source_commit": "3bacff6e275c2333e1931373f48088e47e1fc8c3",
   "historical_candidate_host_version": "1.3.1-qq.6",
   "target_artifact_verification": {
-    "host": "1.3.1-qq.8",
-    "product_code_baseline_commit": "e689af4489c5ecde0f004f36377575514872d12f",
-    "provider_source_commit": "8514b96b4af3c9f88ce93718bc06d8c18496f698",
-    "status": "pending fresh clean package and actual GUI/cold acceptance"
+    "receipt": "docs/qqmusic-research/task14/qq-task14-final-release-summary.json",
+    "raw_artifact_audit_sha256": "674f9aca507b6b5dd84b777b6a2fc6ed9ee319ce2c9481fd1028f903d40eec4d",
+    "host": "1.3.1-qq.9",
+    "product_source_commit": "20f47dfbcb298070ff3bf4b619911783d14836eb",
+    "installer_bytes": 153196508,
+    "installer_sha256": "49f4bbbfc5d56470ba68d5d997eeca345fceccbe3beba806dde04cbba57aea19",
+    "app_asar_sha256": "499a7a7fd4d7b7d8d511ae74ca6f73d5b2e3c563f7c190ca7a85fe79bc5544ea",
+    "passed": true,
+    "installer_executed_by_auditor": false,
+    "final_gui_complete": true,
+    "historical_candidate_only": false,
+    "release_ready_for_recorded_scope": true
   },
-  "target_host_version": "1.3.1-qq.8",
+  "target_host_version": "1.3.1-qq.9",
   "target_provider_version": "0.4.0-rc.8",
-  "product_source_role": "Clean public product code baseline before this documentation freeze; final canonical build commit and acceptance reserved for fixture40",
+  "product_source_role": "Actual canonical product build source; final documentation commit is separate, no binary rebuild",
   "known_qq7_gui_failure": {
     "source": "qq-task14-qq7-ui-observations.json",
     "status": "failed-not-deliverable",
@@ -1993,23 +2253,70 @@
           "kind": "text"
         }
       }
-    ]
+    ],
+    "historical_qq6_artifact_verification": {
+      "receipt": "task14/qq-task14-final-artifact-independent-audit.json",
+      "installer_bytes": 153196613,
+      "installer_sha256": "81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088",
+      "passed": true,
+      "installer_executed_by_auditor": false,
+      "final_gui_complete": false,
+      "historical_candidate_only": true,
+      "release_ready": false,
+      "host": "1.3.1-qq.6",
+      "product_source_commit": "3bacff6e275c2333e1931373f48088e47e1fc8c3"
+    }
   },
   "public_source_boundary": {
     "branch": "codex/qqmusic-streaming-fixes",
     "product_code_baseline_commit": "e689af4489c5ecde0f004f36377575514872d12f",
     "baseline": "Existing Task13 bd3 baseline; original QQ component adapter retained",
     "excluded_scope": "Other-conversation independent-effects implementation, documents and tools; c99/1d35 content excluded by coordinator cherry-pick",
-    "evidence_boundary": "Branch construction reported by coordinator; no Git operations or ancestry verification by documentation owner",
-    "historical_receipts_role": "Existing39 archive entries retain their actual development source/pins; they do not establish this clean branch build, artifact or GUI acceptance"
+    "evidence_boundary": "V4 read-only ancestry/content/path/byte verification plus separate final GUI review; original product baseline provenance retained",
+    "historical_receipts_role": "Existing39 archive entries retain their actual development source/pins; they do not establish this clean branch build, artifact or GUI acceptance",
+    "product_build_commit": "20f47dfbcb298070ff3bf4b619911783d14836eb"
   },
   "provider_mirror_index_verification": {
     "provider_source_commit": "8514b96b4af3c9f88ce93718bc06d8c18496f698",
     "files": 80,
     "working_raw_and_explicit_lf_readbacks": true,
     "changed_entries_from_prior_rc7": 4,
-    "git_content_blob_calculation": "Independently computed from canonical LF bytes; final repository-filter confirmation pending coordinator freeze",
-    "binary_package_normalized": false
+    "git_content_blob_calculation": "V4 independently verified actual Git filters and committed text for80, split78provider+2Corebd3 origins",
+    "binary_package_normalized": false,
+    "provider_committed_files": 78,
+    "inherited_core_bd3_diagnostic_files": 2,
+    "normal_runtime_excludes_both_helpers": true
   },
-  "source_gate_provenance_role": "Historical development gates only; clean branch gates must be bound in final fixture40"
+  "source_gate_provenance_role": "Historical development gates only; clean branch gates must be bound in final fixture40",
+  "final_validation": {
+    "summary": "docs/qqmusic-research/task14/qq-task14-final-release-summary.json",
+    "source_pass": 400,
+    "independent_chain_cases": 11,
+    "native_gates_inherited": 8,
+    "native_tested_commit": "21f5fd8fb5e27de204d42095a071bc7aad258be7",
+    "native_reexecuted_for_ipc_change": false,
+    "gui_observations": 20,
+    "independent_visual_images": 6,
+    "screenshot_hashes": 17,
+    "functional_cold_passed": true,
+    "media_cache_hit": "unknown",
+    "limits": [
+      "7558/21514ms are operator seek-action to resume-request intervals, not pure native latency or immediate recovery.",
+      "Main diagnostic state snapshots are change-triggered, not raw decoder/IPC-ACK traces or continuous no-stall proof; song/PID/bytes and cache hit are not inferred from them.",
+      "Functional cold launch proves preserved session/preference and playback; audio cache hit remains unknown, not strict cold audio or a speed benchmark.",
+      "QQ process-family0 is observed before both launches and after cold playback, not continuously; optional existing local QQ-component effects retain their component dependency.",
+      "Earlier100s same-quality baseline/candidate both stable; startup6.836to7.127s is not improvement evidence. No runtime P2P-byte attribution or P2P transport integration is claimed.",
+      "Independent review checked six saved images and all17 hashes; phase presence alone never establishes GUI success. Screenshots/full UI trees/audio are not copied.",
+      "Source/package/GUI acceptance is scoped to these records, qualities and Windows setup; unknown premium formats/platforms and exact gapless sample timing remain outside this release proof."
+    ]
+  },
+  "publication": {
+    "deliveryCopy": "copied-and-hash-verified",
+    "providerTaskRef": "codex/qqmusic-windows-adaptation",
+    "providerRemote": "Tippye/Twilight-Echo-plugins",
+    "providerPublishedCommit": "8514b96b4af3c9f88ce93718bc06d8c18496f698",
+    "providerPushAndRemoteReadback": "passed; coordinator reported",
+    "coreTaskRef": "codex/qqmusic-streaming-fixes",
+    "coreStatus": "Coordinator final documentation commit and task ref push/readback pending; runtime/artifact/GUI acceptance complete"
+  }
 }

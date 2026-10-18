@@ -1,8 +1,12 @@
 # Task14：取流、缓存、预加载与超时
 
-本归档保留本轮调查及历史开发候选证据。**目标宿主为 `1.3.1-qq.8`，当前39项记录不是新公共分支的产物/实播验收，最终一槽留给新包、GUI、冷启动和发布冻结，尚不可交付**。qq.7 已实际观察FLAC96kHz/24-bit，但保进度切音质仍失败；后续 renderer时钟、代理握手及native seek预算三项修复已有历史源码/合成审查。qq.7 当时配套 provider `0.4.0-rc.7`，来源提交 `5eb33115090fd5cb4bb6035eab3e7d99ae3afa05`，插件 SHA-256 为 `b34358153e38a0b72e6510f187147d96aabd907f3b68af070734f408152e68b2`。旧 `qq.6` 安装包153,196,613 bytes，SHA-256 为 `81605cdd7ee0915f29cfcdfefa52e665a96fffbfc7dccdca89c704ef4fdc9088`；旧产物审计继续保留其历史角色。
+限定验收已完成：宿主1.3.1-qq.9，构建源码20f47dfbcb298070ff3bf4b619911783d14836eb；provider rc.8/8514b96b4af3c9f88ce93718bc06d8c18496f698。最后的[第40项合并收据](qq-task14-final-release-summary.json)固定产物、IPC修复、真实GUI、功能冷启动和限制，前39项继续保留历史开发出处与qq.6/qq.7/qq.8失败，不改写为新版本成功。
 
-当前公共分支 `codex/qqmusic-streaming-fixes` 从既有Task13基线选择本任务修改，文档冻结前产品代码基准为 `e689af4489c5ecde0f004f36377575514872d12f`；保留原有QQ组件适配，不含另一会话的独立音效实现。当前provider为 `0.4.0-rc.8`、来源 `8514b96b4af3c9f88ce93718bc06d8c18496f698`，TEP SHA-256为 `a3e59a6d06f024ccbb9f4998b72cac529f4d74da4437bec741dd284f2e418016`，80项镜像已按实际raw/LF文本更新清单；最终canonical构建提交和安装包由最后收据绑定。
+安装包153,196,508 bytes，SHA-256：49f4bbbfc5d56470ba68d5d997eeca345fceccbe3beba806dde04cbba57aea19；正常TEP SHA-256：a3e59a6d06f024ccbb9f4998b72cac529f4d74da4437bec741dd284f2e418016。175文件字节映射、34成员CRC/32模块闭包及28源码pins通过；成品IPC seek handler的await已核验。native8门禁由未变源码、12stage及7成品native字节同一性继承，未重跑Cpp。
+
+真实单首队列验证普通89→44.7→53.1及自然EOF252→44.7→53.5，HiRes↔FLAC非零位置切换实际96/48kHz、24-bit；《素直未満》缺HiRes后实际FLAC48k24，取样未重新loading。新进程无扫码恢复FLAC播放6.7秒，两个任务进程正常退出。Root现场验收及独立六图/17hash和安全main状态对照均通过；helper的18phase存在检查不单独决定通过。
+
+公共分支codex/qqmusic-streaming-fixes保留既有Task13 QQ组件适配，排除另一会话c99/1d35独立音效实现。80镜像中78项来自provider提交，2项为bd3继承Core诊断源码，正常TEP/ASAR不包含它们。最终文档提交与上述产品构建提交分开；安装包与插件已复制到交付目录并逐字节摘要复核，provider任务ref已推送且远端读回一致，Core文档提交及任务ref发布由协调者收尾。[发布说明](../../release-notes/1.3.1-qq.9.md)。
 
 以下仅为历史开发出处：已审计旧候选源码为 `3bacff6e275c2333e1931373f48088e47e1fc8c3`；Task14 slice `28c23565ee7345cdb7dbd4e3a090f80a9f51fd42` 曾与开发树基线 `c99cb5bdf34ba93c8b79e3709881b84c56b05849` 集成为 `ac573ac083b244d6d253ab1ae93c2b9f38fad33c`。这些SHA只保留证据的实际来源，不表示当前公共分支包含该开发树的独立实现。十二项slice pins、集成pins和控制层审查pins不改写为新分支结果。完整来源及归档摘要见[Task14清单](../task14-manifest.json)。
 
@@ -28,14 +32,15 @@
 | 真实百秒同曲对照 | [混合基线](qq-task14-real-streaming-baseline.json)为 Task14 web/service + Task13 native-v5/rc.6，[候选](qq-task14-real-streaming-candidate.json)为集成 native + rc.7，不是两个完整历史版本。均为《One Last Kiss》同一记录、FLAC 96kHz/24-bit、88,129,955 bytes。baseline100.005秒推进99.973秒，candidate100.036秒推进99.860秒；两者100次采样均无 loading，未复现基线卡顿。首播计时6.836→7.127秒，没有首播或持续播放速度提升证据。 |
 | 原版进程独立性 | [进程核对](qq-task14-standalone-process-check.json)固定候选同次测试前后原版 QQ 音乐进程数均为0、普通任务 profile、无安装 hook。该记录不等于最终无调试默认启动验收；本地臻品音效的可选本机组件依赖也不在此 Hi-Res 样本中消除。 |
 
-## 仍需补齐
+## 验证边界
 
-真实 GUI v1 从 EOF252秒暂停状态 seek45秒，约6591ms后恢复时提示 `native seek position was not confirmed`；这不是亚秒立即恢复实验，当次实际采样率未证。原始失败记录 `qq-task14-final-sky-ui-v1.json` 保留于研究工作区，未将含推荐列表的整棵 UI 树收入安全归档；后续最终 GUI 汇总必须保留该失败及摘要来源。
-
-qq.7 在实际96k24播放后仍发生保进度切音质失败，其结构审计通过也未关闭真实门禁。后续三修的历史开发门禁通过，当前公共分支仍需独立绑定新的full build/native gates/source/package、真实保进度切音质、单首queue自然EOF后seek/恢复、普通暂停定位、正常无调试冷启动及发布验收。现39/40项，最后一槽留给新公共分支的最终合并收据。百秒稳定对照与Task13历史成功不能替代这些结果。
+- 普通/EOF操作到恢复请求的7.558/21.514秒不能当立即恢复或纯native耗时；状态日志不是连续音频观测或原始IPC ACK。
+- 功能冷启动证明会话/偏好保留，无扫码播放；cacheHit未知，不是严格冷音频或加速基准。QQ进程族为所列时点观测。
+- 百秒混合A/B两版均稳且首播6.836→7.127秒，未证明首播提升；未证明或接入P2P贡献。可选本地效果依赖保留。
+- 源码400项、独立链路11项、继承native8门禁、产物和真实GUI分别证明各自范围；不混加为单一测试总数。
 
 ## 归档范围与摘要
 
 本目录只收录选定报告和安全 JSON，不包含音频、缓存文件内容、账号/令牌、真实媒体 URL、profile、原 QQ DLL/模型或构建二进制。部分报告引用的原始 trace/log/fixture 未收录，应按清单中的 source 原始摘要理解其来源，不能假定全部原始材料随仓库分发。
 
-`source_sha256` / `sources.raw_sha256` 是原始输入字节；`sha256` 是安全归档后的工作文件字节；`git_lf_sha256` 为 LF 文本摘要，`git_blob_sha1` 为对应内容对象。历史条目已做只读 Git filter 核对，本次新汇总及更新的README由canonical LF字节计算对象摘要，最终仓库filter复核待来源冻结。绝对本地路径缩减为 basename，并记录 JSON 指针。二进制插件仅收中央目录/CRC 元数据，原 ZIP 摘要按二进制原样计算，未进行换行归一化。
+`source_sha256` / `sources.raw_sha256` 是原始输入字节；`sha256` 是安全归档后的工作文件字节；`git_lf_sha256` 为 LF 文本摘要，`git_blob_sha1` 为对应内容对象。40项条目均已用只读Git filter hash-object核对；本次新汇总和更新的README同时记录实际文件及Git内容对象摘要。绝对本地路径缩减为 basename，并记录 JSON 指针。二进制插件仅收中央目录/CRC 元数据，原 ZIP 摘要按二进制原样计算，未进行换行归一化。
