@@ -261,6 +261,10 @@ struct FFmpegDecoder::Impl {
 
 #if defined(TAE_HAS_FFMPEG)
   AVFormatContext* formatContext = nullptr;
+  decltype(AVFormatContext::io_open) originalIoOpen = nullptr;
+  int detectedProbeScore = -1;
+  bool httpFlacIndexedSeek = false;
+  int httpFlacHeaderEntries = 0;
   FFmpegFileInput fileInput;
   AVCodecContext* codecContext = nullptr;
   AVPacket* packet = nullptr;
@@ -279,6 +283,26 @@ struct FFmpegDecoder::Impl {
   std::optional<int64_t> exactInputCursor;
   int64_t exactOutputCursor = 0;
   AVChannelLayout targetLayout{};
+
+  static int openAndProbeHttp(AVFormatContext* context, AVIOContext** input,
+                              const char* url, int flags, AVDictionary** options) {
+    auto* self = static_cast<Impl*>(context->opaque);
+    if (!self || !self->originalIoOpen) return AVERROR(EINVAL);
+    const int opened = self->originalIoOpen(context, input, url, flags, options);
+    if (opened < 0 || context != self->formatContext || context->iformat || !(flags & AVIO_FLAG_READ))
+      return opened;
+    // This is the same probe init_input performs immediately after io_open.
+    // Reuse its AVIO buffer and select the actual format before read_header;
+    // no extra URL open, guessed extension, or custom-IO ownership is needed.
+    const AVInputFormat* detected = nullptr;
+    const int score = av_probe_input_buffer2(*input, &detected, url, context, 0,
+                                            context->format_probesize);
+    if (score < 0) return score;
+    context->iformat = detected;
+    self->detectedProbeScore = score;
+    if (detected == av_find_input_format("flac")) context->flags |= AVFMT_FLAG_FAST_SEEK;
+    return 0;
+  }
   // Only the FFmpeg IO owner thread reads/writes phase, byte progress and
   // deadlines. Cross-thread stop uses the existing cancellation atomic above.
   using IoClock = std::chrono::steady_clock;
@@ -446,6 +470,10 @@ struct FFmpegDecoder::Impl {
       avformat_close_input(&formatContext);
     }
     fileInput.close();
+    originalIoOpen = nullptr;
+    detectedProbeScore = -1;
+    httpFlacIndexedSeek = false;
+    httpFlacHeaderEntries = 0;
     audioStreamIndex = -1;
     inputEof = false;
     resamplerFlushed = false;
@@ -460,6 +488,37 @@ struct FFmpegDecoder::Impl {
       std::lock_guard lock(streamTitleMutex);
       streamTitle.clear();
     }
+  }
+
+  bool seekPacket(double seconds, std::string* error, SeekPurpose purpose) {
+    if (!formatContext || audioStreamIndex < 0) return false;
+    // The transport owner has stopped/joined the old reader before seeking.
+    ioCancelled.store(false, std::memory_order_release);
+    readFailure.clear();
+    readFailureWasCancelled = false;
+    SeekBudgetScope positioning(*this, purpose);
+    IoOperation io(*this, IoPhase::Seek);
+    AVStream* stream = formatContext->streams[audioStreamIndex];
+    const int64_t timestamp = static_cast<int64_t>(seconds / av_q2d(stream->time_base));
+    const int ret = av_seek_frame(formatContext, audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
+    if (ret < 0 || interruptIo(this)) {
+      if (httpSource || cancelled(nullptr)) return ioError(error, "seek", ret);
+      if (error) *error = "音频跳转失败，错误码：" + std::to_string(ret);
+      return false;
+    }
+    avcodec_flush_buffers(codecContext);
+    // Decoder flush does not clear swr history from the old playback position.
+    if (swr) {
+      swr_close(swr);
+      if (swr_init(swr) < 0) { if (error) *error = "Unable to reset seek resampler"; return false; }
+    }
+    inputEof = false;
+    resamplerFlushed = false;
+    eof = false;
+    resetPending();
+    exactSeek = false;
+    exactInputCursor.reset();
+    return true;
   }
 
   bool configureOutputResampler(const AudioFormat& requestedFormat, std::string* error) {
@@ -930,12 +989,43 @@ bool FFmpegDecoder::open(const std::string& source, std::string* error) {
     return false;
   }
   impl_->formatContext->interrupt_callback = {Impl::interruptIo, impl_.get()};
+  if (looksHttp) {
+    // Nested demuxers inherit opaque. Keep callback state in Impl, never on
+    // this open() stack; all non-root or already detected IO is delegated.
+    impl_->originalIoOpen = impl_->formatContext->io_open;
+    impl_->formatContext->opaque = impl_.get();
+    impl_->formatContext->io_open = Impl::openAndProbeHttp;
+  }
   int ret = avformat_open_input(&impl_->formatContext, source.c_str(), inputFormat, &openOptions);
   av_dict_free(&openOptions);
   if (ret < 0 || Impl::interruptIo(impl_.get())) {
     if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "open", ret);
     if (error) *error = "打开音频失败，错误码：" + std::to_string(ret);
     return false;
+  }
+
+  if (looksHttp && impl_->detectedProbeScore >= 0)
+    impl_->formatContext->probe_score = impl_->detectedProbeScore;
+  if (looksHttp && impl_->formatContext->iformat == av_find_input_format("flac")) {
+    // Check immediately after read_header, before stream-info probing can add
+    // generic packet entries. These entries came from the actual SEEKTABLE.
+    int headerEntries = 0;
+    if (impl_->formatContext->nb_streams) {
+      AVStream* audio = impl_->formatContext->streams[0];
+      headerEntries = avformat_index_get_entries_count(audio);
+      for (int i = 0; i < headerEntries; ++i) {
+        const AVIndexEntry* entry = avformat_index_get_entry(audio, i);
+        if (entry && entry->timestamp >= 0 && entry->pos >= 0 &&
+            (audio->duration <= 0 || entry->timestamp < audio->duration))
+          impl_->httpFlacIndexedSeek = true;
+      }
+    }
+    if (!impl_->httpFlacIndexedSeek) impl_->formatContext->flags &= ~AVFMT_FLAG_FAST_SEEK;
+    impl_->httpFlacHeaderEntries = headerEntries;
+    // Existing FFmpeg/service stderr diagnostics, strictly numeric and with no
+    // source/key/account. This is observation, not an error or a new API.
+    av_log(nullptr, AV_LOG_INFO, "[twilight-flac-index] entries=%d enabled=%d\n",
+           headerEntries, impl_->httpFlacIndexedSeek ? 1 : 0);
   }
 
   ret = avformat_find_stream_info(impl_->formatContext, nullptr);
@@ -1141,34 +1231,23 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
 
 bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose) {
 #if defined(TAE_HAS_FFMPEG)
-  if (!impl_->formatContext || impl_->audioStreamIndex < 0) return false;
-  // The transport owner has stopped/joined the old reader before seeking.
-  impl_->ioCancelled.store(false, std::memory_order_release);
-  impl_->readFailure.clear();
-  impl_->readFailureWasCancelled = false;
-  Impl::SeekBudgetScope positioning(*impl_, purpose);
-  Impl::IoOperation io(*impl_, Impl::IoPhase::Seek);
-  AVStream* stream = impl_->formatContext->streams[impl_->audioStreamIndex];
-  const int64_t timestamp = static_cast<int64_t>(seconds / av_q2d(stream->time_base));
-  const int ret = av_seek_frame(impl_->formatContext, impl_->audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
-  if (ret < 0 || Impl::interruptIo(impl_.get())) {
-    if (impl_->httpSource || impl_->cancelled(nullptr)) return impl_->ioError(error, "seek", ret);
-    if (error) *error = "音频跳转失败，错误码：" + std::to_string(ret);
-    return false;
+  const double frames = seconds * impl_->outputFormat.sampleRate;
+  const bool validFrame = std::isfinite(frames) && frames >= 0 && frames < static_cast<double>(INT64_MAX);
+  if (impl_->httpSource && impl_->formatContext &&
+      impl_->formatContext->iformat == av_find_input_format("flac") && validFrame) {
+    av_log(nullptr, AV_LOG_INFO,
+           "[twilight-flac-seek] entries=%d indexed=%d target_frame=%llu output_rate=%d\n",
+           impl_->httpFlacHeaderEntries, impl_->httpFlacIndexedSeek ? 1 : 0,
+           static_cast<unsigned long long>(std::llround(frames)), impl_->outputFormat.sampleRate);
   }
-  avcodec_flush_buffers(impl_->codecContext);
-  // Decoder flush does not clear swr history from the old playback position.
-  if (impl_->swr) {
-    swr_close(impl_->swr);
-    if (swr_init(impl_->swr) < 0) { if (error) *error = "Unable to reset seek resampler"; return false; }
+  if (impl_->httpFlacIndexedSeek) {
+    if (!validFrame) {
+      if (error) *error = "Invalid precise FLAC seek position";
+      return false;
+    }
+    return seekOutputFrame(static_cast<uint64_t>(std::llround(frames)), error, purpose);
   }
-  impl_->inputEof = false;
-  impl_->resamplerFlushed = false;
-  impl_->eof = false;
-  impl_->resetPending();
-  impl_->exactSeek = false;
-  impl_->exactInputCursor.reset();
-  return true;
+  return impl_->seekPacket(seconds, error, purpose);
 #else
   (void)seconds;
   (void)purpose;
@@ -1186,9 +1265,12 @@ bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error, SeekPurp
   const auto rate = static_cast<uint64_t>(impl_->outputFormat.sampleRate);
   const auto preroll = frame > rate ? frame - rate : 0;
   Impl::SeekBudgetScope positioning(*impl_, purpose);
-  if (!seek(static_cast<double>(preroll) / rate, error, purpose)) return false;
+  if (!impl_->seekPacket(static_cast<double>(preroll) / rate, error, purpose)) return false;
   impl_->exactSeek = true;
-  impl_->exactFromStart = preroll == 0;
+  // Indexed raw FLAC has explicit sample timestamps and no codec priming.
+  // A dishonest table can point its sample-zero entry at a much later frame;
+  // do not relabel that real PTS as zero via the other-codec priming rule.
+  impl_->exactFromStart = preroll == 0 && !impl_->httpFlacIndexedSeek;
   impl_->exactTarget = frame;
   impl_->exactInputCursor.reset();
   while (impl_->exactSeek) {

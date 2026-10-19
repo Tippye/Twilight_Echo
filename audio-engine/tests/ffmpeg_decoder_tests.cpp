@@ -1,3 +1,4 @@
+#include "FfmpegFlacIndexFixture.h"
 #include "../decoder/FFmpegDecoder.h"
 #include "../decoder/FFmpegDecoderUtils.h"
 #include "../core/SharedInputFile.h"
@@ -349,6 +350,102 @@ void assertPreciseSeekMatchesExternalPcm(const std::string& source) {
   }
 }
 
+#if defined(_WIN32)
+void assertOrdinaryIndexedHttpFlacSeekMatchesContinuousPcm() {
+  const auto bytes = std::make_shared<const std::vector<uint8_t>>(makeSparseIndexedFlac(true));
+  const auto path = std::filesystem::temp_directory_path() / "twilight-http-indexed-flac-unit.flac";
+  { std::ofstream output(path, std::ios::binary); output.write(reinterpret_cast<const char*>(bytes->data()), bytes->size()); }
+  TempAudioFixture file(path);
+  FlacIndexHttpFixture server(bytes);
+  for (const int rate : {96000, 48000}) {
+    FFmpegDecoder reference, actual;
+    std::string error;
+    assert(reference.open(file.string(), &error));
+    assert(actual.open(server.url(), &error));
+    auto format = reference.outputFormat();
+    format.sampleRate = rate; format.bitDepth = 32; format.sampleFormat = AudioSampleFormat::Float32Interleaved;
+    assert(reference.setOutputFormat(format, &error));
+    assert(actual.setOutputFormat(format, &error));
+    assert(actual.streamInfo().sourceFormat.sampleRate == 96000);
+    assert(actual.streamInfo().sourceFormat.bitDepth == 24);
+    uint64_t cursor = 0;
+    std::vector<float> scratch(4096 * 2), expected(257 * 2), found(expected.size());
+    for (const double seconds : {1.234567, 30.125, 82.1721875, 89.25, 1.234567, 82.1721875, 0.0}) {
+      const auto target = static_cast<uint64_t>(std::llround(seconds * rate));
+      if (target < cursor) {
+        reference.close(); assert(reference.open(file.string(), &error));
+        assert(reference.setOutputFormat(format, &error)); cursor = 0;
+      }
+      while (cursor < target) {
+        const auto count = static_cast<size_t>(std::min<uint64_t>(4096, target - cursor));
+        assert(reference.readFrames(scratch.data(), count, &error) == count); cursor += count;
+      }
+      assert(reference.readFrames(expected.data(), 257, &error) == 257); cursor += 257;
+      assert(actual.seek(static_cast<double>(target) / rate, &error));
+      assert(actual.readFrames(found.data(), 257, &error) == 257);
+      for (size_t i = 0; i < expected.size(); ++i) {
+        if (std::abs(expected[i] - found[i]) > 1e-5f) {
+          std::fprintf(stderr, "indexed HTTP ordinary seek PCM mismatch rate=%d frame=%llu sample=%zu\n", rate, static_cast<unsigned long long>(target), i);
+          std::abort();
+        }
+      }
+    }
+  }
+  // A file without SEEKTABLE must retain the original binary seek path.
+  // Its explicit precise-frame API still has to return the reference window.
+  {
+    auto plain = std::make_shared<const std::vector<uint8_t>>(makeSparseIndexedFlac(false));
+    FlacIndexHttpFixture noIndex(plain);
+    FFmpegDecoder reference, actual;
+    std::string error;
+    assert(reference.open(file.string(), &error));
+    assert(actual.open(noIndex.url(), &error));
+    auto format = reference.outputFormat();
+    format.bitDepth = 32; format.sampleFormat = AudioSampleFormat::Float32Interleaved;
+    assert(reference.setOutputFormat(format, &error));
+    assert(actual.setOutputFormat(format, &error));
+    const uint64_t target = static_cast<uint64_t>(std::llround(82.1721875 * format.sampleRate));
+    uint64_t cursor = 0;
+    std::vector<float> scratch(8192), expected(514), found(514);
+    while (cursor < target) {
+      const auto count = static_cast<size_t>(std::min<uint64_t>(4096, target - cursor));
+      assert(reference.readFrames(scratch.data(), count, &error) == count); cursor += count;
+    }
+    assert(reference.readFrames(expected.data(), 257, &error) == 257);
+    assert(actual.seekOutputFrame(target, &error));
+    assert(actual.readFrames(found.data(), 257, &error) == 257);
+    for (size_t i = 0; i < expected.size(); ++i) assert(std::abs(found[i] - expected[i]) <= 1e-5f);
+    assert(actual.seek(2.125, &error));
+    assert(actual.readFrames(found.data(), 257, &error) == 257);
+  }
+  // A dishonest seekpoint must not turn a successful packet-positioning ACK
+  // into audio from beyond the target. This reuses a real later frame offset
+  // while deliberately giving it the first entry's timestamp.
+  {
+    auto dishonest = std::make_shared<std::vector<uint8_t>>(*bytes);
+    constexpr size_t table = 4 + 4 + 34 + 4;
+    std::copy_n(dishonest->begin() + table + 2 * 18 + 8, 8, dishonest->begin() + table + 8);
+    FlacIndexHttpFixture invalid(dishonest);
+    FFmpegDecoder actual;
+    std::string error;
+    assert(actual.open(invalid.url(), &error));
+    auto format = actual.outputFormat();
+    format.bitDepth = 32; format.sampleFormat = AudioSampleFormat::Float32Interleaved;
+    assert(actual.setOutputFormat(format, &error));
+    for (const double seconds : {0.0, 0.5, 1.234567}) {
+      error.clear();
+      if (actual.seek(seconds, &error)) {
+        std::fprintf(stderr, "dishonest indexed HTTP seek accepted a late frame as target seconds=%.6f\n", seconds);
+        std::abort();
+      }
+      assert(error == "Precise PCM seek began beyond the requested frame");
+    }
+  }
+  std::cout << "{\"indexedHttpRates\":2,\"positionsPerRate\":7,\"windowFrames\":257,"
+               "\"noTablePreciseFallback\":true,\"dishonestIndexRejected\":true}\n";
+}
+#endif
+
 void assertDecoderResamplesWithQualityTier(
     FFmpegDecoder::ResamplerQuality quality,
     const char* fixtureName) {
@@ -458,6 +555,11 @@ void assertDecoderOpensExternalFixturesWhenProvided() {
 
 int main(int argc,char** argv) {
 #if defined(TAE_HAS_FFMPEG)
+#if defined(_WIN32)
+  if(argc==2 && std::string(argv[1])=="--http-flac-index-unit") {
+    assertOrdinaryIndexedHttpFlacSeekMatchesContinuousPcm(); return 0;
+  }
+#endif
   if(argc==4 && std::string(argv[1])=="--http-seek-budget-probe") {
     return runFfmpegHttpSeekBudgetProbe(argv[2], argv[3]);
   }

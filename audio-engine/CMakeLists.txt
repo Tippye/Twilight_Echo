@@ -487,12 +487,18 @@ if(TAE_BUILD_TESTS)
     core/AudioTypes.cpp
   )
   target_include_directories(twilight_ffmpeg_decoder_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  if(WIN32)
+    target_link_libraries(twilight_ffmpeg_decoder_tests PRIVATE ws2_32)
+  endif()
   if(FFMPEG_FOUND)
     target_compile_definitions(twilight_ffmpeg_decoder_tests PRIVATE TAE_HAS_FFMPEG=1)
     target_include_directories(twilight_ffmpeg_decoder_tests PRIVATE ${FFMPEG_INCLUDE_DIRS})
     target_link_libraries(twilight_ffmpeg_decoder_tests PRIVATE ${FFMPEG_LIBRARIES} ${TAE_FFMPEG_EXTRA_LIBS})
   endif()
   add_test(NAME twilight_ffmpeg_decoder_unit COMMAND twilight_ffmpeg_decoder_tests)
+  if(WIN32 AND FFMPEG_FOUND)
+    add_test(NAME twilight_ffmpeg_flac_index_http COMMAND twilight_ffmpeg_decoder_tests --http-flac-index-unit)
+  endif()
 
   add_executable(twilight_dsd_dop_tests
     tests/dsd_dop_tests.cpp
