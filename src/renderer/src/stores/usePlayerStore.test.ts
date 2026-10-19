@@ -33,6 +33,277 @@ import { patchPlaybackQueueTrack } from '../utils/playbackQueueVirtualization.ts
 import { getTrackSource, isLikelyLocalFilePath } from '../utils/playerTrackUtils.ts'
 import { shouldReuseResolvedStreamUrl } from '../utils/playbackRouting.ts'
 import { createPlaybackSessionClock } from '../utils/playbackSessionClock.ts'
+import { parseAppError, ipcError } from '../../../shared/errors/appError.ts'
+import { presentError } from '../../../shared/errors/presentError.ts'
+import { createPlaybackQualityController } from './player/playbackQualityController.ts'
+import { useAppNoticeStore } from './useAppNoticeStore.ts'
+
+function qualityFailureNoticeFixture(playing = true) {
+  const source = readFileSync(new URL('./usePlayerStore.ts', import.meta.url), 'utf8')
+  const ast = ts.createSourceFile('store.ts', source, ts.ScriptTarget.Latest, true)
+  const names = ['resolveAudioEngineErrorText', 'setAudioEngineError', 'loadAndPlay']
+  const functions = ast.statements.filter(
+    (node): node is ts.FunctionDeclaration =>
+      ts.isFunctionDeclaration(node) && names.includes(node.name?.text ?? '')
+  )
+  const qualityWiring = ast.statements.find(
+    (node) =>
+      ts.isVariableStatement(node) &&
+      node.getText(ast).startsWith('const { changeQuality: changePlaybackQuality }')
+  )
+  assert.equal(functions.length, names.length)
+  assert.ok(qualityWiring)
+  const component = readFileSync(
+    new URL('../components/player-bar/PlayerQualitySelect.vue', import.meta.url),
+    'utf8'
+  )
+  const selector = extractInternalFunctionBody(component, 'selectQuality')
+  const notices = useAppNoticeStore()
+  notices.clearNotices()
+  let generation = 1
+  let nativePlayCalls = 0
+  const track = {
+    id: 'public:fixture',
+    source: 'qq',
+    queueEntryId: 'entry:fixture',
+    title: 'Public fixture',
+    duration: 252
+  } as Track
+  const provider = {
+    id: 'qq',
+    getPlaybackQuality: async () => ({
+      quality: 'flac',
+      options: [{ value: 'flac', label: 'FLAC' }]
+    }),
+    setPlaybackQuality: async (quality: string) => ({
+      quality,
+      options: [{ value: quality, label: quality }]
+    }),
+    getPlaybackUrl: async () => 'public-new.flac'
+  }
+  const registry = { getForTrack: () => provider, getGeneration: () => generation }
+  const context = {
+    Error,
+    console: { warn: () => {}, error: () => {} },
+    props: { track },
+    state: { value: { quality: 'flac', options: [{ value: 'flac', label: 'FLAC' }] } },
+    provider: { value: provider },
+    busy: { value: false },
+    active: true,
+    selectionRevision: 0,
+    selecting: undefined,
+    AbortController,
+    useMediaProviders: () => registry,
+    createPlaybackQualityController,
+    pushNotice: notices.pushNotice,
+    parseAppError,
+    ipcError,
+    currentLocale: () => 'zh-CN',
+    translate,
+    presentError,
+    friendlyStreamingError: (error: unknown, fallback: string) =>
+      presentError('zh-CN', error, fallback, { prefixFallback: true }),
+    refresh: async () => {},
+    audioEngineError: { value: null as string | null },
+    lastAudioEngineNotice: '',
+    currentTrack: { value: { ...track } },
+    queue: { value: [track] },
+    queueIndex: { value: 0 },
+    activeLoadToken: 1,
+    lastActiveTrack: track,
+    isLoading: { value: false },
+    isPlaying: { value: playing },
+    isActiveLoad: (token: number, expected: Track): boolean =>
+      token === context.activeLoadToken && expected.id === context.currentTrack.value.id,
+    getTrackSource,
+    getLatestPlaybackTime: () => 16.3,
+    castTargetUsn: { value: '' },
+    isTrackPlaybackSupported: () => true,
+    UNSUPPORTED_TRACK_PLAYBACK_MESSAGE,
+    playbackHistoryController: {
+      beginPlaybackAttempt: () => {},
+      clearResumeOfferForOtherTrack: () => {}
+    },
+    playbackSessionController: { clearPendingPlaybackPosition: () => {} },
+    nativeHistoryRestartPending: false,
+    clampCuePlaybackPosition: (_track: Track, at: number) => at,
+    playbackToggleIntent: null as { playing: boolean } | null,
+    clearPlaybackToggleIntent: () => {
+      context.playbackToggleIntent = null
+    },
+    setPlaybackToggleIntent: (value: boolean) => {
+      context.playbackToggleIntent = { playing: value }
+    },
+    sourceRecoveryDisabledLoadToken: null,
+    nativePlaybackActive: false,
+    nativeQueueDelegated: false,
+    setNativePlaybackInfoIntent: () => {},
+    clearNativePlaybackInfoIntentForLoad: () => {},
+    stopVisualizationPolling: () => {},
+    resetNativeStreamBufferingState: () => {},
+    streamNowPlaying: { value: '' },
+    stopRendererAudio: () => {},
+    playbackAudio: null,
+    pendingLoadStartTime: 0,
+    duration: { value: 252 },
+    cueDuration: () => 252,
+    beginPlaybackPositionTransition: () => {},
+    clearAbLoop: () => {},
+    clearCrossfadeTimer: () => {},
+    stopNativeAudio: async () => {},
+    patchTrackInQueues: () => {},
+    nativeSourceToTrackId: new Map<string, string>(),
+    shouldUseNativePlayback: () => true,
+    stripStaleNcmStreamUrls: (queue: Track[]) => queue,
+    appSettings: { value: { ncmPlaybackQuality: 'hires' } },
+    playMode: { value: 'sequential' },
+    ncmStreamUrlCommittedAt: new Map<string, number>(),
+    nativeQueueLoader: {
+      prepareAndLoad: async () => ({
+        items: [{ id: track.id, source: 'public-new.flac' }],
+        delegated: false
+      })
+    },
+    preparedNativePlayMode: () => 'list',
+    pruneNativeSourceToTrackId: () => {},
+    window: {
+      api: {
+        fs: { isAudioFileAuthorized: async () => true, areAudioFilesAuthorized: async () => [] },
+        audioEngine: {
+          setPlayMode: async () => {},
+          play: async () => {
+            nativePlayCalls++
+            throw ipcError('audio.play_failed', 'native playback failed', {
+              detail: 'network_io_timeout'
+            })
+          },
+          isHtmlAudioFallbackAllowed: async () => false
+        }
+      }
+    },
+    handlePlaybackFallback: async () => false,
+    autoAdvanceInFlight: false
+  }
+  vm.createContext(context)
+  const code = ts.transpileModule(
+    functions.map((node) => node.getText(ast)).join('\n') +
+      '\n' +
+      qualityWiring.getText(ast) +
+      `\nasync function selectQuality(event: Event) {${selector}}`,
+    { compilerOptions: { target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+  vm.runInContext(code, context)
+  return {
+    notices,
+    context,
+    provider,
+    nativePlayCalls: () => nativePlayCalls,
+    invalidateSelection: () => {
+      generation++
+    },
+    choose: () =>
+      (vm.runInContext('selectQuality', context) as (event: unknown) => Promise<void>)({
+        target: { value: 'hires' }
+      }),
+    ordinaryPlay: () =>
+      (
+        vm.runInContext('loadAndPlay', context) as (
+          track: Track,
+          position: number,
+          options: unknown
+        ) => Promise<void>
+      )(track, 16.3, { target: 'public-new.flac' })
+  }
+}
+
+test('a quality reload native rejection has one caller-owned notice and retains inline failure state', async (t) => {
+  for (const playing of [true, false])
+    await t.test(String(playing), async (t) => {
+      const f = qualityFailureNoticeFixture(playing)
+      t.after(() => f.notices.clearNotices())
+      await f.choose()
+      assert.equal(f.context.audioEngineError.value, '播放失败：network_io_timeout')
+      assert.equal(f.nativePlayCalls(), 1)
+      assert.equal(f.context.isLoading.value, false)
+      assert.equal(f.context.isPlaying.value, false)
+      assert.deepEqual(
+        f.notices.notices.value.map((item) => item.message),
+        ['播放失败：network_io_timeout']
+      )
+      await f.choose()
+      assert.equal(f.nativePlayCalls(), 2)
+      assert.equal(
+        f.notices.notices.value.length,
+        2,
+        'two explicit failed attempts each notify once; no global text dedupe'
+      )
+      await f.ordinaryPlay()
+      assert.equal(
+        f.notices.notices.value.length,
+        3,
+        'a caller-owned failure cannot suppress a later ordinary-play notice'
+      )
+    })
+})
+
+test('ordinary playback still owns its notice and pre-load quality failures notify once', async (t) => {
+  const ordinary = qualityFailureNoticeFixture()
+  t.after(() => ordinary.notices.clearNotices())
+  await ordinary.ordinaryPlay()
+  assert.equal(ordinary.context.audioEngineError.value, '播放失败：network_io_timeout')
+  assert.equal(ordinary.nativePlayCalls(), 1)
+  assert.equal(ordinary.notices.notices.value.length, 1)
+  for (const stage of ['save', 'resolve']) {
+    const quality = qualityFailureNoticeFixture()
+    const fail = async () => {
+      throw new Error('公开测试的品质解析失败')
+    }
+    if (stage === 'save') quality.provider.setPlaybackQuality = fail
+    else quality.provider.getPlaybackUrl = fail
+    await quality.choose()
+    assert.equal(quality.nativePlayCalls(), 0)
+    assert.deepEqual(
+      quality.notices.notices.value.map((item) => item.message),
+      ['公开测试的品质解析失败']
+    )
+  }
+})
+
+test('an obsolete quality selection keeps its existing notice suppression after a provider failure', async (t) => {
+  const f = qualityFailureNoticeFixture()
+  t.after(() => f.notices.clearNotices())
+  let reject!: (error: Error) => void
+  f.provider.getPlaybackUrl = () =>
+    new Promise<string>((_resolve, no) => {
+      reject = no
+    })
+  const changing = f.choose()
+  await new Promise((resolve) => setImmediate(resolve))
+  f.invalidateSelection()
+  reject(new Error('公开测试的旧请求失败'))
+  await changing
+  assert.equal(f.nativePlayCalls(), 0)
+  assert.equal(f.notices.notices.value.length, 0)
+})
+
+test('an obsolete quality reload cannot notify from a late native rejection', async (t) => {
+  const f = qualityFailureNoticeFixture()
+  t.after(() => f.notices.clearNotices())
+  let reject!: (error: Error) => void
+  f.context.window.api.audioEngine.play = () =>
+    new Promise<never>((_resolve, no) => {
+      reject = no
+    })
+  const changing = f.choose()
+  await new Promise((resolve) => setImmediate(resolve))
+  f.invalidateSelection()
+  reject(
+    ipcError('audio.play_failed', 'old native playback failed', { detail: 'network_io_timeout' })
+  )
+  await changing
+  assert.equal(f.context.audioEngineError.value, null)
+  assert.equal(f.notices.notices.value.length, 0)
+})
 
 test('each playback load clears stale pending positions before asynchronous work starts', () => {
   const source = readFileSync(new URL('./usePlayerStore.ts', import.meta.url), 'utf8')
@@ -1746,7 +2017,7 @@ test('audio engine errors use the global notice channel instead of the player ba
   // fallback warning as a hard error.
   assert.match(
     storeSource,
-    /function setAudioEngineError\(error: string \| null, kind: AppNoticeKind = 'error'\): void/
+    /function setAudioEngineError\(\s*error: string \| null,\s*kind: AppNoticeKind = 'error',\s*notify = true\s*\): void/
   )
   assert.match(storeSource, /pushNotice\(\{ kind, message \}\)/)
   assert.doesNotMatch(storeSource, /isFallbackNotice/)

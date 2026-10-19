@@ -284,13 +284,18 @@ function resolveAudioEngineErrorText(error: string): string {
  * reclassified a recovered-with-fallback warning as a hard error. Callers know
  * which case they are in, so they say so.
  */
-function setAudioEngineError(error: string | null, kind: AppNoticeKind = 'error'): void {
+function setAudioEngineError(
+  error: string | null,
+  kind: AppNoticeKind = 'error',
+  notify = true
+): void {
   const message = typeof error === 'string' ? resolveAudioEngineErrorText(error) : ''
   audioEngineError.value = message || error
   if (!message) {
     lastAudioEngineNotice = ''
     return
   }
+  if (!notify) return
   if (message === lastAudioEngineNotice) return
   lastAudioEngineNotice = message
   pushNotice({ kind, message })
@@ -2989,6 +2994,8 @@ interface PlaybackLoadOptions {
   target?: string
   autoplay?: boolean
   allowSourceRecovery?: boolean
+  /** A caller that presents this rejecting load's error keeps the only toast. */
+  notifyError?: boolean
   isCurrent?: () => boolean
 }
 
@@ -3239,7 +3246,9 @@ async function loadAndPlay(
             ? translate(currentLocale(), 'error.audio.native_unavailable_detail', {
                 reason: nativeFallbackReason
               })
-            : translate(currentLocale(), 'error.audio.native_unavailable')
+            : translate(currentLocale(), 'error.audio.native_unavailable'),
+          'error',
+          options?.notifyError !== false
         )
         isPlaying.value = false
         releaseLoadIfOwned()
@@ -3319,7 +3328,11 @@ async function loadAndPlay(
       return
     }
     console.error('[audio-engine] Playback failed:', err)
-    setAudioEngineError(err instanceof Error ? err.message : String(err))
+    setAudioEngineError(
+      err instanceof Error ? err.message : String(err),
+      'error',
+      options?.notifyError !== false
+    )
     autoAdvanceInFlight = false
     isLoading.value = false
     isPlaying.value = false
@@ -3360,6 +3373,7 @@ const { changeQuality: changePlaybackQuality } = createPlaybackQualityController
       target,
       autoplay: playing,
       allowSourceRecovery: false,
+      notifyError: false,
       isCurrent: () =>
         currentTrack.value?.queueEntryId === track.queueEntryId &&
         queueIndex.value === index &&
