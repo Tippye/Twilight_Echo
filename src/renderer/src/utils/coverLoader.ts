@@ -20,6 +20,7 @@
 
 import { ref, type Ref, watch, type ComputedRef } from 'vue'
 import { clearDominantColorCache } from './colorExtractor.ts'
+import { recordCoverDiagnostic } from './coverDiagnostics.ts'
 
 const remoteCoverGrantCache = new Map<string, string>()
 const remoteCoverGrantInflight = new Map<string, Promise<string | null>>()
@@ -258,7 +259,10 @@ async function ensureCachedRemoteGrant(source: string): Promise<string | null> {
           window?: { api?: { data?: { grantRemoteCover?: (src: string) => Promise<string> } } }
         }
       ).window?.api?.data
-      if (!api?.grantRemoteCover) return null
+      if (!api?.grantRemoteCover) {
+        recordCoverDiagnostic('grant.unavailable', null, normalized, {}, 'warn')
+        return null
+      }
       const granted = await api.grantRemoteCover(normalized)
       if (typeof granted === 'string' && granted.trim()) {
         const token = granted.trim()
@@ -269,8 +273,10 @@ async function ensureCachedRemoteGrant(source: string): Promise<string | null> {
         }
         return token
       }
+      recordCoverDiagnostic('grant.empty', null, normalized, {}, 'warn')
       return null
     } catch {
+      recordCoverDiagnostic('grant.failed', null, normalized, {}, 'warn')
       return null
     } finally {
       if (generation === remoteCoverGeneration) remoteCoverGrantInflight.delete(normalized)

@@ -24,6 +24,7 @@ int main() {
   assert(std::strstr(capabilities.data(), "\"devicePathKinds\":[\"default\",\"hw\",\"plughw\",\"hal\",\"asio\"]") != nullptr);
   assert(std::strstr(capabilities.data(), "\"output\":{\"accessModes\":[\"shared\",\"exclusive\",\"hog\",\"direct\",\"plugin\"]}") != nullptr);
   assert(std::strstr(capabilities.data(), "\"backendCapabilities\"") != nullptr);
+  assert(std::strstr(capabilities.data(), "\"queueHotUpdate\":{\"version\":1") != nullptr);
   assert(std::strstr(capabilities.data(), "\"id\":\"wasapi\"") != nullptr);
   assert(std::strstr(capabilities.data(), "\"id\":\"wasapi-exclusive\"") != nullptr);
   assert(std::strstr(capabilities.data(), "\"id\":\"asio\"") != nullptr);
@@ -43,6 +44,40 @@ int main() {
   const TAE_Result playResult = TAE_Play(engine, "test.flac", 0.0);
   assert(playResult == TAE_RESULT_OK || playResult == TAE_RESULT_BACKEND_UNAVAILABLE);
   assert(TAE_SetVolume(engine, 1.0) == TAE_RESULT_OK);
+
+  // Queue hot update contract: append/source refresh must not reload the queue.
+  int firstAppendedIndex = -1;
+  assert(TAE_AppendQueueItems(
+             engine,
+             "[{\"id\":\"2\",\"source\":\"next.flac\"}]",
+             &firstAppendedIndex) == TAE_RESULT_OK);
+  assert(firstAppendedIndex == 1);
+  assert(TAE_AppendQueueItems(engine, "{\"source\":\"bad.flac\"}", nullptr) ==
+         TAE_RESULT_INVALID_ARGUMENT);
+  assert(TAE_UpdateQueueItemSource(engine, 1, "next-fresh.flac") == TAE_RESULT_OK);
+  assert(TAE_UpdateQueueItemSource(engine, 0, "current-fresh.flac") ==
+         TAE_RESULT_INVALID_ARGUMENT);
+  {
+    size_t stateRequired = 0;
+    assert(TAE_GetQueueState(engine, nullptr, 0, &stateRequired) == TAE_RESULT_OK);
+    assert(stateRequired > 1);
+    std::vector<char> stateJson(stateRequired);
+    assert(TAE_GetQueueState(engine, stateJson.data(), stateJson.size(), &stateRequired) ==
+           TAE_RESULT_OK);
+    assert(std::strstr(stateJson.data(), "\"size\":2") != nullptr);
+    assert(std::strstr(stateJson.data(), "\"currentIndex\":0") != nullptr);
+    assert(std::strstr(stateJson.data(), "\"upcomingIndex\":1") != nullptr);
+    assert(std::strstr(stateJson.data(), "\"revision\":") != nullptr);
+  }
+  {
+    size_t infoRequired = 0;
+    assert(TAE_GetPlaybackInfo(engine, nullptr, 0, &infoRequired) == TAE_RESULT_OK);
+    std::vector<char> infoJson(infoRequired);
+    assert(TAE_GetPlaybackInfo(engine, infoJson.data(), infoJson.size(), &infoRequired) ==
+           TAE_RESULT_OK);
+    assert(std::strstr(infoJson.data(), "\"queueRevision\":") != nullptr);
+    assert(std::strstr(infoJson.data(), "\"upcomingQueueIndex\":1") != nullptr);
+  }
 
   required = 0;
   assert(TAE_GetPlaybackInfo(engine, nullptr, 0, &required) == TAE_RESULT_OK);

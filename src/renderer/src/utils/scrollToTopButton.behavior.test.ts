@@ -18,7 +18,7 @@ const execFileAsync = promisify(execFile)
  * in a real render. This mounts the shipped runtime and base.css in an actual
  * Electron window and drives it the way a user would.
  */
-test('the shared back-to-top control reveals, anchors, retargets and themes in a real window', async () => {
+test('the shared scroll controls reveal, stack, retarget and theme in a real window', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'twilight-scroll-top-'))
   try {
     const controller = await compileController()
@@ -181,6 +181,16 @@ const shown = () => {
     style.opacity === '1' &&
     style.pointerEvents === 'auto'
 }
+const locateControl = () => document.querySelector('.te-scroll-locate')
+const locateShown = () => {
+  const element = locateControl()
+  if (!element) return false
+  const style = getComputedStyle(element)
+  return element.dataset.teScrollLocateVisible === 'true' &&
+    style.visibility === 'visible' &&
+    style.opacity === '1' &&
+    style.pointerEvents === 'auto'
+}
 const revealFor = (element) => Math.min(420, Math.max(240, element.clientHeight * 0.5))
 const hover = (element) => element.dispatchEvent(new PointerEvent('pointermove', { bubbles: true }))
 const gutterOf = (element) => element.getBoundingClientRect().width - element.clientWidth
@@ -252,6 +262,35 @@ window.runScrollTopChecks = async () => {
   await nudge()
   if (!shown()) fail('the control hid itself when its own anchor was re-probed')
   near(control().getBoundingClientRect().bottom, barBox.top - 16, 'bottom edge after a re-probe')
+
+  // A song page can opt into a locate action. The stack grows upward so the
+  // lower control still clears the player bar, and clicking it emits a scoped
+  // event for the page to resolve its current row.
+  let locateClicks = 0
+  page.addEventListener('te-locate-current', () => { locateClicks += 1 })
+  page.dataset.teLocateCurrent = 'true'
+  await nudge()
+  if (!locateShown()) fail('the locate control did not appear below back-to-top')
+  box = control().getBoundingClientRect()
+  let locateBox = locateControl().getBoundingClientRect()
+  near(locateBox.right, box.right, 'locate control alignment')
+  near(locateBox.top, box.bottom + 8, 'locate control stacks below back-to-top')
+  near(locateBox.bottom, barBox.top - 16, 'locate control clears the player bar')
+  const locateHit = document.elementFromPoint(
+    Math.round(locateBox.left + 20),
+    Math.round(locateBox.top + 20)
+  )
+  const locateElement = locateControl()
+  if (!locateHit || !(locateHit === locateElement || locateElement.contains(locateHit))) {
+    fail('the locate control is not clickable at its anchor')
+  }
+  locateElement.click()
+  await settle()
+  if (locateClicks !== 1) fail('the locate control did not emit one scoped event')
+  page.removeAttribute('data-te-locate-current')
+  await nudge()
+  if (locateShown()) fail('the locate control stayed visible after its page opt-out')
+  near(control().getBoundingClientRect().bottom, barBox.top - 16, 'back-to-top returned after locate opt-out')
 
   const lightColor = getComputedStyle(element).color
   const lightSurface = getComputedStyle(element).backgroundColor
@@ -391,10 +430,12 @@ window.runScrollTopChecks = async () => {
   await frames(2)
   if (!shown()) fail('visible document did not restore the active back-to-top anchor')
   stopButton(); stopScrollbars()
-  if (control()) fail('cleanup retained the back-to-top control')
+  if (control() || locateControl()) fail('cleanup retained a floating scroll control')
   hover(page); page.dispatchEvent(new Event('scroll'))
   await frames(2)
-  if (control() || page.classList.contains('is-scrollbar-active')) fail('disposed handlers still responded to scrolling')
+  if (control() || locateControl() || page.classList.contains('is-scrollbar-active')) {
+    fail('disposed handlers still responded to scrolling')
+  }
   console.log('SCROLL_TOP_OK')
 }
 `

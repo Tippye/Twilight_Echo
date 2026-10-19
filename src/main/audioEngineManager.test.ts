@@ -2097,6 +2097,59 @@ test('module switches gate matching nodes in an active custom scene', async () =
   manager.destroy()
 })
 
+for (const readyFirst of [false, true]) {
+  test(`cold startup serializes DSP initialization when service ready arrives ${readyFirst ? 'before' : 'during'} start`, async () => {
+    const service = new DeferredAudioServiceBinding(['ApplyDspState'])
+    const manager = new AudioEngineManager(
+      { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+      {
+        audioServiceFactory: () => service,
+        scheduler: TEST_SCHEDULER,
+        deviceOptionsProvider: () => DEVICE_OPTIONS
+      }
+    )
+    try {
+      const ready = new Promise<{ restoreErrors: string[]; outputRouteSynced: boolean }>(
+        (resolve) => {
+          manager.once('audio-service-ready', resolve)
+        }
+      )
+      if (readyFirst) service.emit('ready')
+      let startupFinished = false
+      const startup = manager.start().then(() => {
+        startupFinished = true
+      })
+      await new Promise((resolve) => setImmediate(resolve))
+      assert.equal(service.deferredCalls.length, 1)
+      if (!readyFirst) service.emit('ready')
+      await new Promise((resolve) => setImmediate(resolve))
+      const concurrentGraphApplies = service.deferredCalls.length
+      service.resolveNextDeferredCall()
+      await new Promise((resolve) => setImmediate(resolve))
+      const readyAfterFirstGraph = startupFinished
+      for (let turn = 0; turn < 6; turn += 1) {
+        service.resolveNextDeferredCall()
+        await new Promise((resolve) => setImmediate(resolve))
+      }
+      await startup
+      const event = await ready
+      assert.equal(
+        concurrentGraphApplies,
+        1,
+        "startup and ready must wait for each other's DSP ACK"
+      )
+      assert.equal(readyAfterFirstGraph, false, 'startup must also await the first ready restore')
+      assert.deepEqual(event.restoreErrors, [])
+      assert.equal(event.outputRouteSynced, true)
+      const status = await manager.getDspGraphStatus()
+      assert.equal(status.applyState, 'applied')
+      assert.equal(status.appliedRevision, status.requestedRevision)
+    } finally {
+      manager.destroy()
+    }
+  })
+}
+
 test('audio service restart replays the DSP graph and verifies the new applied revision', async () => {
   const service = new FakeAudioServiceBinding()
   const manager = new AudioEngineManager(
@@ -4822,6 +4875,14 @@ test('a failed revocation queue reload stops playback and blocks restart until a
   await assert.rejects(manager.play('keep.flac'), /provider_queue_authorization_pending/)
   await assert.rejects(manager.next(), /provider_queue_authorization_pending/)
   await assert.rejects(manager.togglePause(), /provider_queue_authorization_pending/)
+  await assert.rejects(
+    manager.appendQueueItems([{ id: 'next', source: 'next.flac' }]),
+    /provider_queue_authorization_pending/
+  )
+  await assert.rejects(
+    manager.updateQueueItemSource(0, 'keep.flac?refreshed'),
+    /provider_queue_authorization_pending/
+  )
   rejectQueue = false
   await manager.loadQueue([{ id: 'keep', source: 'keep.flac' }])
   await manager.play('keep.flac')
@@ -5213,6 +5274,182 @@ test('playback snapshots bind public source metadata to the committed queue and 
   const direct = await manager.getPlaybackInfo()
   assert.equal(direct.rendererSource, undefined)
   assert.equal(direct.sourceBytes, undefined)
+})
+
+test('queue hot update appends and refreshes future sources without reloading', async (t) => {
+  const nativeBinding = new FakeNativeBinding()
+  const calls: Array<{ method: string; args: unknown[] }> = []
+  Object.assign(nativeBinding, {
+    AppendQueueItems: (json: string) => {
+      calls.push({ method: 'AppendQueueItems', args: [json] })
+    },
+    UpdateQueueItemSource: (index: number, source: string) => {
+      calls.push({ method: 'UpdateQueueItemSource', args: [index, source] })
+    }
+  })
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    nativeBinding
+  )
+  t.after(() => manager.destroy())
+  assert.equal(manager.getQueueHotUpdateCapability(), null)
+  Object.assign(nativeBinding, {
+    GetEngineCapabilities: () =>
+      JSON.stringify({
+        queueHotUpdate: {
+          version: 1,
+          append: true,
+          updateSource: true,
+          upcomingIndex: true
+        }
+      })
+  })
+  assert.deepEqual(manager.getQueueHotUpdateCapability(), {
+    version: 1,
+    append: true,
+    updateSource: true,
+    upcomingIndex: true
+  })
+  assert.deepEqual(await manager.getQueueHotUpdateCapabilityAsync(), {
+    version: 1,
+    append: true,
+    updateSource: true,
+    upcomingIndex: true
+  })
+  await manager.loadQueue(
+    [
+      { id: 'ncm:a', source: 'https://cdn.test/a.flac' },
+      { id: 'ncm:b', source: 'https://cdn.test/b.flac' }
+    ],
+    0
+  )
+  const appendEvents: unknown[] = []
+  manager.on('queue-appended', (payload: unknown) => appendEvents.push(payload))
+
+  const firstIndex = await manager.appendQueueItems([
+    { id: 'ncm:c', source: 'https://cdn.test/c.flac' }
+  ])
+  assert.equal(firstIndex, 2)
+  assert.deepEqual(
+    manager.getQueueSnapshot().map((item) => item.source),
+    ['https://cdn.test/a.flac', 'https://cdn.test/b.flac', 'https://cdn.test/c.flac']
+  )
+  assert.equal(nativeBinding.loadQueueCalls, 1, 'append must not reload the queue')
+  assert.equal(calls.filter((call) => call.method === 'AppendQueueItems').length, 1)
+  assert.deepEqual(appendEvents, [{ firstIndex: 2, count: 1, queueToken: manager.getQueueToken() }])
+
+  assert.equal(await manager.updateQueueItemSource(2, 'https://cdn.test/c.flac?sig=2'), true)
+  assert.equal(manager.getQueueSnapshot()[2].source, 'https://cdn.test/c.flac?sig=2')
+  assert.equal(nativeBinding.loadQueueCalls, 1)
+  assert.equal(calls.filter((call) => call.method === 'UpdateQueueItemSource').length, 1)
+  // The active item is already open; hot-swapping it is a contract violation.
+  await assert.rejects(
+    () => manager.updateQueueItemSource(0, 'https://cdn.test/a.flac?sig=2'),
+    /cannot be hot-updated/
+  )
+  await assert.rejects(() => manager.updateQueueItemSource(9, 'x'), /out of range/)
+})
+
+test('queue hot-update acknowledgements cannot change a queue replaced by provider revocation', async (t) => {
+  for (const method of ['AppendQueueItems', 'UpdateQueueItemSource'] as const) {
+    const service = new FakeAudioServiceBinding()
+    const manager = makeManager({ exclusiveMode: false }, service)
+    t.after(() => manager.destroy())
+    await manager.loadQueue([
+      { id: 'keep', source: 'keep.flac' },
+      { id: 'revoked', source: 'revoked.flac' }
+    ])
+    let release!: () => void
+    let announce!: () => void
+    const wait = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const started = new Promise<void>((resolve) => {
+      announce = resolve
+    })
+    const original = service.callAsync.bind(service)
+    service.callAsync = async (called, args) => {
+      if (called === method) {
+        announce()
+        await wait
+        return undefined
+      }
+      return original(called, args)
+    }
+    const pending =
+      method === 'AppendQueueItems'
+        ? manager.appendQueueItems([{ id: 'next', source: 'next.flac' }])
+        : manager.updateQueueItemSource(1, 'refreshed.flac')
+    const rejected = assert.rejects(pending, /audio_queue_update_superseded/)
+    await started
+    await manager.revokeProviderSources(['revoked.flac'])
+    const token = manager.getQueueToken()
+    release()
+    await rejected
+    assert.equal(manager.getQueueToken(), token)
+    assert.deepEqual(
+      manager.getQueueSnapshot().map((item) => item.source),
+      ['keep.flac']
+    )
+  }
+})
+
+test('service capability probe asks the utility process for the full native JSON', async (t) => {
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    new FakeNativeBinding()
+  )
+  t.after(() => manager.destroy())
+  const calls: string[] = []
+  const binding = {
+    GetEngineCapabilities: () => JSON.stringify({}),
+    getEngineCapabilitiesAsync: async () => {
+      calls.push('async')
+      return JSON.stringify({
+        queueHotUpdate: {
+          version: 1,
+          append: true,
+          updateSource: true,
+          upcomingIndex: true
+        }
+      })
+    },
+    destroy: () => {}
+  }
+  ;(manager as unknown as { audioServiceBinding: typeof binding }).audioServiceBinding = binding
+  assert.deepEqual(await manager.getQueueHotUpdateCapabilityAsync(), {
+    version: 1,
+    append: true,
+    updateSource: true,
+    upcomingIndex: true
+  })
+  assert.deepEqual(calls, ['async'])
+})
+
+test('queue hot update capability falls back to the native queue-state probe', async (t) => {
+  const nativeBinding = new FakeNativeBinding()
+  Object.assign(nativeBinding, {
+    GetEngineCapabilities: () => JSON.stringify({}),
+    GetQueueState: () =>
+      JSON.stringify({
+        revision: 4,
+        size: 2,
+        currentIndex: 0,
+        upcomingIndex: 1,
+        playMode: 'sequential'
+      })
+  })
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    nativeBinding
+  )
+  t.after(() => manager.destroy())
+  assert.deepEqual(await manager.getQueueHotUpdateCapabilityAsync(), {
+    version: 1,
+    append: true,
+    updateSource: true,
+    upcomingIndex: true
+  })
 })
 
 test('loadQueue skips native call and queue fanout when normalized queue is unchanged', async () => {
@@ -5641,6 +5878,138 @@ test('AutoMix progress and frozen native source positions bypass wall-clock smoo
   now += 250
   manager.tick()
   assert.equal(positions.at(-1), 20.24)
+  manager.destroy()
+})
+
+test('native source starvation freezes progress while stale cache smoothing remains available', async () => {
+  let now = 2000
+  const native = new FakeNativeBinding()
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    native,
+    { now: () => now }
+  )
+  const positions: number[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'time-pos') positions.push(data as number)
+  })
+  await manager.play('remote.flac', 0)
+  native.playbackInfo = { ...native.playbackInfo, state: 'playing', position: 4.3 }
+  native.setDiagnostics({
+    decodeHealthAvailable: true,
+    liveRenderState: 1,
+    decodeEof: false,
+    decodeStopRequested: false,
+    decodeBufferedFrames: 0,
+    decodeStage: 'reading',
+    decodeLastProgressAgeMs: 1000
+  })
+  manager.tick()
+  for (let tick = 0; tick < 12; tick++) {
+    now += 250
+    manager.tick()
+  }
+  assert.equal(positions.at(-1), 4.3)
+  native.setDiagnostics({ decodeStage: 'reconnecting' })
+  now += 250
+  manager.tick()
+  assert.equal(positions.at(-1), 4.3)
+  native.playbackInfo = { ...native.playbackInfo, position: 4.55 }
+  native.setDiagnostics({
+    decodeBufferedFrames: 96000,
+    decodeStage: 'writing',
+    decodeLastProgressAgeMs: 10
+  })
+  now += 250
+  manager.tick()
+  assert.equal(positions.at(-1), 4.55)
+  manager.destroy()
+})
+
+test('terminal native decode failure reports error without a normal EOF or sleep-timer boundary', async () => {
+  let now = 2000
+  const native = new FakeNativeBinding()
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    native,
+    { now: () => now }
+  )
+  const endings: string[] = [],
+    boundaries: unknown[] = [],
+    errors: Error[] = [],
+    properties: string[] = []
+  const positions: number[] = []
+  manager.on('end-file', ({ reason }) => endings.push(reason))
+  manager.on('sleep-timer-boundary', (data) => boundaries.push(data))
+  manager.on('error', (error) => errors.push(error))
+  manager.on('property-change', ({ name, data }) => {
+    properties.push(name)
+    if (name === 'time-pos') positions.push(data as number)
+  })
+  await manager.play('broken.flac', 0)
+  native.playbackInfo = { ...native.playbackInfo, state: 'playing', position: 4.3 }
+  manager.tick()
+  now += 3000
+  native.playbackInfo = {
+    ...native.playbackInfo,
+    state: 'stopped',
+    position: 4.3,
+    upcomingTrack: null
+  }
+  native.setDiagnostics({ lastError: 'Audio source read failed, code: -1414092869' })
+  manager.tick()
+  manager.tick()
+  assert.deepEqual(endings, ['error'])
+  assert.equal(errors.length, 1)
+  assert.deepEqual(boundaries, [])
+  assert.ok(!properties.includes('eof-reached'))
+  assert.equal(positions.at(-1), 4.3)
+  manager.destroy()
+})
+
+test('terminal decode failure clears a pending seek and reports stopped once', async () => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    native
+  )
+  const endings: string[] = []
+  const errors: Error[] = []
+  manager.on('end-file', ({ reason }) => endings.push(reason))
+  manager.on('error', (error) => errors.push(error))
+  await manager.play('broken.flac', 0)
+  await manager.seek(90)
+  native.playbackInfo = { ...native.playbackInfo, state: 'stopped', position: 4.3 }
+  native.setDiagnostics({ lastError: 'Audio source read failed' })
+  manager.tick()
+  manager.tick()
+  const info = await manager.getPlaybackInfo()
+  assert.equal(info.state, 'stopped')
+  assert.equal(info.position, 4.3)
+  assert.deepEqual(endings, ['error'])
+  assert.equal(errors.length, 1)
+  manager.destroy()
+})
+
+test('an explicit play toggle retries the failed source from its last consumed position', async () => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager(
+    { exclusiveMode: false, audioOutput: 'wasapi', audioDevice: 'auto' },
+    native
+  )
+  manager.on('error', () => {})
+  await manager.play('broken.flac', 0)
+  native.playbackInfo = { ...native.playbackInfo, state: 'stopped', position: 4.3 }
+  native.setDiagnostics({ lastError: 'Audio source read failed' })
+  manager.tick()
+  manager.tick()
+  assert.equal(native.playCalls.length, 1, 'status polling must not restart a failed source')
+  native.setDiagnostics({ lastError: '' })
+  await manager.togglePause()
+  assert.equal(native.playCalls.length, 2)
+  assert.equal(native.playCalls[1].source, 'broken.flac')
+  assert.equal(native.playCalls[1].startTime, 4.3)
+  assert.equal((await manager.getPlaybackInfo()).state, 'playing')
   manager.destroy()
 })
 

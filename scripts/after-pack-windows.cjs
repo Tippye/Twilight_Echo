@@ -2,9 +2,15 @@ const { existsSync } = require('node:fs')
 const { join } = require('node:path')
 const { spawnSync } = require('node:child_process')
 const { assertWindowsExecutableIcon } = require('./verify-windows-app-branding.cjs')
+const { prepareStemZipDecoder } = require('./prepare-automix-stem-zip-decoder.cjs')
 
 exports.default = async function afterPack(context) {
   if (context.electronPlatformName !== 'win32') return
+
+  await prepareStemZipDecoder({
+    root: context.packager.projectDir,
+    destination: join(context.appOutDir, 'resources', 'automix-stems')
+  })
 
   if (
     (process.env.TWILIGHT_RELEASE_BUILD === '1' || process.env.TWILIGHT_PACKAGE_STRIP === '1') &&

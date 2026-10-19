@@ -12,6 +12,7 @@ import {
   type MiniPlayerWindowSize
 } from '../../../shared/miniPlayer.ts'
 import MiniGlyph from './MiniGlyph.vue'
+import DEFAULT_TRACK_COVER from '../assets/images/default-track-cover.webp'
 import MiniPlayerCustomizer from './MiniPlayerCustomizer.vue'
 import ScrollingText from './ScrollingText.vue'
 import {
@@ -447,10 +448,11 @@ async function openCustomizer(): Promise<void> {
   await animateCustomizerArtwork(before, generation)
 }
 
-async function closeCustomizer(): Promise<void> {
+async function closeCustomizer(action: 'save' | 'undo' = 'save'): Promise<void> {
   const generation = ++customizerGeneration
   try {
-    await customization.flush()
+    if (action === 'undo') await customization.undoSession()
+    else await customization.flush()
     if (generation !== customizerGeneration) return
     customizerOpening.value = false
     customizerOpen.value = false
@@ -741,22 +743,13 @@ onBeforeUnmount(() => {
       >
         <Transition name="mini-art-swap">
           <img
-            v-if="hasCover"
             :key="`art:${trackKey}:${coverSrc}`"
-            :src="coverSrc || ''"
+            :src="hasCover ? coverSrc || DEFAULT_TRACK_COVER : DEFAULT_TRACK_COVER"
             class="mini-artwork"
             alt="专辑封面"
             draggable="false"
             @error="coverFailed = true"
           />
-          <div
-            v-else
-            :key="`art:${trackKey}:placeholder`"
-            class="mini-artwork mini-artwork-placeholder"
-            aria-label="暂无封面"
-          >
-            <i class="ph ph-vinyl-record"></i>
-          </div>
         </Transition>
         <span class="mini-artwork-sheen" aria-hidden="true"></span>
       </div>
@@ -1006,7 +999,7 @@ onBeforeUnmount(() => {
           :error="customization.error.value"
           :pick-background-image="pickBackgroundImage"
           @update:settings="customization.replaceSettings"
-          @undo="customization.undoSession"
+          @undo="closeCustomizer('undo')"
           @reset="customization.resetActiveTheme"
           @flush="customization.flush"
           @close="closeCustomizer"

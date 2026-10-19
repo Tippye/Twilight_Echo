@@ -201,6 +201,38 @@ test('legacy APIs without cursor selection retain full availability checks', asy
   assert.equal(batches, 2)
 })
 
+test('adopted engine identity maps indices without reloading the native queue', () => {
+  const loader = new NativeQueueLoader()
+  const queue = tracks(3)
+  loader.adopt(queue, { queueIndex: 1, queueToken: 'engine-token' })
+  assert.equal(loader.findLogicalIndex({ queueIndex: 1, queueToken: 'engine-token' }, queue), 1)
+  assert.equal(loader.findLogicalIndex({ queueIndex: 2, queueToken: 'engine-token' }, queue), 2)
+  // A different token belongs to another queue version; adoption must not lie.
+  assert.equal(loader.findLogicalIndex({ queueIndex: 1, queueToken: 'other' }, queue), -1)
+  assert.equal(loader.hasWindow(), false)
+  assert.deepEqual(loader.getCommittedIndices(), [0, 1, 2])
+})
+
+test('windowed adoption maps native slots onto their logical queue indices', () => {
+  const loader = new NativeQueueLoader()
+  const queue = tracks(5)
+  loader.adopt(queue, {
+    queueIndex: 3,
+    queueToken: 'window-token',
+    nativeQueueIndices: [3, 4]
+  })
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'window-token' }, queue), 3)
+  assert.equal(loader.findLogicalIndex({ queueIndex: 1, queueToken: 'window-token' }, queue), 4)
+  // Outside the loaded window there is nothing to map.
+  assert.equal(loader.findLogicalIndex({ queueIndex: 2, queueToken: 'window-token' }, queue), -1)
+  assert.equal(loader.hasWindow(), true)
+  assert.deepEqual(loader.getCommittedIndices(), [3, 4])
+  // An unmapped (-1) slot must stay unmapped instead of shifting later entries.
+  loader.adopt(queue, { queueToken: 'gap-token', queueIndex: 0, nativeQueueIndices: [-1, 2] })
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'gap-token' }, queue), -1)
+  assert.equal(loader.findLogicalIndex({ queueIndex: 1, queueToken: 'gap-token' }, queue), 2)
+})
+
 test('partial native queues map versioned indices to duplicate logical occurrences', async () => {
   const loader = new NativeQueueLoader()
   const queue = tracks(4)

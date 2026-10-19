@@ -16,3 +16,45 @@ index 1f34cb09d0a81d3f1c9ca048fec4f4ac2b850411..a81b3a2f8314ae57712d477f8803b450
      }
    }
  }
+diff --git a/server.js b/server.js
+--- a/server.js
++++ b/server.js
+@@ -382,19 +382,19 @@ async function constructServer(moduleDefs) {
+         res.status(moduleResponse.status).send(moduleResponse.body)
+       } catch (/** @type {*} */ moduleResponse) {
++        // Local exceptions (for example a missing xeapi key) are gateway
++        // failures, not upstream 404s. Keep their cause in logs and JSON.
++        const status = moduleResponse?.status || 502
++        const body = moduleResponse?.body || {
++          code: 502,
++          data: null,
++          msg: moduleResponse?.message || 'NetEase API request failed',
++        }
+         logger.error(`${decode(req.originalUrl)}`, {
+-          status: moduleResponse.status,
+-          body: moduleResponse.body,
++          status,
++          body,
++          message: moduleResponse?.message,
+         })
+-        if (!moduleResponse.body) {
+-          res.status(404).send({
+-            code: 404,
+-            data: null,
+-            msg: 'Not Found',
+-          })
+-          return
+-        }
+-        if (moduleResponse.body.code == '301')
+-          moduleResponse.body.msg = '需要登录'
+-        if (!query.noCookie) {
++        if (body.code == '301') body.msg = '需要登录'
++        if (!query.noCookie && moduleResponse?.cookie?.length) {
+           res.append('Set-Cookie', moduleResponse.cookie)
+         }
+@@ -402,4 +402,4 @@ async function constructServer(moduleDefs) {
+-        res.status(moduleResponse.status).send(moduleResponse.body)
++        res.status(status).send(body)
+       }
+     })
+   }

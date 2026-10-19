@@ -252,4 +252,28 @@ std::unique_ptr<IAsioHost> createRealAsioHost() {
   return std::make_unique<RealAsioHost>();
 }
 
+int RealAsioHost::activeSampleRate() const {
+#if defined(_WIN32) && defined(_WIN64) && defined(TAE_ENABLE_ASIO)
+  return impl_->session ? impl_->session->activeSampleRate() : 0;
+#else
+  return 0;
+#endif
+}
+
+long RealAsioHost::activeLatencyFrames() const {
+#if defined(_WIN32) && defined(_WIN64) && defined(TAE_ENABLE_ASIO)
+  return impl_->session ? impl_->session->activeLatencyFrames() : -1;
+#else
+  return -1;
+#endif
+}
+
+std::string RealAsioHost::startupSummary() const {
+#if defined(_WIN32) && defined(_WIN64) && defined(TAE_ENABLE_ASIO)
+  return impl_->session ? impl_->session->startupSummary() : std::string{};
+#else
+  return {};
+#endif
+}
+
 }  // namespace twilight::audio

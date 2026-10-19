@@ -183,9 +183,11 @@ class AudioPipeline {
   void pollAutoMix();
 
   PipelineStatus status();
+  void sampleDecodeHealth(OutputInfo::Diagnostics& diagnostics) const;
   bool consumeEnded(bool* terminalFailurePending = nullptr);
   bool consumeDeviceInvalidated(std::string* message);
   bool consumeRenderError(std::string* message);
+  bool consumeDecodeError(std::string* message);
   bool consumeTrackStarted(QueueItem* item);
   size_t getSpectrumData(float* buffer, size_t pointCount) const;
   std::string getVisualizationDataJson(
@@ -486,6 +488,8 @@ class AudioPipeline {
   std::atomic<uint64_t> requestedRenderDspEpoch_{0};
   std::atomic<uint64_t> appliedRenderDspEpoch_{0};
   std::atomic<uint64_t> renderedFrames_{0};
+  std::atomic<uint64_t> sourceConsumedFrames_{0}, outputProducedFrames_{0}, zeroFilledFrames_{0};
+  std::atomic<uint64_t> emptyOutputCount_{0}, inactiveOutputCount_{0}, eofOutputCount_{0};
   // Render-thread-owned DoP marker phase. Decoder chunks have their own packer
   // phase; this counter also covers backend idle/underrun frames without gaps.
   // Control-side discontinuities publish a reset request; only the render

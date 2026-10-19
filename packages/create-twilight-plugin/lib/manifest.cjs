@@ -12,12 +12,14 @@ const PLUGIN_PERMISSIONS = new Set([
   'settings',
   'clipboard',
   'ui:inject',
+  'app:settings',
+  'plugins:manage',
   'dsp:native'
 ])
 
 const PLUGIN_ID_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)+$/
 const SEMVER_PATTERN = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/
-const TWILIGHT_PLUGIN_API_VERSION = 3
+const TWILIGHT_PLUGIN_API_VERSION = 4
 
 function isRecord(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -172,6 +174,24 @@ function validatePluginManifest(raw) {
       throw new Error(`plugin.json contains unknown type: ${String(item)}`)
   }
   validateThemeContributions(raw, type, raw.apiVersion)
+  const experiences = raw.contributes?.experiences
+  if (experiences !== undefined) {
+    if (raw.apiVersion < 4 || !type.includes('ui') || !raw.permissions?.includes('ui:inject'))
+      throw new Error('Experiences require API v4, type ui and ui:inject')
+    if (!Array.isArray(experiences) || !experiences.length || experiences.length > 8)
+      throw new Error('Invalid experiences')
+    const ids = new Set()
+    for (const item of experiences) {
+      if (!item || typeof item.id !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(item.id) || ids.has(item.id))
+        throw new Error('Invalid or duplicate experience id')
+      if (typeof item.name !== 'string' || !item.name.trim() || item.name.length > 120)
+        throw new Error('Invalid experience name')
+      if (typeof item.entry !== 'string' || !/^[a-zA-Z0-9_/-]+\.html$/.test(item.entry) || item.entry.startsWith('/') || item.entry.split('/').includes('..'))
+        throw new Error('Experience entry must be a packaged HTML file')
+      if (item.bridgeVersion !== 1 && item.bridgeVersion !== 2) throw new Error('Unsupported experience bridge version')
+      ids.add(item.id)
+    }
+  }
 
   const main = normalizeRelativePath(raw.main, 'main')
   const rawBinary = raw.binary
@@ -186,7 +206,7 @@ function validatePluginManifest(raw) {
     }
     binary = Object.keys(normalizedBinary).length > 0 ? normalizedBinary : undefined
   }
-  if (!main && !binary && !hasDeclarativeThemeContribution(raw, type)) {
+  if (!main && !binary && !hasDeclarativeThemeContribution(raw, type) && !experiences?.length) {
     throw new Error(
       'plugin.json must declare main or binary, or contributes.themes for theme plugins'
     )

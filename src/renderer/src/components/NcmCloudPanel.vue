@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CoverImg from './CoverImg.vue'
 import PlaybackIcon from '@renderer/components/icons/PlaybackIcon.vue'
 import { computed } from 'vue'
 import type { NcmCloudSelectedFile } from '../../../shared/ncmCloud.ts'
@@ -225,8 +226,13 @@ function progressLabel(task: NcmCloudTransferTask): string {
           @keydown.space.prevent="emit('play', song)"
         >
           <span class="song-cover">
-            <img v-if="song.track.cover" :src="song.track.cover" alt="" />
-            <i v-else class="pi pi-music"></i>
+            <CoverImg
+              :cover="song.track.cover"
+              :cover-source="song.track.coverSource"
+              :identity="song.track.id"
+              alt=""
+              loading="lazy"
+            />
             <span class="cover-play"><PlaybackIcon name="play" /></span>
           </span>
           <span class="song-main">

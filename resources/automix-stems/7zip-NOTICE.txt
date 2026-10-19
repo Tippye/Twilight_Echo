@@ -1,0 +1,6 @@
+7-Zip 26.04, Copyright (C) Igor Pavlov.
+The unmodified standalone x64 7za.exe decodes LZMA streams for AutoMix ZIP installation.
+7-Zip is free software under the GNU LGPL; see 7zip-LICENSE.txt.
+Corresponding source: https://github.com/ip7z/7zip/releases/download/26.04/7z2604-src.tar.xz
+Binary distribution: https://github.com/ip7z/7zip/releases/download/26.04/7z2604-extra.7z
+7za.exe SHA-256: 15d4c788c148e3677e2fc1c4a01f191fb6669eba4f6acf8a465f0f1a6f1e1260

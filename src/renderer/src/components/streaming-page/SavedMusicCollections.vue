@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import CoverImg from '@renderer/components/CoverImg.vue'
+import ExplicitBadge from '@renderer/components/ExplicitBadge.vue'
+import NcmAlbumFilters from './NcmAlbumFilters.vue'
+import { filterNcmAlbums, formatNcmAlbumClassification } from './ncmAlbumClassification'
 import { useMediaProviders } from '@renderer/providers'
 import { useProviderStore } from '@renderer/stores/useProviderStore'
 import type {
@@ -31,10 +34,20 @@ const artists = shallowRef<MediaProviderArtistSummary[]>([])
 const loading = ref(false)
 const error = ref('')
 const limit = ref(40)
+const releaseType = ref('')
+const isNcm = computed(() => props.providerId === 'ncm')
 let request = 0
-const visibleAlbums = computed(() => albums.value.slice(0, limit.value))
+const filteredAlbums = computed(() =>
+  isNcm.value ? filterNcmAlbums(albums.value, releaseType.value) : albums.value
+)
+const visibleAlbums = computed(() => filteredAlbums.value.slice(0, limit.value))
 const visibleArtists = computed(() => artists.value.slice(0, limit.value))
-const count = computed(() => (tab.value === 'albums' ? albums.value.length : artists.value.length))
+const count = computed(() =>
+  tab.value === 'albums' ? filteredAlbums.value.length : artists.value.length
+)
+watch(releaseType, () => {
+  limit.value = 40
+})
 
 async function load(): Promise<void> {
   const current = ++request
@@ -63,6 +76,7 @@ async function load(): Promise<void> {
 watch(
   [() => props.userId, () => props.providerId, tab],
   () => {
+    releaseType.value = ''
     if (!supportedTabs.value[tab.value])
       tab.value = supportedTabs.value.albums ? 'albums' : 'artists'
     void load()
@@ -98,8 +112,16 @@ onBeforeUnmount(() => {
       </div>
       <button type="button" :disabled="loading" @click="load">刷新</button>
     </header>
+    <NcmAlbumFilters
+      v-if="isNcm && tab === 'albums' && albums.length && !loading && !error"
+      :albums="albums"
+      v-model:release-type="releaseType"
+    />
     <p v-if="loading" role="status">正在加载收藏…</p>
     <p v-else-if="error" role="alert">{{ error }}</p>
+    <p v-else-if="tab === 'albums' && albums.length && !count" role="status">
+      没有符合筛选条件的专辑
+    </p>
     <p v-else-if="!count">暂无收藏{{ tab === 'albums' ? '专辑' : '歌手' }}</p>
     <div v-else class="saved-grid">
       <template v-if="tab === 'albums'">
@@ -110,7 +132,16 @@ onBeforeUnmount(() => {
           @click="emit('openAlbum', album)"
         >
           <CoverImg :cover="album.cover" :cover-source="album.coverSource" alt="" />
-          <span>{{ album.name }}</span>
+          <span class="saved-album-title">
+            <span>{{ album.name }}</span>
+            <ExplicitBadge v-if="isNcm && album.isExplicit" />
+          </span>
+          <small
+            v-if="isNcm && formatNcmAlbumClassification(album)"
+            class="saved-album-classification"
+          >
+            {{ formatNcmAlbumClassification(album) }}
+          </small>
         </button>
       </template>
       <template v-else>
@@ -177,6 +208,20 @@ button[aria-pressed='true'] {
   border-radius: 8px;
 }
 .saved-grid span {
+  overflow-wrap: anywhere;
+}
+.saved-album-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+}
+.saved-album-title > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.saved-album-classification {
+  color: var(--te-neutral-500);
   overflow-wrap: anywhere;
 }
 </style>

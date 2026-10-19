@@ -2,6 +2,37 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Track } from '../types/music'
 import { cloneTrackForPlaybackQueue, cloneTrackForPlaybackSession } from './playerSessionTrack.ts'
+import {
+  createPlaybackQueueSnapshotCache,
+  patchPlaybackQueueTrack,
+  toPlaybackQueueSnapshots
+} from './playbackQueueVirtualization.ts'
+
+test('album navigation identity survives queue selection, JSON persistence and session restore', () => {
+  const original = makeTrack({ albumId: 'album-123', albumArtist: 'Album Artist' })
+  const queue = toPlaybackQueueSnapshots([original])
+  assert.equal(queue[0].albumId, original.albumId)
+  const persisted = JSON.parse(JSON.stringify(queue.map(cloneTrackForPlaybackQueue))) as Track[]
+  const restored = toPlaybackQueueSnapshots(persisted.map(cloneTrackForPlaybackSession))
+  const selected = cloneTrackForPlaybackSession(restored[0])
+  assert.equal(selected.albumId, original.albumId)
+  assert.equal(selected.albumArtist, original.albumArtist)
+  assert.equal(selected.queueEntryId, original.queueEntryId)
+})
+
+test('queue patch and cache notice changed album identity even when the album name is unchanged', () => {
+  const original = makeTrack({ albumId: 'album-123', albumArtist: 'Original Artist' })
+  const cache = createPlaybackQueueSnapshotCache()
+  const before = cache([original])
+  const changed = { ...original, albumId: 'album-456', albumArtist: 'Another Artist' }
+  const patched = patchPlaybackQueueTrack(before, changed)
+  assert.notEqual(patched, before)
+  assert.equal(patched[0].albumId, 'album-456')
+  assert.equal(patched[0].albumArtist, 'Another Artist')
+  const after = cache([changed])
+  assert.notEqual(after, before)
+  assert.equal(after[0].albumId, 'album-456')
+})
 
 function makeTrack(partial: Partial<Track> = {}): Track {
   return {

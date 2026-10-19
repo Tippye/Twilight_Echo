@@ -1,4 +1,6 @@
 import { normalizeNavigationPagePreferences } from '../../shared/navigationPages.ts'
+import { normalizeShortcutEnabled } from '../../shared/shortcutPreferences.ts'
+import { writeDiagnostic } from '../diagnostics/logger.ts'
 import {
   normalizeAutoMixMode,
   normalizeAutoMixStemMode,
@@ -67,6 +69,7 @@ import type {
   StreamingAudioCachePolicy,
   UiDensity
 } from './types'
+import type { AfterglowAutoEntry } from '../../shared/afterglowMode.ts'
 import type { PlayMode } from '../audioEngineManager'
 import {
   DEFAULT_MINI_PLAYER_SETTINGS,
@@ -109,6 +112,8 @@ import {
   type SettingsFileLoadIssue
 } from '../persistence/settingsFile.ts'
 
+import { normalizeStartupExperience, startupExperienceKey } from '../../shared/pluginExperience.ts'
+
 let appSettingsLoadIssue: SettingsFileLoadIssue | null = null
 
 export const DEFAULT_DESKTOP_LYRICS: DesktopLyricsSettings = DEFAULT_DESKTOP_LYRICS_SETTINGS
@@ -136,6 +141,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   launchAtLogin: false,
   hardwareAcceleration: true,
   globalShortcuts: false,
+  shortcutEnabled: {},
   globalShortcutBindings: { ...DEFAULT_GLOBAL_SHORTCUT_BINDINGS },
   minimizeToTray: false,
   musicCachePath: '',
@@ -145,9 +151,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   closeWindowBehavior: 'quit',
   closeToTray: false,
   taskbarThumbarButtonsEnabled: true,
+  afterglowAutoEntry: 'off',
   onboardingCompleted: false,
   developerMode: false,
   startupHomePage: 'local',
+  startupExperience: null,
   navigationPages: normalizeNavigationPagePreferences(undefined),
   trackActivationMode: 'singleClick',
   language: DEFAULT_LANGUAGE_PREFERENCE,
@@ -168,6 +176,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lyricsAppearance: cloneLyricsAppearance(DEFAULT_LYRICS_APPEARANCE),
   lyricsPresets: cloneLyricsPresetConfig(DEFAULT_LYRICS_PRESET_CONFIG),
   libraryFolders: [],
+  lastLibraryFolder: '',
   downloadPreferences: { ...DEFAULT_DOWNLOAD_PREFERENCES },
   downloadFolder: '',
   genreSeparators: DEFAULT_GENRE_SEPARATORS,
@@ -376,6 +385,10 @@ export function normalizeStartupHomePage(value: unknown): StartupHomePage {
 
 export function normalizeTrackActivationMode(value: unknown): TrackActivationMode {
   return value === 'doubleClick' ? 'doubleClick' : 'singleClick'
+}
+
+export function normalizeAfterglowAutoEntry(value: unknown): AfterglowAutoEntry {
+  return value === 'minimize' || value === 'hide' || value === 'minimizeOrHide' ? value : 'off'
 }
 
 export function normalizeStreamingAudioCachePolicy(value: unknown): StreamingAudioCachePolicy {
@@ -601,11 +614,10 @@ export function normalizeAudioDevice(device: unknown): string {
   return normalized
 }
 
-// Stored preferences retain the existing 8192-frame range. The engine applies
-// its 2048-frame cap when activating the shared configuration.
+// Preserve large ASIO buffers through storage and activation.
 export function normalizeOutputConfig(config: unknown): OutputConfig {
   if (!config || typeof config !== 'object') return { ...DEFAULT_SETTINGS.audioOutputConfig }
-  return normalizeSharedOutputConfig(config as Partial<OutputConfig>, 8192)
+  return normalizeSharedOutputConfig(config as Partial<OutputConfig>, 32768)
 }
 
 export function normalizeDesktopLyrics(raw: unknown): DesktopLyricsSettings {
@@ -676,6 +688,7 @@ export function normalizeAppSettings(settings: Partial<AppSettings>): AppSetting
     launchAtLogin,
     hardwareAcceleration: settings.hardwareAcceleration !== false,
     globalShortcuts: settings.globalShortcuts === true,
+    shortcutEnabled: normalizeShortcutEnabled(settings.shortcutEnabled),
     globalShortcutBindings: normalizeGlobalShortcutBindings(settings.globalShortcutBindings),
     minimizeToTray,
     musicCachePath: cachePath,
@@ -685,9 +698,11 @@ export function normalizeAppSettings(settings: Partial<AppSettings>): AppSetting
     closeWindowBehavior,
     closeToTray,
     taskbarThumbarButtonsEnabled: settings.taskbarThumbarButtonsEnabled !== false,
+    afterglowAutoEntry: normalizeAfterglowAutoEntry(settings.afterglowAutoEntry),
     onboardingCompleted: settings.onboardingCompleted === true,
     developerMode: settings.developerMode === true,
     startupHomePage: normalizeStartupHomePage(settings.startupHomePage),
+    startupExperience: normalizeStartupExperience(settings.startupExperience),
     navigationPages: normalizeNavigationPagePreferences(settings.navigationPages),
     trackActivationMode: normalizeTrackActivationMode(settings.trackActivationMode),
     language: normalizeLanguagePreference(settings.language),
@@ -704,6 +719,8 @@ export function normalizeAppSettings(settings: Partial<AppSettings>): AppSetting
     lyricsAppearance: normalizeLyricsAppearance(settings.lyricsAppearance, rawSettings),
     lyricsPresets: normalizeLyricsPresetConfig(settings.lyricsPresets),
     libraryFolders: normalizeStringArray(settings.libraryFolders),
+    lastLibraryFolder:
+      typeof settings.lastLibraryFolder === 'string' ? settings.lastLibraryFolder.trim() : '',
     downloadPreferences: normalizeDownloadPreferences(settings.downloadPreferences),
     downloadFolder:
       typeof settings.downloadFolder === 'string' && settings.downloadFolder.trim()
@@ -779,8 +796,14 @@ export function normalizeAppSettings(settings: Partial<AppSettings>): AppSetting
 }
 
 export function readAppSettings(): AppSettings {
+  const started = performance.now()
+  writeDiagnostic('settings', 'load.start', {}, 'debug')
   const result = loadSettingsFile(getSettingsFilePath(), DEFAULT_SETTINGS, normalizeAppSettings)
   appSettingsLoadIssue = result.issue
+  writeDiagnostic('settings', 'load.complete', {
+    durationMs: performance.now() - started,
+    issue: result.issue?.kind ?? null
+  })
   if (result.issue?.kind === 'recovered') {
     console.warn('[persistence] application settings recovered from backup')
   } else if (result.issue?.kind === 'corrupt') {
@@ -790,7 +813,19 @@ export function readAppSettings(): AppSettings {
 }
 
 export function writeAppSettings(settings: AppSettings): void {
-  writeSettingsFile(getSettingsFilePath(), settings)
+  const started = performance.now()
+  try {
+    writeSettingsFile(getSettingsFilePath(), settings)
+    writeDiagnostic(
+      'settings',
+      'save.complete',
+      { durationMs: performance.now() - started, keys: Object.keys(settings).length },
+      'debug'
+    )
+  } catch (error) {
+    writeDiagnostic('settings', 'save.failed', { error }, 'error')
+    throw error
+  }
 }
 
 export function consumeAppSettingsLoadIssue(): SettingsFileLoadIssue | null {
@@ -801,6 +836,12 @@ export function consumeAppSettingsLoadIssue(): SettingsFileLoadIssue | null {
 
 export function getRestartReasons(settings: AppSettings, launch: AppSettings): string[] {
   const reasons: string[] = []
+  if (
+    startupExperienceKey(settings.startupExperience) !==
+    startupExperienceKey(launch.startupExperience)
+  ) {
+    reasons.push('完整界面')
+  }
   if (settings.hardwareAcceleration !== launch.hardwareAcceleration) {
     reasons.push('GPU 加速')
   }

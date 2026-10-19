@@ -58,8 +58,7 @@ export const BUILTIN_NAVIGATION_PAGES: NavigationPageDefinition[] = [
     id: 'library',
     title: '我的音乐库',
     description: '平台的我喜欢、歌单、收藏专辑和歌手',
-    icon: 'navigation.streaming',
-    customIcon: 'pi pi-heart',
+    icon: 'navigation.favorite',
     defaultVisible: true,
     target: { kind: 'streaming', tab: 'library' }
   },
@@ -67,8 +66,7 @@ export const BUILTIN_NAVIGATION_PAGES: NavigationPageDefinition[] = [
     id: 'cloud',
     title: '音乐云盘',
     description: '网易云音乐云盘',
-    icon: 'navigation.streaming',
-    customIcon: 'pi pi-cloud',
+    icon: 'navigation.cloud',
     defaultVisible: true,
     target: { kind: 'streaming', tab: 'cloud' }
   },
@@ -124,8 +122,7 @@ export const BUILTIN_NAVIGATION_PAGES: NavigationPageDefinition[] = [
     id: 'search',
     title: '搜索',
     description: '搜索本地与在线歌曲、歌单和歌手',
-    icon: 'navigation.songs',
-    customIcon: 'pi pi-search',
+    icon: 'navigation.search',
     defaultVisible: true,
     target: { kind: 'streaming', tab: 'search' }
   },
@@ -157,8 +154,7 @@ export const BUILTIN_NAVIGATION_PAGES: NavigationPageDefinition[] = [
     id: 'network',
     title: '网络源',
     description: '浏览与管理网络音乐源',
-    icon: 'navigation.folders',
-    customIcon: 'pi pi-server',
+    icon: 'navigation.network',
     defaultVisible: false,
     target: { kind: 'network' }
   }

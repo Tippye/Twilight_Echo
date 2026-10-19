@@ -103,7 +103,7 @@ app.whenReady().then(async()=>{
  let win;
  const loadDensity=async(density)=>{
   win?.destroy();
-  win=new BrowserWindow({show:false,width:1112,height:210,useContentSize:true,webPreferences:{offscreen:{deviceScaleFactor:density},backgroundThrottling:false}});
+  win=new BrowserWindow({show:false,frame:false,width:1112,height:210,useContentSize:true,webPreferences:{offscreen:{deviceScaleFactor:density},backgroundThrottling:false}});
   await win.loadFile(path.join(__dirname,'index.html'));win.webContents.debugger.attach('1.3');
   if(Math.abs(await win.webContents.executeJavaScript('devicePixelRatio')-density)>.001)throw Error('renderer backing density differs from requested DPI');
  };
@@ -115,17 +115,17 @@ app.whenReady().then(async()=>{
     await win.webContents.executeJavaScript('document.body.classList.toggle("cover-hover",'+hover+')');
     const boxes=await win.webContents.executeJavaScript('(()=>{const tone='+JSON.stringify(tone)+',material='+JSON.stringify(material)+',offset='+offset+';document.documentElement.dataset.theme=tone;const bar=document.querySelector(".player-bar");bar.className="player-bar"+(material==="glass"?" player-bar-glass":material==="liquid"?" player-bar-liquid":"");bar.style.left=(7+offset)+"px";bar.style.top=(28+offset)+"px";const cover=document.querySelector(".player-cover-slot");cover.style.left=(7+offset)+"px";cover.style.top=(128+offset)+"px";const box=element=>{const r=element.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,radius:parseFloat(getComputedStyle(element).borderTopLeftRadius)}};return{bar:box(document.querySelector(".player-bar")),cover:box(cover)}})()');
     await win.webContents.executeJavaScript('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
-    const screenshot=await win.webContents.debugger.sendCommand('Page.captureScreenshot',{format:'png',fromSurface:true});
+    const screenshot=await win.webContents.debugger.sendCommand('Page.captureScreenshot',{format:'png',fromSurface:true,clip:{x:0,y:0,width:1112,height:210,scale:1}});
     const image=nativeImage.createFromBuffer(Buffer.from(screenshot.data,'base64'));
     const viewport=await win.webContents.executeJavaScript('({width:innerWidth,height:innerHeight})');
-    const expectedSize={width:Math.round(viewport.width*density),height:Math.round(viewport.height*density)};
+    const expectedSize={width:Math.round(1112*density),height:Math.round(210*density)};
     const rasterSize=image.getSize();
     if(Math.abs(rasterSize.width-expectedSize.width)>1||Math.abs(rasterSize.height-expectedSize.height)>1)throw Error('pixel probe did not capture the physical DPI raster: '+JSON.stringify({density:density,viewport,expectedSize,actual:rasterSize}));
     if(process.env.TE_CONTOUR_EVIDENCE_DIR){fs.writeFileSync(path.join(process.env.TE_CONTOUR_EVIDENCE_DIR,'contour-latest.png'),image.toPNG());fs.writeFileSync(path.join(process.env.TE_CONTOUR_EVIDENCE_DIR,'contour-latest-boxes.json'),JSON.stringify({density,tone,material,offset,boxes}));}
     // Use Chromium's single native rounded contour as the reference. It accounts
     // for border pixel snapping at fractional heights and fractional placement.
     await win.webContents.executeJavaScript('(()=>{const boxes='+JSON.stringify(boxes)+';for(const name of ["bar","cover"]){const b=boxes[name],style=document.getElementById("reference-"+name).style;style.left=b.x+"px";style.top=b.y+"px";style.width=b.width+"px";style.height=b.height+"px";style.borderRadius=b.radius+"px";}document.body.classList.add("reference-mode");return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))})()');
-    const referenceScreenshot=await win.webContents.debugger.sendCommand('Page.captureScreenshot',{format:'png',fromSurface:true});
+    const referenceScreenshot=await win.webContents.debugger.sendCommand('Page.captureScreenshot',{format:'png',fromSurface:true,clip:{x:0,y:0,width:1112,height:210,scale:1}});
     const reference=nativeImage.createFromBuffer(Buffer.from(referenceScreenshot.data,'base64'));
     results.push({density,tone,material,offset,hover,bar:checkPixels(image,reference,boxes.bar,density,false,'playbar '+material+' offset '+offset),cover:checkPixels(image,reference,boxes.cover,density,false,'artwork hover '+hover)});
     await win.webContents.executeJavaScript('document.body.classList.remove("reference-mode")');

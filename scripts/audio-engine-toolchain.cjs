@@ -54,6 +54,7 @@ const MINGW_EXPECTED_CTESTS = Object.freeze([
   'twilight_miniaudio_backend_unit',
   'twilight_wasapi_format_negotiator_unit',
   'twilight_asio_backend_unit',
+  'twilight_asio_driver_compatibility_unit',
   'twilight_asio_helper_selftest',
   'twilight_asio_helper_process_unit',
   'twilight_asio_abi_checks',

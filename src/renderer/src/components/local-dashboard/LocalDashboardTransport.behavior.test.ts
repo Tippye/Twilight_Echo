@@ -67,11 +67,11 @@ const openSettingsPage=()=>{}, enterStreamingMode=()=>{}, handleStreamingLogin=(
       resolve: {
         alias: [
           {
-            find: /^(?:\.\.\/stores\/use(?:Music|Player|ListeningStats|AudioOutputDsp)Store|@renderer\/stores\/use(?:Music|Theme)Store|\.\.\/utils\/unifiedRecentTracks|pinia)$/,
+            find: /^(?:(?:\.\.\/)+stores\/use(?:Music|Player|ListeningStats|AudioOutputDsp)Store|@renderer\/stores\/use(?:Music|Theme|Player|ListeningStats|AudioOutputDsp)Store|\.\.\/utils\/unifiedRecentTracks|pinia)$/,
             replacement: join(directory, 'fixtures.ts')
           },
           {
-            find: /^\.\/(?:CoverImg|local-dashboard\/DashboardPlaybackProgress|OnlineDashboard|ArchiveDashboard|NightHarborDashboard|SoundFieldDashboard)\.vue$/,
+            find: /^\.\/(?:OnlineDashboard|ArchiveDashboard|NightHarborDashboard|SoundFieldDashboard)\.vue$/,
             replacement: '\0home-transport-child-stub'
           },
           {
@@ -132,6 +132,7 @@ app.whenReady().then(async()=>{
  win.webContents.on('console-message',event=>{if(event.level==='error')console.error(event.message)})
  try{
   await win.loadFile(process.argv.at(-1))
+  win.webContents.debugger.attach('1.3');await win.webContents.debugger.sendCommand('Emulation.setFocusEmulationEnabled',{enabled:true});win.webContents.focus()
   await win.webContents.executeJavaScript('window.runHomeTransportTests()')
   console.log('HOME_TRANSPORT_OK');app.exit(0)
  }catch(error){console.error(error.stack);app.exit(1)}
@@ -142,6 +143,7 @@ const first={id:'one',title:'First',artist:'Artist',album:'Album',duration:100,p
 const last={id:'two',title:'Last played',artist:'Artist',album:'Album',duration:100,path:'last.flac'}
 export const state={tracks:ref([first,last]),recent:ref(last),currentTrack:ref(null),isPlaying:ref(false),calls:[]}
 const player={currentTrack:state.currentTrack,isPlaying:state.isPlaying,dominantColor:ref('#aabbcc'),
+ currentTime:ref(0),duration:ref(100),progress:ref(0),seek(){},formatTime:seconds=>String(seconds),
  playTrack(track,queue){state.calls.push(['start',track.id,queue.map(item=>item.id)]);state.currentTrack.value=track;state.isPlaying.value=true},
  togglePlay(){state.calls.push(['toggle']);state.isPlaying.value=!state.isPlaying.value},
  next(){state.calls.push(['next'])},prev(){state.calls.push(['previous'])},setPlayMode(mode){state.calls.push(['mode',mode])}}
@@ -169,21 +171,74 @@ const controls=()=>[...document.querySelectorAll('.hero-actions button')]
 const play=()=>document.querySelector('.transport-play')
 window.runHomeTransportTests=async()=>{
  await settle()
+ for(let tick=0;tick<30&&!document.querySelector('.fresh-cover img')?.naturalWidth;tick++)await settle()
+ const fallback=document.querySelector('.fresh-cover img')
+ expect(fallback?.naturalWidth===768,'recent music is missing the bundled fallback artwork')
+ expect(Math.abs(fallback.getBoundingClientRect().width-fallback.parentElement.getBoundingClientRect().width)<1,'fallback cover is cropped at its intrinsic size')
  expect(controls().length===1,'fresh launch must show its regular play control')
  expect(play()?.getAttribute('aria-label')==='开始收听'&&play().querySelector('[data-playback-icon="play"]'),'idle control must have the visible play glyph and matching accessible label')
  expect(play().getBoundingClientRect().width>0,'idle control must occupy visible space')
  expect(play().classList.contains('is-idle')&&play().textContent.includes('开始收听'),'fresh launch must show a labeled listening invitation')
  expect(!document.querySelector('.hero-actions')?.textContent.includes('播放这首'),'no duplicate text CTA')
+ const cardHeight=()=>document.querySelector('.feature-card').getBoundingClientRect().height
+ const idleHeight=cardHeight()
+ expect(!document.querySelector('.hero-progress'),'idle card must not expose a seek control')
+ const routeTrigger=document.querySelector('[aria-label="打开实时 DSP 输出线路"]')
+ routeTrigger.focus();routeTrigger.click();await settle()
+ const routeDialog=document.querySelector('.dsp-route-dialog')
+ for(let tick=0;tick<30&&!routeDialog?.contains(document.activeElement);tick++)await new Promise(resolve=>setTimeout(resolve,50))
+ expect(routeDialog?.contains(document.activeElement),'DSP modal must take keyboard focus: '+document.activeElement?.outerHTML.slice(0,300))
+ const dialogButtons=[...routeDialog.querySelectorAll('button:not(:disabled)')]
+ dialogButtons.at(-1).focus()
+ dialogButtons.at(-1).dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}))
+ expect(routeDialog.contains(document.activeElement)&&document.activeElement!==dialogButtons.at(-1),'DSP modal must wrap keyboard focus')
+ document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}))
+ await settle()
+ expect(!document.querySelector('.home').classList.contains('has-route-dialog')&&document.activeElement===routeTrigger,'DSP modal closes on Escape and restores its trigger')
  play().click();await settle()
+ expect(cardHeight()>=idleHeight,'playback progress must fit in the card')
+ const playingHeight=cardHeight()
+ expect(getComputedStyle(document.querySelector('.hero-progress')).visibility==='visible','active playback must reveal the real progress control')
+ expect(document.querySelector('.hero-progress').getBoundingClientRect().bottom<=document.querySelector('.hero-actions').getBoundingClientRect().top,'progress returns above transport')
  expect(JSON.stringify(state.calls[0])===JSON.stringify(['start','two',['one','two']]),'idle control must play the displayed last track with its normal queue')
  expect(controls().length===3&&play().getAttribute('aria-label')==='暂停','starting a track must expose all three regular controls')
  expect(document.querySelector('.hero-actions').classList.contains('is-current')&&!play().classList.contains('is-idle'),'active controls must expose their session transport')
  expect(controls().every(button=>{const r=button.getBoundingClientRect();return r.width>=44&&r.height>=44}),'all transport controls must retain usable hit targets')
  play().click();await settle()
+ expect(Math.abs(cardHeight()-playingHeight)<1,'pause must preserve the card height')
  expect(!state.isPlaying.value&&play().getAttribute('aria-label')==='播放','pause must keep an available resume control')
  expect(document.querySelector('.hero-actions').classList.contains('is-current')&&controls().length===3,'pause must retain the grouped transport without returning to the listening invitation')
  play().click();await settle()
+ expect(Math.abs(cardHeight()-playingHeight)<1,'resume must preserve the card height')
  expect(state.isPlaying.value&&state.calls.filter(call=>call[0]==='start').length===1,'resume must not replace the queue')
+ const originalTrack=state.currentTrack.value
+ const originalLibrary=state.tracks.value
+ state.tracks.value=[...originalLibrary,...Array.from({length:4},(_,i)=>({...originalTrack,id:'extra-'+i,title:'Music '+i}))]
+ for(const font of [14,18])for(const density of ['comfortable','compact'])for(const width of [1100,680,480]){
+  document.documentElement.style.setProperty('--te-font-size-body',font+'px')
+  document.documentElement.dataset.teLibraryDensity=density
+  document.querySelector('#app').style.width=width+'px'
+  state.currentTrack.value={...originalTrack,title:'Short title'};await settle()
+  const shortHeight=cardHeight()
+  const title=document.querySelector('.hero-title'),artist=document.querySelector('.hero-artist')
+  const lineHeight=parseFloat(getComputedStyle(title).lineHeight)
+  expect(artist.getBoundingClientRect().top-title.getBoundingClientRect().bottom<14,'short title separates its artist at width '+width)
+  const grid=document.querySelector('.fresh-grid'),tiles=[...grid.children],host=document.querySelector('.home-inner')
+  const image=tiles[0].querySelector('img'),frame=tiles[0].querySelector('.fresh-cover')
+  expect(image?.naturalWidth===768&&Math.abs(image.getBoundingClientRect().width-frame.getBoundingClientRect().width)<1&&Math.abs(image.getBoundingClientRect().height-frame.getBoundingClientRect().height)<1,'fallback cover sizing broke at '+width+'px')
+  const gridBox=grid.getBoundingClientRect()
+  expect(tiles.length===6&&tiles.every(tile=>{const box=tile.getBoundingClientRect();return box.width>0&&box.left>=gridBox.left-1&&box.right<=gridBox.right+1}),'responsive music shelf must keep its cards in bounds at '+width+' '+density)
+  expect(document.querySelector('.signal-card').getBoundingClientRect().bottom<gridBox.top,'signal card returns above recent music')
+  expect(host.scrollWidth<=host.clientWidth+1,'homepage content overflows horizontally '+JSON.stringify({width,font,density,client:host.clientWidth,scroll:host.scrollWidth,children:[...host.children].map(el=>({class:el.className,right:el.getBoundingClientRect().right}))}))
+  state.currentTrack.value={...originalTrack,title:'A Cielo Abierto (Viaje V) — A long musical journey across the evening sky',album:'A very long album title that must not displace the audio metadata or transport controls'};await settle()
+  expect(title.scrollHeight>lineHeight*1.5,'long title must wrap at width '+width)
+  expect(cardHeight()>=shortHeight,'wrapped title must fit inside the card at width '+width)
+ }
+ state.tracks.value=originalLibrary
+ document.documentElement.style.removeProperty('--te-font-size-body')
+ delete document.documentElement.dataset.teLibraryDensity
+ document.querySelector('#app').style.width=''
+ state.currentTrack.value=originalTrack;await settle()
  controls()[0].click();controls()[2].click()
  expect(state.calls.at(-2)[0]==='previous'&&state.calls.at(-1)[0]==='next','skip controls retain their actions')
  state.currentTrack.value=null;state.isPlaying.value=false;state.recent.value=null;await settle()
@@ -222,7 +277,7 @@ async function runHomeReturnTests(){
   document.documentElement.dataset.theme=tone
   document.documentElement.dataset.teMotion=motion
   for(const [name,leave,back] of returns){
-   const before=measure();leave();await nextTick();await sleep(350)
+   const before=measure();leave();await nextTick();await until(()=>!document.querySelector('.feature-card'))
    expect(!document.querySelector('.feature-card'),'home must leave for '+name)
    back();await nextTick()
    const samples=[]

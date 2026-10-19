@@ -64,7 +64,7 @@ test(
           engines: { twilightEcho: '*' },
           type: ['tool'],
           main: 'index.mjs',
-          permissions: ['filesystem:write']
+          permissions: ['filesystem:write', 'library:write']
         })
       )
       fs.writeFileSync(
@@ -73,7 +73,7 @@ test(
       import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
       import { join } from 'node:path'
       let timer
-      export function activate(context) {
+      export async function activate(context) {
         const file = join(context.storagePath, 'probe.json')
         const previous = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {}
         const state = { activations: (previous.activations || 0) + 1, ticks: 0 }
@@ -84,6 +84,11 @@ test(
         persist()
         if (${JSON.stringify(id)} === 'com.example.retry-task' && state.activations === 1)
           throw new Error('one-time startup failure')
+        // Activation can import before a main window exists. Exercise the real
+        // utilityProcess API bridge rather than calling manager internals.
+        await context.twilight.library.importPlaylists({
+          playlists: [{ name: ${JSON.stringify(id)}, paths: ['D:/Music/startup.flac'] }]
+        })
         timer = setInterval(() => {
           state.ticks++
           persist()
@@ -119,12 +124,20 @@ test(
       })
       const phase = Number(process.argv[2])
       const ids = ${JSON.stringify(ids)}
+      const imports = []
+      manager.on('importPlaylist', request => imports.push(request))
       const probe = (id) => JSON.parse(fs.readFileSync(path.join(
         ${JSON.stringify(profile)}, 'plugin-data', id, 'probe.json'), 'utf8'))
       try {
         await manager.initialize()
         await new Promise(resolve => setTimeout(resolve, 360))
         const descriptors = await manager.list()
+        assert.equal(imports.length, phase === 1 ? 1 : phase === 2 ? 2 : 0)
+        for (const request of imports) {
+          assert.ok(ids.includes(request.pluginId))
+          assert.equal(request.playlists[0].name, request.pluginId)
+          assert.deepEqual(request.playlists[0].paths, ['D:/Music/startup.flac'])
+        }
         if (phase < 3) {
           assert.equal(probe(ids[0]).activations, phase)
           assert.ok(probe(ids[0]).ticks >= 5)

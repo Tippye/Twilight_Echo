@@ -32,6 +32,7 @@ export function toPlaybackQueueSnapshot(track: Track): Track {
     artists: cloneTrackArtistRefs(track.artists),
     album: track.album,
     ...(isTrackReferenceString(track.albumId) ? { albumId: track.albumId } : {}),
+    albumArtist: track.albumArtist,
     filePath: track.filePath,
     fileName: track.fileName,
     dir: track.dir,
@@ -111,6 +112,7 @@ export function matchesPlaybackQueueSnapshot(track: Track, snapshot: Track): boo
         ))) &&
     track.album === snapshot.album &&
     track.albumId === snapshot.albumId &&
+    track.albumArtist === snapshot.albumArtist &&
     track.filePath === snapshot.filePath &&
     track.fileName === snapshot.fileName &&
     track.dir === snapshot.dir &&

@@ -176,6 +176,7 @@ window.runGlassEnvironmentTests=async()=>{
     let source=''
     Object.defineProperty(image,'src',{configurable:true,get:()=>source,set:value=>{
       source=value
+      if(!source)return
       pending.push({image,source})
     }})
     return image
@@ -192,7 +193,7 @@ window.runGlassEnvironmentTests=async()=>{
   const burst=()=>{for(let i=0;i<12;i++)window.dispatchEvent(new Event(LIQUID_GLASS_TUNING_CHANGED_EVENT))}
   const release=async(record,fail=false)=>{
     delete record.image.src
-    if(fail){record.image.onerror(new Event('error'));return}
+    if(fail){record.image.dispatchEvent(new Event('error'));return}
     const loaded=new Promise((resolve,reject)=>{
       record.image.addEventListener('load',resolve,{once:true})
       record.image.addEventListener('error',reject,{once:true})

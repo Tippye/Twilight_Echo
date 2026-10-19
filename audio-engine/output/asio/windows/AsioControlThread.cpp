@@ -120,7 +120,7 @@ void AsioControlThread::worker(std::shared_ptr<State> state) {
   HWND window = nullptr;
   if (comReady) {
     window = CreateWindowExW(
-        0, L"STATIC", L"Twilight Echo ASIO", WS_POPUP, 0, 0, 0, 0, HWND_MESSAGE, nullptr, GetModuleHandleW(nullptr), nullptr);
+        WS_EX_TOOLWINDOW, L"STATIC", L"Twilight Echo ASIO", WS_POPUP, 0, 0, 0, 0, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
   }
   {
     std::lock_guard lock(state->mutex);

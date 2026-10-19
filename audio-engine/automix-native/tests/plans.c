@@ -56,7 +56,8 @@ int main(void) {
           hex,
           "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
       "SHA-256 empty");
-  ta_am_features a, b;
+  /* Feature fixtures are large; keep them off the MSVC default 1 MiB stack. */
+  static ta_am_features a, b;
   fixture(&a, 60, 90, 90);
   fixture(&b, 0, 30, 90);
   require(ta_am_features_valid(&b), "feature fixture valid");
@@ -88,7 +89,8 @@ int main(void) {
   require(natural.output_frames >= 32000 && natural.output_frames <= 64000 &&
               natural.effect == TA_AM_CLEAN,
           "natural policy");
-  ta_am_features short_tail = a;
+  static ta_am_features short_tail;
+  short_tail = a;
   short_tail.duration_seconds += .012;
   require(ta_am_select(&short_tail, &b, TA_AM_NATURAL, &binding, &again, reason,
       sizeof(reason)) == 1 && again.current_end <= 90 * binding.sample_rate,
@@ -134,7 +136,8 @@ int main(void) {
   for (int cpu = TA_AM_C; cpu <= TA_AM_AVX2; cpu++) {
     const ta_am_kernels *k = ta_am_get_kernels((ta_am_cpu)cpu);
     if (!k) continue;
-    ta_am_features quantised = b;
+    static ta_am_features quantised;
+    quantised = b;
     quantised.beat_count = 0;
     for (unsigned i = 0; i < 80; i++)
       quantised.beats[quantised.beat_count++] = round(i * .375 * 50) / 50;
@@ -147,7 +150,8 @@ int main(void) {
     require(!ta_am_rhythm_region(&quantised, 0, 30, k, &rhythm),
         "irregular events cannot become a reliable grid");
   }
-  ta_am_features double_time = b;
+  static ta_am_features double_time;
+  double_time = b;
   double_time.bpm = 240;
   double_time.beat_count = 0;
   for (double t = 0; t < 30; t += .25) double_time.beats[double_time.beat_count++] = t;
@@ -158,7 +162,9 @@ int main(void) {
   for (int cpu = TA_AM_C; cpu <= TA_AM_AVX2; cpu++) {
     const ta_am_kernels *k = ta_am_get_kernels((ta_am_cpu)cpu);
     if (!k) continue;
-    ta_am_features fade = a, intro = b;
+    static ta_am_features fade, intro;
+    fade = a;
+    intro = b;
     fade.beat_count = intro.beat_count = 0;
     require(ta_am_select_with_kernels(&fade, &intro, TA_AM_NATURAL, &binding,
         k, &again, reason, sizeof(reason)) == 0,

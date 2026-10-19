@@ -433,6 +433,91 @@ void testCoreAudioSampleRateMatch() {
   assert(backend.outputInfo().supportsOutputPerfect);
 }
 
+void testCoreAudioClientFormatMatchesAudioUnitForIntegerDevice() {
+  for (bool exclusive : {false, true}) {
+    auto host = makeHost();
+    auto* rawHost = host.get();
+    auto& physical = rawHost->devices.front().streamFormat;
+    physical.sampleRate = 48000;
+    physical.formatID = 0x6c70636d;
+    physical.formatFlags = 0x4; // signed integer device virtual format
+    physical.bitsPerChannel = 24;
+    physical.channelsPerFrame = 2;
+    physical.bytesPerFrame = 6;
+    std::unique_ptr<IOutputBackend> backend;
+    if (exclusive) backend = std::make_unique<CoreAudioExclusiveBackend>(std::move(host));
+    else backend = std::make_unique<CoreAudioBackend>(std::move(host));
+    std::string error;
+    assert(backend->open("auto", sourceFormat(48000, 24, 2, AudioSampleFormat::Int24Interleaved), &error));
+    assert(backend->outputFormat().sampleFormat == AudioSampleFormat::Float32Interleaved);
+    assert(backend->outputInfo().actualBitDepth == 32);
+    assert(backend->outputInfo().resampled);
+    assert(!backend->outputInfo().outputPerfect);
+    if (exclusive) {
+      bool renderedFloat = false;
+      assert(backend->startTyped([&](PcmBlock& block) {
+        assert(block.format.sampleFormat == AudioSampleFormat::Float32Interleaved);
+        assert(block.byteSize == block.frames * 2 * sizeof(float));
+        auto* samples = reinterpret_cast<float*>(block.data);
+        for (size_t i = 0; i < block.frames * 2; ++i) samples[i] = 0.25f;
+        renderedFloat = true;
+        return block.frames;
+      }, nullptr, nullptr, &error));
+      CoreAudioBufferList list;
+      list.buffers.resize(1);
+      list.buffers[0].numberChannels = 2;
+      list.buffers[0].data.resize(4 * 2 * sizeof(float));
+      assert(rawHost->renderCallback(4, list) == 4);
+      float sample = 0;
+      std::memcpy(&sample, list.buffers[0].data.data(), sizeof(sample));
+      assert(sample == 0.25f && renderedFloat);
+    }
+  }
+}
+
+void testCoreAudioPlanarBuffersKeepChannelsAndSilenceTail() {
+  for (bool exclusive : {false, true}) {
+    auto host = makeHost();
+    auto* rawHost = host.get();
+    std::unique_ptr<IOutputBackend> backend;
+    if (exclusive) backend = std::make_unique<CoreAudioExclusiveBackend>(std::move(host));
+    else backend = std::make_unique<CoreAudioBackend>(std::move(host));
+    std::string error;
+    assert(backend->open("auto", sourceFormat(), &error));
+    assert(backend->start([](float* samples, size_t) {
+      samples[0] = 0.25f;
+      samples[1] = -0.5f;
+      return size_t{1};
+    }, nullptr, &error));
+    CoreAudioBufferList list;
+    list.buffers.resize(2);
+    for (auto& buffer : list.buffers) {
+      buffer.numberChannels = 1;
+      buffer.data.resize(3 * sizeof(float), 0xff);
+    }
+    assert(rawHost->renderCallback(3, list) == 1);
+    for (size_t channel = 0; channel < 2; ++channel) {
+      float samples[3];
+      std::memcpy(samples, list.buffers[channel].data.data(), sizeof(samples));
+      assert(samples[0] == (channel == 0 ? 0.25f : -0.5f));
+      assert(samples[1] == 0 && samples[2] == 0);
+    }
+  }
+}
+
+void testCoreAudioFailedOpenRestoresRateAndReleasesHog() {
+  auto host = makeHost(44100);
+  auto* rawHost = host.get();
+  rawHost->failAudioUnitInitialize = true;
+  CoreAudioExclusiveBackend backend(std::move(host));
+  std::string error;
+  assert(!backend.open("auto", sourceFormat(48000), &error));
+  assert(rawHost->devices.front().nominalSampleRate == 44100);
+  assert(rawHost->releaseHogModeCalls == 1);
+  backend.close();
+  assert(rawHost->releaseHogModeCalls == 1);
+}
+
 void testCoreAudioNativeDsdUnsupported() {
   auto sharedHost = makeHost();
   CoreAudioBackend shared(std::move(sharedHost));
@@ -592,6 +677,9 @@ int main() {
   testCoreAudioUnderrunDiagnostics();
   testCoreAudioSampleRateMatch();
   testCoreAudioNativeDsdUnsupported();
+  testCoreAudioClientFormatMatchesAudioUnitForIntegerDevice();
+  testCoreAudioFailedOpenRestoresRateAndReleasesHog();
+  testCoreAudioPlanarBuffersKeepChannelsAndSilenceTail();
   testCoreAudioFloatRenderHelperZerosOnlyUnrenderedTail();
   testCoreAudioFloatRenderHelperDoesNotPreclearFullRender();
   testCoreAudioFloatRenderHelperZerosAllWithoutCallback();

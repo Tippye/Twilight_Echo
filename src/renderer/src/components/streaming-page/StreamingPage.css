@@ -86,6 +86,16 @@
   padding-bottom: 126px;
 }
 
+/* The scroller owns the caption inset even when the content header is absent. */
+.streaming-content.without-header {
+  padding-top: calc(var(--te-titlebar-inset, 40px) + 20px);
+}
+
+/* A custom shell already places this page below its title-bar grid row. */
+html[data-te-shell-layout='custom'] .streaming-content.without-header {
+  padding-top: 20px;
+}
+
 .streaming-placeholder {
   display: flex;
   flex-direction: column;

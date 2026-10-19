@@ -17,6 +17,10 @@ test('network sources separates source management from the primary music browsin
   assert.match(networkSources, /useBackHandler/)
   assert.match(networkSources, /@click="enterBrowse\(profile\)"/)
   assert.match(networkSources, /@click="playAllInDirectory"/)
+  // Regression for issue #94: number inputs feed a number into `v-model`, so the
+  // port must be normalized instead of calling string methods on it.
+  assert.match(networkSources, /parseOptionalPort\(form\.value\.port\)/)
+  assert.doesNotMatch(networkSources, /form\.value\.port\.trim\(\)/)
 })
 
 test('radio and podcast pages keep collections prominent and creation tools secondary', () => {

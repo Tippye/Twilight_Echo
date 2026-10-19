@@ -22,7 +22,7 @@ export function normalizePcmToDsdMode(value: unknown): NonNullable<OutputConfig[
 
 export function normalizeOutputConfig(
   config?: Partial<OutputConfig>,
-  preferredBufferSizeMax = 2048
+  preferredBufferSizeMax = 32768
 ): OutputConfig {
   return {
     ...normalizeContinuityOutputConfig(config ?? {}),
@@ -30,6 +30,7 @@ export function normalizeOutputConfig(
       ? clampNumber(Math.trunc(config?.preferredBufferSize ?? 0), 0, preferredBufferSizeMax, 0)
       : 0,
     routingMode: normalizeChannelRoutingMode(config?.routingMode),
+    asioOutputChannelStart: Math.trunc(clampNumber(config?.asioOutputChannelStart, 0, 255, 0)),
     wasapiExclusivePushMode: config?.wasapiExclusivePushMode === true,
     pcmToDsdMode: normalizePcmToDsdMode(config?.pcmToDsdMode),
     dsdMutePreRollFrames: clampNumber(config?.dsdMutePreRollFrames, 0, 4096, 256),

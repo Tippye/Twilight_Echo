@@ -15,9 +15,11 @@ import {
 import type { PlaybackSession } from '../core/types'
 import { VersionedDataStore } from '../persistence/versionedDataStore.ts'
 import {
-  isPlaybackQueueSnapshot,
-  PlaybackSessionStorage
-} from '../persistence/playbackSessionStorage.ts'
+  MAX_PLAYBACK_QUEUE_BYTES,
+  MAX_PLAYBACK_SESSION_BYTES,
+  getPlaybackSessionStoreBundle
+} from '../persistence/playbackSessionStore.ts'
+import { isPlaybackQueueSnapshot } from '../persistence/playbackSessionStorage.ts'
 import {
   PersistentDataRevisionConflictError,
   createPersistentDataRevisionConflictResponse,
@@ -42,8 +44,6 @@ import {
   reportPersistentDataRecovery
 } from './persistenceReporting.ts'
 
-const MAX_PLAYBACK_SESSION_BYTES = 2 * 1024 * 1024
-const MAX_PLAYBACK_QUEUE_BYTES = 32 * 1024 * 1024
 const MAX_PLAYLISTS_BYTES = 20 * 1024 * 1024
 const MAX_LYRICS_MANAGEMENT_BYTES = 8 * 1024 * 1024
 const MAX_PLAYBACK_BOOKMARKS_BYTES = 4 * 1024 * 1024
@@ -53,8 +53,6 @@ const MAX_NCM_COOKIE_FILE_BYTES = 64 * 1024
 export function registerPersistenceIpc(ipcMain: IpcMain): void {
   const userDataPath = app.getPath('userData')
   const NCM_COOKIE_FILE = join(userDataPath, 'ncm-cookie.json')
-  const PLAYBACK_SESSION_FILE = join(userDataPath, 'playback-session.json')
-  const PLAYBACK_QUEUE_FILE = join(userDataPath, 'playback-queue.json')
   const PLAYLISTS_FILE = join(userDataPath, 'playlists.json')
   const LYRICS_MANAGEMENT_FILE = join(userDataPath, 'lyrics-management.json')
   const PLAYBACK_BOOKMARKS_FILE = join(userDataPath, 'playback-bookmarks.json')
@@ -74,29 +72,8 @@ export function registerPersistenceIpc(ipcMain: IpcMain): void {
   ipcMain.handle('data:loadQueueWorkspace', queueWorkspaceHandlers.load)
   ipcMain.handle('data:saveQueueWorkspace', queueWorkspaceHandlers.save)
 
-  const playbackSessionStore = new VersionedDataStore<PlaybackSession | null>({
-    filePath: PLAYBACK_SESSION_FILE,
-    label: 'playback session',
-    maxBytes: MAX_PLAYBACK_SESSION_BYTES,
-    isData: (value): value is PlaybackSession | null =>
-      value === null || isPlaybackSessionFile(value),
-    isLegacy: isPlaybackSessionFile,
-    onRecovery: (result) =>
-      reportPersistentDataRecovery('Playback session', PLAYBACK_SESSION_FILE, result)
-  })
-  const playbackQueueStore = new VersionedDataStore<unknown[]>({
-    filePath: PLAYBACK_QUEUE_FILE,
-    label: 'playback queue',
-    maxBytes: MAX_PLAYBACK_QUEUE_BYTES,
-    isData: isPlaybackQueueSnapshot,
-    isLegacy: isPlaybackQueueSnapshot,
-    onRecovery: (result) =>
-      reportPersistentDataRecovery('Playback queue', PLAYBACK_QUEUE_FILE, result)
-  })
-  const playbackSessionStorage = new PlaybackSessionStorage(
-    playbackSessionStore,
-    playbackQueueStore
-  )
+  const { sessionFile: PLAYBACK_SESSION_FILE, storage: playbackSessionStorage } =
+    getPlaybackSessionStoreBundle()
   const playlistsStore = new VersionedDataStore<unknown[]>({
     filePath: PLAYLISTS_FILE,
     label: 'playlists',

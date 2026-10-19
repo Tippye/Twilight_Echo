@@ -162,11 +162,13 @@ export const reload=()=>{appSettings.value={...appSettings.value,audioOutputConf
 const policyRuntime = `
 import {createApp,h,nextTick,ref} from 'vue'
 import {createPinia} from 'pinia'
+import {setLanguagePreference} from '@renderer/app/useLocale.ts'
 import PlaybackSettingsSection from '@renderer/components/settings-page/PlaybackSettingsSection.vue'
 import {reload,audioOutputConfig,persisted,engine,appSettings,stemCapabilities,rejectSettings} from 'policy-state'
 const expect=(value,message)=>{if(!value)throw Error(message)}
 const settle=async()=>{await nextTick();await new Promise(resolve=>requestAnimationFrame(resolve));await nextTick()}
 window.runPolicyTests=async()=>{
+ setLanguagePreference('zh-CN')
  let detectionCalls=0
  let installStatus={phase:'idle',completedBytes:0,totalBytes:0},installResult={phase:'cancelled',completedBytes:0,totalBytes:0},finishInstall,holdInstall=false
  window.api={audioEngine:{

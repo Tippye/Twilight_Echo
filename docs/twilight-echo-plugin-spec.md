@@ -129,6 +129,21 @@ primary 损坏时从 backup 恢复并向用户显示告警；两份都损坏时�
 - 插件**不得**直接 import 宿主内部模块、Electron API 或 Node 内置模块之外的宿主实现细节。
 - 宿主能力一律经由 `twilight` API 对象访问；网关层是未来收紧权限的执法点。
 
+`twilight.library`（需 `library:write`）是插件唯一能写入用户可见状态的入口，目前只有
+`importPlaylists({ playlists: [{ name, paths }] })`：把一批歌单写进用户的本地歌单
+（`playlists.json` 中 `kind` 缺省的那些）。约束：
+
+- 曲目以**绝对文件路径**提交，由宿主按路径匹配本地音乐库；插件不提交、也拿不到本地曲目 ID。
+- 名称规范化后最多 80 个字符，超长名称拒绝整个请求，不会截断或隐式合并歌单。
+- 请求经主进程转发给渲染进程执行。**歌单状态归渲染进程所有**，写入复用宿主自带的
+  导入匹配逻辑与带版本号的持久化，插件与主进程都不直接改写 `playlists.json`。
+- 调用**即发即忘**：主进程接受请求后即返回，不等待 UI 完成，因此不会阻塞插件宿主，
+  也不受 UI command 的 5 秒预算约束。导入结果由渲染进程以一条汇总提示告知用户。
+- 已接受请求在当前应用会话的主进程内存中排队；主窗口完成音乐库和歌单加载后主动领取，
+  因此启动阶段或窗口重载期间尚未注册监听也不会丢失请求。整批导入共享路径索引和一次持久化事务。
+- 未声明 `library:write` 时网关拒绝调用。该命名空间是可选能力，旧宿主不提供，
+  插件调用前必须自行探测。
+
 汽水音乐 provider 可使用可选的 `twilight.qishuiAuth` 宿主桥接完成二维码登录。
 该桥接只返回二维码 DTO、上游轮询 JSON 与登录会话 Cookie，并由主进程托管动态安全参数和
 隐藏验证窗口；插件不能通过它访问 Electron、执行任意 JavaScript 或请求任意地址。只有
@@ -249,7 +264,17 @@ schemaVersion 3；API v3 继续接受 schemaVersion 1/2 和 `variables + stylesh
   供后续检查重试，仅显式退出登录时删除凭据。
   `library` 能力可选提供 `fetchSavedAlbums()` / `fetchSavedArtists()`，返回标准
   `AlbumSummary[]` / `ArtistSummary[]`；内置网易云插件分页读取收藏列表，音乐库按批展示并复用详情导航。
+  `AlbumSummary` 可选携带 `releaseType`，保留音源报告的发行类型。
+  内置网易云将 `type` 原样规范为该字段，只在网易云艺人专辑区和收藏专辑区
+  展示发行类型单选筛选与标签；缺失数据保留为“未标注”，不按曲数或标题推断 LP、EP 或 Mixtape。
+  类型选项从返回数据生成，支持专辑、EP、Single、旧的 EP/Single 及后续新增值。
+  `AlbumSummary.isExplicit` 可选携带音源提供的 Explicit 标记；网易云从专辑 `mark` 的
+  `0x100000` 位读取，在专辑卡片和详情显示 E 标。缺失或无效的 `mark` 不推断为 Explicit。
   方法名称联合类型统一定义于 `src/shared/mediaProviderMethods.ts`，main/preload 共用，仍经现有 provider 调用桥接。
+- Navidrome 是在独立插件仓库维护的服务器型 `MediaProvider` 插件：插件 ID 为
+  `com.twilightecho.provider.navidrome`，provider 前缀固定为 `navidrome`，通过插件市场或本地 `.tep` 安装并启用。
+  它通过 Subsonic API 的 `loginWithServer(serverUrl, username, password, context?)` 保存连接配置，
+  提供搜索、播放、封面、歌词和歌单读取；密码由宿主插件设置存储加密。
 - 第三方音源插件使用同一 Provider API。Bilibili 收藏夹音频插件作为外部插件仓库
   或私有插件索引分发，插件 ID 为 `com.twilightecho.provider.bilibili`，provider 前缀
   固定为 `bili`；仅在用户安装、启用并扫码登录后，流媒体 UI 才展示其视频收藏夹。
@@ -358,4 +383,4 @@ schemaVersion 3；API v3 继续接受 schemaVersion 1/2 和 `variables + stylesh
 
 编辑描述 schemaVersion 1 的绑定三选一：`variable`、`token` 或宿主已登记的 `slot`；开关可声明 `checkedValue` / `uncheckedValue`，参数可声明 `description`。编译与导出保留 structured 布局、模式、深浅色参数。项目包含素材及许可、分页面图层和上次应用版本；导出的声明式主题不依赖工坊启用状态。主题源码和素材仍保留在外部插件仓库。
 
-服务器型音源可声明 `loginWithServer(serverUrl, username, password, context?)`，返回 `{ loggedIn, profile }`，并声明 `login` 能力。宿主根据已注册方法展示服务器地址、用户名和密码表单，经现有 provider 调用桥传递，不新增 IPC 通道；同一插件未实现该方法时继续使用原登录流程。插件只持久化服务端会话令牌，不保存密码。Jellyfin provider 位于独立插件仓库，使用官方 AuthenticateByName、Items、Playlists 和 Audio universal 接口。
+服务器型音源可声明 `loginWithServer(serverUrl, username, password, context?)`，返回 `{ loggedIn, profile }`，并声明 `login` 能力。宿主根据已注册方法展示服务器地址、用户名和密码表单，经现有 provider 调用桥传递，不新增 IPC 通道；同一插件未实现该方法时继续使用原登录流程。Jellyfin 和 Navidrome provider 均位于独立插件仓库。Jellyfin 使用官方 AuthenticateByName、Items、Playlists 和 Audio universal 接口，只持久化服务端会话令牌；Navidrome 使用 Subsonic token/salt 认证，需要将密码存入宿主加密的插件设置。

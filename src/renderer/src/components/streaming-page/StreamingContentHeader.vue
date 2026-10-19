@@ -18,7 +18,6 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  back: []
   'clear-search': []
   'update:searchQuery': [value: string]
   'select-provider': [providerId: string]
@@ -29,24 +28,15 @@ const searchInputFocused = ref(false)
 
 <template>
   <header
+    v-if="!isDetail || showUnifiedSearch || providerOptions.length > 0"
     class="streaming-content-header"
     :class="{
       'is-detail': isDetail,
       'is-searching': isSearching
     }"
   >
-    <div class="streaming-header-left">
-      <button
-        v-if="isDetail"
-        type="button"
-        class="detail-back-button"
-        data-te-back-button="pill"
-        @click="emit('back')"
-      >
-        <i class="pi pi-arrow-left" aria-hidden="true"></i>
-        <span>返回</span>
-      </button>
-      <div v-else class="streaming-header-copy">
+    <div v-if="!isDetail" class="streaming-header-left">
+      <div class="streaming-header-copy">
         <div v-if="isSearching" class="streaming-header-kicker" aria-hidden="true">
           <span class="streaming-header-kicker-mark"></span>
           <span class="streaming-header-kicker-text"> 搜索 </span>
@@ -57,7 +47,7 @@ const searchInputFocused = ref(false)
         </p>
       </div>
     </div>
-    <div class="streaming-header-right">
+    <div v-if="showUnifiedSearch || providerOptions.length > 0" class="streaming-header-right">
       <div
         v-if="showUnifiedSearch"
         class="streaming-search-box"

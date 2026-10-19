@@ -1,5 +1,6 @@
 import { onBeforeUnmount, onMounted, watch, type ComputedRef, type Ref } from 'vue'
 import { LIQUID_GLASS_TUNING_CHANGED_EVENT } from '../../../shared/liquidGlass.ts'
+import { loadLiquidGlassContextImage } from '../utils/liquidGlassContextImage'
 import { refreshLiquidGlassRuntimeVariables } from '../stores/useThemeStore'
 import type { AppBackgroundPage } from '../types/settings'
 import {
@@ -27,7 +28,6 @@ const RUNTIME_VARIABLES = [
   '--te-lg-context-shadow',
   '--te-lg-context-rim'
 ]
-const HERO_COVER_SELECTOR = '.home .feature-backdrop img[src]'
 
 type EnvironmentRef<T> = Ref<T> | ComputedRef<T>
 
@@ -42,20 +42,8 @@ function sourceForPage(page: AppBackgroundPage): string | null {
   const appSource = extractCssImageUrl(styles.getPropertyValue('--te-app-bg-image'))
   if (pageSource ?? themeSource ?? appSource) return pageSource ?? themeSource ?? appSource
 
-  const heroCover =
-    page === 'local' ? document.querySelector<HTMLImageElement>(HERO_COVER_SELECTOR) : null
-  const heroSource = heroCover?.currentSrc || heroCover?.getAttribute('src') || null
-  return heroSource && isTrustedLiquidGlassImageUrl(heroSource) ? heroSource : null
-}
-
-function loadImage(source: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.decoding = 'async'
-    image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('liquid glass context image could not load'))
-    image.src = source
-  })
+  // Sample the actual page backdrop, never artwork contained in a content card.
+  return null
 }
 
 function sampleImage(image: HTMLImageElement, isDark: boolean): LiquidGlassEnvironment {
@@ -132,7 +120,7 @@ export function useLiquidGlassEnvironment(options: {
 }): void {
   let sequence = 0
   let observer: MutationObserver | null = null
-  let coverObserver: MutationObserver | null = null
+  let imageRequest: AbortController | null = null
   let environmentKey: string | null = null
   let refreshQueued = false
   let disposed = false
@@ -141,6 +129,8 @@ export function useLiquidGlassEnvironment(options: {
     if (disposed) return
     if (!options.active.value) {
       sequence++
+      imageRequest?.abort()
+      imageRequest = null
       environmentKey = null
       clearEnvironment()
       return
@@ -153,6 +143,8 @@ export function useLiquidGlassEnvironment(options: {
     const nextKey = `${isDark}:${source ?? `solid:${solidColor ?? 'fallback'}`}`
     if (environmentKey === nextKey) return
     const currentSequence = ++sequence
+    imageRequest?.abort()
+    imageRequest = null
     environmentKey = nextKey
     if (!source || !isTrustedLiquidGlassImageUrl(source)) {
       if (solidColor) {
@@ -166,15 +158,25 @@ export function useLiquidGlassEnvironment(options: {
     }
 
     try {
-      const image = await loadImage(source)
-      if (disposed || currentSequence !== sequence || !options.active.value) return
-      applyEnvironment(sampleImage(image, isDark), tone)
-      document.documentElement.dataset.teLiquidGlassSource = 'image'
+      const request = new AbortController()
+      imageRequest = request
+      const image = await loadLiquidGlassContextImage(source, request.signal)
+      try {
+        if (disposed || currentSequence !== sequence || !options.active.value) return
+        applyEnvironment(sampleImage(image, isDark), tone)
+        document.documentElement.dataset.teLiquidGlassSource = 'image'
+      } finally {
+        // The helper keeps successful images alive for the caller to sample. Once
+        // sampling is complete (or the request became stale), release the decode.
+        image.src = ''
+      }
     } catch {
       if (!disposed && currentSequence === sequence && options.active.value) {
         applyEnvironment(fallbackLiquidGlassEnvironment(isDark), tone)
         document.documentElement.dataset.teLiquidGlassSource = 'fallback'
       }
+    } finally {
+      if (currentSequence === sequence) imageRequest = null
     }
   }
 
@@ -185,31 +187,6 @@ export function useLiquidGlassEnvironment(options: {
       refreshQueued = false
       if (!disposed) void refresh()
     })
-  }
-
-  function refreshForHeroCoverMutation(mutations: MutationRecord[]): void {
-    if (options.page.value !== 'local') return
-    for (const mutation of mutations) {
-      if (
-        mutation.type === 'attributes' &&
-        mutation.target instanceof HTMLImageElement &&
-        mutation.target.matches(HERO_COVER_SELECTOR)
-      ) {
-        queueRefresh()
-        return
-      }
-      if (
-        mutation.type === 'childList' &&
-        Array.from(mutation.addedNodes).some(
-          (node) =>
-            node instanceof Element &&
-            (node.matches(HERO_COVER_SELECTOR) || Boolean(node.querySelector(HERO_COVER_SELECTOR)))
-        )
-      ) {
-        queueRefresh()
-        return
-      }
-    }
   }
 
   function syncScrollEdge(event: Event): void {
@@ -234,23 +211,17 @@ export function useLiquidGlassEnvironment(options: {
       attributes: true,
       attributeFilter: ['data-theme', 'data-active-theme', 'data-te-surface-material', 'style']
     })
-    coverObserver = new MutationObserver(refreshForHeroCoverMutation)
-    coverObserver.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['src'],
-      childList: true,
-      subtree: true
-    })
   })
 
   onBeforeUnmount(() => {
     disposed = true
     sequence++
+    imageRequest?.abort()
+    imageRequest = null
     clearEnvironment()
     window.removeEventListener(LIQUID_GLASS_TUNING_CHANGED_EVENT, queueRefresh)
     document.removeEventListener('scroll', syncScrollEdge, true)
     observer?.disconnect()
-    coverObserver?.disconnect()
   })
 
   watch([options.active, options.page], queueRefresh)

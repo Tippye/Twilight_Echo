@@ -891,7 +891,9 @@
 }
 
 .player-bar-glass {
-  --te-regular-solid: rgb(16 17 19);
+  --te-chrome-frosted-solid: rgb(16 17 19);
+  --te-chrome-frosted-surface: rgb(16 17 19 / 72%);
+  --te-regular-solid: var(--te-playback-bar-solid, rgb(16 17 19));
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
     rgba(14, 14, 14, 0.86);
@@ -910,11 +912,13 @@ html[data-theme='pureWhite']
   .player-bar:not(.player-bar-liquid):not(.player-bar-mini):not(.player-bar-compact):not(
     .player-bar-glass
   ) {
-  background: rgb(250 251 253 / 80%);
+  background: var(--te-chrome-frosted-surface, rgb(250 251 253 / 80%));
   border-color: transparent;
   box-shadow: var(--te-bohr-contact), var(--te-bohr-elevation);
-  backdrop-filter: blur(24px) saturate(124%);
-  -webkit-backdrop-filter: blur(24px) saturate(124%);
+  backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
+  -webkit-backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
 }
 
 html[data-theme='dark']
@@ -922,11 +926,13 @@ html[data-theme='dark']
 .player-bar.player-bar-glass:not(.player-bar-liquid):not(.player-bar-mini):not(
     .player-bar-compact
   ) {
-  background: rgb(16 17 19 / 72%);
+  background: var(--te-playback-bar-surface, var(--te-chrome-frosted-surface, rgb(16 17 19 / 72%)));
   border-color: transparent;
   box-shadow: var(--te-bohr-contact), var(--te-bohr-elevation);
-  backdrop-filter: blur(24px) saturate(124%);
-  -webkit-backdrop-filter: blur(24px) saturate(124%);
+  backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
+  -webkit-backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
 }
 
 body.te-no-blur .player-bar:not(.player-bar-liquid):not(.player-bar-mini):not(.player-bar-compact),
@@ -958,19 +964,19 @@ html[data-te-effects-mode='reduced']
 }
 
 .player-bar-glass .player-title {
-  color: #fff;
+  color: var(--te-playback-page-text, #fff);
 }
 .player-bar-glass .player-artist {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--te-playback-page-muted, rgba(255, 255, 255, 0.7));
 }
 .player-bar-glass .ctrl-btn {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--te-playback-control-text, rgba(255, 255, 255, 0.8));
 }
 .player-bar-glass .ctrl-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--te-playback-control-hover-surface, rgba(255, 255, 255, 0.1));
 }
 .player-bar-glass .ctrl-btn img {
-  filter: brightness(0) invert(1);
+  filter: var(--te-playback-icon-filter, brightness(0) invert(1));
   opacity: 0.82;
 }
 .player-bar-glass .btn-play {
@@ -992,14 +998,14 @@ html[data-te-effects-mode='reduced']
   box-shadow: none;
 }
 .player-bar-glass .mode-btn-right {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--te-playback-control-text, rgba(255, 255, 255, 0.6));
 }
 .player-bar-glass .mode-btn-right img {
-  filter: brightness(0) invert(1);
+  filter: var(--te-playback-icon-filter, brightness(0) invert(1));
   opacity: 0.55;
 }
 .player-bar-glass :deep(.time-label) {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--te-playback-page-muted, rgba(255, 255, 255, 0.5));
 }
 .player-bar-glass .player-cover-placeholder {
   background: rgba(255, 255, 255, 0.1);
@@ -1008,14 +1014,14 @@ html[data-te-effects-mode='reduced']
   background: rgba(255, 255, 255, 0.18);
 }
 .player-bar-glass .player-cover-placeholder i {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--te-playback-cover-placeholder-text, rgba(255, 255, 255, 0.4));
 }
 .player-bar-glass .icon-btn {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--te-playback-control-text, rgba(255, 255, 255, 0.6));
 }
 .player-bar-glass .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--te-playback-control-hover-surface, rgba(255, 255, 255, 0.1));
+  color: var(--te-playback-control-hover-text, rgba(255, 255, 255, 0.9));
 }
 .player-bar-glass .icon-btn.active {
   color: var(--accent-color, #1a73e8);
@@ -1025,7 +1031,7 @@ html[data-te-effects-mode='reduced']
 .player-bar-glass .ctrl-btn:active,
 .player-bar-glass .icon-btn:active,
 .player-bar-glass .mode-btn-right:active {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--te-playback-control-hover-surface, rgba(255, 255, 255, 0.16));
 }
 
 .player-bar-glass :deep(.progress-track) {
@@ -1195,7 +1201,7 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .player-cover-placeho
 
 .player-bar-glass .player-title-button:hover,
 .player-bar-glass .player-title-button:focus-visible {
-  color: #fff;
+  color: var(--te-playback-page-text, #fff);
 }
 
 .live-badge {
@@ -1256,8 +1262,22 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .player-cover-placeho
   background: color-mix(in srgb, #f59e0b 72%, transparent);
 }
 
+.player-artists {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.player-artist-separator {
+  flex: none;
+  color: #999;
+}
+
 .player-artist {
   display: block;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
   margin: 2px 0 0;
   padding: 0;
@@ -1293,7 +1313,7 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .player-cover-placeho
 
 .player-bar-glass .player-artist:not(:disabled):hover,
 .player-bar-glass .player-artist:not(:disabled):focus-visible {
-  color: #fff;
+  color: var(--te-playback-page-text, #fff);
 }
 
 .player-stream-now-playing {
@@ -1449,7 +1469,7 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .player-cover-placeho
 :deep(.time-label) {
   font-size: calc(var(--te-font-size-body, 14px) * 11 / 14);
   color: #999;
-  min-width: 36px;
+  min-width: max(36px, calc(var(--te-progress-time-characters, 4) * 1ch + 12px));
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
@@ -1467,10 +1487,9 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .player-cover-placeho
   left: 0;
   right: 0;
   top: 50%;
-  height: 5px;
-  transform: translateY(-50%) scaleY(0.6);
-  transform-origin: center;
-  transition: transform 120ms ease-out;
+  height: calc(var(--te-player-progress-height, 5px) * 0.6);
+  transform: translateY(-50%);
+  transition: height 120ms ease-out;
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent-color, #1a73e8) 18%, transparent);
   overflow: hidden;
@@ -1494,10 +1513,9 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .player-cover-placeho
   position: absolute;
   left: 0;
   top: 50%;
-  height: 5px;
-  transform: translateY(-50%) scaleY(0.6);
-  transform-origin: center;
-  transition: transform 120ms ease-out;
+  height: calc(var(--te-player-progress-height, 5px) * 0.6);
+  transform: translateY(-50%);
+  transition: height 120ms ease-out;
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent-color, #f59e0b) 55%, transparent);
   pointer-events: none;
@@ -1524,7 +1542,7 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .player-cover-placeho
 :deep(.progress-area.is-scrubbing .progress-track),
 :deep(.progress-slider-wrap:not(.is-disabled):hover .ab-loop-range),
 :deep(.progress-area.is-scrubbing .ab-loop-range) {
-  transform: translateY(-50%) scaleY(1);
+  height: calc(var(--te-player-progress-height, 5px) * 1.4);
 }
 
 :deep(.progress-slider:focus) {
@@ -1827,7 +1845,7 @@ html[data-te-motion='off'] .player-bar :deep(.ab-loop-range) {
   }
 
   :deep(.time-label) {
-    min-width: 32px;
+    min-width: max(32px, calc(var(--te-progress-time-characters, 4) * 1ch + 12px));
   }
 }
 
@@ -2002,9 +2020,12 @@ html[data-te-motion='off'] .player-bar :deep(.ab-loop-range) {
 }
 
 .player-bar:not(.player-bar-mini):not(.player-bar-compact).player-bar-glass {
-  --te-transport-play-text: #fff;
-  --te-transport-play-surface: rgba(255, 255, 255, 0.08);
-  --te-transport-play-hover-surface: rgba(255, 255, 255, 0.13);
+  --te-transport-play-text: var(--te-playback-page-text, #fff);
+  --te-transport-play-surface: var(--te-playback-control-surface, rgba(255, 255, 255, 0.08));
+  --te-transport-play-hover-surface: var(
+    --te-playback-control-hover-surface,
+    rgba(255, 255, 255, 0.13)
+  );
 }
 
 .player-bar:not(.player-bar-mini):not(.player-bar-compact) .btn-play:hover,
@@ -2025,7 +2046,6 @@ html[data-te-motion='off'] .player-bar :deep(.ab-loop-range) {
 }
 
 .player-bar :deep(.progress-track) {
-  height: var(--te-player-progress-height, 6px);
   border-radius: var(--te-player-progress-radius, 999px);
   background: var(--te-player-bar-progress-track, var(--te-player-progress-track));
 }
@@ -2284,14 +2304,14 @@ html[data-window-transparent='on'][data-platform='linux'] .player-bar-liquid .pl
    Mini and compact are both flat control strips, and they deliberately share one
    surface: the same playing-page fill, the same control colours, the same hover.
    Declaring the values once keeps the two shapes from drifting apart, and keeps
-   the handful of colours no theme token covers (the playing-page strip is dark
-   under every app theme, so it cannot follow the card tokens) in one place.
+   the artwork stage's dark defaults in one place. A custom playback background
+   supplies its own surface and foreground palette through appearance.css.
 
    `--te-flat-bar-dark-lift` is a `color-mix` over a token, which resolves at use
    time, so it still follows whatever `--te-card-bg` the active theme sets. */
 .player-bar.player-bar-mini,
 .player-bar.player-bar-compact {
-  --te-flat-bar-glass-bg: #141722;
+  --te-flat-bar-glass-bg: var(--te-playback-bar-flat-surface, #141722);
   --te-flat-bar-glass-text: rgba(255, 255, 255, 0.86);
   --te-flat-bar-control: rgba(255, 255, 255, 0.78);
   --te-flat-bar-control-hover-bg: rgba(255, 255, 255, 0.1);
@@ -3173,8 +3193,7 @@ html[data-theme='dark']
 }
 
 /* PlayingMusic supplies `glass=true` even under a light app theme, so compact
-   needs the playing-page dark surface explicitly or the flat rule's card token
-   wins and turns the strip white. */
+   follows the playback surface instead of the flat rule's card token. */
 .player-bar-shell[data-te-playbar-mode='compact']
   .player-bar.player-bar-glass.player-bar-compact.player-bar-compact.player-bar-compact {
   background: var(--te-flat-bar-glass-bg);
@@ -3354,4 +3373,18 @@ html[data-te-motion='reduced']
   :deep(.progress-area) {
     gap: 6px;
   }
+}
+
+.player-bar-idle :is(.player-cover-placeholder, .ctrl-btn:disabled) {
+  cursor: default;
+}
+
+.player-bar-idle .ctrl-btn:disabled {
+  opacity: 0.5;
+}
+
+.player-bar .volume-drawer-slider:focus-visible {
+  outline: 2px solid var(--te-primary-500);
+  outline-offset: 3px;
+  border-radius: 8px;
 }

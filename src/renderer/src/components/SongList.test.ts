@@ -1,6 +1,51 @@
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { runInNewContext } from 'node:vm'
+import { computed, reactive, ref } from 'vue'
+import ts from 'typescript'
+import { parse } from '@vue/compiler-sfc'
+import type { Track } from '../types/music'
+import { resolveLibraryArtistTracks } from '../utils/libraryCollectionView.ts'
+
+test('local artist navigation resolves collaborations and reacts to the selected performer', () => {
+  const source = readFileSync(new URL('./SongList.vue', import.meta.url), 'utf8')
+  const script = parse(source).descriptor.scriptSetup!.content
+  const ast = ts.createSourceFile('SongList.ts', script, ts.ScriptTarget.Latest, true)
+  let expression = ''
+  for (const statement of ast.statements) {
+    if (!ts.isVariableStatement(statement)) continue
+    const declaration = statement.declarationList.declarations.find(
+      (node) => node.name.getText(ast) === 'baseDisplayTracks'
+    )
+    if (declaration?.initializer) expression = declaration.initializer.getText(ast)
+  }
+  assert.ok(expression)
+  const solo = { id: 'solo', artist: 'Alice' } as Track
+  const duet = { id: 'duet', artist: 'Alice / Bob' } as Track
+  const tracks = ref([solo, duet])
+  const props = reactive({ category: 'artists', filter: 'artist:Alice' })
+  const code = ts.transpileModule(`const result = ${expression}; result`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022 }
+  }).outputText
+  const result = runInNewContext(code, {
+    computed,
+    props,
+    tracks,
+    resolveLibraryArtistTracks
+  }) as { value: Track[] }
+  assert.deepEqual(
+    result.value.map((track) => track.id),
+    ['solo', 'duet']
+  )
+  props.filter = 'artist:Bob'
+  assert.deepEqual(
+    result.value.map((track) => track.id),
+    ['duet']
+  )
+  tracks.value = [solo]
+  assert.deepEqual(result.value, [])
+})
 
 test('song list omits header kickers from all non-dashboard local library views', () => {
   const source = readFileSync(new URL('./SongList.vue', import.meta.url), 'utf8')
@@ -298,7 +343,7 @@ test('library header places the search box last so it renders right-most', () =>
   }
 })
 
-test('library playback controls render below the table header', () => {
+test('library playback controls render in the title group while albums use dedicated controls', () => {
   const source = readFileSync(new URL('./SongList.vue', import.meta.url), 'utf8').replace(
     /\r\n/g,
     '\n'
@@ -306,15 +351,36 @@ test('library playback controls render below the table header', () => {
 
   assert.doesNotMatch(source, /class="header-play-actions"/)
   const tableHeaderStart = source.lastIndexOf('<div class="song-list-header"')
+  const headerLeftStart = source.indexOf(
+    '<div v-if="!currentAlbum" class="header-left">',
+    tableHeaderStart
+  )
+  const titleGroupStart = source.indexOf('<div class="title-group">', headerLeftStart)
+  const headerRightStart = source.indexOf('<div class="header-right">', tableHeaderStart)
   const albumHeaderIndex = source.indexOf('<AlbumDetailHeader', tableHeaderStart)
   const playActionsIndex = source.indexOf('class="library-play-actions"', tableHeaderStart)
   const tableHeaderEnd = source.lastIndexOf('</div>', albumHeaderIndex)
 
   assert.ok(tableHeaderStart > 0)
-  assert.ok(tableHeaderEnd > tableHeaderStart)
+  assert.ok(headerLeftStart > tableHeaderStart)
+  assert.ok(titleGroupStart > headerLeftStart)
+  assert.ok(playActionsIndex > titleGroupStart)
+  assert.ok(headerRightStart > playActionsIndex)
+  assert.ok(tableHeaderEnd > headerRightStart)
   assert.ok(albumHeaderIndex > tableHeaderEnd)
-  assert.ok(playActionsIndex > tableHeaderEnd)
-  assert.match(source, /<div v-if="!currentAlbum" class="library-play-actions"/)
+  const titleGroup = source.slice(titleGroupStart, headerRightStart)
+  assert.match(titleGroup, /class="library-play-actions"[\s\S]*<\/div>\s*<\/div>\s*<\/div>\s*$/)
+  for (const handler of ['playAllTracks', 'shufflePlayTracks']) {
+    assert.match(
+      titleGroup,
+      new RegExp(`:disabled="displayTracks.length === 0"\\s+@click="${handler}"`)
+    )
+  }
+  const albumHeader = source.slice(albumHeaderIndex, source.indexOf('/>', albumHeaderIndex))
+  assert.match(albumHeader, /v-if="currentAlbum"/)
+  assert.match(albumHeader, /:can-play="displayTracks.length > 0"/)
+  assert.match(albumHeader, /@play="playAllTracks"/)
+  assert.match(albumHeader, /@shuffle="shufflePlayTracks"/)
 })
 
 test('song list context menu exposes play next, view artist, and view album actions', () => {
@@ -425,4 +491,16 @@ test('selected tracks append as one queue command without starting playback', ()
   assert.equal(batches.length, 1)
   assert.match(source, /@click="appendActionTracksToQueue\(contextActionTracks\)"/)
   assert.match(source, /@click="appendActionTracksToQueue\(selectionActionTracks\)"/)
+})
+
+test('song list exposes the shared locate-current action for every table view', () => {
+  const source = readFileSync(new URL('./SongList.vue', import.meta.url), 'utf8')
+
+  assert.match(source, /const currentTrackIndex = computed\(/)
+  assert.match(source, /!showTable\.value/)
+  assert.match(source, /const canLocateCurrentTrack = computed\(/)
+  assert.match(source, /:data-te-locate-current="canLocateCurrentTrack \? 'true' : undefined"/)
+  assert.match(source, /@te-locate-current="locateCurrentTrack"/)
+  assert.match(source, /scrollToTrack\(index\)/)
+  assert.match(source, /:aria-current="currentTrack\?\.id === track\.id \? 'true' : undefined"/)
 })

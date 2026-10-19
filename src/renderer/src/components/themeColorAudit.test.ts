@@ -105,6 +105,20 @@ test('renderer business styles do not exceed the hard-coded color baseline', () 
   assert.deepEqual(regressions, [])
 })
 
+test('color audit accepts variable color channels while counting literal channels and fallbacks', () => {
+  assert.equal(countColorLiterals('color: rgb(var(--text-rgb) / 0.8)'), 0)
+  assert.equal(countColorLiterals('color: hsl(var(--accent-hsl) / var(--opacity))'), 0)
+  assert.equal(countColorLiterals('color: rgb(255 255 255 / var(--opacity))'), 1)
+  assert.equal(countColorLiterals('color: var(--text, #ffffff)'), 1)
+  assert.equal(countColorLiterals('color: rgb(var(--text-rgb, 255 255 255))'), 1)
+})
+
+function countColorLiterals(styles: string): number {
+  return Array.from(styles.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(colorLiteral)).filter(
+    ([value]) => !/^(?:rgba?|hsla?)\(\s*var\(\s*--[\w-]+\s*\)$/i.test(value)
+  ).length
+}
+
 /** Every renderer stylesheet as `[repo-relative path, style text]`, base.css included. */
 function collectStyleSources(directory: string): Array<[string, string]> {
   const sources: Array<[string, string]> = []
@@ -147,7 +161,7 @@ function collectColorCounts(directory: string): Record<string, number> {
           (match) => match[1]
         ).join('\n')
       : source
-    const count = Array.from(styles.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(colorLiteral)).length
+    const count = countColorLiterals(styles)
     if (count > 0) counts[file] = count
   }
   return counts

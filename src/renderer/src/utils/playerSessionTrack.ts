@@ -23,6 +23,7 @@ export function cloneTrackForPlaybackSession(track: Track): Track {
     artists: cloneTrackArtistRefs(track.artists),
     album: track.album,
     ...(isTrackReferenceString(track.albumId) ? { albumId: track.albumId } : {}),
+    albumArtist: track.albumArtist,
     filePath: track.filePath,
     fileName: track.fileName,
     dir: track.dir,

@@ -25,6 +25,20 @@ export interface StreamingArtistNavigationRequest {
   artistId?: string | number
 }
 
+export interface StreamingAlbumNavigationRequest {
+  key: number
+  providerId: string
+  albumId: string
+  albumName: string
+  artist?: string
+  cover: string | null
+  coverSource?: string | null
+}
+
+export type StreamingMetadataNavigationRequest =
+  | ({ kind: 'artist' } & StreamingArtistNavigationRequest)
+  | ({ kind: 'album' } & StreamingAlbumNavigationRequest)
+
 export function getPrimaryStreamingArtistName(value: string): string {
   const normalized = value.trim()
   if (!normalized) return ''

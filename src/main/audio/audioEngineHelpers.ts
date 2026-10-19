@@ -525,6 +525,7 @@ export function deviceCompatibleWithOutput(
 export function outputConfigsEqual(left: OutputConfig, right: OutputConfig): boolean {
   return (
     left.preferredBufferSize === right.preferredBufferSize &&
+    (left.asioOutputChannelStart ?? 0) === (right.asioOutputChannelStart ?? 0) &&
     (left.playbackPolicy ?? 'bit-perfect-first') ===
       (right.playbackPolicy ?? 'bit-perfect-first') &&
     (left.continuitySampleRate ?? 48000) === (right.continuitySampleRate ?? 48000) &&

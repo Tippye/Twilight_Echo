@@ -257,6 +257,96 @@
   background: transparent;
   font-size: 12px !important;
 }
+
+.appearance-recipe-prompt-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10021;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--te-dialog-backdrop);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.appearance-recipe-prompt {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px 16px;
+  width: min(440px, 100%);
+  padding: 22px;
+  border: 1px solid var(--te-card-border);
+  border-radius: 18px;
+  background: var(--te-settings-backplate);
+  color: var(--te-settings-text);
+  box-shadow: var(--te-glass-shadow);
+  animation: appearance-recipe-prompt-in 180ms var(--te-ease-soft, ease-out) both;
+}
+
+.appearance-recipe-prompt-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--te-primary-500) 14%, transparent);
+  color: var(--te-primary-500);
+  font-size: 17px;
+}
+
+.appearance-recipe-prompt-copy {
+  min-width: 0;
+}
+
+.appearance-recipe-prompt h2 {
+  margin: 1px 0 6px;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.appearance-recipe-prompt p {
+  margin: 0;
+  color: var(--te-settings-text-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.appearance-recipe-prompt-actions {
+  display: flex;
+  grid-column: 2;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.appearance-recipe-prompt-actions button {
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 1px solid var(--te-card-border);
+  border-radius: 9px;
+  font-size: 12px;
+}
+
+.appearance-recipe-prompt-later {
+  background: transparent;
+}
+
+.appearance-recipe-prompt-actions .appearance-save {
+  background: var(--te-primary-500);
+  color: var(--te-on-accent);
+  border-color: transparent;
+}
+
+@keyframes appearance-recipe-prompt-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 .appearance-editor-controls {
   overflow-y: auto;
   padding: 20px 24px;
@@ -584,5 +674,9 @@
 @media (prefers-reduced-motion: reduce) {
   .appearance-editor button {
     transition: none;
+  }
+
+  .appearance-recipe-prompt {
+    animation: none;
   }
 }

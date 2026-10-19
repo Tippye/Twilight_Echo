@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PlaybackIcon from '@renderer/components/icons/PlaybackIcon.vue'
+import { useEscapeToClose, useFocusTrap } from '../app/useDismissLayer'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useMusicStore } from '../stores/useMusicStore'
@@ -23,6 +24,7 @@ import type { Track } from '../types/music'
 import { createUnifiedRecentTrackResolver } from '../utils/unifiedRecentTracks'
 import { resolveTimeGreeting } from '@renderer/utils/timeGreeting'
 import CoverImg from './CoverImg.vue'
+import DEFAULT_COVER from '../assets/images/default-track-cover.webp'
 
 const emit = defineEmits<{
   (event: 'select-view', category: string, filter: string | null): void
@@ -30,9 +32,6 @@ const emit = defineEmits<{
 }>()
 const props = defineProps<{ previewTracks?: Track[] }>()
 
-// Relative so the packaged file:// build resolves it next to index.html
-// instead of the filesystem root.
-const DEFAULT_COVER = './icon.png'
 const DASHBOARD_QUEUE_WINDOW = 200
 const SHELF_SIZE = 6
 const TOP_TRACK_COUNT = 6
@@ -51,7 +50,6 @@ const now = ref(new Date())
 
 onMounted(() => {
   if (props.previewTracks) return
-  window.addEventListener('keydown', onDspRouteDialogKeydown)
   void refreshDspRouteState(true)
   // The polled graph status only moves while audio is flowing (meters, process
   // time). When paused or stopped the last snapshot stays valid, so the 1 Hz
@@ -79,7 +77,6 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', onDspRouteDialogKeydown)
   if (dspRoutePoll !== null) window.clearInterval(dspRoutePoll)
   dspRoutePoll = null
 })
@@ -387,6 +384,9 @@ const RESAMPLER_LABELS: Record<string, string> = {
 const dspSceneState = ref<DspSceneState | null>(null)
 const polledDspGraphStatus = ref<DspGraphStatus | null>(null)
 const dspRouteDialogOpen = ref(false)
+const dspRouteDialogRef = ref<HTMLElement | null>(null)
+useEscapeToClose(dspRouteDialogOpen, closeDspRouteDialog)
+useFocusTrap(dspRouteDialogRef, dspRouteDialogOpen)
 const dspRouteLoading = ref(false)
 const dspRouteError = ref('')
 let dspRoutePoll: number | null = null
@@ -805,10 +805,6 @@ function openDspRouteDialog(): void {
 
 function closeDspRouteDialog(): void {
   dspRouteDialogOpen.value = false
-}
-
-function onDspRouteDialogKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && dspRouteDialogOpen.value) closeDspRouteDialog()
 }
 </script>
 
@@ -1248,10 +1244,12 @@ function onDspRouteDialogKeydown(event: KeyboardEvent): void {
         @click.self="closeDspRouteDialog"
       >
         <section
+          ref="dspRouteDialogRef"
           class="dsp-route-dialog"
           role="dialog"
           aria-modal="true"
           aria-labelledby="dsp-route-dialog-title"
+          tabindex="-1"
         >
           <header class="dsp-route-dialog-head">
             <div>

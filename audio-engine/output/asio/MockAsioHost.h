@@ -1,6 +1,7 @@
 #pragma once
 
 #include "IAsioHost.h"
+#include "AsioDsdBufferGeometry.h"
 
 #include <array>
 #include <cstdint>
@@ -56,6 +57,8 @@ class MockAsioHost final : public IAsioHost {
   int probeCalls = 0;
   int failProbeCount = 0;
   std::string lastHostError;
+  AsioRenderHealth renderHealthSnapshot;
+  bool driverBoundaryHealthAvailable = false;
   /**
    * Refuse a raw DSD open whose semantic rate is absent from the target
    * device's declared nativeDsdSampleRates, as a real driver does.
@@ -87,6 +90,10 @@ class MockAsioHost final : public IAsioHost {
   AsioChannelFormat outputChannelFormat(long channel) const override;
   bool outputReady() override;
   long activeBufferSize() const override;
+  size_t activeRenderFrameCapacity() const override;
+  bool dsdBufferUnitConfirmed() const override;
+  AsioRenderHealth renderHealth() const override { return renderHealthSnapshot; }
+  bool hasDriverBoundaryHealth() const override { return driverBoundaryHealthAvailable; }
   std::string lastCloseError() const override;
 
   void triggerBufferSwitch(long bufferIndex);
@@ -95,6 +102,7 @@ class MockAsioHost final : public IAsioHost {
  private:
   AsioBufferSwitchCallback bufferSwitch_;
   AsioEventCallback eventCallback_;
+  asio::DsdBufferGeometry dsdGeometry_;
 };
 
 AsioDeviceInfo makeMockAsioDevice(

@@ -15,6 +15,7 @@ export default defineConfig(({ command }) => {
         rollupOptions: {
           input: {
             index: resolve(__dirname, 'src/main/index.ts'),
+            diagnosticWriter: resolve(__dirname, 'src/main/diagnostics/writerWorker.ts'),
             pluginHost: resolve(__dirname, 'src/main/plugins/host.ts'),
             audioEngineService: resolve(__dirname, 'src/main/audioEngineService.ts'),
             audioAnalysisService: resolve(__dirname, 'src/main/audioAnalysisService.ts'),

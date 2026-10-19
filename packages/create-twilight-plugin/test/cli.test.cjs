@@ -11,6 +11,27 @@ async function tempDir() {
   return fs.mkdtemp(path.join(os.tmpdir(), 'twilight-plugin-cli-'))
 }
 
+test('packs an API v4 experience dist entry and assets without recursively including packages', async () => {
+  const root = await tempDir()
+  const target = path.join(root, 'experience')
+  await fs.mkdir(path.join(target, 'dist'), { recursive: true })
+  await fs.writeFile(path.join(target, 'plugin.json'), JSON.stringify({ id: 'com.example.experience',
+    name: 'Experience', version: '0.1.0', description: 'Test', author: 'Test', license: 'MIT',
+    type: ['ui'], apiVersion: 4, engines: { twilightEcho: '*' }, permissions: ['ui:inject'],
+    contributes: { experiences: [{ id: 'rhine', name: 'Rhine', entry: 'dist/index.html', bridgeVersion: 1 }] } }))
+  await fs.writeFile(path.join(target, 'dist/index.html'), '<html></html>')
+  await fs.writeFile(path.join(target, 'dist/scene.js'), 'export const ready = true')
+  await fs.writeFile(path.join(target, 'dist/old.tep'), 'old package')
+  const result = await packCommand([target])
+  const unpacked = path.join(root, 'unpacked')
+  await extract(result.outputFile, { dir: unpacked })
+  assert.equal(await exists(path.join(unpacked, 'dist/index.html')), true)
+  assert.equal(await exists(path.join(unpacked, 'dist/scene.js')), true)
+  assert.equal(await exists(path.join(unpacked, 'dist/old.tep')), false)
+  await fs.unlink(path.join(target, 'dist/index.html'))
+  await assert.rejects(packCommand([target]))
+})
+
 test('init creates a valid tool plugin scaffold', async () => {
   const root = await tempDir()
   const target = path.join(root, 'my-tool')

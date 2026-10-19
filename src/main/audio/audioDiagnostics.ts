@@ -15,6 +15,8 @@ import type {
   PlaybackInfo
 } from './audioEngineTypes.ts'
 import { parseJsonWithNestingLimit } from '../security/jsonSafety.ts'
+import { writeDiagnostic } from '../diagnostics/logger.ts'
+import { sanitizeDiagnosticValue } from '../diagnostics/sanitize.ts'
 
 const DEFAULT_MAX_LOG_BYTES = 4 * 1024 * 1024
 const MAX_EVENT_TEXT_LENGTH = 16 * 1024
@@ -43,6 +45,7 @@ export interface AudioDiagnosticBlocker {
 }
 
 export interface AudioDiagnosticEvent {
+  eventId?: string
   timestamp: string
   sessionId: string
   sequence: number
@@ -112,13 +115,15 @@ export class AudioDiagnosticRecorder {
     details: unknown = {},
     level: AudioDiagnosticEvent['level'] = 'info'
   ): void {
+    const shared = writeDiagnostic('audio', event, details, level === 'warning' ? 'warn' : level)
     const entry: AudioDiagnosticEvent = {
+      ...(shared ? { eventId: shared.eventId } : {}),
       timestamp: new Date().toISOString(),
       sessionId: this.sessionId,
       sequence: ++this.sequence,
       level,
       event,
-      details: redactAudioDiagnosticValue(details)
+      details: sanitizeDiagnosticValue(redactAudioDiagnosticValue(details))
     }
     const line = `${JSON.stringify(entry)}\n`
     const byteLength = Buffer.byteLength(line)

@@ -109,6 +109,12 @@ const MAX_AUDIO_SOURCE_LENGTH = 8192
 const MAX_AUDIO_DEVICE_LENGTH = 512
 let audioDiagnosticRecorder: AudioDiagnosticRecorder | null = null
 let stopOutputTest: () => Promise<void> = () => Promise.resolve()
+
+/**
+ * Stops a running device output test for transport paths that bypass IPC
+ * (renderer-free playback while Afterglow has unloaded every window).
+ */
+export const stopActiveOutputTest = (): Promise<void> => stopOutputTest()
 function stemWorkerDirectory(): string {
   return join(
     app.isPackaged || app.getAppPath().endsWith('.asar')
@@ -180,7 +186,7 @@ function persistSoftwareVolumeNow(): void {
   )
 }
 
-function scheduleSoftwareVolumePersist(volume: number): void {
+export function scheduleSoftwareVolumePersist(volume: number): void {
   pendingSoftwareVolume = volume
   if (softwareVolumePersistTimer) clearTimeout(softwareVolumePersistTimer)
   softwareVolumePersistTimer = setTimeout(
@@ -442,7 +448,19 @@ function recordPlaybackDiagnostic(
         exclusiveMode: runtime.appSettings.audioExclusiveMode
       }
     })
-    const signatureDetails = { ...details, position: 0 }
+    const signatureDiagnostics = { ...(details.diagnostics as Record<string, unknown>) }
+    // Live worker counters are included in the export/snapshot, but must not
+    // turn the state-change log into a PCM polling trace.
+    for (const key of [
+      'decodeBufferedFrames',
+      'decodeProducedFrames',
+      'decodeLastProgressAgeMs',
+      'decodeStage',
+      'liveRenderedFrames',
+      'liveRenderCallbackCount'
+    ])
+      delete signatureDiagnostics[key]
+    const signatureDetails = { ...details, position: 0, diagnostics: signatureDiagnostics }
     const signature = JSON.stringify(signatureDetails)
     if (signature === lastAudioDiagnosticPlaybackSignature) return false
     lastAudioDiagnosticPlaybackSignature = signature
@@ -813,6 +831,10 @@ async function initializeAudioEngineRuntime(): Promise<void> {
     audioDiagnosticRecorder?.record('audio-service-ready', event)
     runtime.mainWindow?.webContents.send(IPC.audioEngine.serviceReady, event)
     void runtime.pluginManager?.broadcastEvent(IPC.audioEngine.serviceReady, event)
+  })
+
+  runtime.audioEngineManager.on('audio-service-rpc-timeout', (event) => {
+    audioDiagnosticRecorder?.record('audio-service-rpc-timeout', event, 'warning')
   })
 
   runtime.audioEngineManager.on('audio-service-stderr', ({ message }) => {

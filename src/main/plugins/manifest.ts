@@ -1,4 +1,5 @@
 import { posix, win32 } from 'path'
+import { normalizeExperiences } from '../../shared/pluginExperience.ts'
 import {
   TWILIGHT_PLUGIN_API_VERSION,
   type TwilightPluginDescriptor,
@@ -18,6 +19,8 @@ const PLUGIN_PERMISSIONS = [
   'settings',
   'clipboard',
   'ui:inject',
+  'app:settings',
+  'plugins:manage',
   'dsp:native'
 ] as const
 
@@ -215,11 +218,12 @@ export function validatePluginManifest(raw: unknown): TwilightPluginManifest {
   if (type.length === 1 && type[0] === 'theme' && (main || binary)) {
     throw new Error('纯 theme 插件只能通过 contributes.themes 声明，不能包含 main 或 binary')
   }
-  if (!main && !binary && !hasDeclarativeThemeContribution(raw, type)) {
+  const permissions = normalizePermissions(raw.permissions)
+  const experiences = normalizeExperiences({ apiVersion: normalizedApiVersion, type, permissions, contributes: raw.contributes })
+  if (!main && !binary && !hasDeclarativeThemeContribution(raw, type) && !experiences.length) {
     throw new Error('plugin.json 必须声明 main 或 binary，或为 theme 声明 contributes.themes')
   }
   if (type.includes('dsp') && !binary) throw new Error('type 包含 dsp 时必须声明 binary')
-  const permissions = normalizePermissions(raw.permissions)
   if (type.includes('dsp') && !permissions.includes('dsp:native')) {
     throw new Error('type 包含 dsp 时必须声明 dsp:native 权限')
   }

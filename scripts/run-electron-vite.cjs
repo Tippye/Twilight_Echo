@@ -18,10 +18,10 @@
  */
 'use strict'
 
-const { spawn } = require('node:child_process')
+const { spawn, spawnSync } = require('node:child_process')
 const { homedir } = require('node:os')
-const { join } = require('node:path')
-const { readFileSync } = require('node:fs')
+const { dirname, join } = require('node:path')
+const { mkdirSync, readFileSync } = require('node:fs')
 
 const command = process.argv[2]
 if (command !== 'dev' && command !== 'preview') {
@@ -58,14 +58,64 @@ const electronArgs = process.argv.slice(3)
 if (shouldUseX11Backend()) {
   electronArgs.unshift('--ozone-platform=x11')
 }
+
+function isWindowsElevated() {
+  if (process.platform !== 'win32') return false
+  try {
+    return spawnSync('net', ['session'], { stdio: 'ignore', windowsHide: true }).status === 0
+  } catch {
+    return false
+  }
+}
+
+// The automation/desktop sandbox used by some development sessions runs the
+// Electron browser at medium integrity but blocks writes to the user's Roaming
+// profile. That makes Chromium fail to create its process singleton lock and
+// exit before any app code runs. Use a workspace-local profile only for that
+// restricted session; a normal terminal keeps the regular user profile.
+const restrictedWindowsSession = process.platform === 'win32' && !!process.env.DSH_SESSION_ID
+const elevatedWindowsSession = process.platform === 'win32' && isWindowsElevated()
+const childEnv = { ...process.env }
+const localTemp = join(__dirname, '..', 'tmp', 'electron-vite-temp')
+if (process.platform === 'win32' && command === 'dev') {
+  mkdirSync(localTemp, { recursive: true })
+  childEnv.TEMP = localTemp
+  childEnv.TMP = localTemp
+
+  if (elevatedWindowsSession || restrictedWindowsSession) {
+    // Chromium's sandbox cannot initialize reliably in an elevated Windows
+    // terminal. This is development-only; packaged builds retain their sandbox.
+    childEnv.NO_SANDBOX = '1'
+  }
+  if (restrictedWindowsSession) {
+    childEnv.TWILIGHT_DEV_USER_DATA_DIR ||= join(__dirname, '..', 'tmp', 'electron-vite-user-data')
+    console.warn(
+      '[dev] Restricted Windows session detected; using isolated profile:',
+      childEnv.TWILIGHT_DEV_USER_DATA_DIR
+    )
+  }
+}
+
 // 统一放在 `--` 之后，交给 electron-vite 原样传给 electron
 const args = [command, '--', ...electronArgs]
+// Invoke the installed CLI directly. Shell metacharacters in forwarded Electron
+// arguments must stay literal, and installation paths can contain spaces.
+const entry = join(
+  dirname(require.resolve('electron-vite/package.json')),
+  'bin',
+  'electron-vite.js'
+)
 
-const bin = process.platform === 'win32' ? 'electron-vite.cmd' : 'electron-vite'
-const child = spawn(bin, args, {
+const child = spawn(process.execPath, [entry, ...args], {
   stdio: 'inherit',
-  shell: process.platform === 'win32'
+  shell: false,
+  windowsHide: true,
+  env: childEnv
+})
+child.on('error', (error) => {
+  console.error('启动失败:', error.message)
+  process.exitCode = 1
 })
 child.on('close', (code) => {
-  process.exit(code ?? 0)
+  process.exit(code ?? process.exitCode ?? 0)
 })

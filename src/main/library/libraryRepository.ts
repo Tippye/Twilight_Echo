@@ -331,6 +331,27 @@ export function restoreLibraryExclusions(
   }
 }
 
+/** Permanently forget exclusion records without restoring the files. */
+export function clearLibraryExclusions(
+  document: LocalMusicLibraryDocument,
+  filePaths: string[]
+): { document: LocalMusicLibraryDocument; clearedFilePaths: string[] } {
+  const requested = new Set(filePaths.map(normalizeLibraryFilePath))
+  const clearedFilePaths: string[] = []
+  const exclusions = document.exclusions.filter((exclusion) => {
+    if (!requested.has(normalizeLibraryFilePath(exclusion.filePath))) return true
+    clearedFilePaths.push(exclusion.filePath)
+    return false
+  })
+  return {
+    document: {
+      ...document,
+      exclusions
+    },
+    clearedFilePaths
+  }
+}
+
 function normalizeLibraryExclusions(value: unknown[]): LocalLibraryExclusion[] {
   const result = new Map<string, LocalLibraryExclusion>()
   for (const raw of value) {

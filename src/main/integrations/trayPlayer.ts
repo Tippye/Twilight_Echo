@@ -22,15 +22,27 @@ import { runtime } from '../core/runtime'
 import { assertTrustedIpcSender, shouldAcceptIpcEvent } from '../security/electronSecurity.ts'
 import { getAppIconPath } from '../app/window'
 import { hideMiniPlayerWindow, restoreMainWindowFromMiniPlayer } from './miniPlayer'
+import {
+  normalizeExperienceWindowTheme,
+  type ExperienceWindowOptions,
+  type ExperienceWindowTheme
+} from '../../shared/experienceWindow.ts'
 
 const TRAY_PLAYER_WIDTH = 360
 const TRAY_PLAYER_HEIGHT = 176
 const TRAY_PLAYER_EDGE_GAP = 10
+let trayPlayerExperienceTheme: ExperienceWindowTheme = 'default'
 
 function sendTrayPlayerState(state: MiniPlayerStateSnapshot): void {
   const win = runtime.trayPlayerWindow
   if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return
   win.webContents.send('trayPlayer:state', state)
+}
+
+function sendTrayPlayerExperienceTheme(): void {
+  const win = runtime.trayPlayerWindow
+  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return
+  win.webContents.send('experience:windowTheme', trayPlayerExperienceTheme)
 }
 
 export function publishTrayPlayerState(state: MiniPlayerStateSnapshot): void {
@@ -123,21 +135,24 @@ function createTrayPlayerWindow(): BrowserWindow {
   win.webContents.on('will-navigate', (event) => event.preventDefault())
   win.webContents.on('did-finish-load', () => {
     sendTrayPlayerState(runtime.latestMiniPlayerState ?? { ...EMPTY_MINI_PLAYER_STATE })
+    sendTrayPlayerExperienceTheme()
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     const rendererUrl = new URL(process.env['ELECTRON_RENDERER_URL'])
     rendererUrl.searchParams.set('window', 'tray-player')
+    rendererUrl.searchParams.set('experienceTheme', trayPlayerExperienceTheme)
     void win.loadURL(rendererUrl.toString())
   } else {
     void win.loadFile(join(__dirname, '../renderer/index.html'), {
-      query: { window: 'tray-player' }
+      query: { window: 'tray-player', experienceTheme: trayPlayerExperienceTheme }
     })
   }
   return win
 }
 
-export function showTrayPlayerWindow(): void {
+export function showTrayPlayerWindow(options?: ExperienceWindowOptions): void {
+  trayPlayerExperienceTheme = normalizeExperienceWindowTheme(options?.theme)
   const win =
     runtime.trayPlayerWindow && !runtime.trayPlayerWindow.isDestroyed()
       ? runtime.trayPlayerWindow
@@ -145,6 +160,7 @@ export function showTrayPlayerWindow(): void {
   positionTrayPlayerWindow(win)
   win.showInactive()
   win.focus()
+  sendTrayPlayerExperienceTheme()
   sendTrayPlayerState(runtime.latestMiniPlayerState ?? { ...EMPTY_MINI_PLAYER_STATE })
 }
 

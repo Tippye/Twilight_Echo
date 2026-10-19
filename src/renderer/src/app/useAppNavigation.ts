@@ -58,6 +58,9 @@ export function useAppNavigation(options: { appearancePreviewActive?: () => bool
   const overlay = ref<Overlay | null>(null)
   const overlayHistory = reactive<Array<Overlay | null>>([])
   const history = shallowRef<NavigationPageTarget[]>([])
+  // Pages the user backed out of, newest last. A fresh navigation drops it so
+  // the side-button forward key behaves like a browser's forward history.
+  const forwardHistory = shallowRef<NavigationPageTarget[]>([])
   const lastLocal = shallowRef<Extract<NavigationPageTarget, { kind: 'local' }>>(localHome())
   const loginPageMode = ref<'login' | 'profile'>('login')
   const loginInitialProviderId = ref<string | null>(null)
@@ -156,6 +159,7 @@ export function useAppNavigation(options: { appearancePreviewActive?: () => bool
   )
   const activePageId = computed(() => navigationTargetId(pageTarget.value))
   const canGoBackPage = computed(() => history.value.length > 0 && !overlay.value)
+  const canGoForwardPage = computed(() => forwardHistory.value.length > 0 && !overlay.value)
   const activeCategory = computed(() =>
     pageTarget.value.kind === 'local' ? pageTarget.value.category : 'dashboard'
   )
@@ -168,6 +172,7 @@ export function useAppNavigation(options: { appearancePreviewActive?: () => bool
 
   function navigate(target: NavigationPageTarget, options?: { resetHistory?: boolean }): void {
     if (pageTarget.value.kind === 'local') lastLocal.value = pageTarget.value
+    forwardHistory.value = []
     if (options?.resetHistory) {
       history.value = []
     } else if (
@@ -188,7 +193,19 @@ export function useAppNavigation(options: { appearancePreviewActive?: () => bool
     const previous = history.value.at(-1)
     if (!previous) return
     history.value = history.value.slice(0, -1)
+    forwardHistory.value = [...forwardHistory.value.slice(-49), pageTarget.value]
     pageTarget.value = previous
+  }
+  function goForwardPage(): boolean {
+    // Foreground tools own the title-bar affordance; moving the page behind one
+    // would leave the user on a surface they never opened for that page.
+    if (overlay.value) return false
+    const next = forwardHistory.value.at(-1)
+    if (!next) return false
+    forwardHistory.value = forwardHistory.value.slice(0, -1)
+    history.value = [...history.value.slice(-49), pageTarget.value]
+    pageTarget.value = next
+    return true
   }
   function onSelectView(category: string, filter: string | null): void {
     if (category === 'recent') {
@@ -211,7 +228,8 @@ export function useAppNavigation(options: { appearancePreviewActive?: () => bool
     navigate({ kind: 'plugin', page })
   }
   function closePluginPage(): void {
-    goBackPage()
+    if (history.value.length) goBackPage()
+    else pageTarget.value = lastLocal.value
   }
   function enterRadioPodcastMode(): void {
     navigate({ kind: 'radio' })
@@ -321,10 +339,13 @@ export function useAppNavigation(options: { appearancePreviewActive?: () => bool
     if (nextHistory.length !== history.value.length) history.value = nextHistory
     const target = pageTarget.value
     if (target.kind !== 'plugin') return
-    if (
-      !pages.some((page) => page.pluginId === target.page.pluginId && page.id === target.page.id)
-    ) {
+    const current = pages.find(
+      (page) => page.pluginId === target.page.pluginId && page.id === target.page.id
+    )
+    if (!current) {
       pageTarget.value = localHome()
+    } else if (current.experience?.version !== target.page.experience?.version) {
+      pageTarget.value = { kind: 'plugin', page: current }
     }
   }
   function createToggleMenuHandler(): () => void {
@@ -353,9 +374,11 @@ export function useAppNavigation(options: { appearancePreviewActive?: () => bool
     activePageId,
     streamingTab,
     canGoBackPage,
+    canGoForwardPage,
     navigate,
     selectSidebarPage,
     goBackPage,
+    goForwardPage,
     showPlayingPage,
     showStreamingPage,
     showStreamingSurface,

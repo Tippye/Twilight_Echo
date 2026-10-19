@@ -19,6 +19,7 @@ import { createThemePerformanceRecorder } from '@renderer/utils/themePerformance
 import { WORKSHOP_PREVIEW_SURFACES } from '@renderer/components/theme-workshop/workshopCatalog'
 import type { ThemeTone } from '../../../../shared/theme.ts'
 import { diagnoseWorkshopCssSupport } from '../../../../shared/themeWorkshopCssDiagnostics.ts'
+import type { WorkshopAsset } from '../../../../shared/themeWorkshop.ts'
 
 export interface WorkshopPreviewScene {
   tone: ThemeTone
@@ -56,11 +57,35 @@ export function useWorkshopDiagnostics(
   let disposed = false
   const diagnosticModule = import('../../../../shared/themeWorkshopDiagnostics.ts')
   const decodeCache = new Map<string, Promise<WorkshopDiagnostic | null>>()
+  // Keep full data URLs in the project model, never as cache keys. Large theme
+  // assets would otherwise be retained a second time by this 128-entry cache.
+  const decodeKeyCache = new WeakMap<WorkshopAsset, string>()
+
+  function decodeKey(asset: WorkshopAsset): string {
+    const cached = decodeKeyCache.get(asset)
+    if (cached) return cached
+    let first = 2166136261
+    let second = 16777619
+    let index = 0
+    const feed = (code: number): void => {
+      first = Math.imul(first ^ code, 16777619)
+      second = Math.imul(second ^ (code + index), 2246822519)
+      index += 1
+    }
+    for (let offset = 0; offset < asset.type.length; offset += 1)
+      feed(asset.type.charCodeAt(offset))
+    feed(0)
+    for (let offset = 0; offset < asset.dataUrl.length; offset += 1)
+      feed(asset.dataUrl.charCodeAt(offset))
+    const key = `${asset.type}:${asset.dataUrl.length}:${(first >>> 0).toString(16)}:${(second >>> 0).toString(16)}`
+    decodeKeyCache.set(asset, key)
+    return key
+  }
 
   function decode(project: WorkshopProject): Promise<(WorkshopDiagnostic | null)[]> {
     return Promise.all(
       (project.assets ?? []).map((asset) => {
-        const key = asset.type + asset.dataUrl
+        const key = decodeKey(asset)
         const cached = decodeCache.get(key)
         if (cached)
           return cached.then(
@@ -74,10 +99,17 @@ export function useWorkshopDiagnostics(
           )
         const pending = new Promise<WorkshopDiagnostic | null>((resolve) => {
           let done = false
+          let image: HTMLImageElement | null = null
           const finish = (invalid: boolean): void => {
             if (done) return
             done = true
             clearTimeout(timeout)
+            if (image) {
+              image.onload = null
+              image.onerror = null
+              image.src = ''
+              image = null
+            }
             resolve(
               invalid
                 ? {
@@ -92,8 +124,8 @@ export function useWorkshopDiagnostics(
           }
           const timeout = setTimeout(() => finish(true), 5000)
           if (asset.type === 'image') {
-            const image = new Image()
-            image.onload = () => finish(!image.naturalWidth)
+            image = new Image()
+            image.onload = () => finish(!image?.naturalWidth)
             image.onerror = () => finish(true)
             image.src = asset.dataUrl
           } else {

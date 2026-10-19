@@ -23,7 +23,7 @@
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 48px 44px 140px;
+  padding: 48px 44px max(140px, calc(var(--te-playbar-bottom-clearance, 0px) + 12px));
   color: var(--an-ink);
   font-family: var(--te-font-sans, sans-serif);
   container: listening-journal / inline-size;
@@ -812,12 +812,12 @@
 }
 @media (max-width: 1100px) {
   .analytics-page {
-    padding: 48px 28px 140px;
+    padding: 48px 28px max(140px, calc(var(--te-playbar-bottom-clearance, 0px) + 12px));
   }
 }
 @media (max-width: 700px) {
   .analytics-page {
-    padding: 48px 16px 130px;
+    padding: 48px 16px max(130px, calc(var(--te-playbar-bottom-clearance, 0px) + 12px));
   }
 }
 @media (prefers-reduced-motion: reduce) {

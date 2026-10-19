@@ -124,6 +124,16 @@ std::vector<std::string> splitTopLevelObjects(const std::string& json) {
   return objects;
 }
 
+/** Append batches are strictly a JSON array; a bare object is not a batch. */
+bool isJsonArray(const std::string& json) {
+  size_t first = 0;
+  while (first < json.size() && std::isspace(static_cast<unsigned char>(json[first]))) ++first;
+  if (first >= json.size() || json[first] != '[') return false;
+  size_t last = json.size();
+  while (last > first && std::isspace(static_cast<unsigned char>(json[last - 1]))) --last;
+  return last > first && json[last - 1] == ']';
+}
+
 std::optional<std::string> extractStringField(const std::string& object, const std::string& key) {
   const std::string marker = "\"" + key + "\"";
   size_t pos = object.find(marker);
@@ -413,6 +423,7 @@ bool QueueManager::loadFromJson(const std::string& queueJson, int startIndex, st
   if (items_.empty()) {
     orderPosition_ = -1;
     rebuildPlayOrder();
+    ++queueRevision_;
     return true;
   }
 
@@ -420,6 +431,7 @@ bool QueueManager::loadFromJson(const std::string& queueJson, int startIndex, st
   rebuildPlayOrder();
   auto it = std::find(playOrder_.begin(), playOrder_.end(), startIndex);
   orderPosition_ = it == playOrder_.end() ? 0 : static_cast<int>(std::distance(playOrder_.begin(), it));
+  ++queueRevision_;
   return true;
 }
 
@@ -435,8 +447,62 @@ bool QueueManager::addFromJson(const std::string& itemJson, std::string* error) 
   }
   items_.push_back(std::move(parsed.item));
   rawQueueJson_ = itemsToJson(items_);
+  ++queueRevision_;
   rebuildPlayOrder();
   if (orderPosition_ < 0) orderPosition_ = 0;
+  return true;
+}
+
+bool QueueManager::appendFromJsonBatch(const std::string& itemsJson, int* outFirstIndex, std::string* error) {
+  if (!isJsonArray(itemsJson)) {
+    if (error) *error = "队列新增项必须是 JSON 数组";
+    return false;
+  }
+  std::vector<QueueItem> parsedItems;
+  for (const std::string& object : splitTopLevelObjects(itemsJson)) {
+    ParsedQueueItem parsed = parseQueueItem(object);
+    if (!parsed.valid) {
+      if (error) *error = "Invalid CUE range in appended queue item";
+      return false;
+    }
+    if (parsed.item.source.empty()) {
+      if (error) *error = "队列新增项缺少音频地址";
+      return false;
+    }
+    parsedItems.push_back(std::move(parsed.item));
+  }
+  const int firstIndex = static_cast<int>(items_.size());
+  if (outFirstIndex) *outFirstIndex = firstIndex;
+  if (parsedItems.empty()) return true;
+  items_.reserve(items_.size() + parsedItems.size());
+  for (auto& item : parsedItems) items_.push_back(std::move(item));
+  rawQueueJson_ = itemsToJson(items_);
+  ++queueRevision_;
+  rebuildPlayOrder();
+  if (orderPosition_ < 0) orderPosition_ = 0;
+  return true;
+}
+
+bool QueueManager::updateItemSource(int index, const std::string& source, std::string* error) {
+  if (index < 0 || index >= static_cast<int>(items_.size())) {
+    if (error) *error = "队列索引越界";
+    return false;
+  }
+  if (index == currentIndex()) {
+    if (error) *error = "当前播放条目的音频地址不可热更新";
+    return false;
+  }
+  if (source.empty()) {
+    if (error) *error = "队列条目缺少音频地址";
+    return false;
+  }
+  auto& item = items_[static_cast<size_t>(index)];
+  if (item.source == source) return true;
+  item.source = source;
+  rawQueueJson_ = itemsToJson(items_);
+  ++queueRevision_;
+  // A source change does not affect play order, so the current item and the
+  // shuffle order stay untouched by design.
   return true;
 }
 
@@ -451,6 +517,7 @@ bool QueueManager::removeAt(int index) {
     setCurrentIndex(std::clamp(current >= index ? current - 1 : current, 0, static_cast<int>(items_.size() - 1)));
   }
   rawQueueJson_ = itemsToJson(items_);
+  ++queueRevision_;
   return true;
 }
 
@@ -499,6 +566,12 @@ std::optional<QueueItem> QueueManager::upcoming() const {
   const int index = queueIndexAtOrderOffset(1, true, wrapsAfterEnd());
   if (index < 0 || index >= static_cast<int>(items_.size())) return std::nullopt;
   return items_[static_cast<size_t>(index)];
+}
+
+std::optional<int> QueueManager::upcomingIndex() const {
+  const int index = queueIndexAtOrderOffset(1, true, wrapsAfterEnd());
+  if (index < 0 || index >= static_cast<int>(items_.size())) return std::nullopt;
+  return index;
 }
 
 std::optional<QueueItem> QueueManager::findBySource(const std::string& source) const {

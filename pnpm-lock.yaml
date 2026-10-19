@@ -23,7 +23,7 @@ overrides:
   node-abi: 4.33.0
 
 patchedDependencies:
-  '@neteasecloudmusicapienhanced/api@4.35.1': 656fbb26c80cd8fce02181032bac95656a93ff1e6f1726e8d4cba566fb1cca5b
+  '@neteasecloudmusicapienhanced/api@4.35.1': 784a29b4344049d2a94eb0e698074e771cafe85a2a4d1eb41ae40e033e8bd2cf
   '@phosphor-icons/web@2.1.2': d72ddd19ae5364cf585c9f7c63b19372deb741a3e80cdad3ab6bdc74cf0bbaeb
   extract-zip@2.0.1: 59db17789d14064f3a4432efcf74b7a57de863db5b515354ef04aa411e6d7c73
   node-forge@1.4.0: 7aa50d29a105c5fb9d206aadd58501d637901b4d5878feafb4c1d04b4cf8c6cf
@@ -40,7 +40,7 @@ importers:
         version: 4.0.0(electron@43.5.0)
       '@neteasecloudmusicapienhanced/api':
         specifier: ^4.35.1
-        version: 4.35.1(patch_hash=656fbb26c80cd8fce02181032bac95656a93ff1e6f1726e8d4cba566fb1cca5b)
+        version: 4.35.1(patch_hash=784a29b4344049d2a94eb0e698074e771cafe85a2a4d1eb41ae40e033e8bd2cf)
       '@tokenizer/inflate':
         specifier: 0.4.1
         version: 0.4.1
@@ -149,6 +149,9 @@ importers:
       hasown:
         specifier: 2.0.4
         version: 2.0.4
+      iconv-lite:
+        specifier: ^0.6.3
+        version: 0.6.3
       ieee754:
         specifier: 1.2.1
         version: 1.2.1
@@ -173,6 +176,9 @@ importers:
       object-inspect:
         specifier: 1.13.4
         version: 1.13.4
+      opencc-js:
+        specifier: 1.4.2
+        version: 1.4.2
       pend:
         specifier: 1.2.0
         version: 1.2.0
@@ -225,8 +231,11 @@ importers:
         specifier: 1.0.2
         version: 1.0.2
       yauzl:
-        specifier: 2.10.0
-        version: 2.10.0
+        specifier: 3.4.0
+        version: 3.4.0
+      yazl:
+        specifier: ^3.3.1
+        version: 3.3.1
     devDependencies:
       '@electron-toolkit/eslint-config-prettier':
         specifier: 3.0.0
@@ -249,6 +258,9 @@ importers:
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
+      '@types/yazl':
+        specifier: ^3.3.1
+        version: 3.3.1
       '@vitejs/plugin-vue':
         specifier: ^6.0.2
         version: 6.0.6(vite@7.3.2(@types/node@22.19.17)(jiti@2.7.0))(vue@3.5.33(typescript@5.9.3))
@@ -1085,6 +1097,9 @@ packages:
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
 
+  '@types/yazl@3.3.1':
+    resolution: {integrity: sha512-DIWfCKpsTp6hE5BDBHV3+fIL/bLUF9Bv13iDrWnMlmhQpH67buNvI291ZauQ1xcccxK3FqQ9honnXpq4R8NMuQ==}
+
   '@typescript-eslint/eslint-plugin@8.59.1':
     resolution: {integrity: sha512-BOziFIfE+6osHO9FoJG4zjoHUcvI7fTNBSpdAwrNH0/TLvzjsk2oo8XSSOT2HhqUyhZPfHv4UOffoJ9oEEQ7Ag==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -1383,6 +1398,10 @@ packages:
 
   buffer-crc32@0.2.13:
     resolution: {integrity: sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==}
+
+  buffer-crc32@1.0.0:
+    resolution: {integrity: sha512-Db1SbgBS/fg/392AblrMJk97KggmvYhr4pB5ZIMTWtaivCPMWLkmb7m21cJvpvgK+J3nsU2CmmixNBZx4vFj/w==}
+    engines: {node: '>=8.0.0'}
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
@@ -2579,6 +2598,9 @@ packages:
   once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
 
+  opencc-js@1.4.2:
+    resolution: {integrity: sha512-EdcspgdROiCCZDM+jZR6Pa670xW+EW2QhctPBQ8gRjg6lrx4IHEl+2s+kt5izk/TkxVRgdWuFgaGkaEdIUfdaw==}
+
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
@@ -3375,6 +3397,13 @@ packages:
   yauzl@2.10.0:
     resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
 
+  yauzl@3.4.0:
+    resolution: {integrity: sha512-jIH9yLR9wqr0wOS0TpBvo/g/2UgZH5qePVbjgRliiF0BYvOZyaBknKsF+x9Iht0O6sqgnB93rCICdOZFecJuDw==}
+    engines: {node: '>=12'}
+
+  yazl@3.3.1:
+    resolution: {integrity: sha512-BbETDVWG+VcMUle37k5Fqp//7SDOK2/1+T7X8TD96M3D9G8jK5VLUdQVdVjGi8im7FGkazX7kk5hkU8X4L5Bng==}
+
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
@@ -3876,7 +3905,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@neteasecloudmusicapienhanced/api@4.35.1(patch_hash=656fbb26c80cd8fce02181032bac95656a93ff1e6f1726e8d4cba566fb1cca5b)':
+  '@neteasecloudmusicapienhanced/api@4.35.1(patch_hash=784a29b4344049d2a94eb0e698074e771cafe85a2a4d1eb41ae40e033e8bd2cf)':
     dependencies:
       '@neteasecloudmusicapienhanced/unblockmusic-utils': 0.3.3
       axios: 1.20.0
@@ -4066,6 +4095,10 @@ snapshots:
     dependencies:
       '@types/node': 22.19.17
     optional: true
+
+  '@types/yazl@3.3.1':
+    dependencies:
+      '@types/node': 22.19.17
 
   '@typescript-eslint/eslint-plugin@8.59.1(@typescript-eslint/parser@8.59.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
@@ -4477,6 +4510,8 @@ snapshots:
       update-browserslist-db: 1.2.3(browserslist@4.28.2)
 
   buffer-crc32@0.2.13: {}
+
+  buffer-crc32@1.0.0: {}
 
   buffer-from@1.1.2: {}
 
@@ -5800,6 +5835,8 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
+  opencc-js@1.4.2: {}
+
   optionator@0.9.4:
     dependencies:
       deep-is: 0.1.4
@@ -6642,5 +6679,13 @@ snapshots:
     dependencies:
       buffer-crc32: 0.2.13
       fd-slicer: 1.1.0
+
+  yauzl@3.4.0:
+    dependencies:
+      pend: 1.2.0
+
+  yazl@3.3.1:
+    dependencies:
+      buffer-crc32: 1.0.0
 
   yocto-queue@0.1.0: {}

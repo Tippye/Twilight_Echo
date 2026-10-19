@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { runInNewContext } from 'node:vm'
+import ts from 'typescript'
+import { normalizeIpcString } from '../security/ipcValidation.ts'
 import { waitForListeningPort } from './serverBinding.ts'
 
 async function closeServer(server: ReturnType<typeof createServer>): Promise<void> {
@@ -10,6 +13,66 @@ async function closeServer(server: ReturnType<typeof createServer>): Promise<voi
     server.close((error) => (error ? reject(error) : resolve()))
   })
 }
+
+test('FM and radar requests bypass gateway caches while ordinary playback requests retain caching', async () => {
+  const source = await readFile(new URL('./api.ts', import.meta.url), 'utf8')
+  const ast = ts.createSourceFile('api.ts', source, ts.ScriptTarget.Latest, true)
+  const names = new Set([
+    'requestNcmApi',
+    'shouldTimestampNcmApiPath',
+    'normalizeNcmApiPath',
+    'normalizeNcmCookie',
+    'TIMESTAMPED_NCM_API_PATHS',
+    'NCM_API_HOST',
+    'NCM_API_ORIGIN',
+    'MAX_NCM_API_PATH_LENGTH',
+    'MAX_NCM_COOKIE_LENGTH',
+    'NCM_IDEMPOTENCY_KEY_PATTERN',
+    'NCM_API_REQUEST_TIMEOUT_MS'
+  ])
+  const nodes = ast.statements.filter((node) =>
+    ts.isFunctionDeclaration(node)
+      ? !!node.name && names.has(node.name.text)
+      : ts.isVariableStatement(node) &&
+        node.declarationList.declarations.some((declaration) =>
+          names.has(declaration.name.getText(ast))
+        )
+  )
+  const code = ts.transpileModule(
+    nodes.map((node) => node.getText(ast).replace(/^export /, '')).join('\n'),
+    { compilerOptions: { target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+  let now = 1000
+  const urls: URL[] = []
+  const request = runInNewContext(`${code}\nrequestNcmApi`, {
+    URL,
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    normalizeIpcString,
+    Date: { now: () => now },
+    runtime: { ncmServer: {} },
+    getListeningPort: () => 3101,
+    ensureNcmServer: async () => undefined,
+    NCM_KEEP_ALIVE_AGENT: {},
+    fetch: async (url: string) => {
+      urls.push(new URL(url))
+      return { text: async () => '{"code":200,"data":[]}' }
+    }
+  }) as (path: string) => Promise<unknown>
+  for (const path of ['/personal_fm', '/personal/fm/mode?mode=DEFAULT']) {
+    await request(path)
+    now += 1
+    await request(path)
+    const [first, second] = urls.slice(-2)
+    assert.equal(first.searchParams.get('timestamp'), String(now - 1))
+    assert.equal(second.searchParams.get('timestamp'), String(now))
+    if (path.includes('?')) assert.equal(second.searchParams.get('mode'), 'DEFAULT')
+  }
+  await request('/song/url?id=93')
+  assert.equal(urls.at(-1)!.searchParams.has('timestamp'), false)
+  assert.equal(urls.at(-1)!.searchParams.get('id'), '93')
+})
 
 test('NCM API binding reports its actual isolated port instead of a foreign listener', async () => {
   const foreignServer = createServer((_request, response) => response.end('foreign-service'))

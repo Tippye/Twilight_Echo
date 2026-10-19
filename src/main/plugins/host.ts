@@ -1,4 +1,7 @@
+import { initializeUtilityDiagnostics } from '../diagnostics/utility.ts'
 import { pathToFileURL } from 'url'
+
+initializeUtilityDiagnostics('twilight-plugin')
 import { deletePluginSetting, getPluginSetting, setPluginSetting } from './settingsStore'
 import { initProxy } from './proxyBootstrap'
 import { redactSensitiveText } from '../security/secureStorage.ts'
@@ -97,6 +100,28 @@ interface TwilightPluginContext {
       }) => Promise<void>
       onCommand: (command: string, handler: CommandHandler) => () => void
       notify: (notice: { kind?: string; message: string; durationMs?: number }) => Promise<void>
+    }
+    overlay: {
+      /** Show the host-owned dynamic island window. Requires `ui:inject`. */
+      show: () => Promise<void>
+      /** Hide the host-owned dynamic island window. */
+      hide: () => Promise<void>
+      /**
+       * Apply a DIY config, returning the normalized config the host actually
+       * renders. Safe to call while hidden; the config applies on next show.
+       */
+      configure: (config: unknown) => Promise<unknown>
+    }
+    library: {
+      /**
+       * Create (or extend) local playlists from absolute file paths. Requires
+       * `library:write`. Batched on purpose — plugins import tens of playlists
+       * at once — and resolves once the request is queued; the renderer reports
+       * one combined toast with the imported/unresolved counts.
+       */
+      importPlaylists: (request: {
+        playlists: Array<{ name: string; paths: string[] }>
+      }) => Promise<void>
     }
     themes: {
       register: (theme: {
@@ -347,6 +372,21 @@ function createContext(
       },
       notify: (notice) => callUiApi('notify', notice).then(() => undefined)
     },
+    overlay: {
+      show: () => callOverlayApi('show', []).then(() => undefined),
+      hide: () => callOverlayApi('hide', []).then(() => undefined),
+      configure: (config) => callOverlayApi('configure', [config])
+    },
+    library: {
+      /**
+       * Creates (or extends) local playlists from absolute file paths. Fire and
+       * forget by design: the renderer owns the playlist store and reports the
+       * outcome with a single combined toast, so a plugin never blocks on the
+       * UI thread.
+       */
+      importPlaylists: (request) =>
+        callLibraryApi('importPlaylists', [request]).then(() => undefined)
+    },
     themes: {
       register: async () => {
         throw new Error('Themes must be declared in plugin.json contributes.themes')
@@ -458,6 +498,20 @@ function callUiApi(
   contribution: unknown
 ): Promise<unknown> {
   return callApi('extensions', method, [contribution])
+}
+
+function callOverlayApi(
+  method: Extract<PluginHostResponse, { kind: 'api-call' }>['method'],
+  args: unknown[]
+): Promise<unknown> {
+  return callApi('overlay', method, args)
+}
+
+function callLibraryApi(
+  method: Extract<PluginHostResponse, { kind: 'api-call' }>['method'],
+  args: unknown[]
+): Promise<unknown> {
+  return callApi('library', method, args)
 }
 
 function callInternalNcmApi(

@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, protocol, net } from 'electron'
+import { installExperienceProtocol } from '../plugins/experienceProtocol.ts'
 import { applyPendingPersonalRestore } from '../persistence/personalBackup.ts'
 import { readAppSettings } from '../core/settings'
 import { join, extname } from 'path'
@@ -17,7 +18,8 @@ import {
   isCoverCacheFileName,
   readCoverCacheFileBytes,
   resizeCoverImageBytes,
-  resolveBackgroundImageFile
+  resolveBackgroundImageFile,
+  prepareBackgroundForDisplay
 } from '../library/coverCache'
 import { decodeAudioFileUrlPath } from '../library/audioFileUrl.ts'
 import { initializeLocalPathGrants, resolveAuthorizedAudioFile } from '../security/localPaths'
@@ -31,6 +33,7 @@ import {
   showDesktopLyrics,
   setupDesktopLyricsIpc
 } from '../integrations/desktopLyrics'
+import { destroyDynamicIsland, setupDynamicIslandIpc } from '../integrations/dynamicIsland.ts'
 import { restoreMainWindowFromMiniPlayer, setupMiniPlayerIpc } from '../integrations/miniPlayer'
 import { setupTrayPlayerIpc } from '../integrations/trayPlayer'
 import { destroyWindowsSmtc, setupWindowsSmtcIpc } from '../integrations/windowsSmtc.ts'
@@ -57,6 +60,11 @@ import { installElectronSecurity } from '../security/electronSecurity.ts'
 import { createRemoteMediaRequestHandler } from '../security/remoteMediaGrants.ts'
 import { destroyTelemetry, initializeTelemetry } from '../analytics/index.ts'
 import { createWindow } from './window'
+import {
+  isAfterglowModeActive,
+  restoreAfterglowMode,
+  shutdownAfterglowMode
+} from './AfterglowModeService'
 import { startAppUpdateChecks, stopAppUpdateChecks } from './appUpdateService.ts'
 import {
   consumeAppSettingsLoadIssue,
@@ -145,6 +153,10 @@ export function startApp(): void {
     }
     protocol.registerSchemesAsPrivileged([
       {
+        scheme: 'plugin-ui',
+        privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true }
+      },
+      {
         scheme: 'twilight-audio',
         privileges: {
           standard: true,
@@ -199,6 +211,10 @@ export function startApp(): void {
 
     // Focus-only: no OS protocol client / argv deep links (see AGENTS.md).
     app.on('second-instance', () => {
+      if (isAfterglowModeActive()) {
+        void restoreAfterglowMode()
+        return
+      }
       if (runtime.miniPlayerWindow && !runtime.miniPlayerWindow.isDestroyed()) {
         restoreMainWindowFromMiniPlayer()
         return
@@ -221,6 +237,7 @@ export function startApp(): void {
         )
       }
       installElectronSecurity()
+      installExperienceProtocol()
       await initializeLocalPathGrants(runtime.launchSettings)
 
       // Register cover:// protocol — Chromium reads cached image assets directly from disk,
@@ -260,21 +277,27 @@ export function startApp(): void {
         if (!filePath) {
           return new Response('Not Found', { status: 404 })
         }
-        const ext = extname(filePath).toLowerCase()
-        const contentType =
-          ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
-        const data = await readCachedProtocolFile(filePath)
-        if (!data) {
-          return new Response('Not Found', { status: 404 })
-        }
-        return new Response(data, {
-          headers: {
-            'Content-Type': contentType,
-            // Background filenames are sha256 slices of the stored bytes.
-            'Cache-Control': 'public, max-age=31536000, immutable',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, HEAD'
-          }
+        const displayPath = await prepareBackgroundForDisplay(filePath)
+        // Stream from disk; Chromium owns the encoded/decode caches. Do not also
+        // retain a full wallpaper Buffer in the main-process thumbnail LRU.
+        const response = await net
+          .fetch(pathToFileURL(displayPath).toString(), {
+            method: request.method,
+            bypassCustomProtocolHandlers: true
+          })
+          .catch(() => null)
+        if (!response) return new Response('Not Found', { status: 404 })
+        const headers = new Headers(response.headers)
+        for (const [name, value] of Object.entries({
+          // Background filenames are sha256 slices of the stored bytes.
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD'
+        }))
+          headers.set(name, value)
+        return new Response(request.method === 'HEAD' ? null : response.body, {
+          status: response.status,
+          headers
         })
       })
 
@@ -370,6 +393,7 @@ export function startApp(): void {
       setupThemeIpc()
       setupDesktopLyricsIpc()
       setupMiniPlayerIpc()
+      setupDynamicIslandIpc()
       setupTrayPlayerIpc()
       setupWindowsSmtcIpc()
 
@@ -402,6 +426,10 @@ export function startApp(): void {
       }
 
       app.on('activate', function () {
+        if (isAfterglowModeActive()) {
+          void restoreAfterglowMode()
+          return
+        }
         if (runtime.miniPlayerWindow && !runtime.miniPlayerWindow.isDestroyed()) {
           restoreMainWindowFromMiniPlayer()
         } else if (BrowserWindow.getAllWindows().length === 0) {
@@ -411,6 +439,8 @@ export function startApp(): void {
     })
 
     app.on('window-all-closed', () => {
+      // Afterglow deliberately lives without any BrowserWindow.
+      if (isAfterglowModeActive()) return
       if (process.platform !== 'darwin' && !runtime.appSettings.closeToTray) {
         app.quit()
       }
@@ -419,14 +449,17 @@ export function startApp(): void {
     app.on('before-quit', () => {
       runtime.forceQuit = true
       destroyDesktopLyrics()
+      destroyDynamicIsland()
       // 队列已同步落盘；退出期间的网络投递是尽力而为，未发出的事件下次启动重试。
       void runtime.telemetry?.endSession()
       void runtime.pluginManager?.broadcastEvent('app:before-quit', null)
     })
 
     app.on('will-quit', () => {
+      shutdownAfterglowMode()
       stopAppUpdateChecks()
       destroyDesktopLyrics()
+      destroyDynamicIsland()
       destroyWindowsSmtc()
       unregisterPlayerShortcuts()
       destroyTray()

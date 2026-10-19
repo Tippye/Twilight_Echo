@@ -4,7 +4,84 @@ import { DspOrchestrator, type DspOrchestratorHost } from './dspOrchestrator.ts'
 import { createDefaultPlaybackInfo } from './audioEngineHelpers.ts'
 import type { DspStatePayload } from '../../shared/audioServiceContract.ts'
 import { compensatedAuditionGraph } from '../../shared/dspAudition.ts'
-import { DEFAULT_DSP_OUTPUT_STAGE, type DspGraphConfig } from '../../shared/dspGraph.ts'
+import {
+  DEFAULT_DSP_OUTPUT_STAGE,
+  type DspGraphConfig,
+  type DspGraphStatus
+} from '../../shared/dspGraph.ts'
+
+test('overlapping DSP submissions return their own ACK and preserve the latest aggregate state', async () => {
+  const pending = new Map<
+    number,
+    { resolve: (status: DspGraphStatus) => void; reject: (error: Error) => void }
+  >()
+  let currentAck = 0
+  const host = {
+    getPlaybackInfo: () =>
+      createDefaultPlaybackInfo('wasapi', 'auto', false, {
+        routingMode: 'auto',
+        preferredBufferSize: 0
+      }),
+    getDevice: () => 'auto',
+    getOutput: () => 'wasapi',
+    getNative: () => ({}),
+    setLastNativeError: () => undefined,
+    getAudioServiceBinding: () => ({
+      getDspGraphStatusAsync: async () => ack(currentAck),
+      applyDspState: (revision: number) =>
+        new Promise<DspGraphStatus>((resolve, reject) => {
+          pending.set(revision, { resolve, reject })
+        })
+    })
+  } as unknown as DspOrchestratorHost
+  const dsp = new DspOrchestrator(host, {}, {})
+  const ack = (revision: number): DspGraphStatus => ({
+    revision,
+    activeSceneId: 'default',
+    totalLatencyFrames: 0,
+    totalTailFrames: 0,
+    nodes: [],
+    compileState: 'ready'
+  })
+  const first = dsp.applyNativeDspGraph('restore')
+  const second = dsp.applyNativeDspGraph('user update')
+  currentAck = 1
+  pending.get(1)!.resolve(ack(1))
+  const firstResult = await first
+  assert.equal(firstResult.requestedRevision, 1)
+  assert.equal(firstResult.appliedRevision, 1)
+  assert.equal(firstResult.applyState, 'applied')
+  assert.equal((await dsp.getDspGraphStatus()).applyState, 'pending')
+  currentAck = 2
+  pending.get(2)!.resolve(ack(2))
+  assert.equal((await second).applyState, 'applied')
+  assert.equal((await dsp.getDspGraphStatus()).requestedRevision, 2)
+
+  const failed = dsp.applyNativeDspGraph('failed older update')
+  const latest = dsp.applyNativeDspGraph('latest update')
+  currentAck = 4
+  pending.get(4)!.resolve(ack(4))
+  await latest
+  pending.get(3)!.reject(new Error('native compile failed'))
+  const failure = await failed
+  assert.equal(failure.applyState, 'failed')
+  assert.match(failure.applyError!, /native compile failed/)
+  assert.equal((await dsp.getDspGraphStatus()).applyState, 'applied')
+
+  let recoveryCompleted = false
+  const recovery = dsp.applyLatestNativeDspGraph('recovery').then((status) => {
+    recoveryCompleted = true
+    return status
+  })
+  const duringRecovery = dsp.applyNativeDspGraph('new settings during recovery')
+  pending.get(5)!.resolve(ack(5))
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(recoveryCompleted, false)
+  currentAck = 6
+  pending.get(6)!.resolve(ack(6))
+  await duringRecovery
+  assert.equal((await recovery).requestedRevision, 6)
+})
 
 test('device profile processing reaches the native graph and rollback restores the previous values', async () => {
   const info = createDefaultPlaybackInfo('wasapi', 'auto', false, {

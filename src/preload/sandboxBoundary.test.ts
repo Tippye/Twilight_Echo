@@ -68,6 +68,23 @@ test('native context menus expose DTO requests through the sandboxed system brid
   assert.match(declarations, /popupContextMenu: \(request: NativeContextMenuRequest\)/)
 })
 
+test('mouse side-button history commands cross the sandbox as validated events', () => {
+  const source = readFileSync(new URL('./domains/systemApi.ts', import.meta.url), 'utf8')
+  assert.match(source, /ipcRenderer\.on\(IPC\.app\.historyCommand, \(_event, command: unknown\)/)
+  assert.match(source, /if \(!isAppHistoryCommand\(command\)\) return/)
+  assert.match(source, /onHistoryCommand: \(cb: \(command: AppHistoryCommand\) => void\)/)
+  assert.doesNotMatch(source, /from ['"].*main\//)
+
+  const channels = readFileSync(new URL('../shared/ipcChannels.ts', import.meta.url), 'utf8')
+  assert.match(channels, /historyCommand: 'app:history-command'/)
+
+  const declarations = readFileSync(new URL('./index.d.ts', import.meta.url), 'utf8')
+  assert.match(
+    declarations,
+    /onHistoryCommand: \(cb: \(command: AppHistoryCommand\) => void\) => \(\) => void/
+  )
+})
+
 test('EQ clipboard exposes validated band DTOs rather than arbitrary system clipboard text', () => {
   const source = readFileSync(new URL('./domains/systemApi.ts', import.meta.url), 'utf8')
   assert.match(source, /equalizerClipboardApi: EqualizerClipboardApi/)

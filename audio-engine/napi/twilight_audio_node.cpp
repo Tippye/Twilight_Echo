@@ -540,6 +540,38 @@ napi_value Next(napi_env env, napi_callback_info) {
   return throwOnError(env, TAE_Next(g_engine));
 }
 
+napi_value AppendQueueItems(napi_env env, napi_callback_info info) {
+  ensureEngine();
+  clearLastError();
+  size_t argc = 1;
+  napi_value argv[1];
+  napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  const std::string items = argc > 0 ? getStringArg(env, argv[0]) : "[]";
+  // The JS bridge returns void for the whole binding; hosts read the absolute
+  // append position from GetQueueState().revision/size or their local mirror.
+  return throwOnError(env, TAE_AppendQueueItems(g_engine, items.c_str(), nullptr));
+}
+
+napi_value UpdateQueueItemSource(napi_env env, napi_callback_info info) {
+  ensureEngine();
+  clearLastError();
+  size_t argc = 2;
+  napi_value argv[2];
+  napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  const double rawIndex = argc > 0 ? getNumberArg(env, argv[0], -1.0) : -1.0;
+  if (!std::isfinite(rawIndex) || rawIndex < 0 || rawIndex > std::numeric_limits<int>::max() ||
+      std::floor(rawIndex) != rawIndex)
+    return throwOnError(env, TAE_RESULT_INVALID_ARGUMENT);
+  const std::string source = argc > 1 ? getStringArg(env, argv[1]) : "";
+  return throwOnError(
+      env,
+      TAE_UpdateQueueItemSource(g_engine, static_cast<int>(rawIndex), source.c_str()));
+}
+
+napi_value GetQueueState(napi_env env, napi_callback_info) {
+  return readJson(env, TAE_GetQueueState);
+}
+
 napi_value Previous(napi_env env, napi_callback_info) {
   ensureEngine();
   clearLastError();
@@ -786,6 +818,13 @@ napi_value GetPlaybackInfo(napi_env env, napi_callback_info) {
   return readJson(env, TAE_GetPlaybackInfo);
 }
 
+napi_value SetDiagnosticContext(napi_env env, napi_callback_info info) {
+  size_t argc = 1; napi_value argv[1]; napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+  const std::string context = argc ? getStringArg(env, argv[0]) : "{}";
+  TAE_SetDiagnosticContext(context.c_str());
+  napi_value result; napi_get_undefined(env, &result); return result;
+}
+
 napi_value GetDiagnosticLog(napi_env env, napi_callback_info info) {
   ensureEngine();
   clearLastError();
@@ -978,6 +1017,9 @@ napi_value Init(napi_env env, napi_value exports) {
   define(env, exports, "SetOutputDevice", SetOutputDevice);
   define(env, exports, "SetOutputBackend", SetOutputBackend);
   define(env, exports, "LoadQueue", LoadQueue);
+  define(env, exports, "AppendQueueItems", AppendQueueItems);
+  define(env, exports, "UpdateQueueItemSource", UpdateQueueItemSource);
+  define(env, exports, "GetQueueState", GetQueueState);
   define(env, exports, "SelectQueueIndex", SelectQueueIndex);
   define(env, exports, "Next", Next);
   define(env, exports, "Previous", Previous);
@@ -1000,6 +1042,7 @@ napi_value Init(napi_env env, napi_value exports) {
   define(env, exports, "GetMetadata", GetMetadata);
   define(env, exports, "GetPlaybackInfo", GetPlaybackInfo);
   define(env, exports, "GetDiagnosticLog", GetDiagnosticLog);
+  define(env, exports, "SetDiagnosticContext", SetDiagnosticContext);
   define(env, exports, "GetQueue", GetQueue);
   define(env, exports, "GetUpcomingTrack", GetUpcomingTrack);
   define(env, exports, "GetDspConfig", GetDspConfig);

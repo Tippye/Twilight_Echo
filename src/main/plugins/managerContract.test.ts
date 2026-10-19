@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { randomUUID } from 'node:crypto'
+import { runInNewContext } from 'node:vm'
+import ts from 'typescript'
+import { PluginRpcCoordinator, PluginRpcLifecycleError } from './rpcCoordinator.ts'
+import { protectProviderMedia, RemoteMediaGrantService } from '../security/remoteMediaGrants.ts'
 import type { TwilightMediaProviderRegistration } from '../../../packages/plugin-api/src/index.ts'
 import type { TwilightMediaProviderMethod } from './types.ts'
 
@@ -18,6 +23,128 @@ const registrationCoversUnion: AssertNever<MethodsMissingFromRegistration> = tru
 const unionCoversRegistration: AssertNever<MethodsMissingFromUnion> = true
 
 const managerSource = readFileSync(new URL('./manager.ts', import.meta.url), 'utf8')
+
+function playbackMetadataHarness(pluginId = 'com.twilightecho.provider.ncm') {
+  const ast = ts.createSourceFile('manager.ts', managerSource, ts.ScriptTarget.Latest, true)
+  const declaration = ast.statements.find(
+    (node): node is ts.ClassDeclaration =>
+      ts.isClassDeclaration(node) && node.name?.text === 'TwilightPluginManager'
+  )
+  assert.ok(declaration)
+  const methods = declaration.members.filter(
+    (node) =>
+      ts.isMethodDeclaration(node) &&
+      ['callProvider', 'handleProviderResult'].includes(node.name.getText(ast))
+  )
+  assert.equal(methods.length, 2)
+  const code = ts.transpileModule(
+    `class PlaybackMetadataManager {${methods.map((node) => node.getText(ast)).join('\n')}}`,
+    { compilerOptions: { target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+  const grants = new RemoteMediaGrantService()
+  let dispatched: { requestId: string } | undefined
+  const running = {
+    descriptor: { id: pluginId },
+    playbackSession: new AbortController(),
+    providers: [{ id: 'ncm' }],
+    process: {
+      postMessage: (message: { requestId: string }) => {
+        dispatched = message
+      }
+    }
+  }
+  const Manager = runInNewContext(`${code}\nPlaybackMetadataManager`, {
+    randomUUID,
+    AbortSignal,
+    Error,
+    PluginRpcLifecycleError,
+    findProviderRoute: () => running,
+    getProviderCallTimeoutMs: () => 1000,
+    resolveProviderIdempotencyKey: () => undefined,
+    protectProviderMedia: (value: unknown, method: string) =>
+      protectProviderMedia(value, method, grants),
+    providerPlaybackIdentities: { record: () => undefined },
+    isPluginHostedPlaybackUrl: () => false
+  }) as new () => {
+    callProvider: (provider: string, method: string, args: unknown[]) => Promise<unknown>
+    handleProviderResult: (owner: string, message: unknown) => void
+  }
+  const manager = Object.assign(new Manager(), {
+    rpcCalls: new PluginRpcCoordinator(),
+    contributingPlugins: () => [running],
+    ensureRunningForCall: async () => running,
+    assertRunningPlugin: () => undefined,
+    recordProviderCallSuccess: () => undefined,
+    recordProviderCallFailure: () => undefined
+  })
+  return {
+    grants,
+    resolve: async (value: unknown, requested: unknown = false): Promise<unknown> => {
+      const pending = manager.callProvider('ncm', 'getPlaybackUrl', [
+        { id: 'ncm:93' },
+        { quality: 'lossless', _twilightPlaybackMetadata: requested }
+      ])
+      await new Promise<void>((done) => setImmediate(done))
+      assert.ok(dispatched)
+      manager.handleProviderResult(pluginId, {
+        kind: 'provider-result',
+        requestId: dispatched.requestId,
+        ok: true,
+        value
+      })
+      return pending
+    }
+  }
+}
+
+test('NCM playback metadata keeps the authorized URL and exposes only source audio facts', async () => {
+  const f = playbackMetadataHarness()
+  const upstream = 'https://m8.music.126.net/track.flac'
+  const result = (await f.resolve(
+    {
+      streamUrl: upstream,
+      providerSource: { sampleRate: 96000, bitrate: 4608000, sourceUrl: upstream }
+    },
+    true
+  )) as { streamUrl: string; sampleRate: number; bitrate: number }
+  assert.match(result.streamUrl, /^twilight-media:\/\/audio\//)
+  assert.equal(f.grants.resolve(result.streamUrl, 'audio').source, upstream)
+  assert.equal(result.sampleRate, 96000)
+  assert.equal(result.bitrate, 4608000)
+  assert.deepEqual(Object.keys(result).sort(), ['bitrate', 'sampleRate', 'streamUrl'])
+})
+
+for (const [pluginId, requested] of [
+  ['com.twilightecho.provider.ncm', false],
+  ['com.twilightecho.provider.ncm', 'true'],
+  ['com.example.provider', true]
+] as const) {
+  test(`playback URL remains a string without a trusted metadata opt-in (${pluginId}, ${requested})`, async () => {
+    const f = playbackMetadataHarness(pluginId)
+    const upstream = 'https://m8.music.126.net/track.flac'
+    const result = await f.resolve(
+      { streamUrl: upstream, providerSource: { sampleRate: 96000, bitrate: 4608000 } },
+      requested
+    )
+    assert.equal(typeof result, 'string')
+    assert.equal(f.grants.resolve(result as string, 'audio').source, upstream)
+  })
+}
+
+test('metadata opt-in retains legacy provider string responses and authorized cached paths', async () => {
+  const f = playbackMetadataHarness()
+  const upstream = 'https://m8.music.126.net/track.flac'
+  const legacy = await f.resolve(upstream, true)
+  assert.equal(typeof legacy, 'string')
+  assert.equal(f.grants.resolve(legacy as string, 'audio').source, upstream)
+  const cached = (await f.resolve(
+    { streamUrl: 'D:\\Cache\\93.flac', providerSource: { sampleRate: 44100 } },
+    true
+  )) as { streamUrl: string; sampleRate: number; bitrate?: number }
+  assert.equal(cached.streamUrl, 'D:\\Cache\\93.flac')
+  assert.equal(cached.sampleRate, 44100)
+  assert.equal(cached.bitrate, undefined)
+})
 const statePersistenceSource = readFileSync(
   new URL('./statePersistence.ts', import.meta.url),
   'utf8'
@@ -195,6 +322,28 @@ test('plugin manager enforces plugin API namespace permissions at the gateway', 
   )
 })
 
+test('plugin manager routes the overlay namespace to the host dynamic island bridge behind ui:inject', () => {
+  assert.match(managerSource, /dynamicIsland\?: \{/)
+  assert.match(
+    managerSource,
+    /message\.namespace === 'overlay'[\s\S]*this\.handleOverlayApiCall\(id, message\)/
+  )
+  assert.match(managerSource, /private handleOverlayApiCall\(/)
+  assert.match(
+    managerSource,
+    /this\.requirePermission\(pluginId,\s*'ui:inject',\s*`overlay\.\$\{message\.method\}`\)/
+  )
+  assert.match(managerSource, /this\.dynamicIsland\.show\(pluginId\)/)
+  assert.match(managerSource, /this\.dynamicIsland\.hide\(pluginId\)/)
+  assert.match(
+    managerSource,
+    /this\.dynamicIsland\.configure\(pluginId, message\.args\[0\] \?\? \{\}\)/
+  )
+  assert.match(pluginHostSource, /overlay: \{/)
+  assert.match(pluginHostSource, /function callOverlayApi\(/)
+  assert.match(pluginHostSource, /callApi\('overlay', method, args\)/)
+})
+
 test('plugin manager prevents provider id takeover', () => {
   assert.match(managerSource, /const RESERVED_PROVIDER_IDS = new Set\(\['local', 'ncm'\]\)/)
   assert.match(managerSource, /private assertProviderIdAvailable\(/)
@@ -248,7 +397,7 @@ test('plugin lifecycle stop is single-flight and stale process events cannot dis
   )
   assert.match(
     managerSource,
-    /if \(this\.running\.get\(id\) === running\) this\.running\.delete\(id\)/
+    /if \(this\.running\.get\(id\) === running\) \{\s*this\.dynamicIsland\?\.hide\(id\)\s*this\.running\.delete\(id\)/
   )
 })
 
@@ -343,11 +492,19 @@ test('specialized windows receive only their scoped preload APIs', () => {
   assert.match(preloadSource, /exposedApiForDocument\(\)/)
   assert.match(
     preloadSource,
-    /if \(isDesktopLyricsDocument\(\)\) return \{ desktopLyrics: desktopLyricsWindowApi \}/
+    /if \(isDesktopLyricsDocument\(\)\)\s+return \{\s*diagnostics: diagnosticsApi,\s*desktopLyrics: desktopLyricsWindowApi,\s*experienceWindow: experienceWindowApi\s*\}/
   )
   assert.match(
     preloadSource,
-    /if \(isMiniPlayerDocument\(\)\) \{[\s\S]*?return \{ miniPlayer: miniPlayerWindowApi, data: miniPlayerCoverDataApi \}/
+    /if \(isMiniPlayerDocument\(\)\) \{[\s\S]*?return \{\s*diagnostics: diagnosticsApi,\s*miniPlayer: miniPlayerWindowApi,\s*data: miniPlayerCoverDataApi,\s*experienceWindow: experienceWindowApi\s*\}/
+  )
+  assert.match(
+    preloadSource,
+    /if \(isTrayPlayerDocument\(\)\)\s+return \{\s*diagnostics: diagnosticsApi,\s*trayPlayer: trayPlayerWindowApi,\s*experienceWindow: experienceWindowApi\s*\}/
+  )
+  assert.match(
+    preloadSource,
+    /if \(isDynamicIslandDocument\(\)\) \{\s*return \{ dynamicIsland: dynamicIslandWindowApi, data: miniPlayerCoverDataApi \}/
   )
   // The lyrics window is the shared renderer document with a `window` query now.
   assert.match(preloadSource, /get\('window'\) === 'desktop-lyrics'/)

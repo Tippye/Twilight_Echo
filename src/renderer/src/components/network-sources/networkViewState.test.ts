@@ -4,6 +4,7 @@ import { isProxy } from 'vue'
 import {
   createNetworkBrowser,
   createNetworkLibraryView,
+  parseOptionalPort,
   type NetworkLibraryItem
 } from './networkViewState.ts'
 import type {
@@ -46,6 +47,22 @@ function entry(name: string): NetworkEntry {
 function item(name: string): NetworkLibraryItem {
   return { profileId: 'p1', profileName: 'NAS', entry: entry(name) }
 }
+
+test('parseOptionalPort accepts number and string input without assuming string methods', () => {
+  // `<input type="number">` hands `v-model` a number once the user types a value.
+  assert.equal(parseOptionalPort(8080), 8080)
+  assert.equal(parseOptionalPort(' 443 '), 443)
+  assert.equal(parseOptionalPort(''), null)
+  assert.equal(parseOptionalPort('   '), null)
+  assert.equal(parseOptionalPort(null), null)
+  assert.equal(parseOptionalPort(undefined), null)
+})
+
+test('parseOptionalPort rejects out-of-range and non-integer values', () => {
+  for (const value of ['0', '65536', '80.5', 'abc', '-1']) {
+    assert.throws(() => parseOptionalPort(value), /端口需为 1-65535 之间的整数/)
+  }
+})
 
 test('directory responses cannot overwrite a newer path or finish its loading state', async () => {
   const requests: ReturnType<typeof deferred<NetworkEntry[]>>[] = []

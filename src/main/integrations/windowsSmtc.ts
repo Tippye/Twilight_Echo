@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import { writeDiagnostic } from '../diagnostics/logger.ts'
 import { pathToFileURL } from 'url'
 import { runtime } from '../core/runtime'
 import { resolveCoverCacheFile } from '../library/coverCache.ts'
@@ -47,8 +48,58 @@ export function setupWindowsSmtcIpc(): void {
 
 function sendPlayerCommand(command: MiniPlayerCommand): void {
   const win = runtime.mainWindow
-  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return
+  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) {
+    void routeRendererFreeCommand(command)
+    return
+  }
   win.webContents.send('miniPlayer:command', command)
+}
+
+/**
+ * Afterglow unloads the main window; the same media-session commands are then
+ * executed against the native engine instead of a renderer.
+ */
+async function routeRendererFreeCommand(command: MiniPlayerCommand): Promise<void> {
+  const { isAfterglowModeActive, dispatchAfterglowTransport } =
+    await import('../app/AfterglowModeService.ts')
+  const { toRendererFreePlayMode } = await import('../../shared/afterglowMode.ts')
+  if (!isAfterglowModeActive()) return
+  switch (command.type) {
+    case 'play':
+      await dispatchAfterglowTransport({ type: 'play' })
+      return
+    case 'pause':
+      await dispatchAfterglowTransport({ type: 'pause' })
+      return
+    case 'toggle-play':
+      await dispatchAfterglowTransport({ type: 'toggle-play' })
+      return
+    case 'previous':
+      await dispatchAfterglowTransport({ type: 'previous' })
+      return
+    case 'next':
+      await dispatchAfterglowTransport({ type: 'next' })
+      return
+    case 'cycle-play-mode':
+      await dispatchAfterglowTransport({ type: 'cycle-play-mode' })
+      return
+    case 'set-play-mode':
+      await dispatchAfterglowTransport({
+        type: 'set-play-mode',
+        mode: toRendererFreePlayMode(command.value)
+      })
+      return
+    case 'seek':
+      await dispatchAfterglowTransport({ type: 'seek', positionSeconds: command.value })
+      return
+    case 'set-volume':
+      await dispatchAfterglowTransport({ type: 'set-volume', volume: command.value })
+      return
+    case 'toggle-favorite':
+      // The favorites stream lives in the renderer; keep the button inert instead
+      // of silently toggling an unrelated list.
+      return
+  }
 }
 
 function handleWindowsSmtcEvent(event: WindowsSmtcEvent): void {
@@ -153,13 +204,14 @@ export function refreshWindowsSmtc(force = false): void {
     lastUpdateSignature = signature
     status.lastError = null
   } catch (error) {
+    writeDiagnostic('system.media', 'session.update.failed', { error }, 'error')
     lastUpdateSignature = null
     status.lastError = error instanceof Error ? error.message : String(error)
     console.warn('[smtc] failed to update Windows media session:', error)
   }
 }
 
-export function initializeWindowsSmtc(): boolean {
+export function initializeWindowsSmtc(explicitHandle?: Buffer | null): boolean {
   if (process.platform !== 'win32') return false
   if (status.active && binding) return true
   if (setupAttempted) return false
@@ -178,7 +230,7 @@ export function initializeWindowsSmtc(): boolean {
 
   try {
     const nativeWindowHandle = nativeWindowHandleToNumber(
-      runtime.mainWindow?.getNativeWindowHandle()
+      explicitHandle ?? runtime.mainWindow?.getNativeWindowHandle()
     )
     const created = loaded.binding.Create(
       handleWindowsSmtcEvent,
@@ -203,6 +255,7 @@ export function initializeWindowsSmtc(): boolean {
     }
     binding = loaded.binding
     status = { supported: true, active: true, lastError: null }
+    writeDiagnostic('system.media', 'session.started', { backend: 'windows-smtc' })
     lastUpdateSignature = null
     runtime.refreshWindowsSmtc = refreshWindowsSmtc
     refreshWindowsSmtc(true)
@@ -219,6 +272,7 @@ export function initializeWindowsSmtc(): boolean {
 }
 
 export function destroyWindowsSmtc(): void {
+  writeDiagnostic('system.media', 'session.stopped')
   runtime.refreshWindowsSmtc = null
   lastUpdateSignature = null
   const current = binding
@@ -236,4 +290,14 @@ export function destroyWindowsSmtc(): void {
 
 export function getWindowsSmtcStatus(): SystemMediaNativeStatus {
   return currentStatus()
+}
+
+/**
+ * Recreates the media session against a different window handle. Used when the
+ * main window is unloaded (anchor handle) and again when it is recreated.
+ */
+export function rebindWindowsSmtc(handle?: Buffer | null): boolean {
+  if (process.platform !== 'win32') return false
+  destroyWindowsSmtc()
+  return initializeWindowsSmtc(handle)
 }

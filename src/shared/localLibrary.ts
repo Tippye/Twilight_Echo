@@ -59,6 +59,16 @@ export interface LocalLibraryRestoreResult {
   restoredFilePaths: string[]
 }
 
+export interface LocalLibraryClearExclusionsRequest {
+  filePaths: string[]
+  library: LocalLibrarySnapshotInput
+}
+
+export interface LocalLibraryClearExclusionsResult {
+  library: LocalMusicLibraryDocument
+  clearedFilePaths: string[]
+}
+
 export interface LocalLibraryResetResult {
   library: LocalMusicLibraryDocument
   removedTrackIds: string[]

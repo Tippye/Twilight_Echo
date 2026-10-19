@@ -99,10 +99,12 @@ UpmixConfig upmixConfigFromOutputConfig(const OutputConfig& config) noexcept {
   return upmix;
 }
 
-bool wasapiExclusiveTopologyChanged(
+bool outputTopologyChanged(
     const std::string& backendId,
     const OutputConfig& previous,
     const OutputConfig& next) noexcept {
+  if (backendId == "asio") return previous.preferredBufferSize != next.preferredBufferSize ||
+      previous.asioOutputChannelStart != next.asioOutputChannelStart;
   return backendId == "wasapi-exclusive" &&
          (previous.preferredBufferSize != next.preferredBufferSize ||
           previous.wasapiExclusivePushMode != next.wasapiExclusivePushMode);
@@ -789,6 +791,14 @@ struct AudioPipeline::DecodeStream {
   AudioBuffer buffer;
   std::vector<uint8_t> floatReadScratch;
   std::atomic<bool> running{false};
+  // Independent from running: open/probe happens before the worker starts.
+  // The context remains alive until stop() has joined all decoder IO.
+  std::atomic<bool> stopRequested{false};
+  const ta_am_cancel* externalCancel = nullptr;
+  // 0 idle, 1 reading, 2 writing PCM, 3 exited, 4 reconnecting.
+  std::atomic<uint32_t> decodeStage{0};
+  std::atomic<uint64_t> producedFrames{0};
+  std::atomic<uint64_t> lastProgressMs{0};
   std::atomic<bool> eof{false};
   std::atomic<bool> processingFailed{false};
   std::atomic<bool> processingFailureReported{false};
@@ -799,6 +809,16 @@ struct AudioPipeline::DecodeStream {
   // Only touched by the control thread before start and by the decode thread while running.
   std::optional<uint64_t> remainingSegmentFrames;
   uint64_t remainingVirtualPregapFrames = 0;
+  // Decode-worker cursor, including queued PCM. Never restart at the render
+  // cursor: that would duplicate the samples already held in the ring.
+  uint64_t nextSourceFrame = 0;
+  uint32_t recoveryAttempts = 0;
+  uint64_t healthyFramesSinceReconnect = 0;
+  bool decoderNeedsReopen = false;
+  std::atomic<bool> readFailed{false};
+  std::atomic<bool> failureReported{false};
+  std::mutex readErrorMutex;
+  std::string readError;
 
   ~DecodeStream() {
     stop();
@@ -806,6 +826,8 @@ struct AudioPipeline::DecodeStream {
 
   bool openSource(const QueueItem& queueItem, std::string* error, const ta_am_cancel* cancel = nullptr) {
     stop();
+    stopRequested.store(false, std::memory_order_release);
+    externalCancel = cancel;
     dsdReader.reset();
     item = queueItem;
     processingFailed = false;
@@ -815,8 +837,11 @@ struct AudioPipeline::DecodeStream {
     decoder = std::make_unique<FFmpegDecoder>();
     ta_am_source_stamp before{}, after{};
     const bool hadBefore = ta_am_source_snapshot(item.source.c_str(), &before) != 0;
-    decoder->setInterrupt([](void* p) { return ta_am_cancelled(static_cast<const ta_am_cancel*>(p)); },
-                          const_cast<ta_am_cancel*>(cancel));
+    decoder->setInterrupt([](void* p) -> int {
+      const auto* stream = static_cast<const DecodeStream*>(p);
+      return stream->stopRequested.load(std::memory_order_acquire) ||
+          ta_am_cancelled(stream->externalCancel);
+    }, this);
     if (!decoder->open(item.source, error)) {
       decoder.reset();
       return false;
@@ -935,9 +960,16 @@ struct AudioPipeline::DecodeStream {
     stream.decodedFormat = decodeFormat;
     const double logicalStart = clampLogicalSegmentPosition(startTimeSeconds);
     const double sourceStart = sourcePositionForLogicalPosition(logicalStart);
+    nextSourceFrame = static_cast<uint64_t>(std::llround(sourceStart * decodeFormat.sampleRate));
+    recoveryAttempts = 0;
+    healthyFramesSinceReconnect = 0;
+    decoderNeedsReopen = false;
+    readFailed = false;
+    failureReported = false;
     if (exactLogicalStart) {
       const uint64_t sourceFrame = *exactLogicalStart + static_cast<uint64_t>(
           std::llround(item.cueStartSeconds.value_or(0) * decodeFormat.sampleRate));
+      nextSourceFrame = sourceFrame;
       if (!decoder->seekOutputFrame(sourceFrame, error, FFmpegDecoder::SeekPurpose::Startup)) return false;
     } else if (sourceStart > 0.0 && !(precisePcmSeek
         ? decoder->seekOutputFrame(preciseSourceFrame(sourceStart), error, FFmpegDecoder::SeekPurpose::Startup)
@@ -1075,14 +1107,27 @@ struct AudioPipeline::DecodeStream {
         return;
       }
     }
+    stopRequested.store(false, std::memory_order_release);
     running = true;
-    decodeThread = std::thread([this] { decodeLoop(); });
+    decodeThread = std::thread([this] {
+      decodeStage.store(1, std::memory_order_release);
+      decodeLoop();
+      decodeStage.store(3, std::memory_order_release);
+    });
   }
 
-  void requestStop() {
+  void requestStop(const char* reason = "transport_stop") {
+    const bool alreadyStopped = stopRequested.exchange(true, std::memory_order_acq_rel);
     running = false;
     if (decoder) decoder->cancelPendingIo();
     buffer.notifyAll();
+    const auto token = routingSourceToken.load(std::memory_order_acquire);
+    if (!alreadyStopped && token != 0) {
+      DiagnosticLog::instance().append(DiagLevel::Info, "decode_stop_requested", reason,
+          "{\"streamToken\":" + std::to_string(token) +
+          ",\"reason\":\"" + std::string(reason) + "\",\"stage\":" + std::to_string(decodeStage.load()) +
+          ",\"eof\":" + (eof.load() ? "true" : "false") + "}");
+    }
   }
 
   void stop() {
@@ -1094,8 +1139,19 @@ struct AudioPipeline::DecodeStream {
     if (!decoder && !dsdReader) return false;
     const bool priorTimelineExact = sourceTimelineExact.exchange(false, std::memory_order_acq_rel);
     stop();
+    // A transport seek resumes the same decoder, unlike retirement.
+    stopRequested.store(false, std::memory_order_release);
     const double logicalSeconds = clampLogicalSegmentPosition(seconds);
     const double sourceSeconds = sourcePositionForLogicalPosition(logicalSeconds);
+    if (mode == Mode::Pcm && decoderNeedsReopen) {
+      const bool opened = decoder->open(item.source, error);
+      if (opened) setResamplerQuality(actualResamplerQuality);
+      if (!opened || !decoder->setOutputFormat(decodeFormat, error)) {
+        markReadFailure(error ? *error : "Unable to reopen audio source for seek");
+        return false;
+      }
+      decoderNeedsReopen = false;
+    }
     const bool ok = (mode == Mode::Dop || mode == Mode::NativeDsd)
                         ? dsdReader->seek(sourceSeconds, error)
                         : precisePcmSeek
@@ -1117,6 +1173,11 @@ struct AudioPipeline::DecodeStream {
     if (mode == Mode::Dop) dopPacker.reset();
     if (dsdDownrateActive) dsdDownrateProcessor.reset();
     buffer.clear();
+    nextSourceFrame = static_cast<uint64_t>(std::llround(sourceSeconds * decodeFormat.sampleRate));
+    recoveryAttempts = 0;
+    healthyFramesSinceReconnect = 0;
+    readFailed = false;
+    failureReported = false;
     if (hasCueRange()) {
       remainingSegmentFrames = remainingFramesForSourcePosition(sourceSeconds);
       remainingVirtualPregapFrames = virtualPregapFramesForLogicalPosition(logicalSeconds);
@@ -1196,8 +1257,12 @@ struct AudioPipeline::DecodeStream {
     return eof.load() && buffer.availableFrames() == 0;
   }
 
+  bool terminalFailed() const {
+    return processingFailed.load(std::memory_order_acquire) || readFailed.load(std::memory_order_acquire);
+  }
+
   bool readyForRender() const {
-    return !processingFailed.load() && (buffer.availableFrames() > 0 || eof.load());
+    return !terminalFailed() && (buffer.availableFrames() > 0 || eof.load());
   }
 
   bool waitForPreroll(size_t targetFrames, std::chrono::milliseconds timeout) const {
@@ -1275,6 +1340,72 @@ struct AudioPipeline::DecodeStream {
     buffer.notifyAll();
   }
 
+  bool cancelled() const {
+    return stopRequested.load(std::memory_order_acquire) || ta_am_cancelled(externalCancel);
+  }
+
+  bool canReconnect() const {
+    const bool remote = item.source.rfind("http://", 0) == 0 || item.source.rfind("https://", 0) == 0;
+    return remote && !stream.isDsd && std::isfinite(stream.durationSeconds) && stream.durationSeconds > 0;
+  }
+
+  bool recoverRemoteRead(std::string* error) {
+    // Live sources have no stable seek position. Bound each failure episode;
+    // reset the allowance only after five seconds of successful PCM production.
+    if (!canReconnect() || recoveryAttempts >= 2 || cancelled()) return false;
+    while (recoveryAttempts < 2 && !cancelled()) {
+      ++recoveryAttempts;
+      healthyFramesSinceReconnect = 0;
+      decodeStage.store(4, std::memory_order_release);
+      const auto started = std::chrono::steady_clock::now();
+      const std::string context = "{\"streamToken\":" + std::to_string(routingSourceToken.load()) +
+          ",\"attempt\":" + std::to_string(recoveryAttempts) + ",\"resumeFrame\":" + std::to_string(nextSourceFrame);
+      DiagnosticLog::instance().append(DiagLevel::Warning, "decode.reconnect.start", "reconnect current source", context + "}");
+      std::string attemptError;
+      decoderNeedsReopen = true;
+      bool restored = decoder->open(item.source, &attemptError);
+      if (restored) {
+        const auto& reopened = decoder->streamInfo();
+        restored = reopened.codec == stream.codec &&
+            pcmFormatsSemanticallyMatch(reopened.sourceFormat, stream.sourceFormat) &&
+            (hasCueRange() || !reopened.durationSeconds || std::abs(reopened.durationSeconds - stream.durationSeconds) < 1.0);
+        if (!restored) attemptError = "Reconnected audio source changed its format or duration";
+      }
+      if (restored) {
+        setResamplerQuality(actualResamplerQuality);
+        restored = decoder->setOutputFormat(decodeFormat, &attemptError) &&
+            pcmFormatsExactMatch(decoder->outputFormat(), decodeFormat) &&
+            decoder->seekOutputFrame(nextSourceFrame, &attemptError);
+      }
+      if (cancelled()) return false;
+      const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now() - started).count();
+      DiagnosticLog::instance().append(restored ? DiagLevel::Info : DiagLevel::Error,
+          restored ? "decode.reconnect.complete" : "decode.reconnect.failed",
+          restored ? "source position restored" : attemptError,
+          context + ",\"durationMs\":" + std::to_string(duration) + "}");
+      if (restored) {
+        decoderNeedsReopen = false;
+        return true;
+      }
+      if (error && !attemptError.empty()) *error = attemptError;
+    }
+    return false;
+  }
+
+  void markReadFailure(const std::string& error) {
+    {
+      std::lock_guard lock(readErrorMutex);
+      readError = error.empty() ? "Audio source read failed" : error;
+    }
+    readFailed.store(true, std::memory_order_release);
+    running.store(false, std::memory_order_release);
+    buffer.notifyAll();
+    DiagnosticLog::instance().append(DiagLevel::Error, "decode.failed", error,
+        "{\"streamToken\":" + std::to_string(routingSourceToken.load()) +
+        ",\"reconnectAttempts\":" + std::to_string(recoveryAttempts) + "}");
+  }
+
   void decodeLoop() {
     if (mode == Mode::Dop) {
       decodeDopLoop();
@@ -1316,6 +1447,7 @@ struct AudioPipeline::DecodeStream {
       if (!decoder) break;
       std::string error;
       size_t decoded = 0;
+      decodeStage.store(1, std::memory_order_release);
       if (decodeFormat.sampleFormat == AudioSampleFormat::Float32Interleaved) {
         decoded = decoder->readFrames(frames.data(), kDecodeChunkFrames, &error);
       } else {
@@ -1331,25 +1463,67 @@ struct AudioPipeline::DecodeStream {
       if (remainingSegmentFrames) {
         decoded = std::min(decoded, static_cast<size_t>(*remainingSegmentFrames));
       }
+      // A read may return its buffered tail together with an IO error. Preserve
+      // that failure before the next read reports ordinary EOF.
+      if (!error.empty() && !cancelled()) {
+        DiagnosticLog::instance().append(DiagLevel::Error, "decode_read_failed", error,
+            "{\"streamToken\":" + std::to_string(routingSourceToken.load()) + "}");
+      }
       if (decoded == 0) {
-        if (running.load() && !error.empty()) processingFailed = true;
-        markEof();
+        if (cancelled()) break;
+        if (!error.empty()) {
+          if (recoverRemoteRead(&error)) continue;
+          if (!cancelled()) markReadFailure(error);
+        } else {
+          markEof();
+        }
         break;
       }
+      decodeStage.store(2, std::memory_order_release);
+      const auto writeStarted = std::chrono::steady_clock::now();
+      size_t written = 0;
       if (decodeFormat.sampleFormat == AudioSampleFormat::Float32Interleaved) {
-        buffer.writeBlocking(frames.data(), decoded, running);
+        written = buffer.writeBlocking(frames.data(), decoded, running);
       } else {
         PcmBlock block;
         block.format = decodeFormat;
         block.data = typedFrames.data();
         block.frames = decoded;
         block.byteSize = decoded * bytesPerFrame;
-        buffer.writeBlocking(block, running);
+        written = buffer.writeBlocking(block, running);
+      }
+      if (written > 0) {
+        nextSourceFrame += written;
+        healthyFramesSinceReconnect += written;
+        if (healthyFramesSinceReconnect >= static_cast<uint64_t>(std::max(1, decodeFormat.sampleRate)) * 5) {
+          recoveryAttempts = 0;
+        }
+        producedFrames.fetch_add(written, std::memory_order_relaxed);
+        const auto now = std::chrono::steady_clock::now().time_since_epoch();
+        lastProgressMs.store(static_cast<uint64_t>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(now).count()), std::memory_order_release);
       }
       if (remainingSegmentFrames) {
         *remainingSegmentFrames -= decoded;
         if (*remainingSegmentFrames == 0) {
           markEof();
+          break;
+        }
+      }
+      if (!error.empty() && !cancelled()) {
+        if (recoverRemoteRead(&error)) continue;
+        if (!cancelled()) markReadFailure(error);
+        break;
+      }
+      // A full ring parks this worker during preload or a long pause. Refresh
+      // the idle HTTP connection on this worker as consumption resumes, while
+      // the queued PCM supplies preroll. Never reopen on the realtime callback.
+      if (canReconnect() && !decoder->eof() && !cancelled() &&
+          std::chrono::steady_clock::now() - writeStarted >= std::chrono::seconds(5)) {
+        DiagnosticLog::instance().append(DiagLevel::Info, "decode.connection-idle", "refresh idle source connection",
+            "{\"streamToken\":" + std::to_string(routingSourceToken.load()) + "}");
+        if (!recoverRemoteRead(&error)) {
+          if (!cancelled()) markReadFailure(error);
           break;
         }
       }
@@ -2207,7 +2381,7 @@ AudioPipeline::DecodeStreamReaper& AudioPipeline::decodeStreamReaper() {
 
 bool AudioPipeline::retireDecodeStreamLocked(std::shared_ptr<DecodeStream> stream) {
   if (!stream) return true;
-  stream->requestStop();
+  stream->requestStop("stream_retired");
   // Every caller has already withdrawn this stream's raw pointer from
   // renderActiveStream_ / renderPreloadStream_ on this thread, so that store is
   // sequenced before this release increment. A render callback that later
@@ -2842,7 +3016,9 @@ TAE_Result AudioPipeline::playInternal(
         requestedAutoMixMode_.load(std::memory_order_acquire) == TA_AM_OFF &&
         !outputConfig.continuityFirst && !pcmToDsdPath && !active->stream.isDsd && !processingRequiresPcm &&
         backendCanTypedPassthrough(backendId) && formatCanTypedPassthrough(active->stream.sourceFormat) &&
-        pcmFormatsSemanticallyMatch(active->stream.sourceFormat, outputFormat);
+        (pcmFormatsSemanticallyMatch(active->stream.sourceFormat, outputFormat) ||
+          (backendId == "asio" &&
+            pcmFormatsPreserveSource(active->stream.sourceFormat, outputFormat)));
     AudioFormat decodeFormat = pcmToDsdPath ? requestedPcmFormat : outputFormat;
     if (pcmToDsdPath) {
       decodeFormat.sampleFormat = AudioSampleFormat::Float32Interleaved;
@@ -4137,7 +4313,7 @@ bool AudioPipeline::setOutputConfig(const OutputConfig& config, std::string* err
     renderOutputFormat_ = outputFormat_;
   };
 
-  if (!output_ || !wasapiExclusiveTopologyChanged(backendId_, previousConfig, config)) {
+  if (!output_ || !outputTopologyChanged(backendId_, previousConfig, config)) {
     outputConfig_ = config;
     applyRoutingLocked(config);
     if (output_ && !output_->setOutputConfig(config, error)) {
@@ -4151,11 +4327,12 @@ bool AudioPipeline::setOutputConfig(const OutputConfig& config, std::string* err
     return finish(true);
   }
 
-  // WASAPI Exclusive fixes its event/push mode and buffer duration during
-  // IAudioClient::Initialize. A live assignment cannot change that topology.
+  // WASAPI fixes its mode/buffer duration during Initialize; ASIO fixes its
+  // buffer geometry and output channel numbers during createBuffers.
   // Keep render callbacks silent while the current backend is fully stopped,
   // then only publish the requested config after the candidate has reopened
   // and started. The previous topology is reopened on every candidate failure.
+  const std::string backendLabel = backendId_ == "asio" ? "ASIO" : "WASAPI Exclusive";
   renderState_.store(PipelineState::Paused, std::memory_order_release);
   lock.unlock();
   // The reopen below runs with mutex_ released; serialize it against
@@ -4222,7 +4399,7 @@ bool AudioPipeline::setOutputConfig(const OutputConfig& config, std::string* err
     const bool candidateRaisedOutputFailure =
         deviceInvalidated_.load(std::memory_order_acquire) || renderError_.load(std::memory_order_acquire);
     if (candidateRaisedOutputFailure) {
-      candidateError = outputEventMessage_.empty() ? "WASAPI Exclusive candidate reported an output failure" :
+      candidateError = outputEventMessage_.empty() ? backendLabel + " candidate reported an output failure" :
                                                      outputEventMessage_;
       candidateStarted = false;
     }
@@ -4234,6 +4411,7 @@ bool AudioPipeline::setOutputConfig(const OutputConfig& config, std::string* err
     lock.lock();
     outputConfig_ = previousConfig;
     if (rollbackStarted) {
+      refreshOpenedOutputLocked(output);
       deviceInvalidated_ = false;
       renderError_ = false;
       state_ = previousState;
@@ -4241,17 +4419,17 @@ bool AudioPipeline::setOutputConfig(const OutputConfig& config, std::string* err
       updatePerfectLocked();
       publishStatusLocked();
       if (error) {
-        *error = "WASAPI Exclusive topology update failed and the previous topology was restored: " +
+        *error = backendLabel + " topology update failed and the previous topology was restored: " +
                  candidateError;
       }
     } else {
       state_ = PipelineState::Stopped;
       renderState_.store(PipelineState::Stopped, std::memory_order_release);
       outputInfo_.perfectReasonCode = "topology_rollback_failed";
-      outputInfo_.perfectReason = rollbackError.empty() ? "WASAPI Exclusive rollback failed" : rollbackError;
+      outputInfo_.perfectReason = rollbackError.empty() ? backendLabel + " rollback failed" : rollbackError;
       publishStatusLocked();
       if (error) {
-        *error = "WASAPI Exclusive topology update failed: " + candidateError +
+        *error = backendLabel + " topology update failed: " + candidateError +
                  "; rollback failed: " + rollbackError;
       }
     }
@@ -4260,6 +4438,7 @@ bool AudioPipeline::setOutputConfig(const OutputConfig& config, std::string* err
 
   lock.lock();
   outputConfig_ = config;
+  refreshOpenedOutputLocked(output);
   applyRoutingLocked(config);
   state_ = previousState;
   renderState_.store(previousState, std::memory_order_release);
@@ -4591,7 +4770,7 @@ bool AudioPipeline::preloadNextForSource(const std::optional<QueueItem>& item, s
         const auto& sourceFormat = stream->stream.sourceFormat;
         const bool sourceCompatible = typedPassthrough
             ? pcmFormatsSemanticallyMatch(sourceFormat, activeSourceFormat) &&
-                  pcmFormatsSemanticallyMatch(sourceFormat, outputFormat)
+                  pcmFormatsPreserveSource(sourceFormat, outputFormat)
             : pcmFormatsExactMatch(sourceFormat, activeSourceFormat);
         if (stream->stream.isDsd || activeIsDsd || (!continuityFirst && !autoMixEnabled && !sourceCompatible)) {
           failed(); return;
@@ -4907,6 +5086,43 @@ void AudioPipeline::publishStatusLocked() {
   lastStatus_ = std::move(status);
 }
 
+void AudioPipeline::sampleDecodeHealth(OutputInfo::Diagnostics& diagnostics) const {
+  diagnostics.decodeHealthAvailable = false;
+  diagnostics.decodeUnavailableReason = "pipeline-lock-busy";
+  diagnostics.liveRenderState = static_cast<int>(renderState_.load(std::memory_order_acquire));
+  diagnostics.liveRenderedFrames = renderedFrames_.load(std::memory_order_acquire);
+  diagnostics.liveRenderCallbackCount = renderCallbackCount_.load(std::memory_order_acquire);
+  diagnostics.sourceConsumedFrames = sourceConsumedFrames_.load(std::memory_order_relaxed);
+  diagnostics.outputProducedFrames = outputProducedFrames_.load(std::memory_order_relaxed);
+  diagnostics.zeroFilledFrames = zeroFilledFrames_.load(std::memory_order_relaxed);
+  diagnostics.emptyOutputCount = emptyOutputCount_.load(std::memory_order_relaxed);
+  diagnostics.inactiveOutputCount = inactiveOutputCount_.load(std::memory_order_relaxed);
+  diagnostics.eofOutputCount = eofOutputCount_.load(std::memory_order_relaxed);
+  // Do not make diagnostic reads wait behind a native control operation.
+  std::unique_lock lock(mutex_, std::try_to_lock);
+  if (!lock.owns_lock()) return;
+  const DecodeStream* active = renderActiveStream_.load(std::memory_order_acquire);
+  if (preloadStream_) diagnostics.preloadStreamToken = preloadStream_->routingSourceToken.load();
+  const DecodeStream* owner = nullptr;
+  if (activeStream_.get() == active) owner = activeStream_.get();
+  else if (preloadStream_.get() == active) owner = preloadStream_.get();
+  if (!owner || owner->mode != DecodeStream::Mode::Pcm) { diagnostics.decodeUnavailableReason = owner ? "dsd" : "no-active-stream"; return; }
+  diagnostics.decodeUnavailableReason.clear();
+  diagnostics.decodeHealthAvailable = true;
+  diagnostics.decodeStreamToken = owner->routingSourceToken.load(std::memory_order_acquire);
+  diagnostics.decodeRunning = owner->running.load(std::memory_order_acquire);
+  diagnostics.decodeEof = owner->eof.load(std::memory_order_acquire);
+  diagnostics.decodeStopRequested = owner->stopRequested.load(std::memory_order_acquire);
+  diagnostics.decodeBufferedFrames = owner->buffer.availableFrames();
+  diagnostics.decodeProducedFrames = owner->producedFrames.load(std::memory_order_acquire);
+  const char* stages[] = {"idle", "reading", "writing", "exited", "reconnecting"};
+  diagnostics.decodeStage = stages[std::min<uint32_t>(4, owner->decodeStage.load(std::memory_order_acquire))];
+  const uint64_t lastProgress = owner->lastProgressMs.load(std::memory_order_acquire);
+  const auto now = std::chrono::steady_clock::now().time_since_epoch();
+  const auto nowMs = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(now).count());
+  diagnostics.decodeLastProgressAgeMs = lastProgress && nowMs >= lastProgress ? nowMs - lastProgress : 0;
+}
+
 PipelineStatus AudioPipeline::status() {
   const bool requiresFreshStatus =
       ended_.load() || deviceInvalidated_.load() || renderError_.load() || trackStarted_.load();
@@ -5027,7 +5243,7 @@ void AudioPipeline::setRerouteInProgress(bool active, const std::string& reason)
 
 bool AudioPipeline::consumeEnded(bool* terminalFailurePending) {
   std::lock_guard lock(mutex_);
-  const bool processingFailed = activeStream_ && activeStream_->processingFailed.load();
+  const bool processingFailed = activeStream_ && activeStream_->terminalFailed();
   const bool failed = deviceInvalidated_.load(std::memory_order_acquire) ||
       renderError_.load(std::memory_order_acquire) || processingFailed;
   if (terminalFailurePending) *terminalFailurePending = failed;
@@ -5066,6 +5282,19 @@ bool AudioPipeline::consumeRenderError(std::string* message) {
   if (!renderError_.exchange(false)) return false;
   if (message) *message = outputEventMessage_.empty() ? "音频渲染失败" : outputEventMessage_;
   outputEventMessage_.clear();
+  return true;
+}
+
+bool AudioPipeline::consumeDecodeError(std::string* message) {
+  std::lock_guard lock(mutex_);
+  synchronizeRenderPromotionLocked();
+  // A failed preload must not stop the current healthy track. After promotion,
+  // drain its valid buffered tail before reporting the failure exactly once.
+  if (!activeStream_ || !activeStream_->readFailed.load(std::memory_order_acquire) ||
+      activeStream_->buffer.availableFrames() != 0 ||
+      activeStream_->failureReported.exchange(true, std::memory_order_acq_rel)) return false;
+  std::lock_guard errorLock(activeStream_->readErrorMutex);
+  if (message) *message = activeStream_->readError;
   return true;
 }
 
@@ -5473,7 +5702,7 @@ void AudioPipeline::synchronizeRenderPromotionLocked() {
     if (g->continuation.get() == promoted) mixOwner = g.get();
   if (!mixOwner && (!preloadStream_ || preloadStream_.get() != promoted)) return;
 
-  if (activeStream_ && activeStream_->processingFailed.load()) {
+  if (activeStream_ && activeStream_->terminalFailed()) {
     // A decoder can fail just after the callback checked promotion eligibility
     // (for example at the end of a crossfade). Keep the failed source as the
     // control owner so status synchronization cannot retire its pending error.
@@ -5498,6 +5727,9 @@ void AudioPipeline::synchronizeRenderPromotionLocked() {
   } else activeStream_ = std::move(preloadStream_);
   stream_ = activeStream_->stream;
   currentItem_ = activeStream_->item;
+  DiagnosticLog::instance().append(DiagLevel::Info, "stream.promoted", "render promotion",
+      "{\"streamToken\":" + std::to_string(activeStream_->routingSourceToken.load()) +
+      ",\"previousStreamToken\":" + std::to_string(previous ? previous->routingSourceToken.load() : 0) + "}");
   activeUsesPreloadDspChain_ = renderActiveUsesPreloadDspChain_.load(std::memory_order_acquire);
   publishedActiveDspGraph_ = renderActiveDspGraph_.load(std::memory_order_acquire);
   publishedPreloadDspGraph_ = renderPreloadDspGraph_.load(std::memory_order_acquire);
@@ -5731,7 +5963,7 @@ size_t AudioPipeline::renderTyped(PcmBlock& output) {
       read += segmentRead;
       renderedFrames_ += dsdRenderedFrameUnits(segmentRead, output.format);
       if (read == requestedFrames || !active->drained()) break;
-      if (active->processingFailed.load() ||
+      if (active->terminalFailed() ||
           !renderGaplessEnabled_.load(std::memory_order_acquire) || !preload ||
           !preload->typedPassthrough || !preload->readyForRender() ||
           !pcmFormatsExactMatch(preload->bufferFormat(), output.format)) break;
@@ -5852,6 +6084,8 @@ size_t AudioPipeline::render(float* output, size_t frameCount) {
 
   if (state != PipelineState::Playing || !active) {
     std::fill(output, output + frameCount * static_cast<size_t>(channels), 0.0f);
+    inactiveOutputCount_.fetch_add(1, std::memory_order_relaxed);
+    zeroFilledFrames_.fetch_add(frameCount, std::memory_order_relaxed);
     spectrum_.tryResetCapture();
     recordPerformance();
     return frameCount;
@@ -6113,7 +6347,7 @@ size_t AudioPipeline::render(float* output, size_t frameCount) {
       }
 
       const bool canPromotePreload = preload && renderPreloadStream_.load(std::memory_order_acquire)==preload && preload->readyForRender();
-      if (active->processingFailed.load() ||
+      if (active->terminalFailed() ||
           (!renderGaplessEnabled_.load(std::memory_order_acquire) && !renderCrossfadeMixActive_) ||
           !canPromotePreload) {
         break;
@@ -6226,16 +6460,21 @@ size_t AudioPipeline::render(float* output, size_t frameCount) {
   if (positionRead > 0) {
     // renderedFrames_ counts source frames consumed — correct position when rate != 1.
     renderedFrames_ += positionRead;
+    sourceConsumedFrames_.fetch_add(positionRead, std::memory_order_relaxed);
   }
+  outputProducedFrames_.fetch_add(totalRead, std::memory_order_relaxed);
+  zeroFilledFrames_.fetch_add(frameCount - std::min(frameCount, totalRead), std::memory_order_relaxed);
   if (totalRead > 0) {
     spectrum_.capture(output, totalRead, channels);
   } else if (active->drained() && (!rateActive || totalRead == 0)) {
+    eofOutputCount_.fetch_add(1, std::memory_order_relaxed);
     // Rate path ends when the source is drained and WSOLA could not emit more frames
     // (OLA tail already flushed / no full grain left).
     ended_ = true;
     renderState_.store(PipelineState::Stopped, std::memory_order_release);
     spectrum_.tryResetCapture();
   } else {
+    emptyOutputCount_.fetch_add(1, std::memory_order_relaxed);
     spectrum_.tryResetCapture();
   }
 

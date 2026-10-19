@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { writeDiagnostic } from '../diagnostics/logger.ts'
 import {
   createInitialAppUpdateSnapshot,
   type AppUpdateCheckResult,
@@ -51,6 +52,7 @@ export class AppUpdateManager {
   private installing = false
   private installLaunched = false
   private lastAutomaticAttempt = 0
+  private diagnosticPhase = ''
 
   constructor(options: AppUpdateManagerOptions) {
     this.options = options
@@ -64,6 +66,10 @@ export class AppUpdateManager {
     return structuredClone(this.state)
   }
   private publish(): void {
+    if (this.state.progress.phase !== this.diagnosticPhase) {
+      this.diagnosticPhase = this.state.progress.phase
+      writeDiagnostic('app.update', 'phase.changed', { phase: this.diagnosticPhase, receivedBytes: this.state.progress.receivedBytes, totalBytes: this.state.progress.totalBytes, version: this.state.progress.version, errorCode: this.state.progress.errorCode }, this.diagnosticPhase === 'error' ? 'error' : 'info')
+    }
     this.state.revision++
     this.options.publish(this.snapshot())
   }

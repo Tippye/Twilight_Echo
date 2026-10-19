@@ -57,6 +57,8 @@ extraResources:
       - twilight-audio-engine.dll
       - libtwilight-audio-engine.so
       - libtwilight-audio-engine.dylib
+      # Include the complete dependency closure staged by macos-audio-runtime.cjs.
+      - '*.dylib'
       - twilight_audio_node.node
       - twilight_smtc_node.node
       - twilight-asio-helper.exe

@@ -2,6 +2,8 @@
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useEscapeToClose, useFocusTrap } from '../app/useDismissLayer.ts'
 import { useMusicStore } from '../stores/useMusicStore'
+import { useSettingsStore } from '../stores/useSettingsStore'
+import { isTrackUnderLibraryRoot, normalizeLibraryPath } from '../stores/library/musicStoreData.ts'
 import type { Track } from '../types/music'
 
 const props = defineProps<{
@@ -12,8 +14,19 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const { scannedFolders, addFolder, addTracks, isScanning, saveLibrary, refreshLibraryIndex } =
-  useMusicStore()
+const musicStore = useMusicStore()
+const {
+  scannedFolders,
+  addFolder,
+  addTracks,
+  isScanning,
+  saveLibrary,
+  refreshLibraryIndex,
+  excludedTracks,
+  restoreExcludedTracks
+} = musicStore
+const settingsStore = useSettingsStore()
+const { settings, loaded: settingsLoaded, removeLibraryFolder, updateSettings } = settingsStore
 
 const progress = ref({ current: 0, total: 0 })
 const selectedFolders = ref<Set<string>>(new Set())
@@ -25,7 +38,10 @@ const choosingFolder = ref(false)
 const newlyAddedFolders = ref<string[]>([])
 const busy = computed(() => isScanning.value || choosingFolder.value)
 const availableFolders = computed(() => [
-  ...new Set([...scannedFolders.value, ...newlyAddedFolders.value])
+  ...new Set([
+    ...(settingsLoaded.value ? settings.value.libraryFolders : scannedFolders.value),
+    ...newlyAddedFolders.value
+  ])
 ])
 
 function close(): void {
@@ -40,13 +56,18 @@ watch(
   () => props.show,
   (show) => {
     if (!show) return
-    selectedFolders.value = new Set(scannedFolders.value)
     newlyAddedFolders.value = []
+    selectedFolders.value = new Set(availableFolders.value)
     scanStatus.value = 'idle'
     scanError.value = ''
   },
   { immediate: true }
 )
+
+watch(availableFolders, (folders) => {
+  const available = new Set(folders)
+  selectedFolders.value = new Set([...selectedFolders.value].filter((path) => available.has(path)))
+})
 
 async function handleAddNewFolder(): Promise<void> {
   if (busy.value) return
@@ -57,9 +78,31 @@ async function handleAddNewFolder(): Promise<void> {
     if (path) {
       if (!availableFolders.value.includes(path)) newlyAddedFolders.value.push(path)
       selectedFolders.value.add(path)
+      // `dialog:openFolder` persists the selection in the main process. Keep
+      // the renderer's settings snapshot in sync for windows that were opened
+      // before the settings listener was attached.
+      if (settingsLoaded.value && !settings.value.libraryFolders.includes(path)) {
+        await updateSettings({ libraryFolders: [...settings.value.libraryFolders, path] })
+      }
     }
   } catch (error) {
     scanError.value = `选择文件夹失败：${error instanceof Error ? error.message : String(error)}`
+  } finally {
+    choosingFolder.value = false
+  }
+}
+
+async function handleRemoveFolder(path: string): Promise<void> {
+  if (busy.value) return
+  choosingFolder.value = true
+  scanError.value = ''
+  try {
+    if (settingsLoaded.value) await removeLibraryFolder(path)
+    selectedFolders.value.delete(path)
+    newlyAddedFolders.value = newlyAddedFolders.value.filter((folder) => folder !== path)
+    if (scannedFolders.value.includes(path)) musicStore.removeFolder(path)
+  } catch (error) {
+    scanError.value = `移除文件夹失败：${error instanceof Error ? error.message : String(error)}`
   } finally {
     choosingFolder.value = false
   }
@@ -89,6 +132,21 @@ async function startScan(): Promise<void> {
   scanError.value = ''
 
   try {
+    // A deliberate re-import is also the user's way to opt an earlier
+    // "removed from library" path back in. Clear matching exclusions before
+    // asking the scanner for tracks; otherwise the scanner correctly skips
+    // those paths forever.
+    const selectedRoots = foldersToScan.map(normalizeLibraryPath)
+    const excludedForSelection =
+      excludedTracks?.value
+        .filter((item) =>
+          selectedRoots.some((root) => isTrackUnderLibraryRoot(item.filePath, root))
+        )
+        .map((item) => item.filePath) ?? []
+    if (excludedForSelection.length > 0 && typeof restoreExcludedTracks === 'function') {
+      await restoreExcludedTracks(excludedForSelection)
+    }
+
     for (const folder of foldersToScan) {
       const tracks = await window.api.fs.scanMusicFiles(folder)
       // Scan selection never removes unselected roots or their existing tracks.
@@ -182,17 +240,30 @@ onUnmounted(() => {
                 <div v-if="availableFolders.length === 0" class="empty-folders">
                   暂无文件夹，请点击下方按钮添加
                 </div>
-                <label v-for="folder in availableFolders" :key="folder" class="folder-item">
+                <div v-for="(folder, index) in availableFolders" :key="folder" class="folder-item">
                   <i class="pi pi-folder"></i>
-                  <span class="folder-path" :title="folder">{{ folder }}</span>
+                  <label class="folder-path" :for="`import-folder-${index}`" :title="folder">{{
+                    folder
+                  }}</label>
                   <input
+                    :id="`import-folder-${index}`"
                     type="checkbox"
                     :checked="selectedFolders.has(folder)"
                     :disabled="busy"
                     :aria-label="`扫描文件夹 ${folder}`"
                     @change="toggleFolder(folder)"
                   />
-                </label>
+                  <button
+                    type="button"
+                    class="btn-remove-folder"
+                    :disabled="busy"
+                    :aria-label="`移除文件夹 ${folder}`"
+                    title="移除文件夹记录"
+                    @click="handleRemoveFolder(folder)"
+                  >
+                    <i class="pi pi-times" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
             </div>
 

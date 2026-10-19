@@ -9,6 +9,8 @@
 
 import { onScopeDispose, ref, watch, type Ref, type ComputedRef } from 'vue'
 import { resolveCover } from './coverLoader.ts'
+import { recordCoverDiagnostic } from './coverDiagnostics.ts'
+import { imageDataUrlToBlob } from './imageDataUrl.ts'
 
 export function useTrackCoverSrc(
   trackRef: ComputedRef<{
@@ -36,6 +38,13 @@ export function useTrackCoverSrc(
   }
 
   async function toUniqueDisplayUrl(resolved: string): Promise<string | null> {
+    if (/^data:/i.test(resolved)) {
+      try {
+        return URL.createObjectURL(imageDataUrlToBlob(resolved))
+      } catch {
+        return resolved
+      }
+    }
     // data: / already-fetched local art → mint a unique blob URL every time
     // so <img> cannot reuse a sticky decode for the previous track.
     if (/^(data:|blob:|cover:|background:)/i.test(resolved)) {
@@ -52,11 +61,29 @@ export function useTrackCoverSrc(
     // twilight-media / other grants: unique enough per token; still wrap when possible.
     try {
       const response = await fetch(resolved)
-      if (!response.ok) return resolved
+      if (!response.ok) {
+        recordCoverDiagnostic(
+          'display.fetch.failed',
+          resolved,
+          null,
+          { status: response.status },
+          'warn'
+        )
+        return resolved
+      }
       const blob = await response.blob()
-      if (!blob || blob.size <= 0) return resolved
-      return URL.createObjectURL(blob)
+      if (!blob || blob.size <= 0) {
+        recordCoverDiagnostic('display.body.empty', resolved, null, {}, 'warn')
+        return resolved
+      }
+      const display = URL.createObjectURL(blob)
+      recordCoverDiagnostic('display.materialized', resolved, null, {
+        displayUrl: display,
+        bytes: blob.size
+      })
+      return display
     } catch {
+      recordCoverDiagnostic('display.fetch.failed', resolved, null, {}, 'warn')
       return resolved
     }
   }

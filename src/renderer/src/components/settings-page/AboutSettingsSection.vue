@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useEscapeToClose, useFocusTrap } from '../../app/useDismissLayer.ts'
-import { resolveCover } from '../../utils/coverLoader.ts'
 import { GITHUB_URL, HOMEPAGE_URL, RELEASES_URL } from './types.ts'
 import AppUpdatePanel from './AppUpdatePanel.vue'
 
@@ -16,66 +15,68 @@ const QQ_GROUP_QR_URL = './qq-group-qrcode.jpg'
 interface Sponsor {
   id: string
   name: string
-  avatarUrl: string
-  requestedText?: string
 }
 
 const SPONSORS: readonly Sponsor[] = [
   {
+    id: 'anbaichi',
+    name: 'AnBaichi'
+  },
+  {
+    id: 'meng-hui-fan-hua',
+    name: '梦回繁华'
+  },
+  {
+    id: 'when-we-talk-about-question-mark',
+    name: '我们谈论问号时到底在谈论什么'
+  },
+  {
+    id: 'noro',
+    name: 'Noro'
+  },
+  {
     id: 'celestique',
-    name: 'Celestique',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/03/pmI8JIJ.jpg',
-    requestedText: '運命のルーレット廻して，ずっと君を見ていた。'
+    name: 'Celestique'
   },
   {
     id: 'afdian-user-b3f86',
-    name: '爱发电用户_b3f86',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/03/pmI8Lzq.png'
+    name: '爱发电用户_b3f86'
   },
   {
     id: 'jiang-feng-jiang1021',
-    name: '江枫Jiang1021',
-    avatarUrl: ''
+    name: '江枫Jiang1021'
   },
   {
     id: 'your-rain',
-    name: 'YourRain',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/10/pmbqWUH.jpg'
+    name: 'YourRain'
   },
   {
     id: 'afdian-user-fa664',
-    name: '剑锋',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/10/pmbL1de.jpg'
+    name: '剑锋'
   },
   {
     id: 'yunshan',
-    name: '云杉',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/10/pmbq7Kf.jpg'
+    name: '云杉'
   },
   {
     id: 'yu',
-    name: '羽',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/10/pmbqHr8.jpg'
+    name: '羽'
   },
   {
     id: 'mumu-hina',
-    name: 'MuMuHina',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/30/pnP5zOH.jpg'
+    name: 'MuMuHina'
   },
   {
     id: 'yjo',
-    name: 'YJO',
-    avatarUrl: 'https://s41.ax1x.com/2026/09/16/pnuWoHf.jpg'
+    name: 'YJO'
   },
   {
     id: 'basement-little-evil-cow',
-    name: '地下室的小邪牛本人',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/03/pmI8Lzq.png'
+    name: '地下室的小邪牛本人'
   },
   {
     id: 'afdian-user-3adb7',
-    name: '爱发电用户_3adb7',
-    avatarUrl: 'https://s41.ax1x.com/2026/08/03/pmI8Lzq.png'
+    name: '爱发电用户_3adb7'
   }
 ]
 
@@ -104,25 +105,6 @@ const sponsorListOpen = ref(false)
 const sponsorListRef = ref<HTMLElement | null>(null)
 const qqGroupDialogOpen = ref(false)
 const qqGroupDialogRef = ref<HTMLElement | null>(null)
-const sponsorAvatarSources = ref<Record<string, string>>({})
-const sponsorAvatarLoadFailed = ref<Record<string, boolean>>({})
-
-onMounted(() => {
-  for (const sponsor of SPONSORS) {
-    void resolveCover(null, sponsor.avatarUrl).then((source) => {
-      if (!source) return
-      sponsorAvatarSources.value = { ...sponsorAvatarSources.value, [sponsor.id]: source }
-    })
-  }
-})
-
-function sponsorInitial(name: string): string {
-  return name.trim().slice(0, 1).toUpperCase() || '?'
-}
-
-function markSponsorAvatarLoadFailed(id: string): void {
-  sponsorAvatarLoadFailed.value = { ...sponsorAvatarLoadFailed.value, [id]: true }
-}
 
 function openSponsorDialog(): void {
   sponsorListOpen.value = false
@@ -305,7 +287,7 @@ useFocusTrap(qqGroupDialogRef, qqGroupDialogOpen)
                 <span class="sponsor-dialog-icon"><i class="pi pi-users"></i></span>
                 <div>
                   <h3 id="sponsor-list-title">赞助名单</h3>
-                  <p>感谢每一位支持 Twilight Echo 的朋友</p>
+                  <p>感谢 {{ SPONSORS.length }} 位朋友支持 Twilight Echo</p>
                 </div>
               </div>
               <button
@@ -320,18 +302,8 @@ useFocusTrap(qqGroupDialogRef, qqGroupDialogOpen)
 
             <div v-if="SPONSORS.length > 0" class="sponsor-list-entries">
               <article v-for="sponsor in SPONSORS" :key="sponsor.id" class="sponsor-list-entry">
-                <div class="sponsor-list-avatar" aria-hidden="true">
-                  <img
-                    v-if="sponsorAvatarSources[sponsor.id] && !sponsorAvatarLoadFailed[sponsor.id]"
-                    :src="sponsorAvatarSources[sponsor.id]"
-                    :alt="`${sponsor.name} 的头像`"
-                    @error="markSponsorAvatarLoadFailed(sponsor.id)"
-                  />
-                  <span v-else>{{ sponsorInitial(sponsor.name) }}</span>
-                </div>
                 <div class="sponsor-list-entry-copy">
                   <strong>{{ sponsor.name }}</strong>
-                  <small v-if="sponsor.requestedText">{{ sponsor.requestedText }}</small>
                 </div>
                 <i class="pi pi-heart-fill sponsor-list-entry-heart" aria-hidden="true"></i>
               </article>

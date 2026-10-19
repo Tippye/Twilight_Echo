@@ -20,7 +20,7 @@ import { assertTrustedIpcSender } from '../security/electronSecurity.ts'
 import { stringifyJsonForIpcStorage } from '../security/ipcValidation.ts'
 import { updateAppSettings } from '../app/settingsRuntime.ts'
 import { runtime } from '../core/runtime.ts'
-import { syncWindowFrameColor } from '../app/windowAppearance.ts'
+import { syncWindowFrameAppearance } from '../app/windowAppearance.ts'
 import {
   copyThemeAssets,
   deleteThemeAssets,
@@ -56,12 +56,7 @@ export function setupThemeIpc(): void {
     nativeTheme.on('updated', () => {
       const tone = nativeTheme.shouldUseDarkColors ? 'dark' : 'pureWhite'
       if (runtime.mainWindow && !runtime.mainWindow.isDestroyed()) {
-        syncWindowFrameColor(
-          runtime.mainWindow,
-          runtime.appSettings,
-          nativeTheme.shouldUseDarkColors,
-          nativeTheme.shouldUseHighContrastColors
-        )
+        syncWindowFrameAppearance(runtime.mainWindow, nativeTheme.shouldUseHighContrastColors)
       }
       for (const window of BrowserWindow.getAllWindows()) {
         if (!window.isDestroyed()) window.webContents.send('themes:systemToneChanged', tone)

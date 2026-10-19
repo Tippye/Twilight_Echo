@@ -21,10 +21,16 @@ import type {
 } from './types.ts'
 import type {
   MiniPlayerSettings,
-  MiniPlayerTrackSnapshot,
+  MiniPlayerStateSnapshot,
   MiniPlayerSettingsPatch
 } from '../shared/miniPlayer.ts'
 import type { TrayNavigationTarget } from '../shared/trayPlayer.ts'
+import type { ExperienceWindowOptions, ExperienceWindowTheme } from '../shared/experienceWindow.ts'
+import type {
+  DynamicIslandBootstrap,
+  DynamicIslandLyricsPayload,
+  DynamicIslandPresentation
+} from '../shared/dynamicIsland.ts'
 import type { VersionedDataEnvelope } from '../shared/versionedPersistence.ts'
 import type {
   AudioOutputId,
@@ -74,6 +80,7 @@ import type {
 } from '../shared/dspGraph.ts'
 import type { ImportedFrequencyResponse } from '../shared/frequencyResponse.ts'
 import type { AppStartupSnapshot } from '../shared/appStartup.ts'
+import type { AppHistoryCommand } from '../shared/appHistory.ts'
 import type {
   ThemeAssetReference,
   ThemeAssetType,
@@ -87,6 +94,8 @@ import type {
   LocalLibraryRemoveRequest,
   LocalLibraryRemoveResult,
   LocalLibraryResetResult,
+  LocalLibraryClearExclusionsRequest,
+  LocalLibraryClearExclusionsResult,
   LocalLibraryRestoreRequest,
   LocalLibraryRestoreResult,
   LocalLibrarySnapshotInput,
@@ -106,6 +115,7 @@ import type {
 import type { DuplicateDetectionReadApi } from '../shared/duplicateDetection.ts'
 import type { LyricsManagementDocument } from '../shared/lyricsManagement.ts'
 import type { PluginNotice } from '../shared/pluginNotice.ts'
+import type { PluginPlaylistImportNotice } from '../shared/pluginPlaylistImport.ts'
 import type {
   NcmCloudDownloadRequest,
   NcmCloudDownloadResult,
@@ -147,23 +157,6 @@ type LibraryChange =
 import type { TwilightMediaProviderMethod } from '../shared/mediaProviderMethods.ts'
 
 type MotionPreference = 'system' | 'full' | 'reduced' | 'off'
-
-interface MiniPlayerStateSnapshot {
-  track: MiniPlayerTrackSnapshot | null
-  isPlaying: boolean
-  isLoading: boolean
-  currentTime: number
-  duration: number
-  playbackRate: number
-  volume: number
-  playMode: PlayMode
-  favoriteAvailable: boolean
-  favoriteLiked: boolean
-  favoriteLoading: boolean
-  dominantColor: string
-  queueIndex: number
-  queueLength: number
-}
 
 type MiniPlayerCommand =
   | { type: 'toggle-play' }
@@ -318,6 +311,7 @@ interface OpraAPI {
 }
 
 interface WindowAPI {
+  diagnostics: import('../shared/diagnostics.ts').DiagnosticsApi
   systemMedia: {
     getNativeStatus: () => Promise<import('../shared/systemMedia.ts').SystemMediaNativeStatus>
   }
@@ -347,6 +341,10 @@ interface WindowAPI {
     minimize: () => void
     toggleMaximize: () => void
     close: () => void
+    showTrayPlayer: (options?: ExperienceWindowOptions) => Promise<void>
+  }
+  experienceWindow: {
+    onTheme: (callback: (theme: ExperienceWindowTheme) => void) => () => void
   }
   dialog: {
     openFolder: () => Promise<string | null>
@@ -373,6 +371,9 @@ interface WindowAPI {
   }
   library: DuplicateDetectionReadApi & {
     removeTracks: (request: LocalLibraryRemoveRequest) => Promise<LocalLibraryRemoveResult>
+    clearExclusions: (
+      request: LocalLibraryClearExclusionsRequest
+    ) => Promise<LocalLibraryClearExclusionsResult>
     restoreExclusions: (request: LocalLibraryRestoreRequest) => Promise<LocalLibraryRestoreResult>
     reset: () => Promise<LocalLibraryResetResult>
     writeTags: (request: LocalLibraryTagWriteRequest) => Promise<LocalLibraryTagWriteResult>
@@ -439,9 +440,30 @@ interface WindowAPI {
     /**
      * Reject to report a failed close-time persistence transaction. The main
      * process keeps the window open and offers the user a retry path.
+     * `includeQueue` asks for a queue-inclusive snapshot (Afterglow entry).
      */
-    onSavePlaybackSession: (cb: () => Promise<void> | void) => () => void
+    onSavePlaybackSession: (
+      cb: (
+        options?: import('../shared/closePersistence.ts').PlaybackSessionSaveOptions
+      ) => Promise<void> | void
+    ) => () => void
     onNavigate: (cb: (target: TrayNavigationTarget) => void) => () => void
+    /** Mouse side-button back/forward presses forwarded from the main process. */
+    onHistoryCommand: (cb: (command: AppHistoryCommand) => void) => () => void
+    /** Renderer-unload mode (Afterglow): status, entry, restore and live handoff. */
+    afterglow: {
+      getStatus: () => Promise<import('../shared/afterglowMode.ts').AfterglowModeStatus>
+      enter: () => Promise<import('../shared/afterglowMode.ts').AfterglowModeStatus>
+      restore: () => Promise<import('../shared/afterglowMode.ts').AfterglowModeStatus>
+      getRestoreState: () => Promise<
+        import('../shared/afterglowMode.ts').AfterglowRestoreState | null
+      >
+      rendererAdoptComplete: () => Promise<void>
+      /** Pre-unload queue snapshot handed to main (memory only). */
+      publishRendererSnapshot: (
+        snapshot: import('../shared/afterglowMode.ts').AfterglowRendererSnapshot
+      ) => Promise<boolean>
+    }
   }
   ncmCloud: {
     chooseUploadFiles: () => Promise<NcmCloudSelectedFile[]>
@@ -750,6 +772,8 @@ interface WindowAPI {
     ) => Promise<TwilightPluginDescriptor>
     onChanged: (cb: () => void) => () => void
     onNotice: (cb: (notice: PluginNotice) => void) => () => void
+    takePlaylistImports: () => Promise<PluginPlaylistImportNotice[]>
+    onImportPlaylist: (cb: () => void) => () => void
   }
   providers: {
     list: () => Promise<TwilightMediaProviderRegistration[]>
@@ -770,12 +794,29 @@ interface WindowAPI {
     onChanged: (cb: (tasks: ProviderDownloadTaskSnapshot[]) => void) => () => void
   }
   extensions: {
+    experienceExport: (
+      pluginId: string,
+      name: string,
+      content: string
+    ) => Promise<{ saved: boolean }>
+    experienceMusic: (
+      pluginId: string,
+      operation: string,
+      albums: unknown[],
+      args: Record<string, unknown>
+    ) => Promise<unknown>
+    experienceDocument: (
+      pluginId: string,
+      update?: { revision: number; value: Record<string, unknown> }
+    ) => Promise<{ revision: number; value: Record<string, unknown> }>
+    experiences: () => Promise<import('../shared/pluginExperience.ts').InstalledExperience[]>
+    experiencePreferences: (pluginId: string, value?: unknown) => Promise<unknown>
     list: () => Promise<TwilightPluginExtensionContribution[]>
     executeCommand: (command: string, args?: unknown[]) => Promise<unknown>
     readThemeStylesheet: (stylesheetPath: string) => Promise<string>
   }
   desktopLyrics: {
-    setEnabled: (enabled: boolean) => Promise<boolean>
+    setEnabled: (enabled: boolean, options?: ExperienceWindowOptions) => Promise<boolean>
     publishSession: (session: DesktopLyricsSession) => void
     publishClock: (clock: DesktopLyricsClockSnapshot) => void
     onEnabledChanged: (cb: (enabled: boolean) => void) => () => void
@@ -800,7 +841,7 @@ interface WindowAPI {
     onHoverIntent: (cb: (pointerInside: boolean) => void) => () => void
   }
   miniPlayer: {
-    open: () => Promise<MiniPlayerSettings>
+    open: (options?: ExperienceWindowOptions) => Promise<MiniPlayerSettings>
     getBootstrap: () => Promise<MiniPlayerBootstrap>
     command: (command: MiniPlayerCommand) => void
     updateSettings: (patch: MiniPlayerSettingsPatch) => Promise<MiniPlayerSettings>
@@ -810,6 +851,8 @@ interface WindowAPI {
     moveTo: (x: number, y: number) => void
     moveEnd: () => void
     publishState: (state: MiniPlayerStateSnapshot) => void
+    /** Island-only lyric channel; keeps lyric payloads out of the shared snapshot. */
+    publishLyrics: (payload: DynamicIslandLyricsPayload) => void
     onState: (cb: (state: MiniPlayerStateSnapshot) => void) => () => void
     onSettings: (cb: (settings: MiniPlayerSettings) => void) => () => void
     onMotionPreference: (cb: (preference: MotionPreference) => void) => () => void
@@ -822,6 +865,16 @@ interface WindowAPI {
     hide: () => void
     onState: (cb: (state: MiniPlayerStateSnapshot) => void) => () => void
     onMotionPreference: (cb: (preference: MotionPreference) => void) => () => void
+  }
+  dynamicIsland: {
+    getBootstrap: () => Promise<DynamicIslandBootstrap>
+    command: (command: MiniPlayerCommand) => void
+    getVisualizationData: (options?: VisualizationOptions) => Promise<VisualizationData>
+    setExpanded: (expanded: boolean) => Promise<boolean>
+    onState: (cb: (state: MiniPlayerStateSnapshot) => void) => () => void
+    onExpanded: (cb: (expanded: boolean) => void) => () => void
+    onConfig: (cb: (presentation: DynamicIslandPresentation) => void) => () => void
+    onLyrics: (cb: (payload: DynamicIslandLyricsPayload) => void) => () => void
   }
 }
 

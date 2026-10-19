@@ -484,6 +484,7 @@ if(TAE_BUILD_TESTS)
     tests/ffmpeg_decoder_tests.cpp
     tests/AudioFixtureLibrary.cpp
     decoder/FFmpegDecoder.cpp
+    core/DiagnosticLog.cpp
     core/AudioTypes.cpp
   )
   target_include_directories(twilight_ffmpeg_decoder_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -670,6 +671,23 @@ if(TAE_BUILD_TESTS)
     add_dependencies(twilight_asio_backend_tests twilight_asio_helper)
     add_test(NAME twilight_asio_backend_unit COMMAND twilight_asio_backend_tests)
     add_test(NAME twilight_asio_helper_selftest COMMAND twilight_asio_helper --self-test)
+
+    add_executable(twilight_asio_driver_compatibility_tests
+      tests/asio_driver_compatibility_tests.cpp
+      output/asio/AsioFormatSupport.cpp
+      output/asio/windows/AsioDriverSession.cpp
+      output/asio/windows/AsioControlThread.cpp
+      output/asio/windows/AsioCallbackRouter.cpp
+      output/asio/AsioHostQueries.cpp
+      output/asio/AsioHelperHost.cpp
+      output/asio/helper/AsioHelperProcess.cpp
+      core/AudioTypes.cpp
+    )
+    target_include_directories(twilight_asio_driver_compatibility_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_compile_definitions(twilight_asio_driver_compatibility_tests PRIVATE TAE_ENABLE_ASIO=1)
+    target_link_libraries(twilight_asio_driver_compatibility_tests PRIVATE ole32 uuid user32)
+    add_test(NAME twilight_asio_driver_compatibility_unit COMMAND twilight_asio_driver_compatibility_tests)
+    set_tests_properties(twilight_asio_driver_compatibility_unit PROPERTIES TIMEOUT 30)
 
     add_executable(twilight_asio_helper_fixture
       output/asio/helper/AsioHelperFixture.cpp
@@ -998,6 +1016,7 @@ if(TAE_BUILD_TESTS)
     twilight_platform_backend_smoke
     twilight_wasapi_format_negotiator_tests
     twilight_asio_backend_tests
+    twilight_asio_driver_compatibility_tests
     twilight_asio_helper
     twilight_asio_helper_process_tests
     twilight_asio_abi_checks

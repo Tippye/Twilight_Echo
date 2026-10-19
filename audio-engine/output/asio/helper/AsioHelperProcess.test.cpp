@@ -133,6 +133,84 @@ void testControlTimeout(const std::wstring& helperPath) {
   assert(waitUntil([&] { return !process.alive(); }, 2s));
 }
 
+void testNativeDsdQueuePreservesOrderWithoutParentWakeups(const std::wstring& helperPath) {
+  using namespace twilight::audio::asio_helper;
+  setMode(L"verify-dsd-queue");
+  AsioHelperProcess process(helperPath);
+  std::string error;
+  assert(process.launch(&error));
+  Response response;
+  assert(process.request(Command::Open, [](Request& request) {
+    copyText(request.deviceId, sizeof(request.deviceId), "asio:fixture");
+    auto config = openConfig();
+    config.format.sampleRate = 2822400;
+    config.format.bitDepth = 1;
+    config.format.sampleFormat = AudioSampleFormat::DsdInt8Msb1;
+    request.format = encodeAudioFormat(config.format);
+    request.bufferSizeFrames = 64;
+  }, &response, 2s, &error));
+  assert(process.request(Command::CreateBuffers, &response, 2s, &error));
+  auto* shared = process.shared();
+  assert(shared->renderQueueCapacity == kRenderQueueSlots);
+  assert(!queuedChannelBuffer(shared, 0, 2));
+  for (uint32_t sequence = 0; sequence < 8; ++sequence) {
+    auto& block = shared->renderQueueBlocks[sequence];
+    block.committedFrames = 8;
+    for (uint32_t channel = 0; channel < 2; ++channel) {
+      block.channelBytes[channel] = 8;
+      std::memset(queuedChannelBuffer(shared, sequence, channel), sequence + 1, 8);
+    }
+    MemoryBarrier();
+    exchangeAtomic(&shared->renderQueueWrite, sequence + 1);
+  }
+  assert(process.request(Command::Start, &response, 2s, &error));
+  // Intentionally do not drain callbacks or replenish the queue. Two driver
+  // buffers alone cannot sustain these eight distinct, ordered audio blocks.
+  assert(waitUntil([&] { return readAtomic(&shared->hostEventWriteSequence) >= 8; }, 2s));
+  assert(process.request(Command::Stop, &response, 2s, &error));
+  for (uint32_t sequence = 0; sequence < 8; ++sequence)
+    assert(readText(shared->hostEvents[sequence].message) == "dsd-queue-verified");
+  assert(readAtomic(&shared->renderQueueRead) == 8);
+  assert(process.request(Command::Close, &response, 2s, &error));
+  process.shutdown();
+}
+
+void testWireCapacityAndFloat64(const std::wstring& helperPath) {
+  using namespace twilight::audio::asio_helper;
+  for (const wchar_t* mode : {L"verify-float64", L"verify-bounds"}) {
+    setMode(mode);
+    AsioHelperProcess process(helperPath);
+    std::string error;
+    Response response;
+    assert(process.launch(&error));
+    assert(requestOpen(&process, &response, &error));
+    assert(process.request(Command::CreateBuffers, &response, 2s, &error));
+    assert(response.actualFormat.sampleRate == 48000 && response.latencyFrames == 77);
+    assert(readText(response.startupSummary) == "fixture post-create summary");
+    auto* shared = process.shared();
+    assert(readAtomic(&shared->activeRenderFrameCapacity) == 64);
+    auto& block = shared->buffers[0];
+    const bool wide = std::wstring(mode) == L"verify-float64";
+    block.committedFrames = wide ? 64 : 80;
+    for (long channel = 0; channel < 2; ++channel) {
+      auto* output = channelBuffer(shared, channel, 0);
+      if (wide) for (size_t i = 0; i < 64; ++i) {
+        const double sample = channel == 0 ? 0.25 : -0.5;
+        std::memcpy(output + i * 8, &sample, 8);
+      }
+      else std::memset(output, 0x5a, 320);
+      block.channelBytes[channel] = wide ? 512 : 320;
+    }
+    MemoryBarrier(); incrementAtomic(&block.generation);
+    assert(process.request(Command::Start, &response, 2s, &error));
+    assert(waitUntil([&] { return readAtomic(&shared->hostEventWriteSequence) > 0; }, 2s));
+    assert(readText(shared->hostEvents[0].message) == "wire-verified");
+    assert(shared->callbacks[0].driverTimestampNs > 0);
+    assert(process.request(Command::Stop, &response, 2s, &error));
+    process.shutdown();
+  }
+}
+
 void testAbnormalExit(const std::wstring& helperPath) {
   setMode(L"abnormal-exit");
   AsioHelperProcess process(helperPath);
@@ -301,6 +379,10 @@ void testCallbackBacklogDoesNotOverwritePendingGeneration(const std::wstring& he
   assert(waitUntil([&] { return callbackCount.load(std::memory_order_acquire) >= 1; }, 2s));
   std::this_thread::sleep_for(150ms);
   assert(callbackCount.load(std::memory_order_acquire) == 1);
+  const auto health = host.renderHealth();
+  assert(health.callbackCount == 3);
+  assert(health.underrunCount == 3);
+  assert(health.bufferDropCount == 2);
   host.close();
 }
 
@@ -472,7 +554,9 @@ int wmain(int argc, wchar_t* argv[]) {
   assert(argc == 3);
   testProtocolReasonCodes();
   testNormalRoundTrip(argv[1]);
+  testNativeDsdQueuePreservesOrderWithoutParentWakeups(argv[1]);
   testPcmBytesReachDriverAcrossReopen(argv[1]);
+  testWireCapacityAndFloat64(argv[1]);
   testControlTimeout(argv[1]);
   testAbnormalExit(argv[1]);
   testExternalKill(argv[1]);

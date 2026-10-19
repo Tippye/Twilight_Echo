@@ -1,9 +1,9 @@
 :root {
-  --te-bohr-light: rgb(255 255 255 / 58%);
-  --te-bohr-shoulder: rgb(255 255 255 / 18%);
-  --te-bohr-edge: rgb(18 24 32 / 22%);
-  --te-bohr-contact: 0 2px 5px rgb(18 24 32 / 10%);
-  --te-bohr-elevation: 0 12px 32px rgb(18 24 32 / 14%);
+  --te-chrome-frosted-solid: rgb(250 251 253);
+  --te-chrome-frosted-surface: rgb(250 251 253 / 80%);
+  --te-chrome-shadow-color: #121820;
+  --te-volume-popover-surface: #202328;
+  --te-volume-popover-text: #f5f5f7;
   --te-titlebar-height: 40px;
   --te-titlebar-inset: 40px;
   --te-transport-play-text: var(--te-shell-control-text);
@@ -211,7 +211,7 @@
   --te-library-action-bg: rgba(37, 99, 235, 0.08);
   --te-library-action-radius: 12px;
   --te-playback-cover-size: 100%;
-  --te-artwork-list-radius: 12px;
+  --te-artwork-list-radius: 6px;
   --te-player-control-size: 32px;
   --te-player-play-size: 44px;
   --te-player-control-gap: 12px;
@@ -311,6 +311,7 @@
   /* Keep a fixed pointer target; only the painted thumb changes width. */
   width: 10px !important;
   height: 10px !important;
+  background: transparent !important;
 }
 
 :where(*)::-webkit-scrollbar-button {
@@ -320,8 +321,10 @@
 }
 
 :where(*)::-webkit-scrollbar-track,
+:where(*)::-webkit-scrollbar-track-piece,
 :where(*)::-webkit-scrollbar-corner {
-  background: transparent;
+  /* Paint only the thumb; the gutter must reveal the page material underneath. */
+  background: transparent !important;
 }
 
 :where(*)::-webkit-scrollbar-thumb {
@@ -409,10 +412,11 @@
    styles above remain for in-flow controls (onboarding stepper, mini player,
    login error recovery). */
 
-/* Shared back-to-top control. scrollToTopButton.ts keeps exactly one of these in
-   the document and anchors it to whichever container is scrolled, so `left`/`top`
+/* Shared floating scroll controls. scrollToTopButton.ts keeps one stack in the
+   document and anchors it to whichever container is scrolled, so `left`/`top`
    are written from script while everything else stays theme-owned here. */
-.te-scroll-top {
+.te-scroll-top,
+.te-scroll-locate {
   position: fixed;
   top: 0;
   left: 0;
@@ -442,19 +446,22 @@
     border-color var(--te-motion-hover) ease;
 }
 
-.te-scroll-top[data-te-scroll-top-visible='true'] {
+.te-scroll-top[data-te-scroll-top-visible='true'],
+.te-scroll-locate[data-te-scroll-locate-visible='true'] {
   opacity: 1;
   visibility: visible;
   transform: none;
   pointer-events: auto;
 }
 
-.te-scroll-top:hover {
+.te-scroll-top:hover,
+.te-scroll-locate:hover {
   border-color: color-mix(in srgb, var(--te-scroll-top-color) 26%, var(--te-scroll-top-border));
   background: var(--te-scroll-top-bg-hover);
 }
 
-.te-scroll-top:focus-visible {
+.te-scroll-top:focus-visible,
+.te-scroll-locate:focus-visible {
   outline: 2px solid var(--te-scroll-top-color);
   outline-offset: 2px;
 }
@@ -597,6 +604,9 @@ html[data-te-motion='off'] *::after {
 }
 
 :root[data-theme='dark'] {
+  --te-chrome-frosted-solid: rgb(16 17 19);
+  --te-chrome-frosted-surface: rgb(16 17 19 / 72%);
+  --te-chrome-shadow-color: #000000;
   color-scheme: dark;
   --te-primary-500: #f59e0b;
   --te-primary-400: #fbbf24;
@@ -1097,15 +1107,10 @@ html[data-theme='pureWhite'] .title-bar.title-bar-streaming {
   box-shadow: none;
 }
 
-/* Settings is an independent, opaque page surface; do not inherit the
-   transparent title chrome used by the home page. */
+/* The full-window settings overlay owns the opaque wallpaper. Caption chrome
+   samples that single painter instead of covering it with a second image. */
 html[data-theme='pureWhite'] .title-bar.title-bar-settings {
-  background-color: var(--te-settings-backplate, #f5f6f8) !important;
-  background-image:
-    var(--te-settings-bg-image, none), linear-gradient(var(--te-settings-bg), var(--te-settings-bg)) !important;
-  background-position: center, center;
-  background-size: cover, cover;
-  background-repeat: no-repeat, no-repeat;
+  background: transparent !important;
 }
 
 html[data-theme='pureWhite'] .title-bar.title-bar-settings::before {
@@ -1140,20 +1145,16 @@ html[data-theme='pureWhite'] .title-bar.title-bar-glass {
   box-shadow: none;
 }
 
-html[data-theme='pureWhite'] .title-bar:not(.title-bar-glass) .menu-btn:hover,
-html[data-theme='pureWhite'] .title-bar:not(.title-bar-glass) .settings-btn:hover,
-html[data-theme='pureWhite'] .title-bar:not(.title-bar-glass) .login-btn:hover,
-html[data-theme='pureWhite'] .title-bar:not(.title-bar-glass) .control-btn:hover {
+html[data-theme='pureWhite']
+  .title-bar:not(.title-bar-glass)
+  .control-btn:not(.notification-btn):hover {
   background: rgba(37, 99, 235, 0.08);
 }
 
-html[data-theme='pureWhite'] .side-menu {
+html[data-theme='pureWhite'] .side-menu:not(.side-menu-liquid) {
   border-right-color: rgba(17, 24, 39, 0.06);
-  /* Only the bottom-most global background renders; no separate surface. The
-     base frosted blur stays on so a custom wallpaper's page/body scale seam
-     never shows through the split. */
-  background: transparent;
-  box-shadow: 8px 0 24px rgba(15, 23, 42, 0.04);
+  background: var(--te-chrome-navigation-surface, transparent);
+  box-shadow: var(--te-chrome-navigation-elevation);
 }
 
 html[data-theme='pureWhite'] .menu-item:hover,
@@ -1381,38 +1382,15 @@ html[data-theme='pureWhite'] .playing-music .backdrop-accent {
   opacity: 0.72;
 }
 
-html[data-theme='pureWhite'] .playing-music .track-title,
-html[data-theme='pureWhite'] .playing-music .lyric-row.active {
-  color: rgba(255, 255, 255, 0.96);
-}
-
-html[data-theme='pureWhite'] .playing-music .track-artist,
-html[data-theme='pureWhite'] .playing-music .lyric-row:hover {
-  color: rgba(255, 255, 255, 0.78);
-}
-
-html[data-theme='pureWhite'] .playing-music .track-album,
-html[data-theme='pureWhite'] .playing-music .lyric-row {
-  color: rgba(255, 255, 255, 0.42);
-}
-
 html[data-theme='pureWhite'] .playing-music .lyrics-column {
   border-left-color: rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme='pureWhite'] .playing-music .time-chip,
 html[data-theme='pureWhite'] .playing-music .lyric-row.active {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
-}
-
-html[data-theme='pureWhite'] .playing-music .lyric-translation {
-  color: rgba(255, 255, 255, 0.56);
-}
-
-html[data-theme='pureWhite'] .playing-music .lyric-row.active .lyric-translation {
-  color: rgba(255, 255, 255, 0.78);
+  border-color: var(--te-playback-control-border, rgba(255, 255, 255, 0.12));
+  background: var(--te-playback-control-surface, rgba(255, 255, 255, 0.08));
+  box-shadow: var(--te-playback-control-hover-shadow, 0 14px 32px rgba(0, 0, 0, 0.2));
 }
 
 html[data-theme='pureWhite'] .playing-music .cover-frame {
@@ -1424,7 +1402,7 @@ html[data-theme='pureWhite'] .playing-music .cover-placeholder {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)),
     color-mix(in srgb, var(--accent-color) 20%, transparent);
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--te-playback-cover-placeholder-text, rgba(255, 255, 255, 0.38));
 }
 
 html[data-theme='dark'],
@@ -1505,10 +1483,10 @@ html[data-theme='dark'] .control-btn:hover {
   background: var(--te-active-bg);
 }
 
-html[data-theme='dark'] .side-menu {
+html[data-theme='dark'] .side-menu:not(.side-menu-liquid) {
   border-right-color: transparent;
-  background: transparent;
-  box-shadow: none;
+  background: var(--te-chrome-navigation-surface, transparent);
+  box-shadow: var(--te-chrome-navigation-elevation);
 }
 
 html[data-theme='dark'] .streaming-sidebar {
@@ -1620,9 +1598,9 @@ html[data-theme='dark'] .song-list-title,
 html[data-theme='dark'] .artist-name,
 html[data-theme='dark'] .album-name,
 html[data-theme='dark'] .playlist-name,
-html[data-theme='dark'] .track-title,
+html[data-theme='dark'] .track-title:where(:not(.playing-music *)),
 html[data-theme='dark'] .playlist-title,
-html[data-theme='dark'] .player-title,
+html[data-theme='dark'] .player-title:where(:not(.player-bar-glass *)),
 html[data-theme='dark'] .placeholder-title,
 html[data-theme='dark'] .playlist-grid-name {
   color: rgba(248, 250, 252, 0.95);
@@ -1631,8 +1609,8 @@ html[data-theme='dark'] .playlist-grid-name {
 html[data-theme='dark'] .artist-count,
 html[data-theme='dark'] .album-count,
 html[data-theme='dark'] .playlist-count,
-html[data-theme='dark'] .track-artist,
-html[data-theme='dark'] .player-artist,
+html[data-theme='dark'] .track-artist:where(:not(.playing-music *)),
+html[data-theme='dark'] .player-artist:where(:not(.player-bar-glass *)),
 html[data-theme='dark'] .empty-text,
 html[data-theme='dark'] .empty-hint,
 html[data-theme='dark'] .placeholder-hint,
@@ -1830,7 +1808,7 @@ html[data-theme='dark'] .playlist-artist,
 html[data-theme='dark'] .more-action-desc,
 html[data-theme='dark'] .more-item-desc,
 html[data-theme='dark'] .volume-drawer-val,
-html[data-theme='dark'] .time-label {
+html[data-theme='dark'] .time-label:where(:not(.player-bar-glass *)) {
   color: rgba(148, 163, 184, 0.76);
 }
 
@@ -1855,16 +1833,16 @@ html[data-theme='dark'] .audio-device-mini-select {
   color: rgba(203, 213, 225, 0.88);
 }
 
-html[data-theme='dark'] .ctrl-btn:not(.btn-play),
-html[data-theme='dark'] .icon-btn,
-html[data-theme='dark'] .mode-btn-right {
+html[data-theme='dark'] .ctrl-btn:not(.btn-play):where(:not(.player-bar-glass *)),
+html[data-theme='dark'] .icon-btn:where(:not(.player-bar-glass *)),
+html[data-theme='dark'] .mode-btn-right:where(:not(.player-bar-glass *)) {
   color: rgba(203, 213, 225, 0.82);
 }
 
-html[data-theme='dark'] .ctrl-btn:not(.btn-play):hover,
-html[data-theme='dark'] .icon-btn:hover,
-html[data-theme='dark'] .icon-btn.active,
-html[data-theme='dark'] .mode-btn-right:hover {
+html[data-theme='dark'] .ctrl-btn:not(.btn-play):hover:where(:not(.player-bar-glass *)),
+html[data-theme='dark'] .icon-btn:hover:where(:not(.player-bar-glass *)),
+html[data-theme='dark'] .icon-btn.active:where(:not(.player-bar-glass *)),
+html[data-theme='dark'] .mode-btn-right:hover:where(:not(.player-bar-glass *)) {
   background: rgba(255, 255, 255, 0.075);
   color: rgba(248, 250, 252, 0.94);
 }
@@ -1877,13 +1855,13 @@ html[data-theme='dark'] .player-bar:not(.player-bar-glass) .mode-btn-right img {
 
 /* Pressed and toggled-on playbar controls must stay visible on the dark bar:
    the old 7.5% white wash made active/pressed buttons melt into the surface. */
-html[data-theme='dark'] .ctrl-btn:not(.btn-play):active,
-html[data-theme='dark'] .icon-btn:active,
-html[data-theme='dark'] .mode-btn-right:active {
+html[data-theme='dark'] .ctrl-btn:not(.btn-play):active:where(:not(.player-bar-glass *)),
+html[data-theme='dark'] .icon-btn:active:where(:not(.player-bar-glass *)),
+html[data-theme='dark'] .mode-btn-right:active:where(:not(.player-bar-glass *)) {
   background: rgba(255, 255, 255, 0.18);
 }
 
-html[data-theme='dark'] .icon-btn.active {
+html[data-theme='dark'] .icon-btn.active:where(:not(.player-bar-glass *)) {
   background: rgba(255, 255, 255, 0.18);
   color: rgba(248, 250, 252, 0.96);
 }
@@ -2020,7 +1998,6 @@ html[data-theme='dark'] .section-heading p {
 }
 
 html[data-theme='dark'] .streaming-search-box,
-html[data-theme='dark'] .btn-back,
 html[data-theme='dark'] .streaming-round-btn,
 html[data-theme='dark'] .streaming-avatar-btn,
 html[data-theme='dark'] .search-tab-pill,
@@ -3308,536 +3285,7 @@ html[data-te-effects-mode='reduced'][data-te-background-treatment='image'] body:
   filter: none !important;
 }
 
-/* ===== Liquid glass material =====
-   Switchable alternative to the standard card/playbar surface, selected by
-   settings.surfaceMaterial and applied through the theme runtime as
-   data-te-surface-material. Tuning lives in --te-lg-* (written by the theme
-   runtime) and --te-lg-angle (written by the pointer tracker).
-
-   Structure: the refracting layer is the card's ::after, carrying backdrop-filter
-   plus a CSS sheen stack. The SVG displacement chain was removed from cards (it
-   now only serves the playbar): Chromium hostile-interacts `filter: url()` with
-   backdrop-filter on the same element — it can abandon the backdrop pass and even
-   paint an unfiltered grey slab — and the feDisplacementMap chain costs one full
-   filter pass per card per frame. At z-index -1 inside an isolated stacking
-   context the layer paints above the card's own background but below all in-flow
-   content, which keeps content sharp without editing any of the card components.
-
-   ::before is deliberately untouched — five of these classes already use it for
-   hover glows and layers. */
-
-html[data-te-liquid-glass-coverage='expanded']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  ) {
-  /* Shared optical palette. The playbar uses these same roles, so cards feel
-     like material cut from the same sheet instead of separate opaque UI blocks. */
-  --te-lg-sheen-rgb: 255, 255, 255;
-  --te-lg-surface-rgb: 255, 255, 255;
-  --te-lg-shade-rgb: 15, 23, 42;
-  --te-lg-drop-rgb: 15, 23, 42;
-  /* Cards should feel like a thin optical sheet. Keep the visibly brighter,
-     more pronounced profile reserved for the compact playbar; broad content
-     surfaces become plastic as soon as their white wash and cast shadow stack. */
-  --te-lg-rim-strength: 0.44;
-  --te-lg-top-wash-alpha: 0.055;
-  --te-lg-bottom-density-alpha: 0.062;
-  --te-lg-shade-alpha: 0.062;
-  --te-lg-drop-near-alpha: 0.026;
-  --te-lg-drop-alpha: 0.072;
-  /* Respect the user's tint slider but keep large panes optically open. */
-  --te-lg-tint-scale: 0.72;
-  position: relative;
-  /* Contains the negative-z warp layer so it cannot slip behind an ancestor. */
-  isolation: isolate;
-  background: transparent !important;
-  /* The rim is crisp and the depth is diffused, rather than one dark, hard card
-     shadow. That is what keeps the surface reading as glass instead of plastic. */
-  border-color: transparent !important;
-  box-shadow:
-    /* Two sub-pixel inner edges give the surface its sharp glass boundary without
-       becoming the thick white outline associated with frosted plastic. */
-    inset 0 0 0 0.5px
-      rgba(
-        var(--te-lg-sheen-rgb),
-        calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.54)
-      ),
-    inset 0 1px 0.5px
-      rgba(
-        var(--te-lg-sheen-rgb),
-        calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.2)
-      ),
-    inset 0 -1px 1px rgba(var(--te-lg-shade-rgb), var(--te-lg-shade-alpha)),
-    0 2px 7px rgba(var(--te-lg-drop-rgb), var(--te-lg-drop-near-alpha)),
-    0 13px 32px rgba(var(--te-lg-drop-rgb), var(--te-lg-drop-alpha)) !important;
-}
-
-html[data-te-liquid-glass-coverage='expanded']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  border-radius: inherit;
-  /* Elasticity lets the glass reach toward the cursor; 0 keeps it pinned. */
-  transform: translate(var(--te-lg-elastic-x, 0px), var(--te-lg-elastic-y, 0px));
-  /* A real glass surface needs more than a translucent flat colour: the rim light
-     traces the shape, the pointer places a soft specular bloom, the sweep gives it
-     direction, then top/bottom density layers make the light feel enclosed. */
-  background:
-    /* Shape-aware rim light: a bright bevel along the light side, a faint
-       counter-shade opposite, and nothing through the middle so the center stays
-       clear. This is what makes the highlight read as following the surface. */
-    linear-gradient(
-      var(--te-lg-angle, 135deg),
-      rgba(
-          var(--te-lg-sheen-rgb),
-          calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.4)
-        )
-        0%,
-      transparent 12%,
-      transparent 88%,
-      rgba(
-          var(--te-lg-shade-rgb),
-          calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.16)
-        )
-        100%
-    ),
-    /* A small, directional highlight is enough to communicate curvature. The old
-       full-card bloom made large settings panes read as white molded plastic. */
-    radial-gradient(
-        112% 126% at var(--te-lg-light-x, 50%) var(--te-lg-light-y, 42%),
-        rgba(
-            var(--te-lg-sheen-rgb),
-            calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.17)
-          )
-          0%,
-        rgba(
-            var(--te-lg-sheen-rgb),
-            calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.055)
-          )
-          21%,
-        transparent 55%
-      ),
-    linear-gradient(
-      var(--te-lg-angle, 135deg),
-      rgba(var(--te-lg-sheen-rgb), 0) 0%,
-      rgba(
-          var(--te-lg-sheen-rgb),
-          calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.08)
-        )
-        35%,
-      rgba(
-          var(--te-lg-sheen-rgb),
-          calc(var(--te-lg-expanded-specular, var(--te-lg-rim-strength)) * 0.022)
-        )
-        62%,
-      transparent 100%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(var(--te-lg-sheen-rgb), var(--te-lg-top-wash-alpha)) 0%,
-      rgba(var(--te-lg-sheen-rgb), calc(var(--te-lg-top-wash-alpha) * 0.25)) 30%,
-      transparent 55%,
-      rgba(var(--te-lg-shade-rgb), var(--te-lg-bottom-density-alpha)) 100%
-    ),
-    rgba(var(--te-lg-surface-rgb), calc(var(--te-lg-tint, 0.12) * var(--te-lg-tint-scale, 1)));
-  backdrop-filter: blur(var(--te-lg-expanded-blur, 16px))
-    saturate(var(--te-lg-expanded-saturate, 150%));
-  -webkit-backdrop-filter: blur(var(--te-lg-expanded-blur, 16px))
-    saturate(var(--te-lg-expanded-saturate, 150%));
-  opacity: 1;
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
-}
-
-/* A flat colour has no pixels for backdrop-filter to refract. Give those
-   surfaces a restrained, colour-preserving substrate so the material remains
-   visible without changing the image-backed recipe. */
-html[data-te-liquid-glass-source='solid'][data-te-liquid-glass-coverage='expanded']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--te-lg-context-rim) 18%, transparent),
-      transparent 48%,
-      color-mix(in srgb, var(--te-lg-context-label) 8%, transparent)
-    ),
-    var(--te-lg-context-material) !important;
-}
-
-/* Dark tone: the sheen stays light (it is a specular highlight) but the tint
-   darkens, otherwise a light film washes out dark surfaces. */
-html[data-te-liquid-glass-coverage='expanded'][data-theme='dark']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  ) {
-  --te-lg-surface-rgb: 116, 126, 148;
-  --te-lg-shade-rgb: 0, 0, 0;
-  --te-lg-drop-rgb: 0, 0, 0;
-  /* A broad dark pane must remain an optical layer, not become a raised
-     graphite slab. Dark tone leans on blur + saturation for legibility and
-     keeps the density/shade stack light so the backdrop shows through. */
-  --te-lg-rim-strength: 0.46;
-  --te-lg-top-wash-alpha: 0.04;
-  --te-lg-bottom-density-alpha: 0.09;
-  --te-lg-shade-alpha: 0.11;
-  --te-lg-drop-near-alpha: 0.06;
-  --te-lg-drop-alpha: 0.15;
-  --te-lg-tint-scale: 0.76;
-}
-/* The observer keeps a small warm-up margin around the viewport so this only
-   affects surfaces that cannot contribute to the current frame. */
-html[data-te-liquid-glass-coverage='expanded'] .te-liquid-glass-offscreen::after {
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* ===== Liquid glass degradation =====
-   Three existing contracts strip heavy effects. Each must also drop the SVG filter:
-   refraction without its blurred backdrop reads as a smeared artifact, not glass. */
-
-html[data-te-liquid-glass-coverage='expanded']
-  body.te-no-blur
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  filter: none !important;
-}
-
-html[data-te-liquid-glass-coverage='expanded'][data-te-effects-mode='reduced']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Reduced/disabled motion keeps the material but pins the light source; the pointer
-   tracker also detaches its listener, so the angle variable stops changing. */
-html[data-te-liquid-glass-coverage='expanded']:is(
-    [data-te-motion='reduced'],
-    [data-te-motion='off']
-  )
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  transition: none !important;
-}
-
-/* Transparent Linux windows cannot sample the desktop behind the window, so in-app
-   blur only re-blurs the app's own layers while forcing per-frame recomposition.
-   Mirrors the existing window-transparency carve-out. */
-html[data-te-liquid-glass-coverage='expanded'][data-window-transparent='on'][data-platform='linux']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Windows Acrylic already supplies the compositor blur behind the web contents.
-   Do not stack a second backdrop/filter pass on top of that native material. */
-html[data-te-liquid-glass-coverage='expanded'][data-window-transparent='on'][data-platform='win32']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* Expanded surfaces remain content-first: a registered glass card nested inside
-   another registered surface falls back to the parent's material instead of
-   stacking two blur snapshots. */
-html[data-te-liquid-glass-coverage='expanded']
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  content: none !important;
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-/* The observer keeps the expensive refraction budget bounded. Budgeted and
-   offscreen cards retain a translucent surface, but never create a filter pass. */
-html[data-te-liquid-glass-coverage='expanded']
-  :is(.te-liquid-glass-budget, .te-liquid-glass-offscreen)::after {
-  background: rgba(var(--te-lg-surface-rgb, 255, 255, 255), 0.16) !important;
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-html[data-te-liquid-glass-coverage='expanded']
-  body.te-no-blur
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  ) {
-  background: var(--te-card-bg, #ffffff) !important;
-  border: 1px solid var(--te-card-border, rgba(15, 23, 42, 0.16)) !important;
-  box-shadow: none !important;
-}
-
-html[data-te-liquid-glass-coverage='expanded']
-  body.te-no-blur
-  :is(
-    .artist-card,
-    .album-card,
-    .playlist-card,
-    .glass-card,
-    .signal-card,
-    .chart-card,
-    .profile-card,
-    .recent-card,
-    .ranking-card
-  )::after {
-  background: transparent !important;
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  html[data-te-liquid-glass-coverage='expanded']
-    :is(
-      .artist-card,
-      .album-card,
-      .playlist-card,
-      .glass-card,
-      .signal-card,
-      .chart-card,
-      .profile-card,
-      .recent-card,
-      .ranking-card
-    ) {
-    background: var(--te-card-bg, #ffffff) !important;
-    border: 1px solid var(--te-card-border, rgba(15, 23, 42, 0.16)) !important;
-    box-shadow: none !important;
-  }
-
-  html[data-te-liquid-glass-coverage='expanded']
-    :is(
-      .artist-card,
-      .album-card,
-      .playlist-card,
-      .glass-card,
-      .signal-card,
-      .chart-card,
-      .profile-card,
-      .recent-card,
-      .ranking-card
-    )::after {
-    background: transparent !important;
-    filter: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html[data-te-liquid-glass-coverage='expanded']
-    :is(
-      .artist-card,
-      .album-card,
-      .playlist-card,
-      .glass-card,
-      .signal-card,
-      .chart-card,
-      .profile-card,
-      .recent-card,
-      .ranking-card
-    )::after {
-    transition: opacity 120ms ease !important;
-    transform: none !important;
-  }
-
-  html[data-te-liquid-glass-coverage='expanded']
-    :is(
-      .artist-card,
-      .album-card,
-      .playlist-card,
-      .glass-card,
-      .signal-card,
-      .chart-card,
-      .profile-card,
-      .recent-card,
-      .ranking-card
-    ) {
-    transition: none !important;
-  }
-}
-
-@media (prefers-contrast: more), (forced-colors: active) {
-  html[data-te-liquid-glass-coverage='expanded']
-    :is(
-      .artist-card,
-      .album-card,
-      .playlist-card,
-      .glass-card,
-      .signal-card,
-      .chart-card,
-      .profile-card,
-      .recent-card,
-      .ranking-card
-    ) {
-    background: Canvas !important;
-    color: CanvasText !important;
-    border: 1px solid CanvasText !important;
-    box-shadow: none !important;
-  }
-
-  html[data-te-liquid-glass-coverage='expanded']
-    :is(
-      .artist-card,
-      .album-card,
-      .playlist-card,
-      .glass-card,
-      .signal-card,
-      .chart-card,
-      .profile-card,
-      .recent-card,
-      .ranking-card
-    )::after {
-    content: none !important;
-    filter: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-}
-
-.detail-back-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex-shrink: 0;
-  min-height: 36px;
-  padding: 0 16px;
-  border: 1px solid var(--te-card-border);
-  border-radius: 999px;
-  background: var(--te-card-bg);
-  color: var(--te-chrome-text);
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
-.detail-back-button:hover {
-  background: var(--te-hover-bg);
-}
-.detail-back-button:focus-visible {
-  outline: 2px solid var(--te-primary-500);
-  outline-offset: 3px;
-}
+/* Content cards use their standard theme surfaces; no optical overlay. */
 
 .metadata-link {
   display: block;
@@ -3863,13 +3311,4 @@ html[data-te-liquid-glass-coverage='expanded']
 
 :root {
   --te-page-gutter: clamp(16px, 3vw, 32px);
-}
-
-/* Bohr material uses the same foundation colors at every surface. */
-html[data-theme='dark'] {
-  --te-bohr-light: rgb(255 255 255 / 28%);
-  --te-bohr-shoulder: rgb(255 255 255 / 7%);
-  --te-bohr-edge: rgb(0 0 0 / 52%);
-  --te-bohr-contact: 0 2px 5px rgb(0 0 0 / 30%);
-  --te-bohr-elevation: 0 12px 32px rgb(0 0 0 / 36%);
 }

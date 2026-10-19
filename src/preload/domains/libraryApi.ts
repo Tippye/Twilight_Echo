@@ -4,6 +4,8 @@ import type {
   DuplicateDetectionReadApi,
   DuplicateDetectionResult,
   LibraryChange,
+  LocalLibraryClearExclusionsRequest,
+  LocalLibraryClearExclusionsResult,
   LocalLibraryRemoveRequest,
   LocalLibraryRemoveResult,
   LocalLibraryResetResult,
@@ -28,6 +30,10 @@ export const libraryAndFileSystemApi = {
   library: {
     removeTracks: (request: LocalLibraryRemoveRequest): Promise<LocalLibraryRemoveResult> =>
       ipcRenderer.invoke(IPC.library.removeTracks, request),
+    clearExclusions: (
+      request: LocalLibraryClearExclusionsRequest
+    ): Promise<LocalLibraryClearExclusionsResult> =>
+      ipcRenderer.invoke(IPC.library.clearExclusions, request),
     restoreExclusions: (request: LocalLibraryRestoreRequest): Promise<LocalLibraryRestoreResult> =>
       ipcRenderer.invoke(IPC.library.restoreExclusions, request),
     reset: (): Promise<LocalLibraryResetResult> => ipcRenderer.invoke(IPC.library.reset),

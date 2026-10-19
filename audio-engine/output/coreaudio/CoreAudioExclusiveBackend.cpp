@@ -155,8 +155,8 @@ struct CoreAudioExclusiveBackend::Impl {
       }
     };
 
-    TypedRenderCallback typedCb;
-    RenderCallback floatCb;
+    const TypedRenderCallback* typedCb = nullptr;
+    const RenderCallback* floatCb = nullptr;
     AudioFormat format;
     {
       std::unique_lock lock(mutex, std::try_to_lock);
@@ -164,15 +164,14 @@ struct CoreAudioExclusiveBackend::Impl {
         fillOutputSilence();
         return 0;
       }
-      typedCb = typedCallback;
-      floatCb = callback;
+      typedCb = &typedCallback;
+      floatCb = &callback;
       format = outputFormat;
     }
 
     const int channels = std::max(1, format.channelCount);
     const size_t frames = static_cast<size_t>(frameCount);
     const size_t bytesPerFrame = audioFormatBytesPerFrame(format);
-    const size_t byteCount = frames * bytesPerFrame;
 
     if (ioData->bufferCount() == 1 && ioData->bufferAt(0).hasData()) {
       auto& buffer = ioData->bufferAt(0);
@@ -181,17 +180,18 @@ struct CoreAudioExclusiveBackend::Impl {
       const size_t writableByteCount = writableFrames * bytesPerFrame;
 
       size_t rendered = 0;
-      if (typedCb) {
-        rendered = coreaudio::renderTypedCallbackWithTailSilence(buffer.writableData(), writableFrames, format, typedCb);
+      if (*typedCb) {
+        rendered = coreaudio::renderTypedCallbackWithTailSilence(buffer.writableData(), writableFrames, format, *typedCb);
       }
-      if ((!typedCb || rendered == 0) && floatCb) {
+      if ((!*typedCb || rendered == 0) && *floatCb) {
         const size_t scratchFrames = std::min(writableFrames, floatScratch.size() / static_cast<size_t>(channels));
-        rendered = coreaudio::renderFloatCallbackWithTailSilence(floatScratch.data(), scratchFrames, channels, floatCb);
-        std::memcpy(
-            buffer.writableData(),
-            floatScratch.data(),
-            std::min(floatScratch.size() * sizeof(float), writableByteCount));
-      } else if (!typedCb && !floatCb) {
+        rendered = coreaudio::renderFloatCallbackWithTailSilence(floatScratch.data(), scratchFrames, channels, *floatCb);
+        const size_t copiedBytes = scratchFrames * bytesPerFrame;
+        std::memcpy(buffer.writableData(), floatScratch.data(), copiedBytes);
+        if (copiedBytes < writableByteCount) {
+          std::memset(buffer.writableData() + copiedBytes, 0, writableByteCount - copiedBytes);
+        }
+      } else if (!*typedCb && !*floatCb) {
         std::memset(buffer.writableData(), 0, writableByteCount);
       }
 
@@ -216,10 +216,14 @@ struct CoreAudioExclusiveBackend::Impl {
     }
 
     const size_t scratchFrames = std::min(frames, floatScratch.size() / static_cast<size_t>(channels));
-    size_t rendered = scratchFrames;
-    if (floatCb) {
-      rendered = coreaudio::renderFloatCallbackWithTailSilence(floatScratch.data(), scratchFrames, channels, floatCb);
-    } else {
+    size_t rendered = 0;
+    if (*typedCb) {
+      rendered = coreaudio::renderTypedCallbackWithTailSilence(
+          reinterpret_cast<uint8_t*>(floatScratch.data()), scratchFrames, format, *typedCb);
+    }
+    if ((!*typedCb || rendered == 0) && *floatCb) {
+      rendered = coreaudio::renderFloatCallbackWithTailSilence(floatScratch.data(), scratchFrames, channels, *floatCb);
+    } else if (!*typedCb && !*floatCb) {
       std::fill(floatScratch.begin(), floatScratch.end(), 0.0f);
     }
     if (rendered < frames || scratchFrames < frames) {
@@ -239,18 +243,7 @@ struct CoreAudioExclusiveBackend::Impl {
       }
     }
 
-    const size_t floatBytes = std::min(floatScratch.size() * sizeof(float), byteCount);
-    if (!typedScratch.empty()) {
-      std::fill(typedScratch.begin(), typedScratch.end(), 0);
-    }
-    for (size_t index = 0; index < ioData->bufferCount(); ++index) {
-      auto& buffer = ioData->bufferAt(index);
-      if (buffer.hasData()) {
-        const size_t bytes = std::min({buffer.byteSize(), floatBytes, byteCount});
-        std::memcpy(buffer.writableData(), floatScratch.data(), bytes);
-        buffer.dataByteSize = static_cast<uint32_t>(bytes);
-      }
-    }
+    coreaudio::scatterFloatOutput(floatScratch.data(), scratchFrames, channels, *ioData);
     return rendered;
   }
 };
@@ -292,7 +285,9 @@ bool CoreAudioExclusiveBackend::open(const std::string& deviceId, const AudioFor
   int32_t existingOwnerPid = -1;
   std::string ownerError;
   if (!impl_->host->hogModeOwnerPid(selectedDevice, &existingOwnerPid, &ownerError)) {
-    return impl_->fail(error, ownerError.empty() ? "无法读取 CoreAudio Hog Mode 现有拥有者" : ownerError);
+    impl_->recordFailure("hog_mode_failed", ownerError.empty() ? "无法读取 CoreAudio Hog Mode 现有拥有者" : ownerError, error);
+    impl_->deviceId = 0;
+    return false;
   }
   if (existingOwnerPid != -1) {
     const std::string reason = "device already hogged by pid " + std::to_string(existingOwnerPid);
@@ -333,6 +328,10 @@ bool CoreAudioExclusiveBackend::open(const std::string& deviceId, const AudioFor
   AudioFormat actualFormat = audioFormatFromStreamDescription(deviceFormat);
   if (actualFormat.sampleRate <= 0) actualFormat.sampleRate = sampleRateMatched ? requestedFormat.sampleRate : static_cast<int>(impl_->savedNominalSampleRate + 0.5);
   if (actualFormat.channelCount <= 0) actualFormat.channelCount = channels;
+
+  const double confirmedRate = impl_->host->getNominalSampleRate(selectedDevice);
+  if (confirmedRate > 0.0) actualFormat.sampleRate = static_cast<int>(confirmedRate + 0.5);
+  sampleRateMatched = std::abs(confirmedRate - requestedFormat.sampleRate) < 0.5;
 
   CoreAudioStreamBasicDescription inputFormat{};
   inputFormat.sampleRate = static_cast<double>(actualFormat.sampleRate);
@@ -384,6 +383,8 @@ bool CoreAudioExclusiveBackend::open(const std::string& deviceId, const AudioFor
   }
   impl_->listenerToken = token;
 
+  // The AudioUnit client is float32 even when the device virtual format is integer.
+  actualFormat = audioFormatFromStreamDescription(inputFormat);
   const bool formatMatched = sampleRateMatched &&
                              effectivePcmBitDepth(requestedFormat) == effectivePcmBitDepth(actualFormat) &&
                              requestedFormat.channelCount == actualFormat.channelCount &&
@@ -391,7 +392,10 @@ bool CoreAudioExclusiveBackend::open(const std::string& deviceId, const AudioFor
                               sampleFormatsSameIntegerPayload(
                                   requestedFormat.sampleFormat,
                                   actualFormat.sampleFormat));
-  const bool supportsPerfect = impl_->hogAcquired && sampleRateMatched;
+  const AudioFormat deviceClientFormat = audioFormatFromStreamDescription(deviceFormat);
+  const bool supportsPerfect = impl_->hogAcquired && sampleRateMatched &&
+      deviceClientFormat.sampleFormat == actualFormat.sampleFormat &&
+      effectivePcmBitDepth(deviceClientFormat) == effectivePcmBitDepth(actualFormat);
 
   const uint32_t bufferFrames =
       resolvedCoreAudioBufferFrames(*impl_->host, selectedDevice, impl_->outputConfig.preferredBufferSize);
@@ -451,21 +455,15 @@ bool CoreAudioExclusiveBackend::open(const std::string& deviceId, const AudioFor
     impl_->outputInfo.capabilityReason = impl_->outputInfo.perfectReason;
   } else {
     impl_->outputInfo.perfectReasonCode = "pcm_converted";
-    impl_->outputInfo.perfectReason = exclusiveReason(requestedFormat, impl_->outputFormat, true, true);
+    impl_->outputInfo.perfectReason = !supportsPerfect
+        ? "CoreAudio Hog Mode 已取得；AudioUnit float32 与设备格式之间存在转换"
+        : exclusiveReason(requestedFormat, impl_->outputFormat, true, true);
     impl_->outputInfo.capabilityReason = impl_->outputInfo.perfectReason;
   }
 
-  if (isDopCarrierFormat(requestedFormat)) {
-    impl_->dopRuntimeFacts.state = DopRuntimeFactState::Candidate;
-    impl_->dopRuntimeFacts.candidateFormat = requestedFormat;
-    impl_->dopRuntimeFacts.actualFormat = isDopCarrierFormat(impl_->outputFormat) ? impl_->outputFormat : AudioFormat{};
-    impl_->dopRuntimeFacts.reason = "CoreAudio exclusive Hog Mode path; DoP candidate pending runtime verification";
-  } else {
-    impl_->dopRuntimeFacts = unprovenCoreAudioDopRuntimeFacts(
-        requestedFormat,
-        impl_->outputFormat,
-        "CoreAudio exclusive path cannot prove DoP passthrough for non-DoP request");
-  }
+  impl_->dopRuntimeFacts = unprovenCoreAudioDopRuntimeFacts(
+      requestedFormat, impl_->outputFormat,
+      "CoreAudio HAL AudioUnit float32 client cannot carry integer DoP markers");
 
   return true;
 }

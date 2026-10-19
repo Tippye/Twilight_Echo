@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import SettingsGroup from './SettingsGroup.vue'
+import AfterglowSettingsSection from './AfterglowSettingsSection.vue'
 import BackupAndResetSettingsSection from './BackupAndResetSettingsSection.vue'
+import DiagnosticsSettingsSection from './DiagnosticsSettingsSection.vue'
+import PluginSettingsFormView from './PluginSettingsFormView.vue'
 import type { UiContribution } from '../../extensions/registry'
 import type { BooleanSettingKey, PluginSettingsForm, SettingsResetGroup } from './types.ts'
 const { settings } = useSettingsStore()
@@ -21,6 +24,7 @@ defineProps<{
   runPluginSettingsPanel: (panel: UiContribution) => void
   setPluginSettingsField: (panel: UiContribution, key: string, value: string) => void
   submitPluginSettingsForm: (panel: UiContribution) => void
+  resetPluginSettingsForm: (panel: UiContribution) => void
 }>()
 </script>
 <template>
@@ -55,8 +59,10 @@ defineProps<{
             @click="toggleSetting('hardwareAcceleration')"
           ></button>
         </div>
+        <AfterglowSettingsSection />
       </div>
     </div>
+    <DiagnosticsSettingsSection />
     <BackupAndResetSettingsSection
       @export-settings="exportSettingsBackup"
       @import-settings="importSettingsBackup"
@@ -116,66 +122,19 @@ defineProps<{
               }}
             </button>
           </div>
-          <div v-if="pluginSettingsForms[pluginPanelStateKey(panel)]" class="plugin-settings-form">
-            <p
-              v-if="pluginSettingsForms[pluginPanelStateKey(panel)]?.notice"
-              class="plugin-settings-notice"
-            >
-              {{ pluginSettingsForms[pluginPanelStateKey(panel)]?.notice }}
-            </p>
-            <label
-              v-for="field in pluginSettingsForms[pluginPanelStateKey(panel)]?.fields"
-              :key="field.key"
-              class="plugin-settings-field"
-            >
-              <span>{{ field.label }}<b v-if="field.required"> *</b></span>
-              <select
-                v-if="field.type === 'select'"
-                class="preview-select"
-                :value="pluginSettingsValues[pluginPanelStateKey(panel)]?.[field.key] ?? ''"
-                @change="
-                  setPluginSettingsField(
-                    panel,
-                    field.key,
-                    ($event.target as HTMLSelectElement).value
-                  )
-                "
-              >
-                <option v-for="option in field.options" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <input
-                v-else
-                class="preview-select"
-                :type="field.type"
-                :required="field.required"
-                :placeholder="field.placeholder"
-                :autocomplete="field.type === 'password' ? 'new-password' : 'off'"
-                :value="pluginSettingsValues[pluginPanelStateKey(panel)]?.[field.key] ?? ''"
-                @input="
-                  setPluginSettingsField(
-                    panel,
-                    field.key,
-                    ($event.target as HTMLInputElement).value
-                  )
-                "
-              />
-            </label>
-            <button
-              type="button"
-              class="soft-button plugin-settings-submit"
-              :disabled="Boolean(runningPluginSettingsCommand)"
-              @click="submitPluginSettingsForm(panel)"
-            >
-              {{
-                runningPluginSettingsCommand === pluginPanelStateKey(panel) ? '保存中…' : '保存设置'
-              }}
-            </button>
-          </div>
-        </template>
-      </div></SettingsGroup
-    >
+          <PluginSettingsFormView
+            v-if="pluginSettingsForms[pluginPanelStateKey(panel)]"
+            :form="pluginSettingsForms[pluginPanelStateKey(panel)]!"
+            :values="pluginSettingsValues[pluginPanelStateKey(panel)] ?? {}"
+            :id-prefix="pluginPanelStateKey(panel)"
+            :busy="Boolean(runningPluginSettingsCommand)"
+            :pending="runningPluginSettingsCommand === pluginPanelStateKey(panel)"
+            @update="(key, value) => setPluginSettingsField(panel, key, value)"
+            @submit="submitPluginSettingsForm(panel)"
+            @reset="resetPluginSettingsForm(panel)"
+          />
+        </template></div
+    ></SettingsGroup>
     <SettingsGroup
       id="developer-options"
       title="开发者选项"

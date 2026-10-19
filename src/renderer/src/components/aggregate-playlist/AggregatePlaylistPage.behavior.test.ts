@@ -122,6 +122,7 @@ function runtimeEntrySource(): string {
   return `import { createApp, h, nextTick, ref } from 'vue'
 import AggregatePlaylistPage from ${JSON.stringify(pagePath)}
 import { useMusicStore } from ${JSON.stringify(storePath)}
+import { goBack } from '@renderer/app/useBackStack.ts'
 
 function expect(condition, message) {
   if (!condition) throw new Error(message)
@@ -246,7 +247,8 @@ window.runAggregateRuntime = async () => {
   const pinnedSaved = window.__aggregateFixture.authoritative.find((item) => item.id === 'pl-pinned')
   expect(pinnedSaved && pinnedSaved.pinnedAt, '既有的置顶时间戳不应被这次写入抹掉')
 
-  await click(document.querySelector('.aggregate-detail-header .detail-back-button'), '返回歌单网格')
+  expect(goBack(), '标题栏应能返回聚合歌单网格')
+  await tick()
   expect(all('.aggregate-card:not(.aggregate-create-card)').length === 2, '返回应恢复聚合歌单网格')
   pageApp.unmount()
   const selectedId = ref(null)
@@ -260,7 +262,8 @@ window.runAggregateRuntime = async () => {
   controlledApp.mount(mount);await tick()
   await click(all('.aggregate-card:not(.aggregate-create-card)').find(node=>node.textContent.includes('跨源精选')), '打开受控歌单详情')
   expect(navigationCalls[0]==='pl-aggregate'&&document.querySelector('.aggregate-detail-header'), '歌单详情没有接入页面参数')
-  await click(document.querySelector('.aggregate-detail-header .detail-back-button'), '返回受控歌单目录')
+  expect(goBack(), '标题栏应能返回受控歌单目录')
+  await tick()
   expect(backCalls===1&&all('.aggregate-card:not(.aggregate-create-card)').length===2, '详情返回没有恢复应用导航目标')
   controlledApp.unmount()
   console.error('AGGREGATE_RUNTIME_OK')

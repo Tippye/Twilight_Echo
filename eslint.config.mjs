@@ -19,10 +19,12 @@ export default defineConfig(
       '**/build/**',
       '**/output/**',
       '**/outputs/**',
+      'work/**',
       '**/coverage/**',
       '**/.qoder/**',
       '**/audio-engine/build/**',
       '**/audio-engine/out/**',
+      'src/main/plugins/rhine-vendor/**',
       '**/packages/create-twilight-plugin/**/*.cjs'
     ]
   },

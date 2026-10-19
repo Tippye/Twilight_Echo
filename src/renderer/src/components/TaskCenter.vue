@@ -135,16 +135,32 @@ const visibleJobs = computed(() =>
       matches(j.state) &&
       (j.id === 'update' ||
         !terminal(j.state) ||
-        !notices.noticeHistory.value.some((n) => n.dedupeKey === 'task-result:' + j.id))
+        (!notices.noticeHistory.value.some((n) => n.dedupeKey === 'task-result:' + j.id) &&
+          !notices.clearedTaskResultKeys.value.has('task-result:' + j.id)))
   )
 )
 const visibleDownloads = computed(() =>
   downloads.tasks.value.filter(
     (t) =>
       matches(t.status) &&
-      (!terminal(t.status) || !notices.noticeHistory.value.some((n) => n.downloadTaskId === t.id))
+      (!terminal(t.status) ||
+        (!notices.noticeHistory.value.some((n) => n.downloadTaskId === t.id) &&
+          !notices.clearedTaskResultKeys.value.has('download-result:' + t.id)))
   )
 )
+function clearCompletedTasks(): void {
+  for (const job of jobs.value) {
+    if (job.id !== 'update' && terminal(job.state)) {
+      notices.clearedTaskResultKeys.value.add('task-result:' + job.id)
+    }
+  }
+  for (const task of downloads.tasks.value) {
+    if (terminal(task.status)) {
+      notices.clearedTaskResultKeys.value.add('download-result:' + task.id)
+    }
+  }
+}
+defineExpose({ clearCompletedTasks })
 watch(
   activeCount,
   (count) => {

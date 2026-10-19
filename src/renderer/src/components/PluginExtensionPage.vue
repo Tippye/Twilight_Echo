@@ -94,7 +94,10 @@ watch(
       <div v-if="loading" class="plugin-extension-loading">
         <i
           class="pi pi-spin pi-spinner"
-          style="font-size: calc(var(--te-font-size-body, 14px) * 32 / 14); color: #999"
+          style="
+            font-size: calc(var(--te-font-size-body, 14px) * 32 / 14);
+            color: var(--te-neutral-500);
+          "
         ></i>
         <p>正在加载...</p>
       </div>
@@ -103,7 +106,10 @@ watch(
       <div v-else-if="error" class="plugin-extension-error-state">
         <i
           class="pi pi-exclamation-triangle"
-          style="font-size: calc(var(--te-font-size-body, 14px) * 32 / 14); color: #e74c3c"
+          style="
+            font-size: calc(var(--te-font-size-body, 14px) * 32 / 14);
+            color: var(--te-danger-soft-fg);
+          "
         ></i>
         <p class="error-text">{{ error }}</p>
         <button class="plugin-extension-retry-btn" @click="runPageCommand">重试</button>
@@ -130,9 +136,14 @@ watch(
 
 <style scoped>
 .plugin-extension-page {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   min-height: 0;
-  padding: calc(32px + 46px) clamp(24px, 5vw, 76px) 120px;
+  padding: calc(32px + 46px) clamp(24px, 5vw, 76px)
+    max(120px, calc(var(--te-playbar-bottom-clearance, 0px) + 12px));
   background: var(--te-subtle-bg);
+  color: var(--te-neutral-900);
   min-width: 0;
 }
 
@@ -174,6 +185,7 @@ watch(
   color: var(--te-neutral-900);
   font-size: calc(var(--te-font-size-body, 14px) * 28 / 14);
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .plugin-extension-heading p {
@@ -181,6 +193,7 @@ watch(
   color: var(--te-neutral-600);
   font-size: calc(var(--te-font-size-body, 14px) * 13 / 14);
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .plugin-extension-action {
@@ -205,6 +218,8 @@ watch(
 }
 
 .plugin-extension-body {
+  flex: 1;
+  width: 100%;
   max-width: 960px;
   margin: 0 auto;
   overflow-y: auto;
@@ -224,31 +239,32 @@ watch(
 .plugin-extension-loading p,
 .plugin-extension-error-state p {
   margin: 0;
-  color: #666;
+  color: var(--te-neutral-600);
   font-size: calc(var(--te-font-size-body, 14px) * 14 / 14);
 }
 
 .error-text {
-  color: #e74c3c !important;
+  color: var(--te-danger-soft-fg) !important;
+  overflow-wrap: anywhere;
 }
 
 .plugin-extension-retry-btn {
   padding: 8px 20px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--te-card-border);
   border-radius: 8px;
   background: var(--te-card-bg);
-  color: #333;
+  color: var(--te-neutral-900);
   font-size: calc(var(--te-font-size-body, 14px) * 14 / 14);
   cursor: pointer;
 }
 
 .plugin-extension-retry-btn:hover {
-  background: #f5f5f5;
+  background: var(--te-subtle-bg);
 }
 
 .plugin-extension-text-result {
   padding: 18px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
+  border: 1px solid var(--te-card-border);
   border-radius: 8px;
   background: var(--te-card-bg);
   overflow-x: auto;
@@ -258,7 +274,7 @@ watch(
   margin: 0;
   font-size: calc(var(--te-font-size-body, 14px) * 13 / 14);
   line-height: 1.6;
-  color: #333;
+  color: var(--te-neutral-900);
   white-space: pre-wrap;
   word-break: break-all;
 }

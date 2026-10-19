@@ -78,6 +78,36 @@ test('clearing history preserves active notices and records subsequent changed i
   clearNotices()
 })
 
+test('clearing task history leaves tombstones until a fresh result arrives', () => {
+  clearNotices()
+  const store = useAppNoticeStore()
+  store.pushNotice({
+    message: '曲库扫描：已完成',
+    dedupeKey: 'task-result:scan',
+    presentation: 'center'
+  })
+  store.pushNotice({
+    message: '下载完成',
+    downloadTaskId: 'download-1',
+    presentation: 'center'
+  })
+
+  store.clearHistory()
+  assert.equal(store.noticeHistory.value.length, 0)
+  assert.equal(store.clearedTaskResultKeys.value.has('task-result:scan'), true)
+  assert.equal(store.clearedTaskResultKeys.value.has('download-result:download-1'), true)
+
+  store.pushNotice({
+    message: '曲库扫描：已完成',
+    dedupeKey: 'task-result:scan',
+    presentation: 'center',
+    fresh: true
+  })
+  assert.equal(store.clearedTaskResultKeys.value.has('task-result:scan'), false)
+  assert.equal(store.clearedTaskResultKeys.value.has('download-result:download-1'), true)
+  clearNotices()
+})
+
 test('history remains bounded while expired cards remain available to read', (t) => {
   clearNotices()
   t.mock.timers.enable({ apis: ['setTimeout'] })

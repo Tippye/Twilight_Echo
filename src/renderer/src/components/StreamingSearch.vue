@@ -184,13 +184,14 @@ function onTrackKeydown(event: KeyboardEvent, track: Track): void {
                 @contextmenu.prevent="emit('trackContextMenu', track, index, $event)"
               >
                 <td class="col-cover">
-                  <img v-if="track.cover" :src="track.cover" class="cover-img" alt="cover" />
-                  <div v-else class="cover-placeholder">
-                    <i
-                      class="pi pi-wave-pulse"
-                      style="font-size: calc(var(--te-font-size-body, 14px) * 18 / 14); color: #bbb"
-                    ></i>
-                  </div>
+                  <CoverImg
+                    :cover="track.cover"
+                    :cover-source="track.coverSource"
+                    :identity="track.id"
+                    class="cover-img"
+                    alt=""
+                    loading="lazy"
+                  />
                 </td>
                 <td class="col-index">
                   <span v-if="currentTrack?.id === track.id" class="playing-indicator">

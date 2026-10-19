@@ -73,9 +73,18 @@ export function extractAverageColor(imageSrc: string): Promise<string | null> {
         )
       } catch {
         resolve(null)
+      } finally {
+        img.onload = null
+        img.onerror = null
+        img.src = ''
       }
     }
-    img.onerror = () => resolve(null)
+    img.onerror = () => {
+      img.onload = null
+      img.onerror = null
+      img.src = ''
+      resolve(null)
+    }
     img.src = source
   })
 }
@@ -156,9 +165,18 @@ function readDominantColor(imageSrc: string): Promise<string> {
       } catch {
         // Tainted canvas / decode failure: keep the default accent color.
         resolve(DEFAULT_DOMINANT_COLOR)
+      } finally {
+        img.onload = null
+        img.onerror = null
+        img.src = ''
       }
     }
-    img.onerror = () => resolve(DEFAULT_DOMINANT_COLOR)
+    img.onerror = () => {
+      img.onload = null
+      img.onerror = null
+      img.src = ''
+      resolve(DEFAULT_DOMINANT_COLOR)
+    }
     img.src = imageSrc
   })
 }

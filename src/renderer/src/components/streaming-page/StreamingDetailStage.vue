@@ -8,13 +8,20 @@ import type {
   StreamingTrackSort,
   StreamingSortDirection
 } from '@renderer/components/streaming-page/streamingTrackView'
-import type { Track } from '../../types/music'
+import type { Track, TrackArtistRef } from '../../types/music'
 import {
   isTrackPlaybackSupported,
   UNSUPPORTED_TRACK_PLAYBACK_MESSAGE
 } from '../../utils/trackPlaybackSupport.ts'
 import CoverImg from '../CoverImg.vue'
+import ExplicitBadge from '../ExplicitBadge.vue'
 import { useProgressiveList } from './useProgressiveList.ts'
+import {
+  buildMediaPartRows,
+  MEDIA_PART_PAGE_SIZE,
+  type PartGroup,
+  type PartGroupState
+} from './mediaPartRows'
 
 export type DetailStageKind =
   | 'liked'
@@ -32,6 +39,7 @@ const props = withDefaults(
   defineProps<{
     kind: DetailStageKind
     title: string
+    isExplicit?: boolean
     cover?: string | null
     coverSource?: string | null
     description?: string
@@ -113,7 +121,7 @@ const emit = defineEmits<{
   'update:sort': [value: StreamingTrackSort]
   'update:direction': [value: StreamingSortDirection]
   refresh: []
-  openArtist: [track: Track]
+  openArtist: [track: Track, artist: TrackArtistRef]
   openAlbum: [track: Track]
   playAll: []
   shufflePlay: []
@@ -129,6 +137,14 @@ const emit = defineEmits<{
   loadMoreLiked: []
   trackContextMenu: [track: Track, index: number, event: MouseEvent]
 }>()
+
+function trackArtists(track: Track): TrackArtistRef[] {
+  if (track.artists?.length) return track.artists
+  return track.artist
+    .split(/\s+\/\s+/)
+    .map((name) => ({ name: name.trim() }))
+    .filter((artist) => artist.name)
+}
 
 const kindLabel = computed(() => {
   switch (props.kind) {
@@ -181,14 +197,54 @@ const emptyMessage = computed(() => {
   }
 })
 
+const partState = shallowRef<Record<string, PartGroupState>>({})
+const stageRef = shallowRef<HTMLElement | null>(null)
+const displayRows = computed(() =>
+  buildMediaPartRows(props.tracks, partState.value, !!props.query.trim())
+)
 const {
-  visibleItems: visibleTracks,
-  visibleStart,
+  visibleItems: visibleRows,
   paddingTop,
   totalHeight,
   listRef,
   scrollToIndex
-} = useProgressiveList(() => props.tracks)
+} = useProgressiveList(() => displayRows.value)
+
+async function toggleParts(group: PartGroup, expanded: boolean): Promise<void> {
+  partState.value = {
+    ...partState.value,
+    [group.id]: { expanded, page: partState.value[group.id]?.page ?? 0 }
+  }
+  if (!expanded) {
+    await revealPartHeader(group)
+  }
+}
+
+async function changePartPage(group: PartGroup, page: number): Promise<void> {
+  partState.value = { ...partState.value, [group.id]: { expanded: true, page } }
+  await revealPartHeader(group)
+}
+
+async function revealPartHeader(group: PartGroup): Promise<void> {
+  await nextTick()
+  // Keep the video's header visible when a page replaces twenty rows above the pager.
+  scrollToIndex(
+    displayRows.value.findIndex((row) => row.kind === 'group' && row.group.id === group.id)
+  )
+  await nextTick()
+  // Paging can unmount the focused footer in the virtual window. Return focus
+  // to the disclosure so keyboard users can continue into the new part list.
+  stageRef.value
+    ?.querySelector<HTMLButtonElement>(`[data-part-group="${CSS.escape(group.id)}"]`)
+    ?.focus({ preventScroll: true })
+}
+
+watch(
+  () => [props.kind, props.title, props.query, props.sort, props.direction],
+  () => {
+    partState.value = {}
+  }
+)
 
 watch(
   () => [props.query, props.sort, props.direction],
@@ -200,11 +256,26 @@ async function locateCurrentTrack(): Promise<void> {
   emit('update:query', '')
   await nextTick()
   const index = props.tracks.findIndex((track) => track.id === props.currentTrackId)
-  if (index >= 0) scrollToIndex(index)
-}
-
-function trackIndex(offset: number): number {
-  return visibleStart.value + offset
+  if (index < 0) return
+  const part = props.tracks[index].mediaPart
+  if (part && part.count > 1) {
+    const siblings = props.tracks.filter((track) => track.mediaPart?.groupId === part.groupId)
+    partState.value = {
+      ...partState.value,
+      [part.groupId]: {
+        expanded: true,
+        page: Math.floor(
+          siblings.findIndex((track) => track.id === props.currentTrackId) / MEDIA_PART_PAGE_SIZE
+        )
+      }
+    }
+    await nextTick()
+  }
+  scrollToIndex(
+    displayRows.value.findIndex(
+      (row) => row.kind === 'track' && row.track.id === props.currentTrackId
+    )
+  )
 }
 
 function onRowActivate(track: Track, index: number, event: MouseEvent): void {
@@ -256,7 +327,7 @@ const infoTrack = shallowRef<Track | null>(null)
       <TrackInfoDialog v-if="infoTrack" :track="infoTrack" @close="infoTrack = null" />
     </NativeDialogTransition>
   </Teleport>
-  <section class="detail-stage" :data-kind="kind">
+  <section ref="stageRef" class="detail-stage" :data-kind="kind">
     <header class="stage-hero">
       <div class="stage-cover-frame">
         <CoverImg
@@ -279,7 +350,10 @@ const infoTrack = shallowRef<Track | null>(null)
           <span v-if="trackCountLabel" class="stage-kicker-meta">{{ trackCountLabel }}</span>
         </div>
 
-        <h2 class="stage-title">{{ title }}</h2>
+        <div class="stage-title-row">
+          <h2 class="stage-title">{{ title }}</h2>
+          <ExplicitBadge v-if="kind === 'album' && isExplicit" />
+        </div>
 
         <p v-if="description" class="stage-desc">{{ description }}</p>
         <p v-if="intro" class="stage-intro">{{ intro }}</p>
@@ -447,117 +521,219 @@ const infoTrack = shallowRef<Track | null>(null)
       </div>
 
       <ul :ref="listRef" class="stage-rows" role="list" :style="{ height: `${totalHeight}px` }">
-        <li
-          v-for="(track, index) in visibleTracks"
-          :key="track.id"
-          class="stage-row"
-          data-te-interactive
-          :class="{
-            playing: currentTrackId === track.id,
-            'playback-unsupported': !isTrackPlaybackSupported(track),
-            selected: isSelected(track.id)
-          }"
-          :style="index === 0 ? { marginTop: `${paddingTop}px` } : undefined"
-          role="listitem"
-          :aria-disabled="!isTrackPlaybackSupported(track) || undefined"
-          :title="isTrackPlaybackSupported(track) ? undefined : UNSUPPORTED_TRACK_PLAYBACK_MESSAGE"
-          @click="onRowActivate(track, trackIndex(index), $event)"
-          @dblclick="onRowDblClick(track, trackIndex(index), $event)"
-          @contextmenu="onContextMenu(track, trackIndex(index), $event)"
-        >
-          <div class="col-index">
-            <button
-              v-if="currentTrackId === track.id"
-              type="button"
-              class="row-play-btn playing"
-              :disabled="!isTrackPlaybackSupported(track)"
-              title="正在播放"
-              @click="onPlayRow(track, trackIndex(index), $event)"
-            >
-              <span class="eq-bars" aria-hidden="true"> <i></i><i></i><i></i> </span>
-            </button>
-            <button
-              v-else
-              type="button"
-              class="row-play-btn"
-              :disabled="!isTrackPlaybackSupported(track)"
-              :aria-label="`播放 ${track.title}`"
-              @click="onPlayRow(track, trackIndex(index), $event)"
-            >
-              <span class="row-index-num">{{
-                String(trackIndex(index) + 1).padStart(2, '0')
-              }}</span>
-              <PlaybackIcon name="play" class="row-play-icon" />
-            </button>
-          </div>
-
-          <div class="col-title">
+        <template v-for="(row, index) in visibleRows" :key="row.key">
+          <li
+            v-if="row.kind === 'group'"
+            class="part-video-row"
+            :class="{ expanded: row.expanded }"
+            :style="index === 0 ? { marginTop: `${paddingTop}px` } : undefined"
+          >
             <CoverImg
-              v-if="track.cover"
-              :cover="track.cover"
-              :cover-source="track.coverSource"
-              class="row-cover"
+              :cover="row.group.tracks[0].track.cover"
+              :cover-source="row.group.tracks[0].track.coverSource"
+              class="part-video-cover"
               alt=""
             />
-            <div v-else class="row-cover row-cover-fallback" aria-hidden="true">
-              <i class="pi pi-wave-pulse"></i>
-            </div>
-            <div class="row-copy">
-              <button
-                type="button"
-                class="row-title metadata-link"
-                :title="track.title"
-                @click.stop="infoTrack = track"
-                @dblclick.stop
-              >
-                {{ track.title }}
-              </button>
-              <button
-                type="button"
-                class="row-artist metadata-link"
-                :title="track.artist"
-                @click.stop="emit('openArtist', track)"
-                @dblclick.stop
-              >
-                {{ track.artist || '未知艺人' }}
-              </button>
-            </div>
-          </div>
-
-          <div v-if="!isExternal || showTrackLikes" class="col-like">
             <button
               type="button"
-              class="row-like"
-              :class="{
-                liked: isTrackLiked(track),
-                loading: isLiking(track)
-              }"
-              :disabled="isLiking(track)"
-              :title="`在${favoriteProviderLabel}${isTrackLiked(track) ? '取消' : ''}${isExternal ? '收藏' : '喜欢'}`"
-              :aria-label="`在${favoriteProviderLabel}${isTrackLiked(track) ? '取消' : ''}${isExternal ? '收藏' : '喜欢'}`"
-              :aria-pressed="isTrackLiked(track)"
-              @click="onLike(track, $event)"
+              class="part-disclosure"
+              :data-part-group="row.group.id"
+              :aria-expanded="row.expanded"
+              :aria-label="`${row.expanded ? '收起' : '展开'} ${row.group.title} 的 ${row.group.count} 个分P`"
+              @click="toggleParts(row.group, !row.expanded)"
             >
-              <i v-if="isLiking(track)" class="pi pi-spin pi-spinner"></i>
-              <i v-else :class="isTrackLiked(track) ? 'pi pi-heart-fill' : 'pi pi-heart'"></i>
+              <span class="part-video-title" :title="row.group.title">{{ row.group.title }}</span>
+              <span class="part-video-meta">
+                <span class="part-count">{{ row.group.count }} P</span>
+                <span class="part-toggle-label">{{ row.expanded ? '收起分P' : '展开分P' }}</span>
+                <i class="pi pi-chevron-down part-chevron" aria-hidden="true"></i>
+                <span
+                  v-if="row.group.tracks.some(({ track }) => track.id === currentTrackId)"
+                  class="part-now-playing"
+                  >正在播放</span
+                >
+              </span>
             </button>
-          </div>
-
-          <div class="col-album" :title="track.album || ''">
-            <button
-              type="button"
-              class="metadata-link"
-              @click.stop="emit('openAlbum', track)"
-              @dblclick.stop
+            <span class="part-video-artist" :title="row.group.tracks[0].track.artist">{{
+              row.group.tracks[0].track.artist
+            }}</span>
+          </li>
+          <li
+            v-else-if="row.kind === 'pager'"
+            class="part-pager"
+            :style="index === 0 ? { marginTop: `${paddingTop}px` } : undefined"
+          >
+            <span class="part-range" role="status">
+              {{ row.page * MEDIA_PART_PAGE_SIZE + 1 }}–{{
+                Math.min((row.page + 1) * MEDIA_PART_PAGE_SIZE, row.group.tracks.length)
+              }}
+              / {{ row.group.tracks.length }} P{{ query ? ' 匹配' : '' }}
+            </span>
+            <nav
+              v-if="row.pageCount > 1"
+              class="part-pagination"
+              :aria-label="`${row.group.title} 分P分页`"
             >
-              {{ track.album || '—' }}
+              <button
+                type="button"
+                :disabled="row.page === 0"
+                aria-label="上一页分P"
+                @click="changePartPage(row.group, row.page - 1)"
+              >
+                <i class="pi pi-chevron-left" aria-hidden="true"></i>
+              </button>
+              <select
+                :value="row.page"
+                aria-label="选择分P页码"
+                @change="
+                  changePartPage(row.group, Number(($event.target as HTMLSelectElement).value))
+                "
+              >
+                <option v-for="page in row.pageCount" :key="page" :value="page - 1">
+                  {{ page }} / {{ row.pageCount }}
+                </option>
+              </select>
+              <button
+                type="button"
+                :disabled="row.page === row.pageCount - 1"
+                aria-label="下一页分P"
+                @click="changePartPage(row.group, row.page + 1)"
+              >
+                <i class="pi pi-chevron-right" aria-hidden="true"></i>
+              </button>
+            </nav>
+            <button type="button" class="part-collapse" @click="toggleParts(row.group, false)">
+              收起<i class="pi pi-chevron-up" aria-hidden="true"></i>
             </button>
-          </div>
+          </li>
+          <li
+            v-else
+            class="stage-row"
+            :data-part-index="row.grouped ? row.track.mediaPart?.index : undefined"
+            data-te-interactive
+            :class="{
+              playing: currentTrackId === row.track.id,
+              'playback-unsupported': !isTrackPlaybackSupported(row.track),
+              selected: isSelected(row.track.id),
+              'part-track': row.grouped
+            }"
+            :style="index === 0 ? { marginTop: `${paddingTop}px` } : undefined"
+            role="listitem"
+            :aria-disabled="!isTrackPlaybackSupported(row.track) || undefined"
+            :title="
+              isTrackPlaybackSupported(row.track) ? undefined : UNSUPPORTED_TRACK_PLAYBACK_MESSAGE
+            "
+            @click="onRowActivate(row.track, row.index, $event)"
+            @dblclick="onRowDblClick(row.track, row.index, $event)"
+            @contextmenu="onContextMenu(row.track, row.index, $event)"
+          >
+            <div class="col-index">
+              <button
+                v-if="currentTrackId === row.track.id"
+                type="button"
+                class="row-play-btn playing"
+                :disabled="!isTrackPlaybackSupported(row.track)"
+                title="正在播放"
+                @click="onPlayRow(row.track, row.index, $event)"
+              >
+                <span class="eq-bars" aria-hidden="true"> <i></i><i></i><i></i> </span>
+              </button>
+              <button
+                v-else
+                type="button"
+                class="row-play-btn"
+                :disabled="!isTrackPlaybackSupported(row.track)"
+                :aria-label="`播放 ${row.track.title}`"
+                @click="onPlayRow(row.track, row.index, $event)"
+              >
+                <span class="row-index-num">{{
+                  row.grouped
+                    ? `P${row.track.mediaPart?.index}`
+                    : String(row.index + 1).padStart(2, '0')
+                }}</span>
+                <PlaybackIcon name="play" class="row-play-icon" />
+              </button>
+            </div>
 
-          <div class="col-time">
-            {{ formatTime(track.duration) }}
-          </div>
-        </li>
+            <div class="col-title">
+              <CoverImg
+                v-if="!row.grouped"
+                :cover="row.track.cover"
+                :cover-source="row.track.coverSource"
+                class="row-cover"
+                alt=""
+              />
+
+              <div class="row-copy">
+                <button
+                  type="button"
+                  class="row-title metadata-link"
+                  :title="row.track.title"
+                  @click.stop="infoTrack = row.track"
+                  @dblclick.stop
+                >
+                  {{ row.grouped ? row.track.mediaPart?.title : row.track.title }}
+                </button>
+                <div v-if="!row.grouped" class="row-artists">
+                  <template
+                    v-for="(artist, artistIndex) in trackArtists(row.track)"
+                    :key="artistIndex"
+                  >
+                    <span v-if="artistIndex > 0" class="row-artist-separator" aria-hidden="true"
+                      >/</span
+                    >
+                    <button
+                      type="button"
+                      class="row-artist metadata-link"
+                      :title="artist.name"
+                      @click.stop="emit('openArtist', row.track, artist)"
+                      @dblclick.stop
+                    >
+                      {{ artist.name }}
+                    </button>
+                  </template>
+                  <span v-if="!row.track.artist.trim() && !row.track.artists?.length"
+                    >未知艺人</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div v-if="!isExternal || showTrackLikes" class="col-like">
+              <button
+                type="button"
+                class="row-like"
+                :class="{
+                  liked: isTrackLiked(row.track),
+                  loading: isLiking(row.track)
+                }"
+                :disabled="isLiking(row.track)"
+                :title="`在${favoriteProviderLabel}${isTrackLiked(row.track) ? '取消' : ''}${isExternal ? '收藏' : '喜欢'}`"
+                :aria-label="`在${favoriteProviderLabel}${isTrackLiked(row.track) ? '取消' : ''}${isExternal ? '收藏' : '喜欢'}`"
+                :aria-pressed="isTrackLiked(row.track)"
+                @click="onLike(row.track, $event)"
+              >
+                <i v-if="isLiking(row.track)" class="pi pi-spin pi-spinner"></i>
+                <i v-else :class="isTrackLiked(row.track) ? 'pi pi-heart-fill' : 'pi pi-heart'"></i>
+              </button>
+            </div>
+
+            <div class="col-album" :title="row.track.album || ''">
+              <button
+                type="button"
+                class="metadata-link"
+                @click.stop="emit('openAlbum', row.track)"
+                @dblclick.stop
+              >
+                {{ row.track.album || '—' }}
+              </button>
+            </div>
+
+            <div class="col-time">
+              {{ formatTime(row.track.duration) }}
+            </div>
+          </li>
+        </template>
       </ul>
 
       <div v-if="likedFooter" class="stage-footer">
@@ -590,3 +766,4 @@ const infoTrack = shallowRef<Track | null>(null)
 </template>
 
 <style scoped src="./StreamingDetailStage.css"></style>
+<style scoped src="./MediaPartRows.css"></style>

@@ -4,11 +4,7 @@ import { computed, ref } from 'vue'
 import { DEFAULT_LIQUID_GLASS } from '../../../../shared/liquidGlass.ts'
 import EditableRangeValue from '../EditableRangeValue.vue'
 import type { AppearanceDraft } from '../../../../shared/appAppearance.ts'
-import type {
-  LiquidGlassCoverage,
-  LiquidGlassSettings,
-  LiquidGlassTheme
-} from '../../types/settings'
+import type { LiquidGlassSettings, LiquidGlassTheme } from '../../types/settings'
 
 const props = defineProps<{ modelValue: AppearanceDraft; tone?: 'light' | 'dark' }>()
 const emit = defineEmits<{
@@ -25,36 +21,15 @@ const liquidGlassTab = computed({
   get: () => props.tone ?? 'light',
   set: (tone: 'light' | 'dark') => emit('update:tone', tone)
 })
-const liquidGlassScope = ref<'global' | 'home'>('global')
-
-const hasSharedLiquidGlassProfile = computed(
+const hasLiquidGlassEnabled = computed(
   () =>
     settings.value.surfaceMaterial === 'liquidGlass' ||
     settings.value.liquidGlass.navigationEnabled ||
     settings.value.liquidGlass.playbarEnabled ||
-    settings.value.liquidGlass.settingsNavigationEnabled ||
-    settings.value.liquidGlass.coverage === 'expanded'
+    settings.value.liquidGlass.settingsNavigationEnabled
 )
-const hasLiquidGlassEnabled = computed(
-  () => hasSharedLiquidGlassProfile.value || settings.value.liquidGlass.homeCards.enabled
-)
-const activeLiquidGlassScope = computed<'global' | 'home'>(() => {
-  if (liquidGlassScope.value === 'home' && settings.value.liquidGlass.homeCards.enabled) {
-    return 'home'
-  }
-  return hasSharedLiquidGlassProfile.value ? 'global' : 'home'
-})
-const editingHomeCards = computed(() => activeLiquidGlassScope.value === 'home')
-const activeLiquidGlassTheme = computed(() =>
-  editingHomeCards.value
-    ? settings.value.liquidGlass.homeCards[liquidGlassTab.value]
-    : settings.value.liquidGlass[liquidGlassTab.value]
-)
-const activeOverLight = computed(() =>
-  editingHomeCards.value
-    ? settings.value.liquidGlass.homeCards.overLight
-    : settings.value.liquidGlass.overLight
-)
+const activeLiquidGlassTheme = computed(() => settings.value.liquidGlass[liquidGlassTab.value])
+const activeOverLight = computed(() => settings.value.liquidGlass.overLight)
 
 function cloneLiquidGlass(): LiquidGlassSettings {
   const lg = settings.value.liquidGlass
@@ -77,21 +52,10 @@ function cloneLiquidGlass(): LiquidGlassSettings {
   }
 }
 
-function setLiquidGlassCoverage(coverage: LiquidGlassCoverage): void {
-  const liquidGlass = cloneLiquidGlass()
-  liquidGlass.coverage = coverage
-  if (coverage === 'expanded') liquidGlassScope.value = 'global'
-  void updateSettings({ liquidGlass })
-}
-
 function toggleLiquidGlass(): void {
-  const next = settings.value.surfaceMaterial === 'liquidGlass' ? 'standard' : 'liquidGlass'
-  if (next === 'liquidGlass' || !settings.value.liquidGlass.homeCards.enabled) {
-    liquidGlassScope.value = 'global'
-  } else {
-    liquidGlassScope.value = 'home'
-  }
-  void updateSettings({ surfaceMaterial: next })
+  updateSettings({
+    surfaceMaterial: settings.value.surfaceMaterial === 'liquidGlass' ? 'standard' : 'liquidGlass'
+  })
 }
 
 function resetLiquidGlassParameters(): void {
@@ -116,30 +80,12 @@ function resetLiquidGlassParameters(): void {
   void updateSettings({ liquidGlass })
 }
 
-function toggleHomeCardsLiquidGlass(): void {
-  const liquidGlass = cloneLiquidGlass()
-  liquidGlass.homeCards.enabled = !liquidGlass.homeCards.enabled
-  if (liquidGlass.homeCards.enabled) liquidGlassScope.value = 'home'
-  else if (settings.value.surfaceMaterial === 'liquidGlass') liquidGlassScope.value = 'global'
-  void updateSettings({ liquidGlass })
-}
-
 function toggleSharedLiquidGlassTarget(
   target: 'navigationEnabled' | 'playbarEnabled' | 'settingsNavigationEnabled'
 ): void {
   const liquidGlass = cloneLiquidGlass()
   liquidGlass[target] = !liquidGlass[target]
-  if (liquidGlass[target]) liquidGlassScope.value = 'global'
-  else if (
-    settings.value.surfaceMaterial !== 'liquidGlass' &&
-    !liquidGlass.navigationEnabled &&
-    !liquidGlass.playbarEnabled &&
-    !liquidGlass.settingsNavigationEnabled &&
-    liquidGlass.homeCards.enabled
-  ) {
-    liquidGlassScope.value = 'home'
-  }
-  void updateSettings({ liquidGlass })
+  updateSettings({ liquidGlass })
 }
 
 function toggleLiquidGlassPointer(): void {
@@ -153,21 +99,13 @@ function setLiquidGlassField<K extends keyof LiquidGlassTheme>(
   value: LiquidGlassTheme[K]
 ): void {
   const liquidGlass = cloneLiquidGlass()
-  if (editingHomeCards.value) {
-    liquidGlass.homeCards[liquidGlassTab.value][field] = value
-  } else {
-    liquidGlass[liquidGlassTab.value][field] = value
-  }
+  liquidGlass[liquidGlassTab.value][field] = value
   void updateSettings({ liquidGlass })
 }
 
 function toggleActiveOverLight(): void {
   const liquidGlass = cloneLiquidGlass()
-  if (editingHomeCards.value) {
-    liquidGlass.homeCards.overLight = !liquidGlass.homeCards.overLight
-  } else {
-    liquidGlass.overLight = !liquidGlass.overLight
-  }
+  liquidGlass.overLight = !liquidGlass.overLight
   void updateSettings({ liquidGlass })
 }
 
@@ -211,30 +149,7 @@ function toggleAdaptiveTone(): void {
       </button>
     </div>
     <hr />
-    <div class="setting-item">
-      <div class="setting-copy">
-        <strong>覆盖范围</strong>
-        <span>Apple 功能层保持内容稳定可读；扩展实验仅为显式注册的卡片启用低强度玻璃。</span>
-      </div>
-      <div class="theme-segment" role="group" aria-label="液态玻璃覆盖范围">
-        <button
-          type="button"
-          :class="{ active: settings.liquidGlass.coverage === 'functional' }"
-          :aria-pressed="settings.liquidGlass.coverage === 'functional'"
-          @click="setLiquidGlassCoverage('functional')"
-        >
-          Apple 功能层
-        </button>
-        <button
-          type="button"
-          :class="{ active: settings.liquidGlass.coverage === 'expanded' }"
-          :aria-pressed="settings.liquidGlass.coverage === 'expanded'"
-          @click="setLiquidGlassCoverage('expanded')"
-        >
-          扩展实验
-        </button>
-      </div>
-    </div>
+    <p class="settings-hint">玻璃用于导航和播放控件；内容卡片使用普通材质，保持文字与封面清晰。</p>
     <hr />
     <div class="setting-item">
       <div class="setting-copy">
@@ -300,62 +215,22 @@ function toggleAdaptiveTone(): void {
       ></button>
     </div>
     <hr />
-    <div class="setting-item">
-      <div class="setting-copy">
-        <strong>首页媒体焦点液态玻璃</strong>
-        <span>仅为首页的封面 Hero 使用 Clear 材质，列表和内容卡片保持实体表面。</span>
-      </div>
-      <button
-        type="button"
-        aria-label="首页媒体焦点液态玻璃"
-        class="toggle-switch"
-        :class="{ active: settings.liquidGlass.homeCards.enabled }"
-        role="switch"
-        :aria-checked="settings.liquidGlass.homeCards.enabled"
-        @click="toggleHomeCardsLiquidGlass"
-      ></button>
-    </div>
     <div v-if="hasLiquidGlassEnabled">
       <hr />
       <div class="setting-item">
         <div class="setting-copy">
-          <strong>高光跟随指针</strong>
-          <span>播放栏与首页媒体焦点的镜面高光随鼠标移动变化。</span>
+          <strong>折射跟随指针</strong>
+          <span>播放栏的折射随鼠标移动变化。</span>
         </div>
         <button
           type="button"
-          aria-label="高光跟随指针"
+          aria-label="折射跟随指针"
           class="toggle-switch"
           :class="{ active: settings.liquidGlass.followPointer }"
           role="switch"
           :aria-checked="settings.liquidGlass.followPointer"
           @click="toggleLiquidGlassPointer"
         ></button>
-      </div>
-      <hr />
-      <div class="setting-item">
-        <div class="setting-copy">
-          <strong>编辑范围</strong>
-          <span>首页媒体焦点可独立保存一套玻璃参数，不影响导航和播放栏。</span>
-        </div>
-        <div class="theme-segment">
-          <button
-            v-if="hasSharedLiquidGlassProfile"
-            type="button"
-            :class="{ active: activeLiquidGlassScope === 'global' }"
-            @click="liquidGlassScope = 'global'"
-          >
-            全局
-          </button>
-          <button
-            v-if="settings.liquidGlass.homeCards.enabled"
-            type="button"
-            :class="{ active: activeLiquidGlassScope === 'home' }"
-            @click="liquidGlassScope = 'home'"
-          >
-            首页
-          </button>
-        </div>
       </div>
       <hr />
       <div class="setting-item">

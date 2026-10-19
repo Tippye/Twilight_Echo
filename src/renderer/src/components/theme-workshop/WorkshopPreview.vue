@@ -121,8 +121,10 @@ function syncStyles(): void {
     if (source.id === 'workshop-trial' || source.id === 'twilight-theme-runtime') continue
     const copy = source.cloneNode(true) as HTMLElement
     copy.dataset.workshopHostStyle = ''
+    if (copy instanceof HTMLLinkElement) copy.addEventListener('load', refreshBoxes, { once: true })
     doc.head.insertBefore(copy, sheet ?? null)
   }
+  refreshBoxes()
 }
 
 async function ready(): Promise<void> {
@@ -143,6 +145,8 @@ async function ready(): Promise<void> {
   resizeObserver?.disconnect()
   resizeObserver = new ResizeObserver(refreshBoxes)
   resizeObserver.observe(doc.body)
+  const shell = doc.querySelector('.app-shell')
+  if (shell) resizeObserver.observe(shell)
   doc.addEventListener('scroll', refreshBoxes, { capture: true })
   refreshBoxes()
 }
@@ -166,7 +170,15 @@ function update(): void {
   refreshBoxes()
 }
 watch(
-  () => [props.css, props.tone, props.project, props.state, props.surface, props.width],
+  () => [
+    props.css,
+    props.tone,
+    props.project,
+    props.state,
+    props.surface,
+    props.width,
+    props.canvasEditing
+  ],
   async () => {
     update()
     await nextTick()

@@ -180,7 +180,11 @@ export const bufferSizeOptions = [
   { value: 256, label: '256' },
   { value: 512, label: '512' },
   { value: 1024, label: '1024' },
-  { value: 2048, label: '2048' }
+  { value: 2048, label: '2048' },
+  { value: 4096, label: '4096' },
+  { value: 8192, label: '8192' },
+  { value: 16384, label: '16384' },
+  { value: 32768, label: '32768' }
 ] as const
 
 export const routingModeOptions: { value: ChannelRoutingMode; label: string }[] = [
@@ -889,6 +893,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
     terms: '外观 主题 界面 插件 主题 plugin theme 扩展 插件主题'
   },
   {
+    id: 'startup-experience',
+    section: 'appearance',
+    title: '完整界面',
+    terms: '外观 主题 插件 莱茵生命 Rhine 完整界面 启动 重启 切换 experience'
+  },
+  {
     id: 'accent-light',
     section: 'appearance',
     title: '浅色强调色',
@@ -1288,6 +1298,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
       '歌词 桌面歌词 音译 罗马音 romanization transliteration 显示 外文歌词 显示音译 (Show Romanization)'
   },
   {
+    id: 'local-shortcuts',
+    section: 'connections',
+    title: '应用内快捷键',
+    terms: '快捷键 Ctrl+W 关闭窗口 Ctrl+K 命令面板 空格 播放 暂停 开关 启用 禁用'
+  },
+  {
     id: 'global-shortcuts',
     section: 'connections',
     title: '全局快捷键',
@@ -1650,7 +1666,14 @@ export function resolveSettingsSearchEntry(entry: SettingsSearchEntry): Settings
 
 export const RESET_DESKTOP_LYRICS: DesktopLyricsSettings = DEFAULT_DESKTOP_LYRICS_SETTINGS
 
-export type PluginSettingsFieldType = 'text' | 'password' | 'url' | 'select'
+export type PluginSettingsFieldType =
+  | 'text'
+  | 'password'
+  | 'url'
+  | 'select'
+  | 'toggle'
+  | 'range'
+  | 'color'
 
 export interface PluginSettingsOption {
   label: string
@@ -1663,12 +1686,24 @@ export interface PluginSettingsField {
   type: PluginSettingsFieldType
   required: boolean
   placeholder: string
+  description: string
+  /** Heading shared by consecutive fields; empty when ungrouped. */
+  group: string
   value: string
   options: PluginSettingsOption[]
+  /** Range bounds; unused by other field types. */
+  min: number
+  max: number
+  step: number
+  unit: string
 }
 
 export interface PluginSettingsForm {
   submitCommand: string
+  /** Empty when the plugin offers no reset action. */
+  resetCommand: string
+  /** Submit on every change (debounced) instead of via a save button. */
+  live: boolean
   fields: PluginSettingsField[]
   notice: string
 }

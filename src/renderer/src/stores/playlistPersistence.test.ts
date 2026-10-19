@@ -87,7 +87,7 @@ test('application close coordinator awaits the playlist exit flush', () => {
 
   assert.match(
     appSource,
-    /onSavePlaybackSession\(async \(\) => \{[\s\S]*await flushPlaylistsForExit\(\)[\s\S]*savePlaybackSessionForQuit\(\)/
+    /onSavePlaybackSession\(async \([^)]*\) => \{[\s\S]*await flushPlaylistsForExit\(\)[\s\S]*savePlaybackSessionForQuit\(\)/
   )
   assert.match(
     appSource,

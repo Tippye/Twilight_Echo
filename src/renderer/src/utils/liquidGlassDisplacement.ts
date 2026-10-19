@@ -190,7 +190,7 @@ export function displacementScaleForRadius(radius: number, strength: number): nu
 }
 
 export interface DisplacementRaster {
-  pixels: Uint8ClampedArray
+  pixels: Uint8ClampedArray<ArrayBuffer>
   width: number
   height: number
 }
@@ -409,16 +409,19 @@ export function getDisplacementMapUrl(geometry: DisplacementGeometry, density = 
   const canvas = document.createElement('canvas')
   canvas.width = raster.width
   canvas.height = raster.height
-  const context = canvas.getContext('2d')
-  if (!context) return ''
-
-  const imageData = context.createImageData(raster.width, raster.height)
-  imageData.data.set(raster.pixels)
-  context.putImageData(imageData, 0, 0)
-
-  const url = canvas.toDataURL()
-  rememberMap(key, url)
-  return url
+  try {
+    const context = canvas.getContext('2d')
+    if (!context) return ''
+    // ImageData wraps the existing pixels instead of allocating a second RGBA buffer.
+    context.putImageData(new ImageData(raster.pixels, raster.width, raster.height), 0, 0)
+    const url = canvas.toDataURL()
+    rememberMap(key, url)
+    return url
+  } finally {
+    // Only the encoded URL is retained. Release the temporary canvas backing store now.
+    canvas.width = 0
+    canvas.height = 0
+  }
 }
 
 /** Test hook — the cache is process-lifetime otherwise. */

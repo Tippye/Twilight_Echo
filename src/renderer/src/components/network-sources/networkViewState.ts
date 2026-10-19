@@ -14,6 +14,22 @@ type LibraryReader = (query?: string) => Promise<NetworkLibraryItem[]>
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
+/**
+ * 端口输入归一化。`<input type="number">` 上的 `v-model` 会把已填写的值转成
+ * number，而空值仍是字符串 `''`；两种形态都会传到这里，因此不能假设字符串
+ * 方法可用。非法端口抛出可读错误，交由调用方展示。
+ */
+export function parseOptionalPort(value: unknown): number | null {
+  if (value === null || value === undefined) return null
+  const text = String(value).trim()
+  if (text === '') return null
+  const port = Number(text)
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('端口需为 1-65535 之间的整数')
+  }
+  return port
+}
+
 /** Owns directory state. I/O is a narrow port, with no player or window dependency. */
 export function createNetworkBrowser(readDirectory?: DirectoryReader) {
   const profile = shallowRef<NetworkSourceProfileSummary | null>(null)

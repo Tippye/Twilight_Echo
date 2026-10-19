@@ -331,18 +331,52 @@ void testInt24SourceStaysExactThroughInt24In32Output() {
   assert(result.perfectReasonCode.empty());
   assert(result.perfectReason.empty());
 
-  // Widening the container is fine; changing the payload is not.
+  // Integer widening preserves source samples; narrowing does not.
   auto toInt32 = baseEvaluation();
   toInt32.sourceFormat = int24;
   toInt32.decodedFormat = int32;
   toInt32.outputFormat = int32;
   const PerfectResult int32Result = evaluatePerfect(toInt32);
-  assert(!int32Result.sourceExact);
-  assert(!int32Result.outputPerfect);
-  assert(int32Result.perfectReasonCode == "integer_passthrough_unavailable");
+  assert(int32Result.sourceExact);
+  assert(int32Result.outputPerfect);
+  assert(!int32Result.resampled);
+  assert(int32Result.perfectReasonCode.empty());
+
+  assert(pcmFormatsPreserveSource(int16, int32));
+  assert(pcmFormatsPreserveSource(int24, int32));
+  assert(!pcmFormatsPreserveSource(int32, int16));
+  assert(!pcmFormatsPreserveSource(float32, int32));
 }
 
 void testBackendSupport() {
+  // Integer widening must preserve rate, channels and every significant source bit.
+  const AudioFormat int32 = pcm(48000, 32, 2, AudioSampleFormat::Int32Interleaved);
+  for (const auto& source : {
+           pcm(48000, 16, 2, AudioSampleFormat::Int16Interleaved),
+           pcm(48000, 24, 2, AudioSampleFormat::Int24Interleaved),
+           pcm(48000, 24, 2, AudioSampleFormat::Int24In32Interleaved)}) {
+    auto widened = baseEvaluation();
+    widened.sourceFormat = source;
+    widened.decodedFormat = int32;
+    widened.outputFormat = int32;
+    const PerfectResult result = evaluatePerfect(widened);
+    assert(result.sourceExact && result.outputPerfect && result.pcmPassthrough);
+    assert(!result.resampled);
+    assert(result.perfectReasonCode.empty());
+
+    auto changedRate = int32;
+    changedRate.sampleRate = 96000;
+    assert(!pcmFormatsPreserveSource(source, changedRate));
+    auto changedChannels = int32;
+    changedChannels.channelCount = 1;
+    assert(!pcmFormatsPreserveSource(source, changedChannels));
+    auto reducedPrecision = int32;
+    reducedPrecision.bitDepth = 20;
+    assert(!pcmFormatsPreserveSource(source, reducedPrecision));
+  }
+  assert(!pcmFormatsPreserveSource(
+      pcm(48000, 24, 2, AudioSampleFormat::Int16Interleaved), int32));
+
   auto shared = baseEvaluation();
   shared.supportsOutputPerfect = false;
   shared.backendPerfectReasonCode = "shared_mixer";

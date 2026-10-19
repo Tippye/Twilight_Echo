@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { downloadEntryToCache } from './networkCache.ts'
+import { coverExtension } from './networkCover.ts'
 import type { NetworkSourceSession } from './adapters/types.ts'
 import type { NetworkEntry, NetworkEntryMetadata } from '../../shared/networkSources.ts'
 
@@ -38,14 +39,6 @@ async function parseCachedEntry(cacheFilePath: string): Promise<ParsedEntry | nu
   }
 }
 
-function coverExtension(mime: string | undefined): string {
-  if (mime?.startsWith('image/')) {
-    const extension = mime.split('/')[1]?.replace(/[^a-z0-9]/gi, '')
-    if (extension) return extension
-  }
-  return 'jpg'
-}
-
 export async function saveEntryCover(
   entryId: string,
   cover: Buffer | undefined,
@@ -53,6 +46,9 @@ export async function saveEntryCover(
   coverCacheRoot: string
 ): Promise<string | undefined> {
   if (!cover?.length) return undefined
+  // 与下载缓存一致的标识约束：入口 id 必须是无路径分隔符的短令牌，
+  // 防止污染/穿越 cover-cache 目录。
+  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(entryId)) return undefined
   const target = join(coverCacheRoot, `${entryId}.${coverExtension(coverMime)}`)
   await mkdir(coverCacheRoot, { recursive: true })
   await writeFile(target, cover)

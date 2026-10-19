@@ -3,6 +3,16 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
+#include <regex>
+#include <sstream>
+#include <iomanip>
+#include "../utils/JsonUtils.h"
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace twilight::audio {
 namespace {
@@ -11,6 +21,7 @@ constexpr size_t kMaxEntries = 512;
 constexpr size_t kMaxMessageChars = 512;
 constexpr size_t kMaxDetailsChars = 8192;
 constexpr size_t kMaxEventChars = 64;
+thread_local std::string diagnosticOperationId, diagnosticRequestId;
 
 std::string truncated(std::string value, size_t maxChars) {
   if (value.size() <= maxChars) return value;
@@ -115,6 +126,7 @@ void DiagnosticLog::append(DiagLevel level, const std::string& event, const std:
   entry.event = truncated(event, kMaxEventChars);
   entry.message = truncated(message, kMaxMessageChars);
   entry.detailsJson = truncated(detailsJson, kMaxDetailsChars);
+  entry.operationId = diagnosticOperationId; entry.requestId = diagnosticRequestId;
   {
     std::lock_guard lock(mutex_);
     entry.sequence = ++sequence_;
@@ -169,6 +181,144 @@ void DiagnosticLog::clearForTests() {
   std::lock_guard lock(mutex_);
   entries_.clear();
   sequence_ = 0;
+}
+
+bool DiagnosticLog::trySnapshot(uint64_t since, std::vector<Entry>& entries) const {
+  std::unique_lock lock(mutex_, std::try_to_lock);
+  if (!lock.owns_lock()) return false;
+  for (const auto& entry : entries_) if (entry.sequence > since) entries.push_back(entry);
+  return true;
+}
+
+void DiagnosticLog::setContext(const std::string& json) {
+  const auto read = [&json](const char* key) {
+    const auto start = json_utils::topLevelFieldValueStart(json, key);
+    if (!start) return std::string{};
+    const auto value = json_utils::parseStringToken(json, *start, nullptr);
+    if (!value || value->size() > 128 || !std::all_of(value->begin(), value->end(), [](unsigned char ch) { return std::isalnum(ch) || ch == '-' || ch == '_'; })) return std::string{};
+    return *value;
+  };
+  diagnosticOperationId = read("operationId"); diagnosticRequestId = read("requestId");
+}
+
+namespace {
+std::string fingerprint(const std::string& value) {
+  uint64_t hash = 14695981039346656037ULL;
+  for (unsigned char ch : value) { hash ^= ch; hash *= 1099511628211ULL; }
+  std::ostringstream out; out << std::hex << std::setw(16) << std::setfill('0') << hash;
+  return out.str();
+}
+std::string safeIdentifier(std::string value) {
+  if (value.size() > 128) value.resize(128);
+  for (char& ch : value) if (!std::isalnum(static_cast<unsigned char>(ch)) && ch != '-' && ch != '_' && ch != '.') ch = '_';
+  return value;
+}
+uint64_t steadyMs() {
+  return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count());
+}
+}
+
+std::string sanitizeNativeDiagnosticJson(const std::string& json) {
+  // Token based, including escaped JSON strings; no raw string payload reaches disk.
+  if (json.size() > 8192) return "{\"truncated\":true}";
+  static const std::regex secret("password|passwd|secret|cookie|authorization|credential|^token$|(?:access|refresh|auth|bearer).?token|signature|api.?key", std::regex::icase);
+  static const std::regex enums("^(idle|reading|writing|exited|playing|paused|stopped|pcm|dsd|asio|wasapi|shared|exclusive|stream_retired|transport_stop|seek|stop|queue_update|transition_completed|unavailable|pipeline-lock-busy|no-active-stream)$");
+  std::string out;
+  for (size_t i = 0; i < json.size();) {
+    if (json[i] != '"') { out += json[i++]; continue; }
+    size_t end = i;
+    const auto value = json_utils::parseStringToken(json, i, &end);
+    if (!value) return "{\"invalidDetails\":true}";
+    size_t next = end; json_utils::skipWhitespace(json, &next);
+    if (next < json.size() && json[next] == ':') {
+      out += '"' + jsonEscape(safeIdentifier(*value)) + "\":";
+      i = next + 1; json_utils::skipWhitespace(json, &i);
+      if (std::regex_search(*value, secret)) {
+        if (i < json.size() && json[i] == '"') {
+          if (!json_utils::parseStringToken(json, i, &end)) return "{}";
+          i = end;
+        } else if (i < json.size() && (json[i] == '{' || json[i] == '[')) {
+          const auto containerEnd = json_utils::matchingContainerEnd(json, i);
+          if (!containerEnd) return "{}";
+          i = *containerEnd;
+        } else { while (i < json.size() && json[i] != ',' && json[i] != '}') ++i; }
+        out += "\"[redacted]\"";
+      }
+    } else {
+      if (std::regex_match(*value, enums)) out += '"' + *value + '"';
+      else out += "{\"kind\":\"identifier\",\"fingerprint\":\"" + fingerprint(*value) + "\"}";
+      i = end;
+    }
+  }
+  return out;
+}
+
+DiagnosticJournal::DiagnosticJournal() {
+  startMs_ = steadyMs();
+  const char* directory = std::getenv("TAE_DIAGNOSTICS_DIR");
+  if (!directory || !*directory) return;
+  directory_ = std::filesystem::u8path(directory);
+  const char* session = std::getenv("TWILIGHT_LOG_SESSION_ID");
+  session_ = safeIdentifier(session ? session : "native-standalone");
+  instance_ = "native-" + std::to_string(getpid()) + '-' + std::to_string(nowEpochMs()) + '-' + fingerprint(std::to_string(reinterpret_cast<uintptr_t>(this)));
+}
+
+void DiagnosticJournal::write(const std::string& event, const std::string& details, DiagLevel level,
+                              uint64_t originalSequence, uint64_t epochMs, const std::string& operationId, const std::string& requestId) {
+  if (directory_.empty()) return;
+  try {
+    const uint64_t number = ++sequence_;
+    const char* generation = std::getenv("TAE_SERVICE_GENERATION");
+    std::string line = "{\"schemaVersion\":1,\"timestamp\":\"" + diagnosticIsoTimestamp(epochMs ? epochMs : nowEpochMs()) +
+      "\",\"monotonicMs\":" + std::to_string(steadyMs() - startMs_) + ",\"sessionId\":\"" + session_ + "\",\"processRole\":\"native\",\"processId\":" + std::to_string(getpid()) +
+      ",\"processInstanceId\":\"" + instance_ + "\",\"sequence\":" + std::to_string(number) + ",\"eventId\":\"" + instance_ + ':' + std::to_string(number) +
+      "\",\"serviceGeneration\":" + std::to_string(generation ? std::strtoull(generation, nullptr, 10) : 0) +
+      ",\"module\":\"audio.native\",\"event\":\"" + safeIdentifier(event) + "\",\"level\":\"" + (level == DiagLevel::Warning ? "warn" : diagnosticLevelName(level)) +
+      "\",\"operationId\":\"" + safeIdentifier(operationId) + "\",\"requestId\":\"" + safeIdentifier(requestId) + "\",\"details\":" + sanitizeNativeDiagnosticJson(details) + ",\"nativeSequence\":" + std::to_string(originalSequence) + "}\n";
+    std::filesystem::create_directories(directory_);
+    if (bytes_ && bytes_ + line.size() > 8 * 1024 * 1024) {
+      std::filesystem::rename(file_, directory_ / (instance_ + '-' + std::to_string(part_) + ".jsonl"));
+      ++part_; bytes_ = 0;
+    }
+    // Other processes may own active files. Never delete them to make room.
+    uint64_t total = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(directory_)) {
+      const auto name = entry.path().filename().string();
+      if (entry.is_regular_file() && entry.path().extension() == ".jsonl" &&
+          (name.rfind("app-", 0) == 0 || name.rfind("native-", 0) == 0 || name.rfind("emergency-", 0) == 0)) total += entry.file_size();
+    }
+    if (total + line.size() > 256 * 1024 * 1024) throw std::runtime_error("diagnostic capacity reached");
+    file_ = directory_ / (instance_ + '-' + std::to_string(part_) + ".active.jsonl");
+    std::ofstream file(file_, std::ios::binary | std::ios::app);
+    file.write(line.data(), static_cast<std::streamsize>(line.size())); file.flush();
+    if (!file) throw std::runtime_error("diagnostic write failed");
+    bytes_ += line.size(); reportedFailure_ = false;
+  } catch (...) {
+    if (!reportedFailure_) std::fprintf(stderr, "[TwilightDiagnostics] native journal unavailable; bounded engine ring remains available\n");
+    reportedFailure_ = true;
+  }
+}
+
+void DiagnosticJournal::drain() {
+  std::vector<DiagnosticLog::Entry> entries;
+  if (!DiagnosticLog::instance().trySnapshot(ringSequence_, entries)) { write("journal.ring-unavailable", "{}"); return; }
+  for (const auto& entry : entries) {
+    if (entry.sequence > ringSequence_ + 1) write("events.dropped", "{\"count\":" + std::to_string(entry.sequence - ringSequence_ - 1) + "}", DiagLevel::Warning);
+    write(entry.event, entry.detailsJson, entry.level, entry.sequence, entry.epochMs, entry.operationId, entry.requestId);
+    ringSequence_ = entry.sequence;
+  }
+}
+
+bool EmptyOutputDetector::sample(bool available, bool playing, bool eof, bool stopped, uint64_t nextToken,
+                                uint64_t nextCallbacks, uint64_t nextConsumed) {
+  const bool empty = available && playing && !eof && !stopped && nextToken && nextToken == token &&
+      nextCallbacks > callbacks && nextConsumed == consumed;
+  consecutive = empty ? consecutive + 1 : 0;
+  if (!empty) marked = false;
+  token = nextToken; callbacks = nextCallbacks; consumed = nextConsumed;
+  if (consecutive >= 3 && !marked) { marked = true; return true; }
+  return false;
 }
 
 }  // namespace twilight::audio

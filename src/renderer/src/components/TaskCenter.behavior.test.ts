@@ -128,7 +128,13 @@ window.runTaskCenterTests=async dark=>{
   let snapshot=createInitialAppUpdateSnapshot();
   window.api={window:{getState:async()=>({maximized:false}),onStateChanged:()=>()=>{}},providerDownloads:{list:async()=>[],onChanged:fn=>{downloadsChanged=fn;return()=>stops++},cancel:async()=>{},retry:async()=>{retries++},result:async()=> 'D:/fixture/song.aac'},shell:{showItemInFolder:async()=>{revealed++}},app:{getUpdateState:async()=>snapshot,onUpdateState:fn=>{updateChanged=fn;return()=>stops++},installUpdate:async()=>{installed++}},loudnessAnalysis:{getBatch:async()=>({status:{state:'idle',revision:0}}),onBatchProgress:fn=>{batchChanged=fn;return()=>stops++},cancelBatch:async()=>{}}};
   const host=ref();
+  scan.value={state:'completed',current:10,total:10,error:''};
   const app=createApp({render:()=>h('div',{},[h(TitleBar,{menuOpen:false,hideStart:true,notificationsOpen:store.centerOpen.value,onNotifications:event=>host.value.toggleHistory(event)}),h('button',{id:'outside'},'页面操作'),h(Host,{ref:host,onLibrary:()=>library++})])});app.mount('#app');await tick();
+  document.querySelector('.notification-btn').click();await tick();
+  expect(document.querySelector('.task-record')&&!store.noticeHistory.value.length,'initial completed scan fixture missing');
+  expect(!button('.notice-history','清空记录').disabled,'completed initial scan cannot be cleared');
+  button('.notice-history','清空记录').click();await tick();expect(!document.querySelector('.task-record'),'completed initial scan reappeared after clearing');
+  document.querySelector('.notification-btn').click();scan.value={state:'idle',current:0,total:10,error:''};await tick();
   for(const kind of ['info','success','warning'])store.pushNotice({kind,message:'通知结果 '+kind});await tick();
   expect(!opened(),'notification opened the center automatically');expect(!document.querySelector('.app-notice'),'routine information interrupted the page');expect(store.unreadCount.value===3,'quiet outcomes lost unread state');
   scan.value={state:'running',current:4,total:10,error:''};await tick();expect(store.activeTaskCount.value===1,'closed dropdown stopped task updates');
@@ -136,6 +142,7 @@ window.runTaskCenterTests=async dark=>{
   expect(document.querySelectorAll('[role=dialog]').length===1,'notifications and tasks opened separate dialogs');expect(document.querySelectorAll('.notice-history').length===1,'history displayed twice');expect(noticeText().includes('通知结果 success'),'user result unavailable in shared panel');expect(store.unreadCount.value===0,'visible history was not marked read');
   expect(document.querySelector('progress[aria-label="曲库扫描"]').value===0.4,'live scan progress missing');button('.notice-history','暂停').click();await tick();button('.notice-history','继续').click();await tick();expect(calls.join(',')==='pause,resume','task controls lost behavior');
   scan.value={state:'completed',current:10,total:10,error:''};await tick();expect(noticeText().includes('曲库扫描：已完成'),'background completion disappeared');expect(!document.querySelector('.task-record'),'completion duplicated in live tasks');expect(!store.notices.value.length,'background completion became a toast');
+  button('.notice-history','清空记录').click();await tick();expect(!noticeText().includes('曲库扫描')&&!document.querySelector('.task-record'),'cleared scan result reappeared');
   scan.value={state:'running',current:1,total:10,error:''};await tick();scan.value={state:'failed',current:1,total:10,error:'无法读取文件'};await tick();expect(noticeText().includes('无法读取文件'),'background error is not recoverable');button('.notice-records','重试').click();await tick();expect(calls.at(-1)==='retry','scan retry lost');
   const task=status=>({id:'download-'+dark,providerId:'fixture',providerJobId:'job',track:{id:'track',title:'下载旋律',artist:'艺人'},requestedQuality:'aac',actualQuality:'aac',status,progress:status==='completed'?1:0.2,targetPath:'D:/fixture/song.aac',fileSize:10,error:status==='failed'?'连接中断':null,createdAt:'2026-10-06',updatedAt:'2026-10-06'});
   downloadsChanged([task('downloading')]);await tick();downloadsChanged([task('failed')]);await tick();expect(noticeText().includes('下载失败'),'download failure has no retained result');button('.notice-records','重新下载').click();await tick();expect(retries===1,'download retry lost');downloadsChanged([task('completed')]);await tick();button('.notice-records','打开目录').click();await tick();expect(revealed===1,'completed download action lost');button('.notice-records','播放本地文件').click();await tick();expect(calls.includes('play'),'completed download playback lost');
@@ -154,6 +161,7 @@ window.runTaskCenterTests=async dark=>{
   bell.click();await tick();button('.notice-history','查看曲库').click();await tick();expect(library===1&&!opened(),'library action did not navigate and close dropdown');
   bell.click();await tick();document.querySelector('#outside').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));await tick();expect(!opened(),'outside click did not close dropdown');
   scan.value={state:'running',current:7,total:10,error:''};bell.click();await tick();button('.notice-history','清空记录').click();await tick();expect(scan.value.state==='running'&&!calls.includes('cancel'),'clearing history cancelled a live task');
+  expect(![...document.querySelectorAll('.task-record')].some(el=>el.textContent.includes('下载旋律')),'cleared download result reappeared');
   store.pushNotice({kind:'success',message:'下载完成 · '+('长曲名与路径'.repeat(18)),presentation:'center',downloadTaskId:task('completed').id});store.pushNotice({kind:'info',message:'曲库扫描：已完成，新增 12 首歌曲。'});await tick();
   dispose=()=>{app.unmount();expect(stops===3,'shared services did not disconnect');store.clearNotices()};
 }

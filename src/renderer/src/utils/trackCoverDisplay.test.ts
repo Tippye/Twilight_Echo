@@ -22,19 +22,18 @@ test('useTrackCoverSrc clears previous src and mints a fresh blob per track', as
     api: {
       data: {
         getCover: async (handle: string): Promise<string | null> => {
-          if (handle.includes('a.jpg')) return 'data:image/jpeg;base64,aaa'
-          if (handle.includes('b.jpg')) return 'data:image/jpeg;base64,bbb'
+          if (handle.includes('a.jpg')) return 'data:image/jpeg;base64,YWFh'
+          if (handle.includes('b.jpg')) return 'data:image/jpeg;base64,YmJi'
           return null
         }
       }
     }
   } as unknown
 
-  // fetch(dataUrl) for toUniqueDisplayUrl
-  globalThis.fetch = (async (input: RequestInfo | URL) => {
-    const url = String(input)
-    const body = url.includes('aaa') ? 'aaa' : url.includes('bbb') ? 'bbb' : 'x'
-    return new Response(body, { status: 200, headers: { 'Content-Type': 'image/jpeg' } })
+  let fetchCalls = 0
+  globalThis.fetch = (async () => {
+    fetchCalls++
+    throw new Error('connect-src does not allow inline images')
   }) as typeof fetch
 
   try {
@@ -62,6 +61,7 @@ test('useTrackCoverSrc clears previous src and mints a fresh blob per track', as
     assert.equal(src.value, 'blob:track-cover-1-3')
     assert.match(key.value, /^t2:/)
     assert.equal(blobs.length, 2)
+    assert.equal(fetchCalls, 0)
   } finally {
     URL.createObjectURL = originalCreate
     URL.revokeObjectURL = originalRevoke

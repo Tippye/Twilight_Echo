@@ -13,6 +13,8 @@ const {
 const {
   notifyLocalTracksUnavailable,
   onLocalTracksUnavailable,
+  onLocalTracksRemovalRequested,
+  prepareLocalTracksForRemoval,
   pruneUnavailableLocalTracks,
   selectLocalLibraryActionTracks
 } = (await import(
@@ -401,6 +403,43 @@ test('successful store removals can publish one queue-cleanup event for every en
   assert.deepEqual(events, [
     { trackIds: ['local:moon'], filePaths: ['D:\\Music\\Moon River.flac'] }
   ])
+})
+
+test('local track removal preparation awaits release listeners and isolates failures', async () => {
+  const events: string[] = []
+  const stopFirst = onLocalTracksRemovalRequested(async () => {
+    events.push('first:start')
+    await Promise.resolve()
+    events.push('first:end')
+  })
+  const stopSecond = onLocalTracksRemovalRequested(() => {
+    events.push('second')
+    throw new Error('release failed')
+  })
+  const stopThird = onLocalTracksRemovalRequested(() => {
+    events.push('third')
+  })
+  try {
+    await prepareLocalTracksForRemoval([localTrack.id], [localTrack.filePath])
+  } finally {
+    stopThird()
+    stopSecond()
+    stopFirst()
+  }
+
+  assert.deepEqual(events, ['first:start', 'first:end', 'second', 'third'])
+})
+
+test('unregistered local track removal listeners are not called', async () => {
+  let calls = 0
+  const stop = onLocalTracksRemovalRequested(() => {
+    calls++
+  })
+  stop()
+
+  await prepareLocalTracksForRemoval([localTrack.id], [localTrack.filePath])
+
+  assert.equal(calls, 0)
 })
 
 test('recent resolver indexes are rebuilt once per tracks array identity', () => {

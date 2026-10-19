@@ -1,9 +1,12 @@
 export * from './lyricTypes.ts'
 export * from './lyricParser.ts'
 export { buildLyricLines } from './lyricLineBuilder.ts'
-import type { LyricLine, LyricWord } from './lyricTypes.ts'
+import type { LyricWord } from './lyricTypes.ts'
 
-export function findActiveLyricIndex(lines: readonly LyricLine[], currentTime: number): number {
+export function findActiveLyricIndex(
+  lines: readonly { time: number | null }[],
+  currentTime: number
+): number {
   if (lines.length === 0 || !Number.isFinite(currentTime)) return -1
 
   let low = 0

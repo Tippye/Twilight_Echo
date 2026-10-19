@@ -69,6 +69,8 @@ export interface NcmAlbumSummary {
   coverSmallSource?: string | null
   trackCount: number
   publishTime?: number
+  releaseType?: string
+  isExplicit?: boolean
 }
 
 export interface NcmArtistSummary {

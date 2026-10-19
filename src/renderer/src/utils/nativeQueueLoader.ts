@@ -16,16 +16,49 @@ interface QueueApi {
 }
 
 /** Retains one content version, with authority to reuse held by main. */
+type CommittedEntry = { id: string; queueEntryId?: string; index: number } | null
+
 export class NativeQueueLoader {
   private committed: {
     json: string
     token: string
     window: boolean
-    entries: Array<{ id: string; queueEntryId?: string; index: number }>
+    entries: CommittedEntry[]
   } | null = null
 
   clear(): void {
     this.committed = null
+  }
+
+  /**
+   * Afterglow restore: adopt the queue identity the engine already holds so
+   * later playback-info events map back onto this renderer's logical queue
+   * without reloading the native queue. `nativeQueueIndices` describes a
+   * current+next window (online queues); without it the mapping is identity.
+   */
+  adopt(
+    queue: readonly Track[],
+    info: { queueIndex: number; queueToken?: string; nativeQueueIndices?: readonly number[] }
+  ): void {
+    const indices =
+      info.nativeQueueIndices && info.nativeQueueIndices.length > 0
+        ? [...info.nativeQueueIndices]
+        : queue.map((_, index) => index)
+    this.committed = {
+      json: '',
+      token: info.queueToken ?? '',
+      window: indices.length !== queue.length,
+      entries: indices.map((index) => {
+        const track = queue[index]
+        return track ? { id: track.id, index, queueEntryId: track.queueEntryId } : null
+      })
+    }
+  }
+
+  /** Snapshot of the native→logical mapping, for the pre-unload handoff. */
+  getCommittedIndices(): number[] | null {
+    if (!this.committed) return null
+    return this.committed.entries.map((entry) => entry?.index ?? -1)
   }
 
   private matches(items: NativeQueueLoadItem[]): boolean {

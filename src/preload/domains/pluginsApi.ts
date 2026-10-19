@@ -1,7 +1,13 @@
 import { ipcRenderer } from 'electron'
+import type { InstalledExperience } from '../../shared/pluginExperience.ts'
 import { ProviderWriteIdempotencyCoordinator } from '../../shared/providerWriteIdempotency.ts'
 import { PROVIDER_DOWNLOAD_CHANGED_CHANNEL } from '../../shared/providerDownloads.ts'
 import { PLUGIN_NOTICE_CHANNEL, type PluginNotice } from '../../shared/pluginNotice.ts'
+import {
+  PLUGIN_IMPORT_PLAYLIST_CHANNEL,
+  PLUGIN_TAKE_PLAYLIST_IMPORTS_CHANNEL,
+  type PluginPlaylistImportNotice
+} from '../../shared/pluginPlaylistImport.ts'
 import type {
   ProviderDownloadTaskSnapshot,
   ProviderDownloadCreateInput,
@@ -16,6 +22,7 @@ import type {
 
 const pluginChangedCallbacks = new Set<() => void>()
 const pluginNoticeCallbacks = new Set<(notice: PluginNotice) => void>()
+const pluginImportPlaylistCallbacks = new Set<() => void>()
 const providerDownloadChangedCallbacks = new Set<(tasks: ProviderDownloadTaskSnapshot[]) => void>()
 const providerWriteIdempotency = new ProviderWriteIdempotencyCoordinator()
 
@@ -29,6 +36,12 @@ export function bindPluginsIpcEvents(): void {
   ipcRenderer.on(PLUGIN_NOTICE_CHANNEL, (_event, notice: PluginNotice) => {
     for (const cb of pluginNoticeCallbacks) {
       cb(notice)
+    }
+  })
+
+  ipcRenderer.on(PLUGIN_IMPORT_PLAYLIST_CHANNEL, () => {
+    for (const cb of pluginImportPlaylistCallbacks) {
+      cb()
     }
   })
 
@@ -76,6 +89,12 @@ export const pluginsApi = {
     onNotice: (cb: (notice: PluginNotice) => void): (() => void) => {
       pluginNoticeCallbacks.add(cb)
       return () => pluginNoticeCallbacks.delete(cb)
+    },
+    takePlaylistImports: (): Promise<PluginPlaylistImportNotice[]> =>
+      ipcRenderer.invoke(PLUGIN_TAKE_PLAYLIST_IMPORTS_CHANNEL),
+    onImportPlaylist: (cb: () => void): (() => void) => {
+      pluginImportPlaylistCallbacks.add(cb)
+      return () => pluginImportPlaylistCallbacks.delete(cb)
     }
   },
   providers: {
@@ -129,6 +148,15 @@ export const pluginsApi = {
     }
   },
   extensions: {
+    experienceExport: (pluginId: string, name: string, content: string): Promise<{ saved: boolean }> =>
+      ipcRenderer.invoke('extensions:experienceExport', pluginId, name, content),
+    experienceMusic: (pluginId: string, operation: string, albums: unknown[], args: Record<string, unknown>): Promise<unknown> =>
+      ipcRenderer.invoke('extensions:experienceMusic', pluginId, operation, albums, args),
+    experienceDocument: (pluginId: string, update?: { revision: number; value: Record<string, unknown> }): Promise<{ revision: number; value: Record<string, unknown> }> =>
+      ipcRenderer.invoke('extensions:experienceDocument', pluginId, update),
+    experiences: (): Promise<InstalledExperience[]> => ipcRenderer.invoke('extensions:experiences'),
+    experiencePreferences: (pluginId: string, value?: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('extensions:experiencePreferences', pluginId, value),
     list: (): Promise<TwilightPluginExtensionContribution[]> =>
       ipcRenderer.invoke('extensions:list'),
     executeCommand: (command: string, args?: unknown[]): Promise<unknown> =>

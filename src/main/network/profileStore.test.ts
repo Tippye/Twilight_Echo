@@ -112,7 +112,14 @@ test('profile store fails closed on deeply nested or structurally invalid persis
   try {
     const nested = `${'['.repeat(128)}0${']'.repeat(128)}`
     await writeFile(filePath, `{"profiles":${nested}}`, 'utf8')
-    await assert.rejects(() => store.listProfiles())
+    await assert.rejects(
+      () => store.listProfiles(),
+      (err: unknown) => {
+        assert.equal((err as { code: string }).code, 'network')
+        assert.equal((err as Error).message, '网络源配置读取失败')
+        return true
+      }
+    )
 
     await writeFile(filePath, JSON.stringify({ profiles: [{ id: 'malformed' }] }), 'utf8')
     await assert.rejects(() => store.listProfiles())
@@ -152,6 +159,50 @@ test('WebDAV profiles preserve HTTPS selected by an entered URL', async () => {
     assert.equal(created.webdavScheme, 'https')
     const persisted = await store.getProfile(created.id)
     assert.equal(persisted.webdavScheme, 'https')
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('profile update can change and explicitly clear an optional port', async () => {
+  const { dir, store } = await makeStore()
+  try {
+    const created = await store.createProfile(makeInput({ port: 8080 }))
+    assert.equal(created.port, 8080)
+
+    const changed = await store.updateProfile(created.id, { port: 9090 })
+    assert.equal(changed.port, 9090)
+
+    const cleared = await store.updateProfile(created.id, { port: null })
+    assert.equal(cleared.port, null)
+
+    const untouched = await store.updateProfile(created.id, { name: 'NAS 3' })
+    assert.equal(untouched.name, 'NAS 3')
+    assert.equal(untouched.port, null)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('webdav port 443 implies HTTPS unless the entered URL says otherwise', async () => {
+  const { dir, store } = await makeStore()
+  try {
+    assert.equal(
+      (await store.createProfile(makeInput({ host: 'nas.local', port: 443 }))).webdavScheme,
+      'https'
+    )
+    assert.equal(
+      (await store.createProfile(makeInput({ host: 'nas.local', port: 80 }))).webdavScheme,
+      'http'
+    )
+    assert.equal(
+      (await store.createProfile(makeInput({ host: 'http://nas.local', port: 443 }))).webdavScheme,
+      'http'
+    )
+    assert.equal(
+      (await store.createProfile(makeInput({ host: 'https://nas.local', port: 80 }))).webdavScheme,
+      'https'
+    )
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

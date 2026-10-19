@@ -287,30 +287,6 @@ void testAsioDriverActivationRequestsDriverClsid() {
   assert(!std::regex_search(activationBody, activatesUnknown));
 }
 
-void testAsioDriverSessionRequeriesBufferSizeAfterNativeDsdSwitch() {
-  const std::filesystem::path testFilePath(__FILE__);
-  const std::filesystem::path sourcePath =
-      testFilePath.parent_path().parent_path() / "output" / "asio" / "windows" / "AsioDriverSession.cpp";
-  const std::string source = readTextFile(sourcePath);
-  const std::string openBody = extractFunctionBody(source, "bool AsioDriverSession::open(");
-
-  // A driver's valid buffer-size range can change once the DSD I/O format is
-  // active, so the range must be re-read after the switch, on the Native DSD
-  // path only, and the re-chosen size must become the session's buffer size.
-  const size_t dsdRequestPos = openBody.find("nativeDsdRequested");
-  const size_t dsdSwitchPos = openBody.find("configureNativeDsd");
-  assert(dsdRequestPos != std::string::npos);
-  assert(dsdSwitchPos != std::string::npos);
-  assert(dsdRequestPos < dsdSwitchPos);
-  const size_t requeryPos = openBody.find("getBufferSize", dsdSwitchPos);
-  assert(requeryPos != std::string::npos);
-  const size_t rechoosePos = openBody.find("chooseBufferSize", dsdSwitchPos);
-  assert(rechoosePos != std::string::npos);
-  assert(rechoosePos > requeryPos);
-  const size_t applyPos = openBody.find("state->bufferSize = dsdBufferSize", dsdSwitchPos);
-  assert(applyPos != std::string::npos);
-  assert(applyPos > rechoosePos);
-}
 
 void testAsioDriverSessionHintsAtHeldDeviceWhenDsdSetIsRefused() {
   const std::filesystem::path testFilePath(__FILE__);
@@ -358,54 +334,7 @@ void testAsioDriverSessionFallsBackToRateOnlyNativeDsdOrder() {
   assert(restorePos < allFailedPos);
 }
 
-void testAsioDriverSessionRetriesCreateBuffersAtPreferred() {
-  const std::filesystem::path testFilePath(__FILE__);
-  const std::filesystem::path sourcePath =
-      testFilePath.parent_path().parent_path() / "output" / "asio" / "windows" / "AsioDriverSession.cpp";
-  const std::string source = readTextFile(sourcePath);
-  const std::string createBody =
-      extractFunctionBody(source, "bool AsioDriverSession::createBuffers(");
 
-  // JUCE and PortAudio both retry createBuffers at the driver's preferred
-  // size for drivers whose reported range is wrong (Hoontech DSP24 class).
-  // The retry must re-read the range, only fire when preferred differs, and
-  // stay a single bounded attempt.
-  const size_t failPos = createBody.find("!asio_abi::asioErrorIsSuccess(createBuffersResult)");
-  assert(failPos != std::string::npos);
-  const size_t requeryPos = createBody.find("getBufferSize", failPos);
-  assert(requeryPos != std::string::npos);
-  const size_t preferredPos = createBody.find("chooseBufferSize(0", requeryPos);
-  assert(preferredPos != std::string::npos);
-  assert(createBody.find("preferredSize != state->bufferSize", preferredPos) != std::string::npos);
-  assert(createBody.find("\"create-buffers-retry\"", preferredPos) != std::string::npos);
-  // The retry must not bypass the callback router: still one uninstall path.
-  size_t uninstallCount = 0;
-  for (size_t pos = createBody.find("AsioCallbackRouter::uninstall"); pos != std::string::npos;
-       pos = createBody.find("AsioCallbackRouter::uninstall", pos + 1)) {
-    ++uninstallCount;
-  }
-  assert(uninstallCount == 1);
-}
-
-void testAsioDriverSessionRechecksChannelCountAfterRateSwitch() {
-  const std::filesystem::path testFilePath(__FILE__);
-  const std::filesystem::path sourcePath =
-      testFilePath.parent_path().parent_path() / "output" / "asio" / "windows" / "AsioDriverSession.cpp";
-  const std::string source = readTextFile(sourcePath);
-  const std::string openBody = extractFunctionBody(source, "bool AsioDriverSession::open(");
-
-  // JUCE re-reads getChannels after the rate switch: a few drivers change the
-  // count there, and createBuffers with a stale count fails obscurely. A
-  // failed re-read must stay non-fatal (the original count stands).
-  const size_t ratePos = openBody.find("after sample rate negotiation");
-  assert(ratePos != std::string::npos);
-  const size_t recheckPos = openBody.find("getChannels", ratePos);
-  assert(recheckPos != std::string::npos);
-  assert(openBody.find("postRateOutputs", recheckPos) != std::string::npos);
-  const size_t guardPos = openBody.find("config.format.channelCount > postRateOutputs", recheckPos);
-  assert(guardPos != std::string::npos);
-  assert(openBody.find("changed after the rate switch", guardPos) != std::string::npos);
-}
 
 void testAsioDriverSessionProbesDoPCarriersInBothRateFamilies() {
   const std::filesystem::path testFilePath(__FILE__);
@@ -422,25 +351,6 @@ void testAsioDriverSessionProbesDoPCarriersInBothRateFamilies() {
   }
 }
 
-void testAsioDriverSessionOnlySetsRateWhenDifferent() {
-  const std::filesystem::path testFilePath(__FILE__);
-  const std::filesystem::path sourcePath =
-      testFilePath.parent_path().parent_path() / "output" / "asio" / "windows" / "AsioDriverSession.cpp";
-  const std::string source = readTextFile(sourcePath);
-  const std::string openBody = extractFunctionBody(source, "bool AsioDriverSession::open(");
-
-  // PortAudio/RtAudio guard the rate write behind a getSampleRate comparison:
-  // a redundant setSampleRate disturbs some drivers and re-triggers
-  // exclusive-format arbitration on multi-client devices.
-  const size_t negotiatePos = openBody.find("before sample rate negotiation");
-  assert(negotiatePos != std::string::npos);
-  const size_t readPos = openBody.find("alreadyAtRate", negotiatePos);
-  assert(readPos != std::string::npos);
-  const size_t setPos = openBody.find("setSampleRate(requestedRate)", negotiatePos);
-  assert(setPos != std::string::npos);
-  assert(openBody.find("!alreadyAtRate", negotiatePos) != std::string::npos);
-  assert(openBody.find("getSampleRate(&currentRate)", negotiatePos) != std::string::npos);
-}
 
 void testAsioRenderCallbackDoesNotResizeScratchBuffers() {
   const std::filesystem::path testFilePath(__FILE__);
@@ -505,8 +415,9 @@ void testAsioRenderCallbackAdaptsDsdBufferUnit() {
   // happen at the conservative probe unit (or the confirmed one), so neither
   // interpretation can overflow the driver buffer.
   assert(!renderBody.empty());
-  assert(renderBody.find("classifyDsdCallbackUnit") != std::string::npos);
-  assert(renderBody.find("advanceDsdRenderUnitProbe") != std::string::npos);
+  assert(renderBody.find("classifyDsdCallbackUnit") == std::string::npos);
+  assert(renderBody.find("activeRenderFrameCapacity") != std::string::npos);
+  assert(renderBody.find("dsdBufferUnitConfirmed") != std::string::npos);
   assert(renderBody.find("renderDsdUnitFramesSession_") != std::string::npos);
   assert(renderBody.find("pendingDsdBufferUnitMismatch_") == std::string::npos);
 }
@@ -776,6 +687,36 @@ void testFormatNegotiation() {
   assert(backend.outputInfo().actualBackend == "asio");
 }
 
+void testActualDeviceIdTracksTheOpenedDriver() {
+  const std::string firstId = "asio:{11111111-1111-1111-1111-111111111111}";
+  const std::string secondId = "asio:{895E25BB-F2E2-4E94-BE88-9D1DCD1C6793}";
+  auto host = std::make_unique<MockAsioHost>();
+  for (const auto& id : {firstId, secondId}) {
+    auto device = makeMockAsioDevice(id, {44100, 48000, 96000}, 2);
+    device.name = "FiiO ASIO Driver";
+    device.driverName = device.name;
+    host->devices.push_back(std::move(device));
+  }
+  auto* rawHost = host.get();
+  AsioBackend backend(std::move(host));
+  std::string error;
+
+  assert(backend.open(secondId, sourceFormat(48000, 24), &error));
+  assert(rawHost->lastOpenConfig.deviceId == secondId);
+  assert(backend.outputInfo().actualDeviceId == secondId);
+  assert(backend.outputInfo().actualDeviceName == "FiiO ASIO Driver");
+
+  assert(backend.open("auto", sourceFormat(48000, 24), &error));
+  assert(backend.outputInfo().actualDeviceId == firstId);
+  // A unique legacy name must report the resolved catalog ID, not the alias.
+  rawHost->devices.erase(rawHost->devices.begin() + 1);
+  assert(backend.open("asio:FiiO ASIO Driver", sourceFormat(48000, 24), &error));
+  assert(backend.outputInfo().actualDeviceId == firstId);
+
+  assert(!backend.open("asio:missing", sourceFormat(48000, 24), &error));
+  assert(backend.outputInfo().actualDeviceId.empty());
+}
+
 void testOpenFailureAndFallbackFormats() {
   {
     auto host = std::make_unique<MockAsioHost>();
@@ -972,7 +913,8 @@ void testDopRuntimeFactsMismatchWhenActualFormatDiffers() {
   AsioBackend backend(std::move(host));
   std::string error;
   assert(backend.open("asio:dop-mismatch", dopFormat(176400, 24, 2, AudioSampleFormat::Int24In32Interleaved), &error));
-  assert(backend.start([](float*, size_t frames) { return frames; }, nullptr, &error));
+  assert(!backend.start([](float*, size_t frames) { return frames; }, nullptr, &error));
+  assert(rawHost->startCalls == 0);
 
   const DopRuntimeFacts facts = backend.dopRuntimeFacts();
   assert(facts.state == DopRuntimeFactState::Mismatch);
@@ -1266,6 +1208,16 @@ void testNativeDsdDriverSelectedWireTypeAndIdleTail() {
         &error));
 
     rawHost->triggerBufferSwitch(0);
+    if (item.wireFormat == AudioSampleFormat::DsdInt8Ner8) {
+      for (size_t frame = 0; frame < 4; ++frame) {
+        const uint8_t left = frame == 0 ? 0xa1 : frame == 1 ? 0xa2 : 0x69;
+        const uint8_t right = frame == 0 ? 0xb1 : frame == 1 ? 0xb2 : 0x69;
+        for (size_t bit = 0; bit < 8; ++bit) {
+          assert(rawHost->channelBuffers[0].buffers[0][frame * 8 + bit] == ((left >> bit) & 1));
+          assert(rawHost->channelBuffers[1].buffers[0][frame * 8 + bit] == ((right >> bit) & 1));
+        }
+      }
+    } else {
     assert(rawHost->channelBuffers[0].buffers[0][0] == 0xa1);
     assert(rawHost->channelBuffers[1].buffers[0][0] == 0xb1);
     assert(rawHost->channelBuffers[0].buffers[0][1] == 0xa2);
@@ -1273,6 +1225,7 @@ void testNativeDsdDriverSelectedWireTypeAndIdleTail() {
     for (size_t frame = 2; frame < 4; ++frame) {
       assert(rawHost->channelBuffers[0].buffers[0][frame] == item.expectedIdle);
       assert(rawHost->channelBuffers[1].buffers[0][frame] == item.expectedIdle);
+    }
     }
 
     const NativeDsdRuntimeFacts facts = backend.nativeDsdRuntimeFacts();
@@ -1682,7 +1635,7 @@ void testRejectsUnsupportedChannelDescriptor() {
 
   AsioChannelFormat bigEndian;
   bigEndian.logicalFormat = AudioSampleFormat::Int32Interleaved;
-  bigEndian.containerBits = 32;
+  bigEndian.containerBits = 48;
   bigEndian.validBits = 32;
   bigEndian.littleEndian = false;
   rawHost->channelDescriptors = {bigEndian, bigEndian};
@@ -1708,6 +1661,55 @@ void testActualOutputFormatRefreshAfterBuffers() {
   assert(info.perfectReason.find("actual output format differs") != std::string::npos);
 }
 
+void testPcmWirePrecisionAndFloat64() {
+  for (bool doubleWire : {false, true}) {
+    auto host = makeHost();
+    auto* raw = host.get();
+    AsioChannelFormat descriptor;
+    descriptor.logicalFormat = doubleWire ? AudioSampleFormat::Float32Interleaved : AudioSampleFormat::Int32Interleaved;
+    descriptor.containerBits = doubleWire ? 64 : 32;
+    descriptor.validBits = doubleWire ? 64 : 20;
+    raw->channelDescriptors = {descriptor, descriptor};
+    AsioBackend backend(std::move(host));
+    std::string error;
+    assert(backend.open("asio:mock", sourceFormat(48000, 32), &error));
+    assert(backend.startTyped([&](PcmBlock& block) {
+      if (doubleWire) {
+        const float value = -0.5;
+        for (size_t i = 0; i < block.frames * 2; ++i) std::memcpy(block.data + i * 4, &value, 4);
+      } else {
+        const uint32_t value = 0xedcba987u;
+        for (size_t i = 0; i < block.frames * 2; ++i) std::memcpy(block.data + i * 4, &value, 4);
+      }
+      return block.frames;
+    }, {}, {}, &error));
+    raw->triggerBufferSwitch(0);
+    const auto info = backend.outputInfo();
+    assert(info.diagnostics.containerBits == descriptor.containerBits);
+    assert(info.diagnostics.validBits == descriptor.validBits);
+    if (doubleWire) {
+      double value = 0; std::memcpy(&value, raw->channelBuffers[0].buffers[0].data(), 8);
+      assert(value == -0.5);
+    } else {
+      assert(readInt32(raw->channelBuffers[0].buffers[0]) == (static_cast<int32_t>(0xedcba987u) >> 12));
+      assert(!info.outputPerfect && !info.pcmPassthrough);
+      assert(info.perfectReasonCode == "pcm_wire_precision_reduced");
+    }
+  }
+  // A reduced 20-bit container cannot carry the 24-bit DoP marker/payload.
+  auto host = makeHost();
+  auto* raw = host.get();
+  AsioChannelFormat narrow;
+  narrow.logicalFormat = AudioSampleFormat::Int32Interleaved;
+  narrow.validBits = 20;
+  raw->channelDescriptors = {narrow, narrow};
+  AsioBackend backend(std::move(host));
+  std::string error;
+  assert(backend.open("asio:mock", dopFormat(176400, 24, 2, AudioSampleFormat::Int24In32Interleaved), &error));
+  assert(!backend.start([](float*, size_t frames) { return frames; }, {}, &error));
+  assert(raw->startCalls == 0);
+}
+
 void testPcmShortReadIsCountedOncePerCallback() {
   auto host = makeHost();
   auto* rawHost = host.get();
@@ -1729,6 +1731,42 @@ void testPcmShortReadIsCountedOncePerCallback() {
   const auto secondSession = backend.outputInfo();
   assert(secondSession.diagnostics.sessionUnderrunCount == 0);
   assert(secondSession.diagnostics.lifetimeUnderrunCount == 1);
+}
+
+void testHelperStarvationIsIncludedInSessionAndLifetimeDiagnostics() {
+  auto host = makeHost();
+  auto* rawHost = host.get();
+  AsioBackend backend(std::move(host));
+  std::string error;
+  assert(backend.open("asio:mock", sourceFormat(48000, 32), &error));
+  assert(backend.start([](float*, size_t frames) { return frames; }, nullptr, &error));
+  rawHost->renderHealthSnapshot = {20, 7, 3};
+  rawHost->driverBoundaryHealthAvailable = true;
+  rawHost->triggerBufferSwitch(0);
+  std::this_thread::sleep_for(std::chrono::milliseconds(30));
+  rawHost->triggerBufferSwitch(1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(30));
+  rawHost->triggerBufferSwitch(0);
+  for (int read = 0; read < 2; ++read) {
+    const auto diagnostics = backend.outputInfo().diagnostics;
+    assert(diagnostics.asioHelperCallbackCount == 20);
+    assert(diagnostics.asioHelperUnderrunCount == 7);
+    assert(diagnostics.asioHelperBufferDropCount == 3);
+    assert(diagnostics.sessionUnderrunCount == 7);
+    assert(diagnostics.lifetimeUnderrunCount == 7);
+    assert(diagnostics.sessionBufferDropCount == 3);
+    assert(diagnostics.lifetimeBufferDropCount == 3);
+  }
+  backend.close();
+  backend.close();
+  assert(backend.outputInfo().diagnostics.lifetimeUnderrunCount == 7);
+  assert(backend.open("asio:mock", sourceFormat(48000, 32), &error));
+  const auto reopened = backend.outputInfo().diagnostics;
+  assert(reopened.sessionUnderrunCount == 0);
+  assert(reopened.sessionBufferDropCount == 0);
+  assert(reopened.lifetimeUnderrunCount == 7);
+  assert(reopened.lifetimeBufferDropCount == 3);
+  rawHost->renderHealthSnapshot = {};
 }
 
 void testOutputReadyFailureDisablesRepeatedDriverCalls() {
@@ -2321,13 +2359,9 @@ int main() {
   testDsdCallbackUnitClassification();
   testDsdRenderUnitProbeAdaptsOnConfirmedCadence();
   testAsioDriverActivationRequestsDriverClsid();
-  testAsioDriverSessionRequeriesBufferSizeAfterNativeDsdSwitch();
   testAsioDriverSessionHintsAtHeldDeviceWhenDsdSetIsRefused();
   testAsioDriverSessionFallsBackToRateOnlyNativeDsdOrder();
-  testAsioDriverSessionRetriesCreateBuffersAtPreferred();
-  testAsioDriverSessionRechecksChannelCountAfterRateSwitch();
   testAsioDriverSessionProbesDoPCarriersInBothRateFamilies();
-  testAsioDriverSessionOnlySetsRateWhenDifferent();
   testAsioRenderCallbackDoesNotResizeScratchBuffers();
   testAsioRenderCallbackAdaptsDsdBufferUnit();
   testAsioNativeDsdPrefillStaysInsideProbeUnit();
@@ -2349,6 +2383,7 @@ int main() {
   testFatalHelperProbeFailureStopsBeforeOpen();
   testMissingHelperKeepsStructuredLaunchReason();
   testFormatNegotiation();
+  testActualDeviceIdTracksTheOpenedDriver();
   testOpenFailureAndFallbackFormats();
   testExtremeSampleRates();
   testDopCarrierProfile();
@@ -2376,7 +2411,9 @@ int main() {
   testActualOutputFormats();
   testRejectsUnsupportedChannelDescriptor();
   testActualOutputFormatRefreshAfterBuffers();
+  testPcmWirePrecisionAndFloat64();
   testPcmShortReadIsCountedOncePerCallback();
+  testHelperStarvationIsIncludedInSessionAndLifetimeDiagnostics();
   testOutputReadyFailureDisablesRepeatedDriverCalls();
   testBufferSizeMatrix();
   testNativeDsdBufferSizeWithoutCatalogRange();

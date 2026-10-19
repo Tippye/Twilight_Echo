@@ -108,16 +108,18 @@ function close(): void {
     :class="{
       'drag-region': !preview,
       'no-drag': preview,
-      'title-bar-glass': glass && !closeOnly,
+      'title-bar-glass': glass && !immersive && !closeOnly,
       'title-bar-liquid': liquidMaterial && !immersive && !closeOnly,
       'title-bar-immersive': immersive && !closeOnly,
       'title-bar-close-only': closeOnly,
-      'title-bar-settings': titleSurface === 'settings' && !closeOnly,
-      'title-bar-streaming': titleSurface === 'streaming' && !closeOnly,
-      'title-bar-menu-open': menuOpen && !closeOnly
+      'title-bar-settings': titleSurface === 'settings' && !immersive && !closeOnly,
+      'title-bar-streaming': titleSurface === 'streaming' && !immersive && !closeOnly,
+      'title-bar-menu-open': menuOpen && !immersive && !closeOnly
     }"
   >
-    <div v-if="!closeOnly" class="title-bar-background" aria-hidden="true"></div>
+    <!-- Playback already paints the caption backdrop, including filtered artwork.
+         Keeping a separate material layer lets contrast preferences repaint it. -->
+    <div v-if="!closeOnly && !immersive" class="title-bar-background" aria-hidden="true"></div>
     <div
       v-if="canGoBack && !preview && !closeOnly"
       class="title-bar-back no-drag"
@@ -199,10 +201,7 @@ function close(): void {
           aria-controls="app-notice-history"
           @click="$emit('notifications', $event)"
         >
-          <svg class="notification-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-            <path v-if="doNotDisturb" d="m3 3 18 18" />
-          </svg>
+          <TitleBarIcon :name="doNotDisturb ? 'bell_off' : 'bell'" />
           <Transition name="notification-dot">
             <span
               v-if="!doNotDisturb && (unreadCount || activeTaskCount)"
@@ -262,10 +261,6 @@ function close(): void {
 .notification-btn {
   position: relative;
 }
-.notification-btn[aria-expanded='true'] {
-  color: var(--te-primary-500);
-  background: var(--te-shell-control-hover);
-}
 .notification-icon {
   width: var(--te-titlebar-icon-size, 16px);
   height: var(--te-titlebar-icon-size, 16px);
@@ -300,17 +295,19 @@ function close(): void {
   opacity: 0;
   transform: scale(0);
 }
-.settings-btn[aria-pressed='true'],
-.plugins-btn[aria-pressed='true'] {
-  background: var(--te-shell-control-hover);
-  color: var(--te-primary-500);
-}
 .title-bar {
   --te-titlebar-height: 40px;
-  --te-titlebar-material-surface: var(--te-app-bg);
+  --te-titlebar-material-surface: var(--te-chrome-frosted-solid, var(--te-app-bg));
+  --te-titlebar-frosted-surface: var(
+    --te-chrome-frosted-surface,
+    color-mix(in srgb, var(--te-titlebar-material-surface) 80%, transparent)
+  );
   --te-titlebar-material-ink: var(--te-shell-control-text);
   --te-titlebar-icon-size: 16px;
   --te-titlebar-control-width: 46px;
+  font-family: var(--te-font-sans);
+  font-weight: var(--te-control-font-weight, 500);
+  letter-spacing: normal;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -345,26 +342,12 @@ function close(): void {
   height: 100%;
   z-index: 0;
   pointer-events: none;
-  background:
-    linear-gradient(
-      color-mix(in srgb, var(--te-titlebar-material-ink) 4%, transparent),
-      transparent
-    ),
-    color-mix(in srgb, var(--te-titlebar-material-surface) 66%, transparent);
+  background: var(--te-titlebar-frosted-surface);
   box-shadow: none;
-  backdrop-filter: blur(20px) saturate(120%);
-  -webkit-backdrop-filter: blur(20px) saturate(120%);
-}
-
-/* Dark chrome has a soft surface, without a pale outline around the strip. */
-html[data-theme='dark'] .title-bar:not(.title-bar-immersive) .title-bar-background {
-  background: color-mix(in srgb, var(--te-titlebar-material-surface) 72%, transparent);
-  box-shadow: none;
-}
-
-html[data-theme='dark'] .title-bar-liquid .title-bar-background {
-  background: color-mix(in srgb, var(--te-lg-context-surface) 64%, transparent);
-  box-shadow: none;
+  backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
+  -webkit-backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
 }
 
 .title-bar::before {
@@ -373,6 +356,7 @@ html[data-theme='dark'] .title-bar-liquid .title-bar-background {
 
 .title-bar-glass {
   --te-titlebar-material-surface: #17181a;
+  --te-titlebar-frosted-surface: rgb(23 24 26 / 72%);
   --te-titlebar-material-ink: #fff;
 }
 
@@ -382,13 +366,16 @@ html[data-theme='dark'] .title-bar-liquid .title-bar-background {
   --te-shell-control-hover: color-mix(in srgb, var(--te-shell-control-text) 8%, transparent);
   --te-titlebar-material-surface: var(--te-player-bg);
   --te-titlebar-material-ink: var(--te-shell-control-text);
+  /* Presets must not tint the artwork again behind the caption controls. */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .title-bar-immersive .title-bar-background {
-  background: transparent;
+  background: transparent !important;
   box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .title-bar-start,
@@ -440,10 +427,6 @@ html[data-theme='dark'] .title-bar-liquid .title-bar-background {
   color: var(--te-on-accent);
 }
 
-.title-bar-glass .back-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .menu-btn {
   display: flex;
   align-items: center;
@@ -457,10 +440,6 @@ html[data-theme='dark'] .title-bar-liquid .title-bar-background {
   transition: background 0.15s;
   padding: 0;
   flex-shrink: 0;
-}
-
-.menu-btn:hover {
-  background: var(--te-shell-control-hover);
 }
 
 .settings-btn {
@@ -479,10 +458,6 @@ html[data-theme='dark'] .title-bar-liquid .title-bar-background {
   font-size: calc(var(--te-font-size-body, 14px) * 14 / 14);
 }
 
-.settings-btn:hover {
-  background: var(--te-shell-control-hover);
-}
-
 .plugins-btn {
   display: flex;
   align-items: center;
@@ -497,10 +472,6 @@ html[data-theme='dark'] .title-bar-liquid .title-bar-background {
   padding: 0;
   flex-shrink: 0;
   font-size: calc(var(--te-font-size-body, 14px) * 17 / 14);
-}
-
-.plugins-btn:hover {
-  background: var(--te-shell-control-hover);
 }
 
 .login-btn {
@@ -519,26 +490,9 @@ html[data-theme='dark'] .title-bar-liquid .title-bar-background {
   font-size: calc(var(--te-font-size-body, 14px) * 14 / 14);
 }
 
-.login-btn:hover {
-  background: var(--te-shell-control-hover);
-}
-
 /* Use a neutral wash for dark caption feedback so album accents cannot tint the chrome. */
-html[data-theme='dark']
-  .title-bar
-  :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .control-btn):not(
-    .close
-  ):hover {
+html[data-theme='dark'] .title-bar .control-btn:not(.notification-btn):not(.close):hover {
   background: color-mix(in srgb, var(--te-shell-control-text) 6%, transparent);
-}
-
-html[data-theme='dark'] .title-bar :is(.settings-btn, .plugins-btn)[aria-pressed='true'] {
-  background: color-mix(in srgb, var(--te-shell-control-text) 8%, transparent);
-  color: var(--te-primary-400);
-}
-
-html[data-theme='dark'] .title-bar :is(.settings-btn, .plugins-btn)[aria-pressed='true']:hover {
-  background: color-mix(in srgb, var(--te-shell-control-text) 11%, transparent);
 }
 
 .user-avatar {
@@ -552,16 +506,8 @@ html[data-theme='dark'] .title-bar :is(.settings-btn, .plugins-btn)[aria-pressed
   color: #fff;
 }
 
-.title-bar-glass :is(.menu-btn, .settings-btn, .plugins-btn):hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .title-bar-glass .login-btn {
   color: #fff;
-}
-
-.title-bar-glass .login-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .title-bar-controls {
@@ -653,11 +599,11 @@ html .title-bar.title-bar-close-only {
   color: #fff;
 }
 
-.title-bar-glass .control-btn:hover {
+.title-bar-glass .control-btn:not(.notification-btn):hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.control-btn:hover {
+.control-btn:not(.notification-btn):hover {
   background: var(--te-shell-control-hover);
 }
 
@@ -681,7 +627,6 @@ html
   :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .control-btn):not(
     .close
   ):hover {
-  background: var(--te-shell-control-hover);
   color: var(--te-shell-control-text);
   transform: none;
 }
@@ -699,26 +644,12 @@ html
 
 .title-bar-liquid .title-bar-background {
   display: block;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--te-lg-context-rim) 18%, transparent),
-      transparent 82%
-    ),
-    color-mix(in srgb, var(--te-lg-context-surface) 56%, transparent);
+  background: color-mix(in srgb, var(--te-lg-context-material) 72%, transparent);
   box-shadow: none;
-  backdrop-filter: blur(var(--te-lg-context-diffusion, 16px)) saturate(124%);
-  -webkit-backdrop-filter: blur(var(--te-lg-context-diffusion, 16px)) saturate(124%);
-}
-
-:global(html[data-te-liquid-glass-source='solid'] .title-bar-liquid .title-bar-background) {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--te-lg-context-rim) 10%, transparent),
-      transparent 82%
-    ),
-    var(--te-lg-context-material);
+  backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
+  -webkit-backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
 }
 
 .title-bar-liquid :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .control-btn) {
@@ -753,27 +684,218 @@ html
   opacity: 1;
 }
 
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .title-bar-background {
-    background: var(--te-titlebar-material-surface) !important;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-  .title-bar-liquid .title-bar-background {
-    background: var(--te-lg-context-surface-solid) !important;
-    border-bottom: 1px solid var(--te-lg-context-label);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+/* Inset feedback shares the caption material; the full 46 × 40 hit area stays intact. */
+html
+  .title-bar
+  :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .notification-btn) {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0;
+  background: transparent;
+  --te-titlebar-feedback: transparent;
+  transition:
+    background-color 160ms ease-out,
+    color 160ms ease-out,
+    opacity 100ms ease-out;
+}
+
+html
+  .title-bar
+  :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .notification-btn)::before {
+  content: '';
+  position: absolute;
+  inset: 5px 7px;
+  border-radius: 9px;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--te-titlebar-feedback);
+  transition: background-color 160ms ease-out;
+}
+
+html
+  .title-bar-immersive
+  :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .notification-btn) {
+  transition-property: background-color, opacity;
+}
+
+html
+  .title-bar
+  :is(
+    .menu-btn,
+    .back-btn,
+    .settings-btn,
+    .plugins-btn,
+    .login-btn,
+    .notification-btn
+  ):focus-visible::before {
+  outline: 2px solid var(--te-primary-500);
+  outline-offset: 1px;
+}
+
+html
+  .title-bar
+  :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .notification-btn):not(
+    :disabled
+  ):hover {
+  --te-titlebar-feedback: color-mix(in srgb, var(--te-shell-control-text) 6%, transparent);
+}
+
+html
+  .title-bar
+  :is(
+    .settings-btn[aria-pressed='true'],
+    .plugins-btn[aria-pressed='true'],
+    .notification-btn[aria-expanded='true']
+  ) {
+  --te-titlebar-feedback: color-mix(in srgb, var(--te-shell-control-text) 12%, transparent);
+  color: var(--te-primary-500);
+}
+
+html[data-theme='dark']
+  .title-bar
+  :is(
+    .settings-btn[aria-pressed='true'],
+    .plugins-btn[aria-pressed='true'],
+    .notification-btn[aria-expanded='true']
+  ) {
+  color: var(--te-primary-400);
+}
+
+html
+  .title-bar
+  :is(
+    .settings-btn[aria-pressed='true'],
+    .plugins-btn[aria-pressed='true'],
+    .notification-btn[aria-expanded='true']
+  ):not(:disabled):hover {
+  --te-titlebar-feedback: color-mix(in srgb, var(--te-shell-control-text) 16%, transparent);
+}
+
+html
+  .title-bar
+  :is(
+    .menu-btn,
+    .back-btn,
+    .settings-btn,
+    .plugins-btn,
+    .login-btn,
+    .notification-btn
+  ):focus-visible {
+  outline: none;
+}
+
+html
+  .title-bar
+  :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .notification-btn):active {
+  transform: none;
+  opacity: 0.8;
+}
+
+.title-bar-liquid
+  :is(.menu-btn, .back-btn, .settings-btn, .plugins-btn, .login-btn, .notification-btn)::after {
+  inset: 5px 7px;
+  border-radius: 9px;
+}
+
+@media (prefers-contrast: more) {
+  html[data-theme]
+    .title-bar
+    :is(
+      .settings-btn[aria-pressed='true'],
+      .plugins-btn[aria-pressed='true'],
+      .notification-btn[aria-expanded='true']
+    ),
+  html[data-theme]
+    .title-bar
+    :is(
+      .settings-btn[aria-pressed='true'],
+      .plugins-btn[aria-pressed='true'],
+      .notification-btn[aria-expanded='true']
+    ):hover {
+    --te-titlebar-feedback: color-mix(in srgb, var(--te-shell-control-text) 22%, transparent);
+    color: var(--te-shell-control-text);
   }
 }
 
 @media (forced-colors: active) {
+  html[data-theme]
+    .title-bar
+    :is(
+      .settings-btn[aria-pressed='true'],
+      .plugins-btn[aria-pressed='true'],
+      .notification-btn[aria-expanded='true']
+    ),
+  html[data-theme]
+    .title-bar
+    :is(
+      .settings-btn[aria-pressed='true'],
+      .plugins-btn[aria-pressed='true'],
+      .notification-btn[aria-expanded='true']
+    ):hover {
+    --te-titlebar-feedback: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+  html
+    .title-bar
+    :is(
+      .menu-btn,
+      .back-btn,
+      .settings-btn,
+      .plugins-btn,
+      .login-btn,
+      .notification-btn
+    ):focus-visible::before {
+    outline-color: Highlight;
+  }
+}
+
+html:is([data-te-motion='reduced'], [data-te-motion='off']) .title-bar button,
+html:is([data-te-motion='reduced'], [data-te-motion='off']) .title-bar button::before {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-bar button,
+  .title-bar button::before {
+    transition: none;
+  }
+}
+
+/* All effect switches target the painter, rather than its transparent host. */
+html[data-te-effects-mode='reduced'] .title-bar .title-bar-background,
+body.te-no-blur .title-bar .title-bar-background {
+  background: var(--te-titlebar-material-surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .title-bar-background {
+    background: var(--te-titlebar-material-surface) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .title-bar-liquid .title-bar-background {
+    background: var(--te-lg-context-surface-solid) !important;
+    border-bottom: 1px solid var(--te-lg-context-label);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  html .title-bar.title-bar-immersive {
+    --te-shell-control-text: CanvasText;
+    background: Canvas !important;
+  }
+
   .title-bar .title-bar-background {
     background: Canvas !important;
     border-bottom: 1px solid CanvasText;
     box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
 </style>

@@ -3,6 +3,7 @@ import { DEFAULT_DOWNLOAD_PREFERENCES } from '../../../shared/downloadPreference
 import { computed, ref } from 'vue'
 import { normalizeAppBackgroundSettings } from '../../../shared/appAppearance.ts'
 import { normalizeAppFontRendering } from '../../../shared/appFont.ts'
+import { normalizeStartupExperience } from '../../../shared/pluginExperience.ts'
 import {
   DEFAULT_MINI_PLAYER_SETTINGS,
   cloneMiniPlayerSettings
@@ -108,6 +109,7 @@ const fallbackSettings: AppSettings = {
   launchAtLogin: false,
   hardwareAcceleration: true,
   globalShortcuts: false,
+  shortcutEnabled: {},
   globalShortcutBindings: {
     previous: 'CommandOrControl+Alt+Left',
     next: 'CommandOrControl+Alt+Right',
@@ -129,9 +131,11 @@ const fallbackSettings: AppSettings = {
   closeWindowBehavior: 'quit',
   closeToTray: false,
   taskbarThumbarButtonsEnabled: true,
+  afterglowAutoEntry: 'off',
   onboardingCompleted: false,
   developerMode: false,
   startupHomePage: 'local',
+  startupExperience: null,
   navigationPages: normalizeNavigationPagePreferences(undefined),
   trackActivationMode: 'singleClick',
   language: 'system',
@@ -152,6 +156,7 @@ const fallbackSettings: AppSettings = {
   lyricsAppearance: cloneLyricsAppearance(DEFAULT_LYRICS_APPEARANCE),
   lyricsPresets: cloneLyricsPresetConfig(DEFAULT_LYRICS_PRESET_CONFIG),
   libraryFolders: [],
+  lastLibraryFolder: '',
   downloadPreferences: { ...DEFAULT_DOWNLOAD_PREFERENCES },
   downloadFolder: '',
   genreSeparators: DEFAULT_GENRE_SEPARATORS,
@@ -468,7 +473,8 @@ function applySnapshot(snapshot: SettingsSnapshot): void {
         }
       }
     },
-    liquidGlass: normalizeLiquidGlass(incoming.liquidGlass)
+    liquidGlass: normalizeLiquidGlass(incoming.liquidGlass),
+    startupExperience: normalizeStartupExperience(incoming.startupExperience)
   }
   defaults.value = { ...snapshot.defaults }
   paths.value = { ...snapshot.paths }
@@ -730,11 +736,13 @@ export function useSettingsStore() {
     await window.api.app.relaunch()
   }
 
-  async function addLibraryFolder(): Promise<void> {
+  async function addLibraryFolder(): Promise<string | null> {
     const folder = await window.api.dialog.openFolder()
-    if (!folder) return
-    if (settings.value.libraryFolders.includes(folder)) return
-    await updateSettings({ libraryFolders: [...settings.value.libraryFolders, folder] })
+    if (!folder) return null
+    if (!settings.value.libraryFolders.includes(folder)) {
+      await updateSettings({ libraryFolders: [...settings.value.libraryFolders, folder] })
+    }
+    return folder
   }
 
   async function removeLibraryFolder(folder: string): Promise<void> {

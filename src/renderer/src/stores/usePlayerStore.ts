@@ -25,6 +25,7 @@ import {
   UNSUPPORTED_TRACK_PLAYBACK_MESSAGE,
   unsupportedTracksNotice
 } from '../utils/trackPlaybackSupport.ts'
+import type { AfterglowRestoreState } from '../../../shared/afterglowMode.ts'
 import type {
   AudioProcessingSettings,
   OutputConfig,
@@ -135,6 +136,8 @@ import { createRemoteControlBridge } from './player/remoteControlBridge.ts'
 import { createRemotePlaybackPublisher } from './player/remotePlaybackPublisher.ts'
 import { createNativePlaybackToggleController } from '@renderer/stores/player/nativePlaybackToggleController.ts'
 import { createPlayerSystemIntegrations } from './player/playerSystemIntegrations.ts'
+import { useProviderStore } from './useProviderStore'
+import { onLocalTracksRemovalRequested } from '../utils/localTrackRemovalPolicy.ts'
 
 type NativePlaybackInfo = Awaited<ReturnType<typeof window.api.audioEngine.getPlaybackInfo>>
 type NativeOutputInfo = NativePlaybackInfo['outputInfo']
@@ -387,7 +390,12 @@ const visualizationData = shallowRef<NativeVisualizationData>(createInactiveVisu
 // 读取 visualizationData 的已挂载组件数；为 0 时 60ms IPC 轮询不启动。
 const visualizationConsumers = ref(0)
 const visualizationDocumentVisible = ref(typeof document === 'undefined' || !document.hidden)
-const { settings: appSettings, loaded: settingsLoaded, updateSettings } = useSettingsStore()
+const {
+  settings: appSettings,
+  loaded: settingsLoaded,
+  platform: appPlatform,
+  updateSettings
+} = useSettingsStore()
 const lyricsManagement = useLyricsManagement()
 let playbackAudio: HTMLAudioElement | null = null
 let playbackObjectUrl: string | null = null
@@ -511,9 +519,16 @@ async function prefetchUpcomingNcmStream(): Promise<void> {
     if (retryKey === ncmPrefetchRetryKey && Date.now() < ncmPrefetchRetryAfter) return
     attempted = true
     await syncPluginProviders()
-    const resolved = await useMediaProviders().resolvePlaybackUrl(upcoming, {
-      quality
-    })
+    const result = await useProviderStore().callProvider<
+      | string
+      | {
+          streamUrl: string
+          sampleRate?: number
+          bitrate?: number
+        }
+      | null
+    >('ncm', 'getPlaybackUrl', [upcoming, { quality, _twilightPlaybackMetadata: true }])
+    const resolved = typeof result === 'string' ? result : result?.streamUrl
     if (!resolved) return
     if (
       !isAuthorizedRemoteUrl(resolved) &&
@@ -523,6 +538,21 @@ async function prefetchUpcomingNcmStream(): Promise<void> {
     // Resolution and cache authorization may outlive queue/account/quality changes.
     const stillUpcoming = currentUpcoming()
     if (!stillUpcoming) return
+
+    if (result && typeof result !== 'string') {
+      stillUpcoming.sampleRate =
+        typeof result.sampleRate === 'number' &&
+        Number.isFinite(result.sampleRate) &&
+        result.sampleRate > 0
+          ? result.sampleRate
+          : undefined
+
+      stillUpcoming.bitrate =
+        typeof result.bitrate === 'number' && Number.isFinite(result.bitrate) && result.bitrate > 0
+          ? result.bitrate
+          : undefined
+    }
+
     stillUpcoming.streamUrl = resolved
     stillUpcoming.streamQuality = quality
     patchTrackInQueues(stillUpcoming)
@@ -940,6 +970,66 @@ async function stopNativeAudio(): Promise<void> {
   }
 }
 
+function normalizeRemovalPath(filePath: string): string {
+  const normalized = filePath.replace(/\\/g, '/')
+  return appPlatform.value === 'win32' ? normalized.toLocaleLowerCase('en-US') : normalized
+}
+
+function isRemovalTarget(filePath: string | undefined, targets: Set<string>): boolean {
+  return !!filePath && targets.has(normalizeRemovalPath(filePath))
+}
+
+/**
+ * Native playback preloads the upcoming queue item, so stopping only the
+ * current track is insufficient when that upcoming file is being trashed.
+ * Renderer fallback audio also needs its source cleared before the main IPC
+ * attempts the filesystem operation.
+ */
+async function prepareLocalTracksForRemoval(
+  _trackIds: string[],
+  filePaths: string[]
+): Promise<void> {
+  const targets = new Set(
+    filePaths
+      .filter((filePath) => typeof filePath === 'string' && filePath)
+      .map(normalizeRemovalPath)
+  )
+  if (targets.size === 0) return
+
+  const current = currentTrack.value
+  const currentPath =
+    current && getTrackSource(current) === 'local' ? normalizeRemovalPath(current.filePath) : ''
+  const currentMatches = currentPath.length > 0 && targets.has(currentPath)
+  const nativeInfo = playbackInfo.value
+  const nativeSourceMatches = isRemovalTarget(nativeInfo?.source, targets)
+  const upcomingSourceMatches = isRemovalTarget(nativeInfo?.upcomingTrack?.source, targets)
+  const rendererMatches = currentMatches && loadedTrackId === current?.id
+  const nativeMatches =
+    nativePlaybackActive || nativeQueueDelegated
+      ? currentMatches || nativeSourceMatches || upcomingSourceMatches
+      : nativeSourceMatches || upcomingSourceMatches
+
+  if (!nativeMatches && !rendererMatches) return
+
+  activeLoadToken += 1
+  nativeQueueRevisionFence.next()
+  clearCrossfadeTimer()
+  clearPlaybackToggleIntent()
+  clearNativePlaybackInfoIntent()
+  stopVisualizationPolling(true)
+  isLoading.value = false
+  isPlaying.value = false
+  loadedTrackId = ''
+  stopRendererAudio(true)
+
+  // Await the native command. The Windows decoder and any preloaded stream
+  // release their handles as part of Stop; the retrying trash operation in the
+  // main process covers the small OS-level close delay that can follow it.
+  if (nativeMatches) await stopNativeAudio()
+  nativePlaybackActive = false
+  nativeQueueDelegated = false
+}
+
 const playbackClockController = createPlaybackClockController({
   currentTrack,
   currentTime,
@@ -1303,6 +1393,18 @@ function findTrackIndexFromPlaybackInfo(info: NativePlaybackInfo): number {
     info,
     mappedTrackId,
     nativeQueueDelegated && nativeQueueSyncRequest === null
+  )
+}
+
+function isCurrentTrackNativePlaybackInfo(info: NativePlaybackInfo): boolean {
+  const index = nativeQueueLoader.findLogicalIndex(info, queue.value)
+  const track = currentTrack.value
+  return (
+    !!track &&
+    index >= 0 &&
+    index === queueIndex.value &&
+    queue.value[index]?.id === track.id &&
+    (!track.queueEntryId || queue.value[index]?.queueEntryId === track.queueEntryId)
   )
 }
 
@@ -1863,7 +1965,7 @@ watch(
 watch(
   () => appSettings.value?.audioOutputConfig,
   (config) => {
-    audioOutputConfig.value = normalizeOutputConfig(config, 8192)
+    audioOutputConfig.value = normalizeOutputConfig(config, 32768)
   },
   { deep: true, immediate: true }
 )
@@ -1880,6 +1982,7 @@ watch(
 )
 
 const cleanupFns: (() => void)[] = []
+cleanupFns.push(onLocalTracksRemovalRequested(prepareLocalTracksForRemoval))
 let listenersSetup = false
 let crossfadeTimer: number | null = null
 let crossfadeTrackId = ''
@@ -1891,6 +1994,22 @@ let lastActiveTrack: Track | null = null
 let restoredPlaybackPending = false
 let restoredPlaybackPosition = 0
 let pendingLoadStartTime = 0
+/**
+ * Set once a recreated renderer adopted live engine state after Afterglow.
+ * Startup must not replay persisted volume/rate over the running host.
+ */
+let adoptedAfterglowRestore = false
+
+const ADOPTED_PLAY_MODES: readonly PlayMode[] = [
+  'sequential',
+  'listLoop',
+  'repeat',
+  'shuffle',
+  'heart'
+]
+
+const normalizeAdoptedPlayMode = (value: string): PlayMode =>
+  (ADOPTED_PLAY_MODES as readonly string[]).includes(value) ? (value as PlayMode) : 'sequential'
 let nativeQueueSyncRequest: Promise<void> | null = null
 let nativeHistoryRestartPending = false
 const rendererPlayModeBoundaryPending = ref(false)
@@ -2782,8 +2901,16 @@ function setupAudioEngineListeners(): void {
       } else {
         setAudioEngineError(null)
       }
-      syncSoftwareVolumeToEngine()
-      api.setPlaybackRate(playbackRate.value).catch(() => {})
+      // A renderer recreated after Afterglow must not overwrite the running
+      // host with the persisted volume/rate; it adopted the live values instead.
+      // A later engine-ready event (for example after an audio-service restart)
+      // must resume syncing the persisted settings.
+      if (adoptedAfterglowRestore) {
+        adoptedAfterglowRestore = false
+      } else {
+        syncSoftwareVolumeToEngine()
+        api.setPlaybackRate(playbackRate.value).catch(() => {})
+      }
       await refreshAudioOutputState()
       try {
         const nativeInfo = await api.getPlaybackInfo()
@@ -3933,6 +4060,17 @@ export function usePlayerStore() {
     await togglePlayState()
   }
 
+  /** End the current transport while retaining the user's queue for replay. */
+  function stopPlayback(): void {
+    clearCrossfadeTimer()
+    resetPlaybackRuntimeStateForRestore()
+    currentTrack.value = null
+    isPlaying.value = false
+    isLoading.value = false
+    currentTime.value = 0
+    resetPlaybackUiForTrackSwitch(null, 0)
+  }
+
   function prev(): void {
     previous()
   }
@@ -3954,7 +4092,72 @@ export function usePlayerStore() {
     await lyricsLoader.ensureCurrentTrackLyricsLoaded(currentTrack.value, true, true)
   }
 
+  /**
+   * Afterglow restore: adopt the engine's live state without issuing transport
+   * commands. The native engine kept playing while the renderer was unloaded, so
+   * replaying `loadQueue`/`play` here would restart or interrupt it.
+   */
+  function adoptAfterglowRestore(state: AfterglowRestoreState): void {
+    const snapshotQueue = Array.isArray(state.queue) ? (state.queue as Track[]) : []
+    if (snapshotQueue.length === 0) return
+    const index = Number.isInteger(state.queueIndex)
+      ? Math.min(Math.max(0, state.queueIndex), snapshotQueue.length - 1)
+      : 0
+
+    activeLoadToken += 1
+    nativeQueueRevisionFence.next()
+    nativeSourceToTrackId.clear()
+    clearNativePlaybackInfoIntent()
+    clearPlaybackToggleIntent()
+    resetPlaybackClock()
+    stopVisualizationPolling(true)
+    stopRendererAudio(true)
+
+    const adoptedQueue = toPlaybackQueueSnapshots(snapshotQueue)
+    const track = adoptedQueue[index]
+    if (!track) return
+    const nativeQueueIndices = Array.isArray(state.nativeQueueIndices)
+      ? state.nativeQueueIndices
+      : null
+    queue.value = adoptedQueue
+    originalQueue.value = [...adoptedQueue]
+    queueIndex.value = index
+    const hydrated = hydratePlaybackTrack(track)
+    currentTrack.value = hydrated
+    lastActiveTrack = hydrated
+    loadedTrackId = hydrated.id
+    duration.value = state.duration > 0 ? state.duration : cueDuration(hydrated)
+    setCurrentTimeImmediate(Math.max(0, state.position))
+    isPlaying.value = state.state === 'playing'
+    isLoading.value = false
+    playbackRate.value = state.playbackRate
+    volume.value = Math.min(
+      Math.max(0, state.volume),
+      appSettings.value.audioDeviceProfiles.volumeCeiling
+    )
+    playMode.value = normalizeAdoptedPlayMode(state.playMode)
+    restoredPlaybackPending = false
+    restoredPlaybackPosition = 0
+    pendingLoadStartTime = 0
+    autoAdvanceInFlight = false
+    advancingFromEndedTrackId = ''
+    nativePlaybackActive = true
+    // A windowed adoption (current+next online queue) still lets the native
+    // engine advance inside the loaded window, but the renderer must keep
+    // handling queue-end so playback does not stop silently at the window tail.
+    nativeQueueDelegated = !nativeQueueIndices || nativeQueueIndices.length === adoptedQueue.length
+    adoptedAfterglowRestore = true
+    nativeQueueLoader.adopt(adoptedQueue, {
+      queueIndex: index,
+      queueToken: state.queueToken,
+      ...(nativeQueueIndices ? { nativeQueueIndices } : {})
+    })
+    void lyricsLoader.ensureCurrentTrackLyricsLoaded(hydrated, true)
+    startRendererPlaybackClock()
+  }
+
   return {
+    adoptAfterglowRestore,
     rehydrateCurrentTrackFromLibrary,
     currentTrack,
     dominantColor,
@@ -4000,12 +4203,15 @@ export function usePlayerStore() {
     audioOutputOptions,
     audioDeviceOptions,
     audioOutputDeviceOptions,
+    /** Native→logical queue mapping for the pre-unload handoff. */
+    getNativeQueueIndices: (): number[] | null => nativeQueueLoader.getCommittedIndices(),
     audioProcessing,
     audioOutputConfig,
     audioOutputConfigApplyStatus,
     dspOutputStage,
     dspStereoImage,
     playbackInfo,
+    isCurrentTrackNativePlaybackInfo,
     loudnormStatus,
     loudnormStatusSource,
     outputInfo,
@@ -4028,6 +4234,7 @@ export function usePlayerStore() {
     playTrackFromPosition,
     changePlaybackQuality,
     togglePlay,
+    stopPlayback,
     next,
     prev,
     seek,

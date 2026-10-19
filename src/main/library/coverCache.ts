@@ -5,6 +5,11 @@ import { join, extname, resolve } from 'path'
 import { createHash } from 'crypto'
 import { getMusicCacheRoot } from '../cache/ncmCache.ts'
 import { readCachedProtocolFile, type ProtocolAssetBytes } from '../cache/protocolAssetCache'
+import { createBackgroundDisplayCache } from '../cache/backgroundDisplayCache.ts'
+
+export const prepareBackgroundForDisplay = createBackgroundDisplayCache((bytes) =>
+  nativeImage.createFromBuffer(bytes)
+)
 
 // ─── Cover thumbnail disk cache ─────────────────────────────────────
 // Every cover that reaches the disk cache is capped at 500px wide JPEG

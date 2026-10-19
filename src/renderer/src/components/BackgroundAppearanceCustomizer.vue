@@ -13,6 +13,10 @@ const {
   previewPage,
   tone,
   importing,
+  matching,
+  recipePromptOpen,
+  recipePromptRef,
+  busy,
   advancedOpen,
   pageOptions,
   materials,
@@ -30,6 +34,9 @@ const {
   resetCurrent,
   selectMaterial,
   useTransparentRecipe,
+  dismissRecipePrompt,
+  applyRecipeFromPrompt,
+  setBackgroundKind,
   fullPreview,
   cancel,
   save,
@@ -60,7 +67,7 @@ const {
             type="button"
             class="appearance-icon-button"
             aria-label="取消并关闭"
-            :disabled="state.saving || importing"
+            :disabled="state.saving || busy"
             @click="cancel"
           >
             <i class="pi pi-times" />
@@ -147,10 +154,10 @@ const {
             <button
               type="button"
               class="appearance-recipe"
-              :disabled="state.saving || importing"
+              :disabled="inherited || state.saving || busy"
               @click="useTransparentRecipe"
             >
-              <i class="pi pi-eye" /> 图片通透推荐搭配
+              <i class="pi pi-eye" /> {{ matching ? '正在分析背景…' : '图片通透推荐搭配' }}
             </button>
           </aside>
           <div
@@ -193,14 +200,14 @@ const {
                   @change="setInheritance"
                 />继承统一背景</label
               >
-              <fieldset :disabled="inherited || state.saving || importing">
+              <fieldset :disabled="inherited || state.saving || busy">
                 <div class="appearance-segment">
                   <button
                     v-for="kind in ['color', 'image'] as const"
                     :key="kind"
                     type="button"
                     :aria-pressed="activeBackground.kind === kind"
-                    @click="editableBackground().kind = kind"
+                    @click="setBackgroundKind(kind)"
                   >
                     {{ kind === 'color' ? '纯色' : '图片' }}
                   </button>
@@ -266,7 +273,7 @@ const {
                   :key="material.value"
                   type="button"
                   :aria-pressed="activeMaterial === material.value"
-                  :disabled="state.saving"
+                  :disabled="state.saving || busy"
                   @click="selectMaterial(material.value)"
                 >
                   <i :class="material.icon" />{{ material.label }}
@@ -284,7 +291,7 @@ const {
                 <i :class="advancedOpen ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" />
               </button>
               <div v-if="advancedOpen">
-                <fieldset :disabled="inherited || state.saving">
+                <fieldset :disabled="inherited || state.saving || busy">
                   <div
                     v-for="field in ['positionX', 'positionY'] as const"
                     :key="field"
@@ -304,7 +311,7 @@ const {
                     />
                   </div>
                 </fieldset>
-                <fieldset :disabled="state.saving">
+                <fieldset :disabled="state.saving || busy">
                   <CardAppearanceSettings
                     v-model="state.draft"
                     v-model:tone="tone"
@@ -316,16 +323,16 @@ const {
         </div>
         <p v-if="state.error" class="appearance-error" role="alert">{{ state.error }}</p>
         <footer class="appearance-editor-footer">
-          <button type="button" :disabled="state.saving || importing" @click="resetCurrent">
+          <button type="button" :disabled="state.saving || busy" @click="resetCurrent">
             恢复当前项默认</button
-          ><button type="button" :disabled="state.saving || importing" @click="fullPreview(true)">
+          ><button type="button" :disabled="state.saving || busy" @click="fullPreview(true)">
             全窗口预览</button
-          ><span /><button type="button" :disabled="state.saving || importing" @click="cancel">
+          ><span /><button type="button" :disabled="state.saving || busy" @click="cancel">
             取消</button
           ><button
             type="button"
             class="appearance-save"
-            :disabled="state.saving || importing"
+            :disabled="state.saving || busy"
             @click="save"
           >
             {{ importing ? '导入中…' : state.saving ? '保存中…' : '保存并使用' }}
@@ -342,6 +349,43 @@ const {
           class="appearance-file-input"
           @change="importImage"
         />
+      </section>
+    </div>
+    <div
+      v-if="appearanceEditorOpen && !state.fullWindow && recipePromptOpen"
+      class="appearance-recipe-prompt-backdrop"
+      @click.self="dismissRecipePrompt"
+    >
+      <section
+        class="appearance-recipe-prompt"
+        :ref="
+          (element) => {
+            recipePromptRef = element as HTMLElement | null
+          }
+        "
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="appearance-recipe-prompt-title"
+        aria-describedby="appearance-recipe-prompt-description"
+        tabindex="-1"
+      >
+        <div class="appearance-recipe-prompt-icon" aria-hidden="true">
+          <i class="pi pi-sparkles" />
+        </div>
+        <div class="appearance-recipe-prompt-copy">
+          <h2 id="appearance-recipe-prompt-title">图片已更换</h2>
+          <p id="appearance-recipe-prompt-description">
+            要不要使用图片通透推荐搭配？我会根据图片明暗自动选择文字颜色和保护遮罩，让主页卡片与设置文字更清晰。
+          </p>
+        </div>
+        <div class="appearance-recipe-prompt-actions">
+          <button type="button" class="appearance-recipe-prompt-later" @click="dismissRecipePrompt">
+            稍后设置
+          </button>
+          <button type="button" class="appearance-save" @click="applyRecipeFromPrompt">
+            <i class="pi pi-eye" aria-hidden="true" /> 应用推荐
+          </button>
+        </div>
       </section>
     </div>
     <div

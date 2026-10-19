@@ -120,6 +120,30 @@ function measure(options: Parameters<typeof installDom>[0]): number {
   return offset
 }
 
+test('default sidebar preserves its content clearance during a slide and repeated toggles', () => {
+  for (const right of [240, 160, 80, 0, -4, 0, 80, 160, 240]) {
+    installDom({
+      shellLayout: 'classic',
+      sideMenuInset: 4,
+      sideMenuRect: { top: 100, bottom: 796, left: right - 216, right, height: 696 },
+      playerBarRect: { top: 700, bottom: 778, left: 94, right: 1106, height: 78 }
+    })
+    const clearance = useSideMenuClearance({ showLocalSidebar: ref(true), hasPlayerBar: ref(true) })
+    clearance.measureSideMenuClearance()
+    assert.equal(
+      clearance.sideMenuBottomOffset.value,
+      0,
+      'the material bounds cannot depend on the animated rect'
+    )
+    assert.equal(
+      clearance.sideMenuToolsClearance.value,
+      106,
+      'sliding past the player cannot resize the scroller'
+    )
+    clearance.dispose()
+  }
+})
+
 test('sidebar clearance reserves room for a visible overlapping playbar', () => {
   // 800 viewport - 700 top + 10 gap.
   assert.equal(measure({ playerBarHidden: 'false' }), 110)

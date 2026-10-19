@@ -118,7 +118,7 @@ test('quick setup hides after configuration, reveals nested targets, and preserv
         .map((file) => `<link rel="stylesheet" href="bundle/${file}">`)
         .join(
           ''
-        )}<link rel="stylesheet" href="app.css"><style>body{margin:0;font:14px system-ui}*{box-sizing:border-box}.settings-preview-page{scroll-behavior:auto}</style></head><body><div id="app"></div><script>window.api=new Proxy({}, {get:(target,service)=>Object.hasOwn(target,service)?target[service]:new Proxy({}, {get:(_module,method)=>method.startsWith('on')?()=>()=>{}:async()=>method==='listInstalled'||method==='getShortcutStatuses'?[]:null})})</script><script src="bundle/${files.find((file) => file.endsWith('.js'))}"></script></body></html>`
+        )}<link rel="stylesheet" href="app.css"><style>body{margin:0;font:14px system-ui}*{box-sizing:border-box}.settings-preview-page{scroll-behavior:auto}</style></head><body><div id="app"></div><script>window.api=new Proxy({}, {get:(target,service)=>Object.hasOwn(target,service)?target[service]:new Proxy({}, {get:(_module,method)=>method.startsWith('on')?()=>()=>{}:async()=>method==='getAutoMixStemCapabilities'?{status:'missing',cpu:false,gpu:false,packs:[]}:method==='getAutoMixStemInstallStatus'?{phase:'idle',completedBytes:0,totalBytes:0}:method==='listInstalled'||method==='getShortcutStatuses'?[]:null})})</script><script src="bundle/${files.find((file) => file.endsWith('.js'))}"></script></body></html>`
     )
     const evidence = process.env.TWILIGHT_SETTINGS_EVIDENCE_DIR
     if (evidence) await mkdir(evidence, { recursive: true })
@@ -162,6 +162,7 @@ import {settings} from '@renderer/components/settingsOrganization.fixture.mjs'
 import {useAudioOutputDspStore,selectedDevice} from '@renderer/stores/useAudioOutputDspStore'
 import SettingsQuickSetup from '@renderer/components/settings-page/SettingsQuickSetup.vue'
 import {SETTINGS_SEARCH_INDEX} from '@renderer/components/settings-page/types.ts'
+import {TWILIGHT_AUTOMIX_AVAILABLE} from '@renderer/../../shared/twilightAutoMix.ts'
 import {selection} from 'quick-test-theme'
 const expect=(value,message)=>{if(!value)throw Error(message)}
 const settle=async()=>{await nextTick();await new Promise(resolve=>requestAnimationFrame(resolve));await new Promise(resolve=>setTimeout(resolve,80));await nextTick()}
@@ -175,7 +176,7 @@ window.runQuickSetupTests=async()=>{
  const trigger=card.querySelector(':scope > button')
  const actions=[...card.querySelectorAll('.settings-quick-setup-action')]
  expect(actions.length===3&&trigger.getAttribute('aria-expanded')==='true','three optional quick setup entries must be visible initially')
- for(const id of ['output-advanced','playback-transitions','player-bar','player-bar-behavior-details','player-bar-layout-details','theme-customization','window-transparency-details','storage','shortcut-details','external-connections','network-proxy','lyrics-style-details'])expect(page.querySelector('#'+id+' > button').getAttribute('aria-expanded')==='false','advanced group must start collapsed: '+id)
+ for(const id of ['output-advanced','playback-transitions','player-bar','player-bar-behavior-details','player-bar-layout-details','theme-customization','window-transparency-details','storage','shortcut-details','external-connections','network-proxy','lyrics-style-details']){const groupTrigger=page.querySelector('#'+id+' > button');expect(groupTrigger,'advanced group trigger missing: '+id);expect(groupTrigger.getAttribute('aria-expanded')==='false','advanced group must start collapsed: '+id)}
  expect(card.textContent.includes('已添加 0 个文件夹')&&card.textContent.includes('跟随系统默认设备')&&card.textContent.includes('默认主题'),'unconfigured users must retain valid default audio and theme choices')
  const originalSettings=JSON.stringify(settings.value)
  for(const [index,id] of ['library-folders','audio-device','color-mode'].entries()){
@@ -203,7 +204,8 @@ window.runQuickSetupTests=async()=>{
  expect([...page.querySelectorAll('[role="option"]')].some(option=>option.textContent.includes('歌曲信息缓存')),'old terminology must remain searchable')
  const beforeFallback=JSON.stringify(settings.value)
  const fallback=await reveal('autoMixStemMode')
- expect(fallback.dataset.settingId==='autoMixMode'&&page.textContent.includes('分轨功能暂不可用'),'unavailable stems must explain and focus the main AutoMix item')
+ if(TWILIGHT_AUTOMIX_AVAILABLE)expect(fallback.dataset.settingId==='autoMixStemMode','available stems must focus their own settings item')
+ else expect(fallback.dataset.settingId==='autoMixMode'&&page.textContent.includes('分轨功能暂不可用'),'unavailable stems must explain and focus the main AutoMix item')
  expect(JSON.stringify(settings.value)===beforeFallback,'fallback search must never enable a feature')
  expect(page.querySelectorAll('[data-setting-id="dsd-output-mode"]').length===1&&!page.querySelector('#advanced-engine-parameters [data-setting-id="dsd-output-mode"]'),'DSD must have one editing entry')
  expect(page.querySelector('#dsd-routing [data-setting-id="pcm-to-dsd"]'),'PCM to DSD must belong to DSD playback')

@@ -31,16 +31,24 @@ const normalizeStored = new Function(
   `${adapterJs}; return normalizeOutputConfig`
 )(normalizeOutputConfig, { audioOutputConfig: defaults }) as (config: unknown) => OutputConfig
 
-test('stored buffer preferences keep 8192 frames while active output keeps its 2048 cap', () => {
-  const input = { preferredBufferSize: 9000.9, upmixLfeLowpassHz: 900, pcmToDsdMode: 'dsd128' }
+test('large ASIO buffer preferences survive storage and activation', () => {
+  const input = { preferredBufferSize: 32768, upmixLfeLowpassHz: 900, pcmToDsdMode: 'dsd128' }
   const stored = normalizeStored(input)
   const active = normalizeOutputConfig(stored)
-  assert.equal(stored.preferredBufferSize, 8192)
-  assert.equal(active.preferredBufferSize, 2048)
+  assert.equal(stored.preferredBufferSize, 32768)
+  assert.equal(active.preferredBufferSize, 32768)
   assert.equal(stored.upmixLfeLowpassHz, 500)
   assert.equal(active.pcmToDsdMode, 'dsd128')
-  assert.deepEqual({ ...stored, preferredBufferSize: 2048 }, active)
-  assert.equal(input.preferredBufferSize, 9000.9)
+  assert.deepEqual(stored, active)
+  assert.equal(input.preferredBufferSize, 32768)
+})
+
+test('ASIO output channel preferences are finite zero-based indices', () => {
+  for (const [input, expected] of [[-1, 0], [2.9, 2], [255, 255], [999, 255], [NaN, 0], [Infinity, 0]]) {
+    const stored = normalizeStored({ asioOutputChannelStart: input })
+    assert.equal(stored.asioOutputChannelStart, expected)
+    assert.deepEqual(normalizeOutputConfig(stored), stored)
+  }
 })
 
 test('stored and active output use the same finite-number, routing and continuity rules', () => {

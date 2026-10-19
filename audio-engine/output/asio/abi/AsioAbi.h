@@ -33,9 +33,22 @@ constexpr bool asioErrorIsSuccess(AsioError value) {
 }
 
 inline constexpr AsioSampleType kAsioSampleInt16Lsb = 16;
+inline constexpr AsioSampleType kAsioSampleInt16Msb = 0;
+inline constexpr AsioSampleType kAsioSampleInt24Msb = 1;
+inline constexpr AsioSampleType kAsioSampleInt32Msb = 2;
+inline constexpr AsioSampleType kAsioSampleFloat32Msb = 3;
+inline constexpr AsioSampleType kAsioSampleFloat64Msb = 4;
+inline constexpr AsioSampleType kAsioSampleInt32Msb16 = 8;
+inline constexpr AsioSampleType kAsioSampleInt32Msb18 = 9;
+inline constexpr AsioSampleType kAsioSampleInt32Msb20 = 10;
+inline constexpr AsioSampleType kAsioSampleInt32Msb24 = 11;
 inline constexpr AsioSampleType kAsioSampleInt24Lsb = 17;
 inline constexpr AsioSampleType kAsioSampleInt32Lsb = 18;
 inline constexpr AsioSampleType kAsioSampleFloat32Lsb = 19;
+inline constexpr AsioSampleType kAsioSampleFloat64Lsb = 20;
+inline constexpr AsioSampleType kAsioSampleInt32Lsb16 = 24;
+inline constexpr AsioSampleType kAsioSampleInt32Lsb18 = 25;
+inline constexpr AsioSampleType kAsioSampleInt32Lsb20 = 26;
 inline constexpr AsioSampleType kAsioSampleInt32Lsb24 = 27;
 inline constexpr AsioSampleType kAsioSampleDsdInt8Lsb1 = 32;
 inline constexpr AsioSampleType kAsioSampleDsdInt8Msb1 = 33;

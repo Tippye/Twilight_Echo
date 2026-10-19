@@ -418,7 +418,8 @@ function deleteMenuPlaylist(): void {
     <!-- Feature Cards: Recent & Ranking portals (ncm only — external providers don't implement these) -->
     <section class="feature-cards" v-if="isLoggedIn && showFeatureCards !== false">
       <!-- Recent Played Card -->
-      <div
+      <button
+        type="button"
         class="glass-card feature-card recent-card"
         data-te-interactive
         @click="emit('openRecent')"
@@ -435,10 +436,11 @@ function deleteMenuPlaylist(): void {
             <i class="pi pi-chevron-right"></i>
           </div>
         </div>
-      </div>
+      </button>
 
       <!-- Top Ranking Card -->
-      <div
+      <button
+        type="button"
         class="glass-card feature-card ranking-card"
         data-te-interactive
         @click="emit('openRanking')"
@@ -455,7 +457,7 @@ function deleteMenuPlaylist(): void {
             <i class="pi pi-chevron-right"></i>
           </div>
         </div>
-      </div>
+      </button>
     </section>
 
     <!-- Playlists Section -->
@@ -1123,6 +1125,9 @@ function deleteMenuPlaylist(): void {
 }
 
 .feature-card {
+  text-align: left;
+  color: inherit;
+  font: inherit;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;

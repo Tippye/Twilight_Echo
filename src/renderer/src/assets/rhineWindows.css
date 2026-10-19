@@ -1,0 +1,136 @@
+/* Palette from Rhine-Music-Demo a889801f, src/music.css. The host's bundled
+   MiSans is reused. Window sizes, input handling and user settings stay owned
+   by their existing components. Nothing here is persisted into user profiles. */
+html.rhine-experience-window {
+  --rhine-ink: #232722;
+  --rhine-muted: #74786f;
+  --rhine-line: rgba(42, 49, 42, 0.2);
+  --rhine-accent: #b56834;
+  --rhine-surface: #efede7;
+  --rhine-panel: rgba(245, 244, 239, 0.98);
+}
+html.rhine-experience-window[data-experience-tone='night'] {
+  --rhine-ink: #e9eef2;
+  --rhine-muted: #9caabd;
+  --rhine-line: rgba(208, 226, 243, 0.2);
+  --rhine-accent: #d9ad7d;
+  --rhine-surface: #162234;
+  --rhine-panel: rgba(17, 27, 42, 0.97);
+}
+
+/* Inline customization tokens are temporarily overridden for this experience;
+   removing the root class restores the original profile without a write. */
+.rhine-experience-window .mini-player-root {
+  --mini-background-fallback: var(--rhine-surface) !important;
+  --mini-placeholder: var(--rhine-surface) !important;
+  --mini-text: var(--rhine-ink) !important;
+  --mini-muted: var(--rhine-muted) !important;
+  --mini-accent: var(--rhine-accent) !important;
+  --mini-track-accent: var(--rhine-accent) !important;
+  --mini-border-color: var(--rhine-line) !important;
+  --mini-window-radius: 2px !important;
+  --mini-font-family: MiSans, system-ui, sans-serif !important;
+}
+.rhine-experience-window .mini-player-surface {
+  background: var(--rhine-panel);
+  box-shadow: inset 0 0 0 1px var(--rhine-line);
+}
+.rhine-experience-window :is(.mini-background-source, .mini-background-overlay, .mini-grain) {
+  display: none;
+}
+.rhine-experience-window .mini-artwork-wrap {
+  border-radius: 1px;
+  border: 1px solid var(--rhine-line);
+  transform: none;
+  box-shadow: 4px 5px 0 color-mix(in srgb, var(--rhine-ink) 9%, transparent);
+}
+.rhine-experience-window .mini-title {
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.rhine-experience-window :is(.mini-kicker, .mini-time) {
+  letter-spacing: 0.12em;
+}
+.rhine-experience-window .mini-play-button {
+  border: 1px solid var(--rhine-line);
+  border-radius: 2px;
+  color: var(--rhine-ink);
+  background: var(--rhine-surface);
+  box-shadow: none;
+}
+.rhine-experience-window .mini-progress-track {
+  height: 2px;
+  border-radius: 0;
+}
+.rhine-experience-window .mini-progress-fill {
+  background: var(--rhine-accent);
+}
+
+html.rhine-experience-window .tray-player {
+  color: var(--rhine-ink);
+  background: var(--rhine-panel);
+  border: 1px solid var(--rhine-line);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 16%, transparent);
+  font-family: MiSans, system-ui, sans-serif;
+}
+html.rhine-experience-window .tray-player .track-copy strong {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+html.rhine-experience-window .tray-player :is(.track-copy span, .time-row, .close-button) {
+  color: var(--rhine-muted);
+}
+html.rhine-experience-window .tray-player .time-row {
+  letter-spacing: 0.12em;
+}
+html.rhine-experience-window .tray-player .progress-slider {
+  accent-color: var(--rhine-accent);
+}
+html.rhine-experience-window .tray-player :is(.play-button, .page-actions button) {
+  color: var(--rhine-ink);
+  background: var(--rhine-surface);
+  border: 1px solid var(--rhine-line);
+  border-radius: 2px;
+}
+html.rhine-experience-window .tray-player button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--rhine-accent) 16%, var(--rhine-surface));
+}
+
+html.rhine-experience-window .dl-root:not(.is-taskbar) .dl-board {
+  border-radius: 2px;
+  border-color: var(--rhine-line);
+  background: var(--rhine-panel);
+  box-shadow: none;
+}
+html.rhine-experience-window .dl-root:not(.is-taskbar) {
+  --dl-active: var(--rhine-accent) !important;
+  --dl-active-end: var(--rhine-accent) !important;
+  --dl-inactive: var(--rhine-muted) !important;
+  --dl-outline-width: 0px !important;
+  --dl-shadow-alpha: 0 !important;
+  --dl-font: MiSans, system-ui, sans-serif !important;
+  letter-spacing: 0.04em;
+}
+html.rhine-experience-window :is(.dl-toolbar, .dl-palette-menu, .dl-unlock-affordance) {
+  color: var(--rhine-ink);
+  background: var(--rhine-panel);
+  border: 1px solid var(--rhine-line);
+  border-radius: 2px;
+  box-shadow: none;
+}
+html.rhine-experience-window .dl-toolbar button {
+  border-radius: 2px;
+}
+html.rhine-experience-window .dl-toolbar button:is(:hover, .is-selected) {
+  background: color-mix(in srgb, var(--rhine-accent) 16%, var(--rhine-surface));
+}
+html.rhine-experience-window .dl-song-label {
+  color: var(--rhine-muted);
+}
+html.rhine-experience-window .dl-placeholder {
+  color: var(--rhine-muted);
+}
+html.rhine-experience-window .dl-root:not(.is-taskbar) :is(.dl-translation, .dl-romanization) {
+  color: var(--rhine-muted);
+}

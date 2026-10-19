@@ -184,10 +184,24 @@ html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics .f
   align-items: center;
   gap: 24px;
   min-height: var(--te-setting-row-height);
-  padding-block: var(--te-setting-row-padding);
+  padding: var(--te-setting-row-padding) 16px;
   color: var(--te-settings-text);
   font-size: var(--te-setting-label-size);
   font-weight: 500;
+  line-height: 1.4;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .field:has(> select)
+  + .field {
+  border-top: 1px solid var(--te-setting-divider);
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  :is(.field select, .preview-select) {
+  font-size: var(--te-font-size-body, 14px);
 }
 html
   .settings-preview-page[data-settings-layout='categories']
@@ -206,10 +220,25 @@ html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics .c
   display: flex;
   justify-content: space-between;
   min-height: var(--te-setting-row-height);
-  padding-block: var(--te-setting-row-padding);
+  padding: var(--te-setting-row-padding) 16px;
+  gap: 24px;
   color: var(--te-settings-text);
   font-size: var(--te-setting-label-size);
   font-weight: 500;
+  line-height: 1.4;
+  white-space: normal;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .check-field
+  > input[type='checkbox'] {
+  order: 1;
+  flex: 0 0 18px;
+}
+html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics .check-field > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 html
   .settings-preview-page[data-settings-layout='categories']
@@ -323,13 +352,83 @@ html .settings-preview-page[data-settings-layout='categories'] .dsd-route-contro
   padding: 4px 8px;
 }
 html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics {
-  gap: 24px;
+  --te-setting-row-height: 48px;
+  --te-setting-row-padding: 6px;
+  gap: 16px;
+}
+html[data-density='compact']
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics {
+  --te-setting-row-height: 44px;
+  --te-setting-row-padding: 4px;
+}
+html[data-density='comfortable']
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics {
+  --te-setting-row-height: 56px;
+  --te-setting-row-padding: 10px;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .desktop-lyrics-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .desktop-lyrics-heading
+  > h3 {
+  font-size: calc(var(--te-font-size-body, 14px) * 16 / 14);
 }
 html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics .quick-control-row {
   display: grid;
-  grid-template-columns: 1fr;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: 0 16px;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .quick-control-row
+  > .check-field {
+  cursor: pointer;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .quick-control-row
+  > .check-field
+  + .check-field {
+  border-top: 1px solid var(--te-setting-divider);
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .quick-control-row
+  input[type='checkbox']:not(:checked) {
+  border-color: color-mix(in srgb, var(--te-settings-text) 50%, var(--te-card-bg));
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .quick-control-row
+  > .check-field:focus-within {
+  background: color-mix(in srgb, var(--te-primary-500) 6%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  html
+    .settings-preview-page[data-settings-layout='categories']
+    #desktopLyrics
+    .quick-control-row
+    > .check-field:hover {
+    background: var(--te-settings-search-bg);
+  }
 }
 html
   .settings-preview-page[data-settings-layout='categories']
@@ -344,6 +443,29 @@ html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics .s
 html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics .control-group,
 html .settings-preview-page[data-settings-layout='categories'] #desktopLyrics .preview-group {
   margin: 0;
+  gap: 8px;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .desktop-lyrics-style-card {
+  gap: 16px;
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  .control-group
+  + .control-group {
+  padding-top: 16px;
+  border-top: 1px solid var(--te-setting-divider);
+}
+html
+  .settings-preview-page[data-settings-layout='categories']
+  #desktopLyrics
+  :is(.control-group, .preview-group)
+  > h3 {
+  margin: 0;
+  color: var(--te-settings-text-muted);
 }
 html .settings-preview-page[data-settings-layout='categories'] #shortcuts .shortcut-rows {
   grid-template-columns: 1fr;
@@ -476,6 +598,22 @@ html[data-theme='dark']
     flex-wrap: wrap;
   }
   html .settings-preview-page[data-settings-layout='categories'] .setting-item > .preview-select {
+    width: 100%;
+    max-width: 100%;
+  }
+  html
+    .settings-preview-page[data-settings-layout='categories']
+    #desktopLyrics
+    :is(.field:has(> select), .check-field:has(> select)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+  html
+    .settings-preview-page[data-settings-layout='categories']
+    #desktopLyrics
+    .check-field
+    > select {
     width: 100%;
     max-width: 100%;
   }

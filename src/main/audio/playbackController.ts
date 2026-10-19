@@ -4,6 +4,7 @@ import type {
   AudioEnginePlayResult,
   AudioEnginePlayOptions,
   AudioEngineQueueItem,
+  AudioEngineQueueState,
   AudioEngineScheduler,
   AudioEngineServiceNativeBinding,
   AudioOutputId,
@@ -654,6 +655,18 @@ export class PlaybackController {
 
   async togglePause(): Promise<void> {
     this.assertQueueAuthorization()
+    const failure =
+      this.playbackInfo.outputInfo?.diagnostics?.lastError ||
+      this.playbackInfo.diagnostics?.lastError
+    if (this.playbackInfo.state === 'stopped' && failure && this.playbackInfo.source) {
+      // A failed decoder has been retired. An explicit user resume must open
+      // it again; Pause on a stopped native engine is deliberately a no-op.
+      const result = await this.play(this.playbackInfo.source, this.playbackInfo.position)
+      if (!result.nativeStarted && !result.superseded) {
+        throw new Error(result.fallbackReason || this.lastNativeError || failure)
+      }
+      return
+    }
     const native = this.native
     const source = this.playbackInfo.source
     if (!native) {
@@ -1102,6 +1115,130 @@ export class PlaybackController {
     this.emit('queue-change', this.queue)
   }
 
+  /**
+   * Hot-appends resolved queue entries without calling LoadQueue. Native
+   * indices stay stable, so the logical mapping the Afterglow core keeps does
+   * not need to be rebased. Returns the absolute first native index.
+   */
+  async appendQueueItems(items: AudioEngineQueueItem[]): Promise<number> {
+    this.assertQueueAuthorization()
+    if (items.length === 0) return this.queue.length
+    if (this.queue.length === 0) {
+      throw nativeAudioError(
+        'audio.queue_append_empty',
+        'cannot append to an unloaded queue',
+        this.lastNativeError
+      )
+    }
+    this.transportRevision += 1
+    const revision = this.queueRevision
+    const queueToken = this.queueToken
+    const firstIndex = this.queue.length
+    const appended = await this.callNativeMaybeAsync(
+      '追加播放队列',
+      'AppendQueueItems',
+      JSON.stringify(items)
+    )
+    if (!appended) {
+      throw nativeAudioError(
+        'audio.queue_append_failed',
+        'native queue append failed',
+        this.lastNativeError
+      )
+    }
+    if (revision !== this.queueRevision || queueToken !== this.queueToken)
+      throw new Error('audio_queue_update_superseded')
+    this.assertQueueAuthorization()
+    this.queue.push(...items.map((item) => ({ ...item })))
+    this.queueJson = JSON.stringify(this.queue)
+    this.invalidateUpcomingTrackCache()
+    this.emit('queue-appended', {
+      firstIndex,
+      count: items.length,
+      queueToken: this.queueToken
+    })
+    return firstIndex
+  }
+
+  /**
+   * Refreshes the source of a queued item that is not currently decoding. The
+   * native side invalidates a stale preload and re-opens the upcoming stream.
+   */
+  async updateQueueItemSource(index: number, source: string): Promise<boolean> {
+    this.assertQueueAuthorization()
+    if (!Number.isInteger(index) || index < 0 || index >= this.queue.length) {
+      throw nativeAudioError(
+        'audio.queue_index_invalid',
+        `queue index ${index} is out of range`,
+        this.lastNativeError
+      )
+    }
+    if (index === this.playbackInfo.queueIndex) {
+      throw nativeAudioError(
+        'audio.queue_current_source_immutable',
+        'the currently playing queue item cannot be hot-updated',
+        this.lastNativeError
+      )
+    }
+    if (!source.trim()) {
+      throw nativeAudioError(
+        'audio.queue_source_invalid',
+        'queue source is empty',
+        this.lastNativeError
+      )
+    }
+    this.transportRevision += 1
+    const revision = this.queueRevision
+    const queueToken = this.queueToken
+    const updated = await this.callNativeMaybeAsync(
+      '热更新队列音频地址',
+      'UpdateQueueItemSource',
+      index,
+      source
+    )
+    if (!updated) {
+      throw nativeAudioError(
+        'audio.queue_source_update_failed',
+        'native queue source update failed',
+        this.lastNativeError
+      )
+    }
+    if (revision !== this.queueRevision || queueToken !== this.queueToken)
+      throw new Error('audio_queue_update_superseded')
+    this.assertQueueAuthorization()
+    this.queue[index] = { ...this.queue[index], source }
+    this.queueJson = JSON.stringify(this.queue)
+    this.invalidateUpcomingTrackCache()
+    this.emit('queue-item-source-updated', { index, queueToken: this.queueToken })
+    return true
+  }
+
+  /** Authoritative native queue revision/cursor/upcoming snapshot for hot-update consumers. */
+  async readQueueState(): Promise<AudioEngineQueueState | null> {
+    if (!this.native) return null
+    try {
+      const raw =
+        typeof this.native.callAsync === 'function'
+          ? await this.native.callAsync('GetQueueState', [])
+          : this.native.GetQueueState?.()
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+      if (!parsed || typeof parsed !== 'object') return null
+      const state = parsed as Partial<AudioEngineQueueState>
+      if (
+        !Number.isInteger(state.revision) ||
+        !Number.isInteger(state.size) ||
+        !Number.isInteger(state.currentIndex) ||
+        !Number.isInteger(state.upcomingIndex) ||
+        typeof state.playMode !== 'string'
+      ) {
+        return null
+      }
+      return state as AudioEngineQueueState
+    } catch {
+      return null
+    }
+  }
+
   async selectQueueItem(selection: NativeQueueSelection): Promise<boolean> {
     this.assertQueueAuthorization()
     const item = this.queue[selection.index]
@@ -1488,8 +1625,24 @@ export class PlaybackController {
     const previousPosition = this.playbackInfo.position
     const mappedAutoMixPosition =
       nativeInfo.autoMixState === 'mixing' || this.playbackInfo.autoMixState === 'mixing'
+    const health = nativeInfo.outputInfo?.diagnostics ?? nativeInfo.diagnostics
+    const sourceStarved =
+      health?.decodeHealthAvailable === true &&
+      health.liveRenderState === 1 &&
+      !health.decodeEof &&
+      !health.decodeStopRequested &&
+      health.decodeBufferedFrames === 0 &&
+      (health.decodeStage === 'reading' || health.decodeStage === 'reconnecting') &&
+      (health.decodeLastProgressAgeMs ?? 0) >= 500
+    const sourceFailed = nativeInfo.state === 'stopped' && Boolean(health?.lastError)
+    if (
+      sourceFailed &&
+      (!this.pendingNativeSource || nativeInfo.source === this.pendingNativeSource)
+    ) {
+      this.pendingNativePositionTarget = null
+    }
     const resolvedPosition =
-      mappedAutoMixPosition &&
+      (mappedAutoMixPosition || sourceStarved || sourceFailed) &&
       this.pendingNativePositionTarget === null &&
       Number.isFinite(nativeInfo.position)
         ? Math.max(0, nativeInfo.position)
@@ -1758,7 +1911,12 @@ export class PlaybackController {
       appliedConfigRevision,
       outputInfo,
       outputBackend: outputInfo.backend,
-      outputDevice: outputInfo.deviceName,
+      // The native outputDevice is the requested route identity. A released
+      // pause can retain the previous device's runtime name until resume, so
+      // replacing this ID with deviceName breaks pending route confirmation.
+      outputDevice: staleNativeOutputRoute
+        ? this.device
+        : preferNonEmpty(info.outputDevice, outputInfo.deviceName),
       actualBackend: outputInfo.actualBackend,
       accessMode: outputInfo.accessMode,
       devicePathKind: outputInfo.devicePathKind,
@@ -1937,8 +2095,13 @@ export class PlaybackController {
           // any further. The old index comparison misread a looping or repeating
           // queue as finished, and read the last entry of a shuffled native play
           // order as mid-queue.
+          const readError =
+            nativeInfo.outputInfo?.diagnostics?.lastError || nativeInfo.diagnostics?.lastError
           const isAtEnd = this.queue.length === 0 || !nativeInfo.upcomingTrack
-          if (isAtEnd) {
+          if (readError) {
+            this.emit('end-file', { reason: 'error' })
+            this.emit('error', new Error(readError))
+          } else if (isAtEnd) {
             // 播放结束：保持 nativePlaybackActive=true 以便持续轮询原生真实状态，
             // 避免状态发散后无法自我纠正。下次 play() 会重新设置状态。
             this.publishProperty('eof-reached', true)

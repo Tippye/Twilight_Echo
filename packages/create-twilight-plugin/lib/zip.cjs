@@ -39,7 +39,7 @@ function msDosDateTime(date) {
   return { dosDate, dosTime }
 }
 
-async function collectFiles(root) {
+async function collectFiles(root, outputFile, options) {
   const files = []
 
   async function walk(directory) {
@@ -48,7 +48,8 @@ async function collectFiles(root) {
       const absolute = path.join(directory, entry.name)
       const relative = path.relative(root, absolute)
       const parts = relative.split(path.sep)
-      if (parts.some((part) => EXCLUDED_DIRS.has(part))) continue
+      if (parts.some((part, index) => EXCLUDED_DIRS.has(part) && !(part === 'dist' && index === 0 && options.includeDist))) continue
+      if (path.resolve(absolute) === path.resolve(outputFile) || entry.name.endsWith('.tep')) continue
       if (EXCLUDED_SUFFIXES.some((suffix) => entry.name.endsWith(suffix))) continue
       if (entry.isDirectory()) {
         await walk(absolute)
@@ -62,8 +63,8 @@ async function collectFiles(root) {
   return files.sort((left, right) => left.relative.localeCompare(right.relative))
 }
 
-async function createZip(root, outputFile) {
-  const files = await collectFiles(root)
+async function createZip(root, outputFile, options = {}) {
+  const files = await collectFiles(root, outputFile, options)
   const chunks = []
   const central = []
   let offset = 0

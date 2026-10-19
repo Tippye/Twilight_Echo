@@ -39,10 +39,53 @@
   display: block;
   position: absolute;
 }
+
+/* Homepage lighting belongs to the window, outside the resizing scrollport.
+   Opening navigation moves the content over this field without moving it. */
+.app-background-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 520px 520px at 80px 40px,
+      color-mix(in srgb, var(--te-primary-500) 6%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 420px 420px at calc(100% - 20px) 300px,
+      color-mix(in srgb, var(--te-accent-cyan) 4%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 360px 360px at 45% 840px,
+      color-mix(in srgb, var(--te-favorite-500) 3%, transparent),
+      transparent 72%
+    );
+}
+
+html[data-theme='dark'] .app-background-ambient {
+  opacity: 0.6;
+}
+
+/* Standalone home previews retain their own decoration; the live shell uses
+   the fixed lighting above, including the pixels behind its navigation. */
+.app-shell-content > .main-content > .local-home-layout > .home > .ambient,
+html[data-te-local-custom-background='on'] .app-background-ambient,
+html[data-window-transparent='on'] .app-background-ambient,
+html[data-te-surface-material='transparent'] .app-background-ambient {
+  display: none;
+}
+
 :root {
   --te-overlay-text: var(--te-neutral-900);
   --te-overlay-muted: var(--te-neutral-500);
   --te-overlay-surface: var(--te-card-bg-solid, var(--te-settings-backplate));
+  --te-overlay-settings-text: var(--te-settings-text);
+  --te-overlay-settings-muted: var(--te-settings-text-muted);
+  --te-overlay-control-text: var(--te-control-fg);
+  --te-overlay-control-muted: var(--te-control-fg-muted);
 }
 
 /* Important declarations in this layer take precedence over unlayered preset
@@ -133,6 +176,7 @@
       .side-menu,
       .streaming-sidebar,
       .title-bar,
+      .title-bar-background,
       .main-content,
       .home,
       .song-list,
@@ -150,6 +194,9 @@
       .folder-card,
       .playlist-tile,
       .favorites-card,
+      .home .empty-stage,
+      .home .chart-panel,
+      .home .cal-panel,
       .signal-card,
       .chart-card,
       .profile-card,
@@ -206,6 +253,14 @@
     transform: none !important;
   }
 
+  /* The hero's cover wash is a second surface, even when its outer card is clear.
+     A transparent photo recipe shows the fixed wallpaper behind the copy. */
+  html[data-te-local-custom-background='on'][data-te-surface-material='transparent']
+    .home
+    .feature-backdrop {
+    display: none !important;
+  }
+
   html[data-te-local-text-tone='light'] :is(.home, .song-list, .side-menu, .player-bar, .title-bar),
   html[data-te-local-text-tone='dark'] :is(.home, .song-list, .side-menu, .player-bar, .title-bar) {
     --appearance-text: var(--te-local-background-text);
@@ -228,6 +283,33 @@
     --home-ink: var(--appearance-text);
     --home-muted: var(--appearance-muted);
     color: var(--appearance-text) !important;
+  }
+  html:is([data-te-local-text-tone='light'], [data-te-local-text-tone='dark'])
+    .home
+    :is(
+      .block-more,
+      .empty-chips span,
+      .dsp-route-dialog,
+      .dsp-state:not(.on, .live),
+      .route-stage:not(.route-endpoint-stage, .is-active, .is-error)
+    ),
+  html:is([data-te-local-text-tone='light'], [data-te-local-text-tone='dark']):not(
+      [data-te-surface-material='transparent']
+    )
+    .home
+    :is(.feature-card, .signal-card, .chart-panel, .cal-panel, .empty-stage) {
+    --te-neutral-900: var(--te-overlay-text);
+    --te-neutral-500: var(--te-overlay-muted);
+    --home-ink: var(--te-overlay-text);
+    --home-muted: var(--te-overlay-settings-muted);
+    color: var(--te-overlay-text) !important;
+  }
+  html:is([data-te-local-text-tone='light'], [data-te-local-text-tone='dark'])
+    .home
+    :is(.route-stage.is-bypassed, .route-stage.is-disabled) {
+    /* Dashed boundaries signal bypass without fading the text with the surface. */
+    opacity: 1 !important;
+    border-style: dashed;
   }
   html[data-te-streaming-text-tone='light']
     :is(
@@ -271,29 +353,148 @@
     --te-neutral-900: var(--te-settings-background-text);
     --te-neutral-500: var(--te-settings-background-muted);
     --te-chrome-text: var(--te-settings-background-text);
+    /* Accent buttons only add a thin tint, so their text follows the wallpaper. */
+    --te-control-accent-text: var(--te-settings-background-text);
     color: var(--te-settings-background-text) !important;
   }
+  /* Wallpaper text can be light in a light theme. Controls that paint a theme
+     surface keep its palette during hover, retained focus and search highlights. */
+  html:is([data-te-settings-text-tone='light'], [data-te-settings-text-tone='dark'])
+    .settings-preview-page
+    :is(
+      .preview-select,
+      .settings-select,
+      .select-control,
+      .number-input,
+      .path-control input,
+      .diagnostic-note,
+      .theme-segment,
+      .segmented-control,
+      .appearance-entry,
+      .settings-search-box,
+      .settings-nav-results,
+      .soft-button,
+      .muted-button,
+      .icon-button,
+      .dashed-button,
+      .preset-btn,
+      .range-pill,
+      .folder-chip,
+      .dsp-meter,
+      .signal-node-circle,
+      .device-panel,
+      .device-card,
+      .accordion-preview,
+      .output-diagnostic-panel,
+      .update-card,
+      .plugin-empty,
+      .about-links button,
+      .background-accordion,
+      .background-editor,
+      .page-background-row,
+      .background-kind-toggle,
+      .color-field,
+      .inherit-toggle,
+      .watcher-status-row,
+      .preview-nav-item.active,
+      .preview-nav-item:hover,
+      .setting-item:hover,
+      .setting-item:focus-within,
+      [data-setting-id].search-target-flash,
+      .settings-accordion-trigger:hover
+    ) {
+    --te-settings-text: var(--te-overlay-settings-text);
+    --te-settings-text-muted: var(--te-overlay-settings-muted);
+    --te-settings-nav-text: var(--te-overlay-settings-text);
+    --te-neutral-900: var(--te-overlay-text);
+    --te-neutral-500: var(--te-overlay-muted);
+    --text-primary: var(--te-overlay-text);
+    --text-secondary: var(--te-overlay-settings-muted);
+    --te-control-fg: var(--te-overlay-control-text);
+    --te-control-fg-muted: var(--te-overlay-control-muted);
+    --te-control-accent-text: var(--te-overlay-settings-text);
+    color: var(--te-overlay-settings-text) !important;
+  }
+  /* Legacy translucent panels need enough of their theme surface behind the
+     theme foreground; wallpaper contrast cannot protect text inside them. */
+  html:is([data-te-settings-text-tone='light'], [data-te-settings-text-tone='dark'])
+    .settings-preview-page
+    :is(.accordion-preview, .output-diagnostic-panel, .watcher-status-row) {
+    background: var(--te-overlay-surface) !important;
+  }
+  /* A custom background replaces the dark artwork stage. Its theme text tone
+     must follow the app tone too, including chrome outside the playing page. */
+  html[data-te-player-custom-background='on'][data-te-player-text-tone='theme']
+    :is(.playing-music, .title-bar-immersive, .title-bar-glass, .player-bar-glass),
   html[data-te-player-text-tone='light']
-    :is(.playing-music, body .app-shell .title-bar-glass, body .app-shell .player-bar-glass),
+    :is(.playing-music, .title-bar-immersive, .title-bar-glass, .player-bar-glass),
   html[data-te-player-text-tone='dark']
-    :is(.playing-music, body .app-shell .title-bar-glass, body .app-shell .player-bar-glass) {
+    :is(.playing-music, .title-bar-immersive, .title-bar-glass, .player-bar-glass) {
     --te-playback-page-text: var(--te-player-background-text);
     --te-playback-page-muted: var(--te-player-background-muted);
     --te-playback-track-title: var(--te-player-background-text);
     --te-playback-track-artist: var(--te-player-background-muted);
     --te-playback-track-album: var(--te-player-background-muted);
     --te-playback-lyric-text: var(--te-player-background-muted);
+    --te-playback-lyric-hover-text: var(--te-player-background-text);
     --te-playback-lyric-active-text: var(--te-player-background-text);
+    --te-playback-lyric-translation: var(--te-player-background-muted);
+    --te-playback-lyric-translation-active: var(--te-player-background-text);
+    --te-playback-lyric-harmony: var(--te-player-background-muted);
+    --te-playback-lyric-harmony-active: var(--te-player-background-text);
+    --te-playback-lyric-romanization: var(--te-player-background-muted);
+    --te-playback-lyric-romanization-active: var(--te-player-background-text);
+    --te-playback-cover-placeholder-text: var(--te-player-background-muted);
     --te-playback-control-text: var(--te-player-background-text);
+    --te-playback-control-hover-text: var(--te-player-background-text);
+    --te-playback-control-surface: color-mix(
+      in srgb,
+      var(--te-player-background-text) 8%,
+      transparent
+    );
+    --te-playback-control-hover-surface: color-mix(
+      in srgb,
+      var(--te-player-background-text) 14%,
+      transparent
+    );
+    --te-playback-control-border: color-mix(
+      in srgb,
+      var(--te-player-background-text) 10%,
+      transparent
+    );
+    --te-playback-control-hover-border: color-mix(
+      in srgb,
+      var(--te-player-background-text) 16%,
+      transparent
+    );
+    --te-playback-bar-surface: color-mix(
+      in srgb,
+      var(--te-player-background-color) 72%,
+      transparent
+    );
+    --te-playback-bar-solid: var(--te-player-background-color);
+    --te-playback-bar-flat-surface: var(--te-player-background-color);
+    --te-playback-icon-filter: brightness(0);
     --te-neutral-900: var(--te-player-background-text);
     --te-neutral-500: var(--te-player-background-muted);
     --te-chrome-text: var(--te-player-background-text);
     --te-shell-control-text: var(--te-player-background-text);
-    --te-flat-bar-glass-text: var(--te-player-background-text);
-    --te-flat-bar-muted: var(--te-player-background-muted);
+    /* Flat strip defaults are declared on the bar itself, so these overrides
+       need layer priority rather than relying on inherited variables. */
+    --te-flat-bar-glass-text: var(--te-player-background-text) !important;
+    --te-flat-bar-control: var(--te-player-background-text) !important;
+    --te-flat-bar-control-hover-text: var(--te-player-background-text) !important;
+    --te-flat-bar-control-hover-bg: var(--te-playback-control-hover-surface) !important;
+    --te-flat-bar-muted: var(--te-player-background-muted) !important;
     --text-primary: var(--te-player-background-text);
     --text-secondary: var(--te-player-background-muted);
     color: var(--te-player-background-text) !important;
+  }
+
+  html[data-te-player-text-tone='light'] :is(.playing-music, .player-bar-glass),
+  html[data-theme='dark'][data-te-player-custom-background='on'][data-te-player-text-tone='theme']
+    :is(.playing-music, .player-bar-glass) {
+    --te-playback-icon-filter: brightness(0) invert(1);
   }
 
   /* Overlays retain the theme's readable surface and foreground palette. */

@@ -63,7 +63,31 @@ const visible = computed(() =>
   )
 )
 const entries = computed(() => buildSidebarEntries(visible.value))
+const sideMenu = ref<HTMLElement | null>(null)
 const expanded = ref(new Set<SidebarGroupId>())
+watch(
+  visible,
+  async (pages, previous) => {
+    const previousIds = new Set(previous?.map((page) => page.id))
+    const added = pages.filter((page) =>
+      previous ? !previousIds.has(page.id) : !page.defaultVisible
+    )
+    // Enabling a page must also reveal it inside its collapsed sidebar group.
+    // Restore explicitly enabled optional pages when the sidebar mounts again.
+    for (const page of added) {
+      const group = sidebarGroupId(page.id)
+      if (group) expanded.value.add(group)
+    }
+    if (!previous || added.length === 0) return
+    await nextTick()
+    const page = added.find((page) => !page.defaultVisible) ?? added[0]
+    const button = [
+      ...(sideMenu.value?.querySelectorAll<HTMLElement>('[data-page-id]') ?? [])
+    ].find((button) => button.dataset.pageId === page.id)
+    button?.scrollIntoView({ block: 'nearest', behavior: 'instant' })
+  },
+  { immediate: true }
+)
 watch(
   () => props.activeKey,
   (key) => {
@@ -131,6 +155,7 @@ function setPressOrigin(event: PointerEvent): void {
 
 <template>
   <div
+    ref="sideMenu"
     class="side-menu"
     :class="{ open: open || persistent, 'side-menu-liquid': props.liquidMaterial }"
     :inert="!open && !persistent"
@@ -185,9 +210,17 @@ function setPressOrigin(event: PointerEvent): void {
                 :class="{ active: props.activeKey === page.id }"
                 :aria-current="props.activeKey === page.id ? 'page' : undefined"
                 :aria-label="page.title"
+                :data-page-id="page.id"
                 :title="page.title"
                 @click="selectPage(page)"
               >
+                <i
+                  v-if="page.customIcon"
+                  class="item-icon"
+                  :class="page.customIcon"
+                  aria-hidden="true"
+                ></i>
+                <ThemeIcon v-else class="item-icon" :icon-slot="page.icon" />
                 <span class="item-label">{{ page.title }}</span>
               </button>
             </div>
@@ -199,6 +232,7 @@ function setPressOrigin(event: PointerEvent): void {
             :class="{ active: props.activeKey === entry.page.id }"
             :aria-current="props.activeKey === entry.page.id ? 'page' : undefined"
             :aria-label="entry.page.title"
+            :data-page-id="entry.page.id"
             :title="entry.page.title"
             @click="selectPage(entry.page)"
           >
@@ -283,25 +317,21 @@ function setPressOrigin(event: PointerEvent): void {
      footer clears the painted bar; custom shells can reserve a playback row. */
   bottom: var(--te-side-menu-bottom, 0px);
   width: var(--te-menu-width);
-  /* Frosted surface: the bottom-most global background shows through. The
-     blur is what keeps the split readable over a custom wallpaper — the page
-     draws its own cover-scaled copy of that image while the body carries the
-     window-wide one, and an unblurred seam between the two scales reads as the
-     menu sitting off-grid. Same recipe the streaming sidebar ships. */
-  background: transparent;
-  border-right: 1px solid var(--te-navigation-border);
+  /* The same frosted tint as the caption and player, over the shared wallpaper. */
+  background: var(--te-chrome-navigation-surface, transparent);
+  border-right: 0;
   border-radius: 0 var(--te-navigation-radius) var(--te-navigation-radius) 0;
   z-index: 1000;
   overflow: hidden;
-  box-shadow: var(--te-navigation-shadow);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--te-chrome-navigation-elevation, var(--te-navigation-shadow));
+  backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
+  -webkit-backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
   transform: translate3d(-100%, 0, 0);
   transform-origin: left center;
   will-change: transform;
-  transition:
-    transform var(--te-motion-panel) var(--te-ease-soft),
-    box-shadow var(--te-motion-panel);
+  transition: transform var(--te-motion-panel) var(--te-ease-soft);
   font-family: var(--te-font-sans);
 }
 
@@ -309,9 +339,9 @@ function setPressOrigin(event: PointerEvent): void {
   transform: translate3d(0, 0, 0);
 }
 
-:global(html[data-theme='dark'] .side-menu) {
+:global(html[data-theme='dark'] .side-menu:not(.side-menu-liquid)) {
   border-right-color: var(--te-navigation-border);
-  background: transparent;
+  background: var(--te-chrome-navigation-surface, transparent);
 }
 
 :global(html[data-te-navigation-style='expanded']) {
@@ -433,6 +463,10 @@ function setPressOrigin(event: PointerEvent): void {
   font-size: calc(var(--te-font-size-body, 14px) * 0.92857);
 }
 
+.menu-child > .item-icon {
+  display: none;
+}
+
 .menu-child.active::before {
   left: -10px;
 }
@@ -529,7 +563,7 @@ function setPressOrigin(event: PointerEvent): void {
   justify-content: center;
   flex-shrink: 0;
   color: var(--te-navigation-icon);
-  font-size: calc(var(--te-font-size-body, 14px) * 1.21429);
+  font-size: calc(var(--te-font-size-body, 14px) * 18 / 14);
   transition: color var(--te-motion-hover) var(--te-ease-enter);
 }
 
@@ -554,10 +588,10 @@ function setPressOrigin(event: PointerEvent): void {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: calc(var(--te-font-size-body, 14px) * 1);
-  font-weight: 500;
+  font-weight: var(--te-control-font-weight, 500);
   color: currentColor;
   opacity: 0;
-  letter-spacing: 0.3px;
+  letter-spacing: normal;
   transition: opacity 0.2s ease;
 }
 
@@ -620,6 +654,10 @@ function setPressOrigin(event: PointerEvent): void {
   padding: 0;
 }
 
+:global(html[data-te-navigation-style='rail'] .menu-child > .item-icon) {
+  display: inline-grid;
+}
+
 :global(html[data-te-navigation-style='rail'] .menu-children::before) {
   left: 5px;
 }
@@ -674,9 +712,13 @@ function setPressOrigin(event: PointerEvent): void {
 }
 
 .side-menu-liquid {
+  background: transparent;
+  /* The pseudo surface owns the only backdrop pass. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   isolation: isolate;
-  border-right-color: color-mix(in srgb, var(--te-lg-context-label) 13%, transparent);
-  box-shadow: 5px 0 22px var(--te-lg-context-shadow);
+  border-right-color: color-mix(in srgb, var(--te-lg-context-label) 6%, transparent);
+  box-shadow: var(--te-chrome-navigation-elevation);
 }
 
 .side-menu-liquid::before {
@@ -684,28 +726,13 @@ function setPressOrigin(event: PointerEvent): void {
   z-index: -1;
   inset: 0;
   border-radius: inherit;
-  background:
-    linear-gradient(
-      112deg,
-      color-mix(in srgb, var(--te-lg-context-rim) 18%, transparent),
-      transparent 56%
-    ),
-    color-mix(in srgb, var(--te-lg-context-surface) 68%, transparent);
-  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--te-lg-context-rim) 32%, transparent);
+  background: color-mix(in srgb, var(--te-lg-context-material) 72%, transparent);
   content: '';
   pointer-events: none;
-  backdrop-filter: blur(20px) saturate(128%);
-  -webkit-backdrop-filter: blur(20px) saturate(128%);
-}
-
-:global(html[data-te-liquid-glass-source='solid'] .side-menu-liquid::before) {
-  background:
-    linear-gradient(
-      112deg,
-      color-mix(in srgb, var(--te-lg-context-rim) 22%, transparent),
-      transparent 56%
-    ),
-    var(--te-lg-context-material);
+  backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
+  -webkit-backdrop-filter: blur(var(--te-chrome-frosted-blur, 24px))
+    saturate(var(--te-chrome-frosted-saturation, 124%));
 }
 
 .side-menu-liquid :is(.navigation-brand, .menu-item, .scanning-text) {
@@ -749,9 +776,30 @@ function setPressOrigin(event: PointerEvent): void {
   opacity: 1;
 }
 
+/* Keep regular navigation readable when diffusion is disabled. */
+body.te-no-blur .side-menu:not(.side-menu-liquid),
+html[data-te-effects-mode='reduced'] .side-menu:not(.side-menu-liquid) {
+  background: var(--te-chrome-frosted-solid, var(--te-navigation-bg));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.te-no-blur .side-menu-liquid::before,
+html[data-te-effects-mode='reduced'] .side-menu-liquid::before {
+  background: var(--te-lg-context-surface-solid, var(--te-chrome-material-solid)) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .side-menu:not(.side-menu-liquid) {
+    background: var(--te-chrome-frosted-solid, var(--te-navigation-bg));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
   .side-menu-liquid::before {
-    background: var(--te-lg-context-surface-solid);
+    background: var(--te-lg-context-surface-solid) !important;
     border-right: 1px solid var(--te-lg-context-label);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -759,8 +807,16 @@ function setPressOrigin(event: PointerEvent): void {
 }
 
 @media (forced-colors: active) {
+  .side-menu:not(.side-menu-liquid) {
+    background: Canvas !important;
+    border-right: 1px solid CanvasText;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
   .side-menu-liquid::before {
-    background: Canvas;
+    background: Canvas !important;
     border-right: 1px solid CanvasText;
     box-shadow: none;
     backdrop-filter: none;

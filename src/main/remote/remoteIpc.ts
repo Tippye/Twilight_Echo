@@ -15,6 +15,8 @@ import {
   type RemoteControlStatus,
   type RemotePlaybackSnapshot
 } from '../../shared/remoteControl.ts'
+import { dispatchAfterglowTransport, isAfterglowModeActive } from '../app/AfterglowModeService.ts'
+import { afterglowTransportCommandForAction } from '../../shared/afterglowMode.ts'
 import { RemoteCommandError, RemoteHttpServer } from './httpServer.ts'
 import {
   discoverDlnaDevices,
@@ -63,10 +65,44 @@ function ensureServer(): RemoteHttpServer {
       onBrowse: requestRemoteBrowse
     })
   }
+  runtime.publishRemotePlaybackSnapshot = publishRemotePlaybackSnapshot
   return server
 }
 
-function sendPlayerCommand(action: PlayerShortcutAction): void {
+/**
+ * Mirrors the engine-driven playback state into the web remote while Afterglow
+ * has no renderer publishing `remote:publishState`.
+ */
+export function publishRemotePlaybackSnapshot(patch: Partial<RemotePlaybackSnapshot>): void {
+  const current = server
+  if (!current) return
+  try {
+    current.updatePlaybackSnapshot(
+      createEmptyRemotePlaybackSnapshot({
+        ...current.getPlaybackSnapshot(),
+        ...patch,
+        updatedAt: Date.now()
+      })
+    )
+  } catch (error) {
+    console.warn('[remote] failed to publish afterglow snapshot:', error)
+  }
+}
+
+async function sendPlayerCommand(action: PlayerShortcutAction): Promise<void> {
+  if (isAfterglowModeActive()) {
+    const command =
+      typeof action === 'string'
+        ? afterglowTransportCommandForAction(action)
+        : action.action === 'seek'
+          ? { type: 'seek' as const, positionSeconds: action.positionSeconds }
+          : action.action === 'setVolume'
+            ? { type: 'set-volume' as const, volume: action.volume }
+            : null
+    if (!command) throw new RemoteCommandError('renderer_not_ready')
+    await dispatchAfterglowTransport(command)
+    return
+  }
   if (runtime.mainWindow?.isDestroyed() !== false)
     throw new RemoteCommandError('renderer_not_ready')
   runtime.mainWindow.webContents.send('player:shortcut', action)
@@ -116,36 +152,44 @@ async function dispatchRemoteCommand(command: PlayerRemoteCommand): Promise<void
   // also forward to the active DLNA renderer when possible.
   switch (command.action) {
     case 'playPause':
-      sendPlayerCommand('playPause')
+      await sendPlayerCommand('playPause')
       if (activeCastUsn) await tryDlnaPlayPause()
       return
     case 'play':
-      sendPlayerCommand('play')
+      await sendPlayerCommand('play')
       if (activeCastUsn) await tryDlnaTransport('play')
       return
     case 'pause':
-      sendPlayerCommand('pause')
+      await sendPlayerCommand('pause')
       if (activeCastUsn) await tryDlnaTransport('pause')
       return
     case 'previous':
-      sendPlayerCommand('previous')
+      await sendPlayerCommand('previous')
       return
     case 'next':
-      sendPlayerCommand('next')
+      await sendPlayerCommand('next')
       return
     case 'seek':
-      sendPlayerCommand({ action: 'seek', positionSeconds: command.positionSeconds })
+      await sendPlayerCommand({ action: 'seek', positionSeconds: command.positionSeconds })
       if (activeCastUsn) await tryDlnaSeek(command.positionSeconds)
       return
     case 'setVolume':
-      sendPlayerCommand({ action: 'setVolume', volume: command.volume })
+      await sendPlayerCommand({ action: 'setVolume', volume: command.volume })
       if (activeCastUsn) await tryDlnaVolume(command.volume)
+      return
+    case 'setPlayMode':
+      if (isAfterglowModeActive()) {
+        const mode: 'sequential' | 'listLoop' | 'repeat' =
+          command.mode === 'single' ? 'repeat' : command.mode === 'loop' ? 'listLoop' : 'sequential'
+        await dispatchAfterglowTransport({ type: 'set-play-mode', mode })
+        return
+      }
+      await requestRenderer<void>('command', command)
       return
     case 'jumpQueue':
     case 'removeQueue':
     case 'playTrack':
     case 'enqueueTrack':
-    case 'setPlayMode':
       await requestRenderer<void>('command', command)
       return
   }
@@ -556,7 +600,7 @@ export function setupRemoteIpc(): void {
         activeCastUsn = usn
         castSucceeded = true
         // Pause local engine via renderer.
-        sendPlayerCommand('pause')
+        void sendPlayerCommand('pause').catch(() => {})
         return {
           ok: true as const,
           usn,
@@ -643,6 +687,7 @@ export function setupRemoteIpc(): void {
 
 export async function destroyRemoteIpc(): Promise<void> {
   rejectRendererRequests()
+  runtime.publishRemotePlaybackSnapshot = null
   activeCastUsn = null
   lastDlnaDevices = []
   syncDesiredEnabled = null

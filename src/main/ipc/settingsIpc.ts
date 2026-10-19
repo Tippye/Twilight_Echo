@@ -83,8 +83,11 @@ export function registerSettingsIpc(ipcMain: IpcMain): void {
     assertTrustedIpcSender(event, 'dialog IPC')
     const win = BrowserWindow.getFocusedWindow()
     if (!win) return null
+    const lastLibraryFolder =
+      runtime.appSettings.lastLibraryFolder || runtime.appSettings.libraryFolders.at(-1)
     const result = await dialog.showOpenDialog(win, {
-      properties: ['openDirectory']
+      properties: ['openDirectory'],
+      ...(lastLibraryFolder ? { defaultPath: lastLibraryFolder } : {})
     })
     if (result.canceled || result.filePaths.length === 0) return null
     const folder = await grantUserSelectedLibraryRoot(result.filePaths[0])
@@ -92,7 +95,7 @@ export function registerSettingsIpc(ipcMain: IpcMain): void {
       ...runtime.appSettings.libraryFolders,
       folder
     ])
-    await updateAppSettings({ libraryFolders })
+    await updateAppSettings({ libraryFolders, lastLibraryFolder: folder })
     return folder
   })
 

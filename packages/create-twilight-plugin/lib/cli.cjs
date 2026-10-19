@@ -111,6 +111,9 @@ async function packCommand(args) {
   const manifest = validatePluginManifest(JSON.parse(await fs.readFile(manifestPath, 'utf-8')))
   const mainPath = manifest.main ? path.resolve(root, manifest.main) : null
   if (mainPath) await fs.access(mainPath)
+  for (const experience of manifest.contributes?.experiences ?? []) {
+    await fs.access(path.resolve(root, experience.entry))
+  }
   if (manifest.binary) {
     for (const binaryPath of Object.values(manifest.binary)) {
       await fs.access(path.resolve(root, binaryPath))
@@ -123,7 +126,9 @@ async function packCommand(args) {
       ? path.resolve(outArg)
       : path.resolve(outArg, defaultName)
     : path.resolve(root, 'dist', defaultName)
-  const result = await createZip(root, outputFile)
+  const result = await createZip(root, outputFile, {
+    includeDist: (manifest.contributes?.experiences ?? []).some(experience => experience.entry.startsWith('dist/'))
+  })
   console.log(`Packed ${result.fileCount} files to ${result.outputFile}`)
   return result
 }

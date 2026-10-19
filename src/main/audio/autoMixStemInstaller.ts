@@ -11,6 +11,7 @@ import {
 } from '../../shared/twilightAutoMix.ts'
 import { probeStemRuntime } from './autoMixStemCapabilities.ts'
 import { STEM_CHECKPOINT_SHA256, STEM_MODEL_VERSION } from './autoMixStemService.ts'
+import { decodeStemZipLzma } from './autoMixStemZipLzma.ts'
 
 interface Entry {
   fileName: string
@@ -24,6 +25,11 @@ interface Zip extends NodeJS.EventEmitter {
   readEntry(): void
   close(): void
   openReadStream(entry: Entry, callback: (error: Error | null, stream: Readable) => void): void
+  openReadStream(
+    entry: Entry,
+    options: { decodeFileData: false },
+    callback: (error: Error | null, stream: Readable) => void
+  ): void
 }
 const require = createRequire(import.meta.url)
 const yauzl = require('yauzl') as {
@@ -159,7 +165,7 @@ export class AutoMixStemInstaller {
             const directory = entry.fileName.endsWith('/')
             const mode = (entry.externalFileAttributes >>> 16) & 0xf000
             if (mode && mode !== (directory ? 0x4000 : 0x8000)) invalidArchive()
-            if (entry.generalPurposeBitFlag & 1 || ![0, 8].includes(entry.compressionMethod))
+            if (entry.generalPurposeBitFlag & 1 || ![0, 8, 14].includes(entry.compressionMethod))
               invalidArchive()
             const key = entry.fileName.replace(/\/$/, '').toLowerCase()
             if (names.has(key)) invalidArchive()
@@ -229,11 +235,22 @@ export class AutoMixStemInstaller {
         const name = entry.fileName.slice(prefix.length)
         const destination = join(staging, name)
         await mkdir(dirname(destination), { recursive: true })
-        const stream = await new Promise<Readable>((resolve, reject) =>
-          opened.openReadStream(entry, (error, value) =>
+        const raw = await new Promise<Readable>((resolve, reject) => {
+          const callback = (error: Error | null, value: Readable): void =>
             error ? reject(new InstallError('invalid_archive')) : resolve(value)
-          )
-        )
+          if (entry.compressionMethod === 14)
+            opened.openReadStream(entry, { decodeFileData: false }, callback)
+          else opened.openReadStream(entry, callback)
+        })
+        const stream =
+          entry.compressionMethod === 14
+            ? decodeStemZipLzma(
+                raw,
+                entry.uncompressedSize,
+                join(this.options.workerDirectory(), '7za.exe'),
+                abort.signal
+              )
+            : raw
         const hash = createHash('sha256')
         let bytes = 0,
           crc = 0
@@ -247,9 +264,19 @@ export class AutoMixStemInstaller {
             callback(null, chunk)
           }
         })
-        await pipeline(stream, progress, createWriteStream(destination, { flags: 'wx' }), {
-          signal: abort.signal
-        })
+        try {
+          await pipeline(stream, progress, createWriteStream(destination, { flags: 'wx' }), {
+            signal: abort.signal
+          })
+        } catch (error) {
+          if (
+            entry.compressionMethod === 14 &&
+            !abort.signal.aborted &&
+            !['ENOSPC', 'EACCES', 'EPERM'].includes((error as NodeJS.ErrnoException).code ?? '')
+          )
+            throw new InstallError('integrity')
+          throw error
+        }
         if (bytes !== entry.uncompressedSize || crc !== entry.crc32)
           throw new InstallError('integrity')
         hashes.set(name, { bytes, sha256: hash.digest('hex') })

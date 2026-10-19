@@ -150,8 +150,13 @@ const stemInstallText = computed(() => {
 })
 let stemInstallPoll: ReturnType<typeof setTimeout> | undefined
 let stemComponentMounted = false
-async function acceptStemInstallStatus(status: AutoMixStemInstallStatus): Promise<void> {
+async function acceptStemInstallStatus(
+  status: AutoMixStemInstallStatus | null | undefined
+): Promise<void> {
   if (!stemComponentMounted) return
+  // The IPC wrapper is generic; a malformed/absent payload must not replace a
+  // known status with `null` and break every downstream computed.
+  if (!status || typeof status.phase !== 'string') return
   const wasReady = stemInstallStatus.value.phase === 'ready'
   stemInstallStatus.value = status
   if (status.phase === 'ready' && !wasReady) await detectStems(true)
@@ -236,7 +241,10 @@ async function detectStems(refresh = false): Promise<void> {
   if (stemChecking.value) return
   stemChecking.value = true
   try {
-    stemCapabilities.value = await window.api.audioEngine.getAutoMixStemCapabilities(refresh)
+    const capabilities = await window.api.audioEngine.getAutoMixStemCapabilities(refresh)
+    if (capabilities && typeof capabilities.status === 'string') {
+      stemCapabilities.value = capabilities
+    }
   } catch {
     stemCapabilities.value = {
       status: 'unavailable',
@@ -548,6 +556,13 @@ function setPreferredBufferSize(event: Event): void {
   const value = Number((event.target as HTMLSelectElement).value)
   if (audioOutputConfig.value.preferredBufferSize === value) return
   void setAudioOutputConfig({ preferredBufferSize: value })
+}
+
+function setAsioOutputChannelStart(event: Event): void {
+  if (audioOutputConfigApplyStatus.value.state === 'pending') return
+  const value = Number((event.target as HTMLInputElement).value)
+  if (!Number.isFinite(value)) return
+  void setAudioOutputConfig({ asioOutputChannelStart: Math.min(255, Math.max(0, Math.trunc(value) - 1)) })
 }
 
 function setRoutingMode(event: Event): void {
@@ -1619,6 +1634,19 @@ function setContinuitySampleRate(event: Event): void {
               {{ option.label }}
             </option>
           </select>
+        </label>
+        <label v-if="audioOutput === 'asio'" data-setting-id="asio-output-channel-start">
+          <span>ASIO 起始输出通道</span>
+          <input
+            class="preview-select"
+            type="number"
+            min="1"
+            max="256"
+            step="1"
+            :value="(audioOutputConfig.asioOutputChannelStart ?? 0) + 1"
+            :disabled="audioOutputConfigApplyStatus.state === 'pending'"
+            @change="setAsioOutputChannelStart"
+          />
         </label>
         <label data-setting-id="channel-routing">
           <span>Routing</span>

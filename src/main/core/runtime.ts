@@ -51,6 +51,12 @@ export const runtime = {
   libraryLoudnessManager: null as LibraryLoudnessManager | null,
   mainWindow: null as BrowserWindow | null,
   miniPlayerWindow: null as BrowserWindow | null,
+  /**
+   * Renderer-free window that keeps a Windows taskbar entry and the SMTC window
+   * handle alive while Afterglow has destroyed every normal window.
+   */
+  afterglowAnchorWindow: null as import('electron').BaseWindow | null,
+  dynamicIslandWindow: null as BrowserWindow | null,
   trayPlayerWindow: null as BrowserWindow | null,
   pendingTrayNavigation: null as TrayNavigationTarget | null,
   latestMiniPlayerState: null as MiniPlayerStateSnapshot | null,
@@ -75,5 +81,12 @@ export const runtime = {
   coversMissingNotified: false,
   libraryWatcherDebounceMs: 2000,
   refreshTaskbarThumbarButtons: null as (() => void) | null,
-  refreshWindowsSmtc: null as (() => void) | null
+  refreshWindowsSmtc: null as (() => void) | null,
+  /**
+   * Set by the remote-control server so Afterglow can keep the web remote's
+   * playback state fresh while no renderer publishes it.
+   */
+  publishRemotePlaybackSnapshot: null as
+    | ((patch: Partial<import('../../shared/remoteControl.ts').RemotePlaybackSnapshot>) => void)
+    | null
 }

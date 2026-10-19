@@ -1,0 +1,241 @@
+/* Video chapters share the same 64px virtual row rhythm as ordinary tracks. */
+.part-video-row,
+.part-pager {
+  box-sizing: border-box;
+  height: 64px;
+  margin: 0 6px;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--stage-ink);
+}
+
+.part-video-row {
+  border-radius: 12px;
+  background: var(--stage-paper);
+  box-shadow: inset 0 0 0 1px var(--stage-line);
+}
+
+.part-video-row.expanded {
+  border-radius: 12px 12px 0 0;
+  background: color-mix(in srgb, var(--stage-accent) 5%, var(--stage-paper));
+}
+
+.part-video-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 9px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--stage-cover-bg);
+}
+
+.part-disclosure {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.part-video-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--te-font-size-body, 14px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.part-video-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 17px;
+  color: var(--stage-ink-soft);
+}
+
+.part-count {
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--stage-accent-soft);
+  color: var(--stage-accent);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.part-chevron {
+  font-size: 9px;
+}
+.expanded .part-chevron {
+  transform: rotate(180deg);
+}
+.part-now-playing {
+  color: var(--stage-playing);
+}
+.part-video-artist {
+  flex: 0 1 20%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--stage-ink-soft);
+  font-size: 12px;
+  text-align: right;
+}
+
+.stage-row.part-track {
+  grid-template-columns: 56px minmax(0, 1fr) 44px 72px;
+  height: 64px;
+  box-sizing: border-box;
+  border-radius: 0;
+  border-left: 2px solid var(--stage-accent-soft);
+  background: color-mix(in srgb, var(--stage-paper) 40%, transparent);
+}
+.stage-list.no-like .stage-row.part-track {
+  grid-template-columns: 56px minmax(0, 1fr) 72px;
+}
+.part-track .col-album {
+  display: none;
+}
+
+.part-track + .part-track {
+  box-shadow: inset 0 1px var(--stage-line);
+}
+.part-track .row-copy {
+  width: 100%;
+}
+.part-track .row-title {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+  font-weight: 500;
+  text-align: left;
+}
+.part-track .row-index-num {
+  font-size: 11px;
+  color: var(--stage-ink-soft);
+}
+.stage-row.part-track.playing {
+  background: var(--stage-playing-soft);
+  border-left-color: var(--stage-playing);
+}
+.stage-row.part-track.selected {
+  background: var(--stage-accent-soft);
+}
+
+.part-pager {
+  border-radius: 0 0 12px 12px;
+  border-top: 1px solid var(--stage-line);
+  margin-bottom: 0;
+  background: var(--stage-paper);
+  color: var(--stage-ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.part-range {
+  flex: 1;
+}
+.part-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.part-pagination button,
+.part-pagination select,
+.part-collapse {
+  height: 30px;
+  border: 1px solid var(--stage-line-strong);
+  border-radius: 8px;
+  background: var(--stage-paper-raised);
+  color: var(--stage-ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+.part-pagination button {
+  width: 30px;
+}
+.part-pagination button i {
+  font-size: 10px;
+}
+.part-pagination select {
+  padding: 0 7px;
+  font-variant-numeric: tabular-nums;
+}
+.part-collapse {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-color: transparent;
+  background: transparent;
+}
+.part-collapse i {
+  font-size: 10px;
+}
+.part-pagination button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.part-disclosure:focus-visible,
+.part-pagination :focus-visible,
+.part-collapse:focus-visible {
+  outline: 2px solid var(--stage-accent);
+  outline-offset: 3px;
+}
+.part-pagination button:active:not(:disabled),
+.part-collapse:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .part-disclosure:hover .part-toggle-label {
+    color: var(--stage-accent);
+  }
+  .stage-row.part-track:hover {
+    background: var(--stage-paper);
+  }
+  .part-pagination button:hover:not(:disabled),
+  .part-collapse:hover {
+    background: var(--stage-accent-soft);
+    color: var(--stage-accent);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .part-disclosure:not(:focus-visible) .part-chevron {
+    transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+}
+@media (max-width: 640px) {
+  .stage-row.part-track {
+    grid-template-columns: 44px minmax(0, 1fr) 36px 56px;
+  }
+  .stage-list.no-like .stage-row.part-track {
+    grid-template-columns: 44px minmax(0, 1fr) 56px;
+  }
+  .part-video-row,
+  .part-pager {
+    padding-left: 12px;
+    padding-right: 12px;
+    gap: 8px;
+  }
+  .part-video-artist {
+    display: none;
+  }
+  .part-pager {
+    font-size: 11px;
+  }
+}

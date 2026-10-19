@@ -64,6 +64,21 @@ void writeLatencyInfoJson(std::ostringstream& json, const OutputInfo::LatencyInf
 
 void writeDiagnosticsJson(std::ostringstream& json, const OutputInfo::Diagnostics& diagnostics) {
   json << "{"
+       << "\"decodeHealthAvailable\":" << (diagnostics.decodeHealthAvailable ? "true" : "false") << ","
+       << "\"decodeStreamToken\":" << diagnostics.decodeStreamToken << ","
+       << "\"decodeRunning\":" << (diagnostics.decodeRunning ? "true" : "false") << ","
+       << "\"decodeEof\":" << (diagnostics.decodeEof ? "true" : "false") << ","
+       << "\"decodeStopRequested\":" << (diagnostics.decodeStopRequested ? "true" : "false") << ","
+       << "\"decodeBufferedFrames\":" << diagnostics.decodeBufferedFrames << ","
+       << "\"decodeProducedFrames\":" << diagnostics.decodeProducedFrames << ","
+       << "\"decodeLastProgressAgeMs\":" << diagnostics.decodeLastProgressAgeMs << ","
+       << "\"decodeStage\":\"" << json_utils::escape(diagnostics.decodeStage) << "\","
+       << "\"liveRenderState\":" << diagnostics.liveRenderState << ","
+       << "\"liveRenderedFrames\":" << diagnostics.liveRenderedFrames << ","
+       << "\"liveRenderCallbackCount\":" << diagnostics.liveRenderCallbackCount << ","
+       << "\"asioHelperCallbackCount\":" << diagnostics.asioHelperCallbackCount << ","
+       << "\"asioHelperUnderrunCount\":" << diagnostics.asioHelperUnderrunCount << ","
+       << "\"asioHelperBufferDropCount\":" << diagnostics.asioHelperBufferDropCount << ","
        << "\"sessionUnderrunCount\":" << diagnostics.sessionUnderrunCount << ","
        << "\"sessionBufferDropCount\":" << diagnostics.sessionBufferDropCount << ","
        << "\"sessionRecoveryCount\":" << diagnostics.sessionRecoveryCount << ","
@@ -88,6 +103,8 @@ void writeDiagnosticsJson(std::ostringstream& json, const OutputInfo::Diagnostic
        << "\"typedRawPath\":" << (diagnostics.typedRawPath ? "true" : "false") << ","
        << "\"processingBypassed\":" << (diagnostics.processingBypassed ? "true" : "false") << ","
        << "\"nativeDsdNegotiation\":\"" << json_utils::escape(diagnostics.nativeDsdNegotiation) << "\","
+       << "\"asioStartupSummary\":\"" << json_utils::escape(diagnostics.asioStartupSummary) << "\","
+       << "\"wireLittleEndian\":" << (diagnostics.wireLittleEndian ? "true" : "false") << ","
        << "\"dopRuntimeEvidence\":\"" << json_utils::escape(diagnostics.dopRuntimeEvidence) << "\","
        << "\"quirkRegistryState\":\"" << json_utils::escape(diagnostics.quirkRegistryState) << "\","
        << "\"quirkFingerprint\":\"" << json_utils::escape(diagnostics.quirkFingerprint) << "\","
@@ -386,6 +403,8 @@ std::string playbackInfoToJson(const PlaybackInfo& info) {
        << "\"requestedConfigRevision\":" << info.requestedConfigRevision << ","
        << "\"appliedConfigRevision\":" << info.appliedConfigRevision << ","
        << "\"queueIndex\":" << info.queueIndex << ","
+       << "\"queueRevision\":" << info.queueRevision << ","
+       << "\"upcomingQueueIndex\":" << info.upcomingQueueIndex << ","
        << "\"playMode\":\"" << json_utils::escape(info.playMode) << "\","
        << "\"source\":\"" << json_utils::escape(info.source) << "\","
        << "\"codec\":\"" << json_utils::escape(info.codec) << "\","
@@ -645,6 +664,7 @@ float parseFloatField(const std::string& json, const std::string& key, float fal
 OutputConfig parseOutputConfigJson(const std::string& json) {
   OutputConfig config;
   config.preferredBufferSize = parseUintField(json, "preferredBufferSize", 0);
+  config.asioOutputChannelStart = std::min<uint32_t>(255, parseUintField(json, "asioOutputChannelStart", 0));
   config.routingMode = parseChannelRoutingMode(parseStringField(json, "routingMode", "auto"));
   config.wasapiExclusivePushMode = parseBoolField(json, "wasapiExclusivePushMode", false);
   config.releaseExclusiveOnPause = parseBoolField(json, "releaseExclusiveOnPause", false);
@@ -732,11 +752,15 @@ TwilightAudioEngine::TwilightAudioEngine() {
   updatePerfectLocked();
   lastTick_ = std::chrono::steady_clock::now();
   startClock();
+  diagnosticThread_ = std::thread([this] { diagnosticLoop(); });
 }
 
 TwilightAudioEngine::~TwilightAudioEngine() {
   if (pipeline_) pipeline_->stop();
   stopClock();
+  diagnosticRunning_.store(false);
+  clockCv_.notify_all();
+  if (diagnosticThread_.joinable()) diagnosticThread_.join();
 }
 
 void TwilightAudioEngine::setEventCallback(TAE_EventCallback callback, void* userData) {
@@ -1249,6 +1273,7 @@ TAE_Result TwilightAudioEngine::cancelAutoMix() {
   return TAE_RESULT_OK;
 }
 TAE_Result TwilightAudioEngine::loadQueue(const std::string& queueJson, int startIndex) {
+  DiagnosticLog::instance().append(DiagLevel::Info, "queue.update.start", "queue update", "{\"bytes\":" + std::to_string(queueJson.size()) + ",\"startIndex\":" + std::to_string(startIndex) + "}");
   std::lock_guard transportLock(transportMutex_);
   if (pipeline_) pipeline_->cancelAutoMix("queue_changed");
   const ClockWake wake(*this);
@@ -1290,8 +1315,149 @@ TAE_Result TwilightAudioEngine::loadQueue(const std::string& queueJson, int star
   {
     std::lock_guard lock(mutex_);
     emit("queue-change", queue_.queueJson());
+    DiagnosticLog::instance().append(DiagLevel::Info, "queue.update.complete", "queue update", "{\"queueIndex\":" + std::to_string(info_.queueIndex) + "}");
   }
   return TAE_RESULT_OK;
+}
+
+namespace {
+
+bool sameQueuePosition(
+    const std::optional<QueueItem>& left,
+    const std::optional<QueueItem>& right) {
+  if (left.has_value() != right.has_value()) return false;
+  if (!left) return true;
+  return left->id == right->id && left->source == right->source &&
+         left->cueStartSeconds == right->cueStartSeconds &&
+         left->cueEndSeconds == right->cueEndSeconds;
+}
+
+}  // namespace
+
+TAE_Result TwilightAudioEngine::appendQueueItems(const std::string& itemsJson, int* outFirstIndex) {
+  std::lock_guard transportLock(transportMutex_);
+  const ClockWake wake(*this);
+  std::optional<QueueItem> beforeUpcoming;
+  std::optional<QueueItem> afterUpcoming;
+  int firstIndex = -1;
+  int appendedCount = 0;
+  uint64_t revision = 0;
+  bool transportActive = false;
+  {
+    std::lock_guard lock(mutex_);
+    beforeUpcoming = queue_.upcoming();
+    std::string error;
+    if (!queue_.appendFromJsonBatch(itemsJson, &firstIndex, &error)) {
+      emitError(
+          error.empty() ? "追加播放队列失败" : error,
+          TAE_RESULT_INVALID_ARGUMENT,
+          "queue");
+      return TAE_RESULT_INVALID_ARGUMENT;
+    }
+    appendedCount = static_cast<int>(queue_.size()) - firstIndex;
+    revision = queue_.queueRevision();
+    afterUpcoming = queue_.upcoming();
+    info_.queueIndex = queue_.currentIndex();
+    info_.playMode = queue_.playModeId();
+    info_.hasUpcomingTrack = afterUpcoming.has_value();
+    info_.upcomingTrack = afterUpcoming.value_or(QueueItem{});
+    transportActive = info_.state != PlaybackState::Stopped;
+  }
+  if (outFirstIndex) *outFirstIndex = firstIndex;
+
+  // Appending past an already preloaded next item must not churn the decoder;
+  // only a changed upcoming identity needs a fresh preload.
+  if (appendedCount > 0 && transportActive && pipeline_ &&
+      !sameQueuePosition(beforeUpcoming, afterUpcoming)) {
+    if (afterUpcoming) {
+      pipeline_->refreshQueueReplayGainTags(*afterUpcoming);
+      std::string preloadError;
+      if (!pipeline_->preloadNext(afterUpcoming, &preloadError)) {
+        emitError(
+            preloadError.empty() ? "追加队列后预加载失败" : preloadError,
+            TAE_RESULT_INTERNAL_ERROR,
+            "queue");
+      }
+    }
+  }
+
+  if (appendedCount > 0) {
+    std::ostringstream payload;
+    payload << "{\"firstIndex\":" << firstIndex << ",\"count\":" << appendedCount
+            << ",\"revision\":" << revision << "}";
+    emit("queue-appended", payload.str());
+  }
+  return TAE_RESULT_OK;
+}
+
+TAE_Result TwilightAudioEngine::updateQueueItemSource(int index, const std::string& source) {
+  std::lock_guard transportLock(transportMutex_);
+  const ClockWake wake(*this);
+  std::optional<QueueItem> beforeUpcoming;
+  std::optional<QueueItem> afterUpcoming;
+  uint64_t revision = 0;
+  bool transportActive = false;
+  {
+    std::lock_guard lock(mutex_);
+    if (index < 0 || index >= static_cast<int>(queue_.size())) {
+      emitError("队列索引越界", TAE_RESULT_INVALID_ARGUMENT, "queue");
+      return TAE_RESULT_INVALID_ARGUMENT;
+    }
+    if (index == queue_.currentIndex()) {
+      emitError(
+          "当前播放条目的音频地址不可热更新",
+          TAE_RESULT_INVALID_ARGUMENT,
+          "queue");
+      return TAE_RESULT_INVALID_ARGUMENT;
+    }
+    beforeUpcoming = queue_.upcoming();
+    std::string error;
+    if (!queue_.updateItemSource(index, source, &error)) {
+      emitError(
+          error.empty() ? "更新队列音频地址失败" : error,
+          TAE_RESULT_INVALID_ARGUMENT,
+          "queue");
+      return TAE_RESULT_INVALID_ARGUMENT;
+    }
+    revision = queue_.queueRevision();
+    afterUpcoming = queue_.upcoming();
+    info_.hasUpcomingTrack = afterUpcoming.has_value();
+    info_.upcomingTrack = afterUpcoming.value_or(QueueItem{});
+    transportActive = info_.state != PlaybackState::Stopped;
+  }
+
+  std::string preload = "not_needed";
+  if (pipeline_ && !sameQueuePosition(beforeUpcoming, afterUpcoming) && afterUpcoming) {
+    pipeline_->cancelAutoMix("queue_item_source_changed");
+    if (transportActive) {
+      pipeline_->refreshQueueReplayGainTags(*afterUpcoming);
+      std::string preloadError;
+      preload = pipeline_->preloadNext(afterUpcoming, &preloadError) ? "refreshed" : "failed";
+      if (preload == "failed") {
+        emitError(
+            preloadError.empty() ? "刷新预加载失败" : preloadError,
+            TAE_RESULT_INTERNAL_ERROR,
+            "queue");
+      }
+    }
+  }
+
+  std::ostringstream payload;
+  payload << "{\"index\":" << index << ",\"revision\":" << revision
+          << ",\"preload\":\"" << preload << "\"}";
+  emit("queue-item-source-updated", payload.str());
+  return TAE_RESULT_OK;
+}
+
+std::string TwilightAudioEngine::getQueueStateJson() const {
+  std::lock_guard lock(mutex_);
+  std::ostringstream json;
+  json << "{\"revision\":" << queue_.queueRevision()
+       << ",\"size\":" << queue_.size()
+       << ",\"currentIndex\":" << queue_.currentIndex()
+       << ",\"upcomingIndex\":" << queue_.upcomingIndex().value_or(-1)
+       << ",\"playMode\":\"" << queue_.playModeId() << "\"}";
+  return json.str();
 }
 
 TAE_Result TwilightAudioEngine::next() {
@@ -2006,6 +2172,8 @@ std::string TwilightAudioEngine::engineCapabilitiesJson() const {
        << ",\"backendCapabilities\":" << backendCapabilities
        << ",\"plugins\":" << pluginCapabilitiesJson()
        << ",\"output\":{\"accessModes\":[\"shared\",\"exclusive\",\"hog\",\"direct\",\"plugin\"]}"
+       << ",\"queueHotUpdate\":{\"version\":1,\"append\":true,\"updateSource\":true,"
+          "\"upcomingIndex\":true}"
        << "}";
   return json.str();
 }
@@ -2023,8 +2191,15 @@ std::string TwilightAudioEngine::getLastErrorJson() const {
 }
 
 std::string TwilightAudioEngine::getPlaybackInfoJson() const {
-  std::lock_guard lock(mutex_);
-  return playbackInfoToJson(info_);
+  PlaybackInfo snapshot;
+  {
+    std::lock_guard lock(mutex_);
+    snapshot = info_;
+    snapshot.queueRevision = queue_.queueRevision();
+    snapshot.upcomingQueueIndex = queue_.upcomingIndex().value_or(-1);
+  }
+  if (pipeline_) pipeline_->sampleDecodeHealth(snapshot.outputInfo.diagnostics);
+  return playbackInfoToJson(snapshot);
 }
 
 size_t TwilightAudioEngine::getSpectrumData(float* buffer, size_t pointCount) const {
@@ -2092,6 +2267,44 @@ void TwilightAudioEngine::waitForClockTick(bool active) {
   clockWakeRequested_ = false;
 }
 
+void TwilightAudioEngine::diagnosticLoop() {
+  DiagnosticJournal journal;
+  EmptyOutputDetector detector;
+  journal.write("engine.started", "{}");
+  while (diagnosticRunning_.load(std::memory_order_relaxed)) {
+    const auto start = std::chrono::steady_clock::now();
+    OutputInfo::Diagnostics health;
+    pipeline_->sampleDecodeHealth(health); // Only atomics and a try-lock; never transport/clock locks.
+    const auto nowMs = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(start.time_since_epoch()).count());
+    const auto heartbeatMs = clockHeartbeatMs_.load(std::memory_order_relaxed);
+    std::ostringstream out;
+    out << "{\"available\":" << (health.decodeHealthAvailable ? "true" : "false")
+        << ",\"unavailableReason\":\"" << health.decodeUnavailableReason << "\""
+        << ",\"renderState\":" << health.liveRenderState << ",\"callbackCount\":" << health.liveRenderCallbackCount
+        << ",\"sourceConsumedFrames\":" << health.sourceConsumedFrames << ",\"outputProducedFrames\":" << health.outputProducedFrames
+        << ",\"zeroFilledFrames\":" << health.zeroFilledFrames << ",\"emptyOutputCount\":" << health.emptyOutputCount
+        << ",\"inactiveOutputCount\":" << health.inactiveOutputCount << ",\"eofOutputCount\":" << health.eofOutputCount
+        << ",\"streamToken\":" << health.decodeStreamToken << ",\"preloadStreamToken\":" << health.preloadStreamToken
+        << ",\"bufferedFrames\":" << health.decodeBufferedFrames << ",\"producedFrames\":" << health.decodeProducedFrames
+        << ",\"decodeStage\":\"" << health.decodeStage << "\",\"progressAgeMs\":" << health.decodeLastProgressAgeMs
+        << ",\"decodeRunning\":" << (health.decodeRunning ? "true" : "false")
+        << ",\"eof\":" << (health.decodeEof ? "true" : "false") << ",\"stopRequested\":" << (health.decodeStopRequested ? "true" : "false")
+        << ",\"clockHeartbeat\":" << clockHeartbeat_.load(std::memory_order_relaxed)
+        << ",\"clockAgeMs\":" << (heartbeatMs && nowMs >= heartbeatMs ? nowMs - heartbeatMs : nowMs) << '}';
+    journal.write("health.sample", out.str());
+    if (detector.sample(health.decodeHealthAvailable, health.liveRenderState == static_cast<int>(PipelineState::Playing),
+                        health.decodeEof, health.decodeStopRequested, health.decodeStreamToken,
+                        health.liveRenderCallbackCount, health.sourceConsumedFrames)) {
+      journal.write("incident.empty-output", "{\"beforeSeconds\":120,\"afterSeconds\":30,\"health\":" + out.str() + "}", DiagLevel::Warning);
+    }
+    journal.drain();
+    // Short interruptible waits do not contend with the clock condition variable.
+    while (diagnosticRunning_.load() && std::chrono::steady_clock::now() - start < std::chrono::seconds(1))
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  journal.drain(); journal.write("engine.stopped", "{}");
+}
+
 void TwilightAudioEngine::clockLoop() {
   PipelineState lastPipelineState = PipelineState::Stopped;
   while (running_) {
@@ -2103,6 +2316,9 @@ void TwilightAudioEngine::clockLoop() {
     waitForClockTick(active);
     if (!running_) break;
     std::unique_lock transportLock(transportMutex_);
+    clockHeartbeat_.fetch_add(1, std::memory_order_relaxed);
+    clockHeartbeatMs_.store(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count()), std::memory_order_relaxed);
     // Nobody may be listening for playback snapshots (the N-API addon polls
     // GetPlaybackInfo instead), so only serialize them when a consumer asked.
     const bool stateEvents = stateEventsEnabled_.load(std::memory_order_relaxed);
@@ -2113,10 +2329,12 @@ void TwilightAudioEngine::clockLoop() {
     const bool hasPipelineStatus = pipeline_ != nullptr;
     bool deviceInvalidated = false;
     bool renderError = false;
+    bool decodeError = false;
     bool trackStarted = false;
     QueueItem startedItem;
     std::string deviceInvalidatedMessage;
     std::string renderErrorMessage;
+    std::string decodeErrorMessage;
     if (hasPipelineStatus) {
       pipeline_->pollAutoMix();
       // A-B loop enforcement (seek is not RT-safe — runs on clock thread).
@@ -2149,6 +2367,7 @@ void TwilightAudioEngine::clockLoop() {
       emitEnded = pipeline_->consumeEnded();
       deviceInvalidated = pipeline_->consumeDeviceInvalidated(&deviceInvalidatedMessage);
       renderError = pipeline_->consumeRenderError(&renderErrorMessage);
+      decodeError = pipeline_->consumeDecodeError(&decodeErrorMessage);
       trackStarted = pipeline_->consumeTrackStarted(&startedItem);
       // Promotion can occur between the snapshot and the track-start flag.
       if(trackStarted)pipelineStatus=pipeline_->status();
@@ -2199,12 +2418,14 @@ void TwilightAudioEngine::clockLoop() {
       }
       continue;
     }
-    if (renderError) {
+    if (renderError || decodeError) {
+      const std::string failureMessage = decodeError ? decodeErrorMessage : renderErrorMessage;
       {
         std::lock_guard lock(mutex_);
         if (hasPipelineStatus) applyPipelineStatusLocked(pipelineStatus);
         info_.state = PlaybackState::Stopped;
         eofSeekState_ = EofSeekState::Ineligible;
+        info_.outputInfo.diagnostics.lastError = failureMessage;
         if (stateEvents) {
           payload = playbackInfoToJson(info_);
           emitTick = true;
@@ -2212,9 +2433,10 @@ void TwilightAudioEngine::clockLoop() {
       }
       if (pipeline_) pipeline_->stop();
       emitError(
-          renderErrorMessage.empty() ? "音频渲染失败" : renderErrorMessage,
-          TAE_RESULT_BACKEND_UNAVAILABLE,
-          "render");
+          failureMessage.empty() ? "音频读取或渲染失败" : failureMessage,
+          decodeError ? TAE_RESULT_INTERNAL_ERROR : TAE_RESULT_BACKEND_UNAVAILABLE,
+          decodeError ? "decode" : "render");
+      emit("end-file", "{\"reason\":\"error\"}");
       if (emitTick) emit("property-change", payload);
       continue;
     }
@@ -2349,7 +2571,10 @@ void TwilightAudioEngine::emitError(const std::string& message, TAE_Result code,
 
 void TwilightAudioEngine::publishStateLocked() const {
   if (!stateEventsEnabled_.load(std::memory_order_relaxed)) return;
-  emit("playback-info", playbackInfoToJson(info_));
+  PlaybackInfo snapshot = info_;
+  snapshot.queueRevision = queue_.queueRevision();
+  snapshot.upcomingQueueIndex = queue_.upcomingIndex().value_or(-1);
+  emit("playback-info", playbackInfoToJson(snapshot));
 }
 
 void TwilightAudioEngine::applyClockPipelineStatusLocked(const PipelineStatus& status) {
@@ -2710,6 +2935,7 @@ enum class JsonGetter {
   None,
   AutoMixSelection,
   Queue,
+  QueueState,
   UpcomingTrack,
   DspConfig,
   DspGraphStatus,
@@ -2873,6 +3099,35 @@ TAE_Result TAE_SetOutputBackend(TAE_EngineHandle engine, const char* backend_id)
 TAE_Result TAE_LoadQueue(TAE_EngineHandle engine, const char* queue_json, int start_index) {
   if (!engine) return TAE_RESULT_NOT_INITIALIZED;
   return fromHandle(engine)->loadQueue(queue_json ? queue_json : "[]", start_index);
+}
+
+TAE_Result TAE_AppendQueueItems(
+    TAE_EngineHandle engine,
+    const char* items_json,
+    int* out_first_index) {
+  if (!engine || !items_json) return TAE_RESULT_INVALID_ARGUMENT;
+  return fromHandle(engine)->appendQueueItems(items_json, out_first_index);
+}
+
+TAE_Result TAE_UpdateQueueItemSource(
+    TAE_EngineHandle engine,
+    int index,
+    const char* source) {
+  if (!engine || !source || index < 0) return TAE_RESULT_INVALID_ARGUMENT;
+  return fromHandle(engine)->updateQueueItemSource(index, source);
+}
+
+TAE_Result TAE_GetQueueState(
+    TAE_EngineHandle engine,
+    char* buffer,
+    size_t buffer_size,
+    size_t* required_size) {
+  if (!engine) return TAE_RESULT_NOT_INITIALIZED;
+  return copyJsonWithProbeResult(
+      engine, JsonGetter::QueueState, {}, buffer, buffer_size, required_size, nullptr,
+      [engine](uint64_t*) {
+        return fromHandle(engine)->getQueueStateJson();
+      });
 }
 
 TAE_Result TAE_SelectQueueIndex(TAE_EngineHandle engine, int index) {
@@ -3163,6 +3418,10 @@ uint64_t TAE_GetAnalysisExecutionCount(const char* analysis_kind) {
 
 const char* TAE_GetVersion(void) {
   return "0.1.0";
+}
+
+void TAE_SetDiagnosticContext(const char* context_json) {
+  twilight::audio::DiagnosticLog::setContext(context_json ? context_json : "{}");
 }
 
 }  // extern "C"

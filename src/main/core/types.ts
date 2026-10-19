@@ -26,6 +26,7 @@ export interface PlayerShortcutStatus {
   action: PlayerShortcutKeyAction
   label: string
   registered: boolean
+  enabled?: boolean
   error: string | null
 }
 

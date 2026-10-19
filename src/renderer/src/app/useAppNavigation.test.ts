@@ -129,6 +129,61 @@ test('sidebar selections switch root pages without exposing a return path', () =
   }
 })
 
+test('page forward history replays the pages the user backed out of', () => {
+  const navigation = useAppNavigation()
+  navigation.onSelectView('albums', 'album:one')
+  navigation.onSelectView('artists', 'artist:two')
+  assert.equal(navigation.canGoForwardPage.value, false)
+
+  navigation.goBackPage()
+  assert.equal(navigation.activeFilter.value, 'album:one')
+  assert.equal(navigation.canGoForwardPage.value, true)
+
+  navigation.goBackPage()
+  assert.equal(navigation.canGoBackPage.value, false)
+  assert.equal(navigation.activeCategory.value, 'dashboard')
+
+  assert.equal(navigation.goForwardPage(), true)
+  assert.equal(navigation.activeFilter.value, 'album:one')
+  assert.equal(navigation.goForwardPage(), true)
+  assert.equal(navigation.activeFilter.value, 'artist:two')
+  assert.equal(navigation.goForwardPage(), false)
+})
+
+test('fresh navigation discards the forward trail', () => {
+  const navigation = useAppNavigation()
+  navigation.onSelectView('albums', 'album:one')
+  navigation.onSelectView('artists', 'artist:two')
+  navigation.goBackPage()
+  assert.equal(navigation.canGoForwardPage.value, true)
+
+  navigation.onSelectView('playlists', 'playlist:工作')
+  assert.equal(navigation.canGoForwardPage.value, false)
+  assert.equal(navigation.goForwardPage(), false)
+
+  navigation.goBackPage()
+  assert.equal(navigation.canGoForwardPage.value, true)
+  navigation.selectSidebarPage({ kind: 'local', category: 'dashboard', filter: null })
+  assert.equal(navigation.canGoForwardPage.value, false)
+})
+
+test('foreground tools keep the forward trail but block moving the page behind them', () => {
+  const navigation = useAppNavigation()
+  navigation.onSelectView('albums', 'album:one')
+  navigation.onSelectView('artists', 'artist:two')
+  navigation.goBackPage()
+
+  navigation.openSettingsPage()
+  assert.equal(navigation.canGoForwardPage.value, false)
+  assert.equal(navigation.goForwardPage(), false)
+  assert.equal(navigation.activeFilter.value, 'album:one')
+
+  navigation.closeSettingsPage()
+  assert.equal(navigation.canGoForwardPage.value, true)
+  assert.equal(navigation.goForwardPage(), true)
+  assert.equal(navigation.activeFilter.value, 'artist:two')
+})
+
 test('a secondary page returns to its selected root and stops there', () => {
   const navigation = useAppNavigation()
   navigation.selectSidebarPage({ kind: 'local', category: 'artists', filter: null })

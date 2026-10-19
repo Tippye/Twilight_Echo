@@ -2,7 +2,7 @@
 import PlaybackIcon from '@renderer/components/icons/PlaybackIcon.vue'
 import PlayerControlIcon from '@renderer/components/player-bar/PlayerControlIcon.vue'
 import { clampVolumePercent, createVolumeWheelStepper } from './player-bar/volumeWheel'
-import type { Track } from '@renderer/types/music'
+import type { Track, TrackArtistRef } from '@renderer/types/music'
 import { ref, computed, onMounted, onBeforeUnmount, watch, type ComponentPublicInstance } from 'vue'
 import { usePlayerStore } from '../stores/usePlayerStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
@@ -130,6 +130,7 @@ const {
   dspOutputStage,
   dspStereoImage,
   playbackInfo,
+  isCurrentTrackNativePlaybackInfo,
   loudnormStatus,
   outputInfo,
   visualizationData,
@@ -206,12 +207,16 @@ const currentTrack = computed(() =>
 const currentSourceInfo = computed(() => {
   const track = currentTrack.value
   const info = playbackInfo.value
-  return !props.preview &&
-    track &&
-    info?.nativePlaybackActive &&
-    matchesPlaybackAudioSource(track, info)
-    ? info
-    : null
+  if (props.preview || !track || !info?.nativePlaybackActive) return null
+
+  const source = info.source
+  if (typeof source !== 'string' || !source) return null
+
+  if (matchesPlaybackAudioSource(track, info) || source === track.subTrack) {
+    return info
+  }
+
+  return isCurrentTrackNativePlaybackInfo(info) ? info : null
 })
 // Keep the visualization poll alive only while the compact skyline is mounted.
 let releaseVisualizationConsumer: (() => void) | null = null
@@ -333,12 +338,22 @@ const emit = defineEmits<{
   openSettings: []
   openDsp: []
   openEqualizer: []
-  openArtist: []
+  openArtist: [artist: TrackArtistRef]
 }>()
 
-function onArtistClick(): void {
-  if (props.preview || !currentTrack.value?.artist.trim()) return
-  emit('openArtist')
+const currentArtists = computed<TrackArtistRef[]>(() => {
+  const track = currentTrack.value
+  if (!track) return []
+  if (track.artists?.length) return track.artists
+  return track.artist
+    .split(/\s+\/\s+/)
+    .map((name) => ({ name: name.trim() }))
+    .filter((artist) => artist.name)
+})
+
+function onArtistClick(artist: TrackArtistRef): void {
+  if (props.preview || !artist.name.trim()) return
+  emit('openArtist', artist)
 }
 
 /**
@@ -798,7 +813,9 @@ const fullyHidden = computed(() => props.hiddenBar && !props.preview)
 // Fully hidden wins, so the pointer listeners never arm for a bar that has no
 // reveal gesture. `resolvePlayerBarPresentation` already keeps the two flags
 // exclusive; this holds even if a caller forwards both.
-const autoHideActive = computed(() => props.autoHide && !fullyHidden.value && !props.preview)
+const autoHideActive = computed(
+  () => props.autoHide && !!currentTrack.value && !fullyHidden.value && !props.preview
+)
 
 const {
   favoriteButtonVisible,
@@ -1594,16 +1611,8 @@ onBeforeUnmount(() => {
                   </span>
                   <span v-else class="playlist-index-num">{{ item.index + 1 }}</span>
                 </span>
-                <CoverImg
-                  v-if="item.cover"
-                  :cover="item.cover"
-                  :identity="item.id"
-                  class="playlist-cover"
-                  alt=""
-                />
-                <div v-else class="playlist-cover-placeholder">
-                  <i class="pi pi-wave-pulse" aria-hidden="true"></i>
-                </div>
+                <CoverImg :cover="item.cover" :identity="item.id" class="playlist-cover" alt="" />
+
                 <div class="playlist-info">
                   <div class="playlist-title">{{ item.title }}</div>
                   <div class="playlist-artist">{{ item.artist }}</div>
@@ -1754,19 +1763,12 @@ onBeforeUnmount(() => {
             @click="onCoverClick"
           >
             <CoverImg
-              v-if="currentTrack.cover || currentTrack.coverSource"
               :cover="currentTrack.cover"
               :cover-source="currentTrack.coverSource"
               :identity="currentTrack.id"
               class="player-cover"
               alt=""
             />
-            <div v-else class="player-cover-placeholder">
-              <i
-                class="pi pi-wave-pulse"
-                style="font-size: calc(var(--te-font-size-body, 14px) * 18 / 14); color: #bbb"
-              ></i>
-            </div>
           </div>
 
           <div v-else-if="control === 'trackInfo'" class="player-track-info">
@@ -1797,16 +1799,21 @@ onBeforeUnmount(() => {
                 >{{ isStreamBuffering && !isLiveStream ? '缓冲中' : liveBadgeLabel }}</span
               >
             </div>
-            <button
-              type="button"
-              class="player-artist"
-              data-te-interactive
-              :disabled="preview || !currentTrack.artist.trim()"
-              :title="currentTrack.artist ? `打开歌手：${currentTrack.artist}` : undefined"
-              @click.stop="onArtistClick"
-            >
-              {{ currentTrack.artist }}
-            </button>
+            <div class="player-artists">
+              <template v-for="(artist, index) in currentArtists" :key="index">
+                <span v-if="index > 0" class="player-artist-separator" aria-hidden="true">/</span>
+                <button
+                  type="button"
+                  class="player-artist"
+                  data-te-interactive
+                  :disabled="preview || !artist.name.trim()"
+                  :title="`打开歌手：${artist.name}`"
+                  @click.stop="onArtistClick(artist)"
+                >
+                  {{ artist.name }}
+                </button>
+              </template>
+            </div>
             <div
               v-if="streamNowPlaying && isLiveStream && !isMini"
               class="player-stream-now-playing"
@@ -1904,6 +1911,7 @@ onBeforeUnmount(() => {
                     step="0.01"
                     class="volume-drawer-slider"
                     aria-label="音量"
+                    :aria-valuetext="`${Math.round(volume * 100)}%`"
                     :style="{ '--range-value': `${volume * 100}%` }"
                     @input="onVolumeInput"
                   />
@@ -2184,6 +2192,76 @@ onBeforeUnmount(() => {
         </div>
       </Transition>
     </Teleport>
+  </div>
+  <div v-else ref="playerBarShellRef" class="player-bar-shell" v-bind="shellDataAttrs">
+    <div
+      ref="playerBarRef"
+      class="player-bar player-bar-idle"
+      :class="{
+        'player-bar-mini': isMini,
+        'player-bar-compact': isCompact
+      }"
+      aria-label="播放器，尚未选择歌曲"
+    >
+      <div class="player-left">
+        <button v-if="isMini" class="mini-play-button" disabled aria-label="请先选择歌曲">
+          <PlaybackIcon name="play" />
+        </button>
+        <template v-else>
+          <div class="player-cover-slot player-cover-placeholder" aria-hidden="true">
+            <PlayerControlIcon name="queue" />
+          </div>
+          <div class="player-track-info">
+            <div class="player-title">选择歌曲开始播放</div>
+            <span class="player-artist">本地音乐与流媒体</span>
+          </div>
+        </template>
+      </div>
+      <div class="player-center">
+        <div v-if="!isMini" class="player-controls">
+          <button class="ctrl-btn previous-button" disabled aria-label="上一首，请先选择歌曲">
+            <PlaybackIcon name="previous" />
+          </button>
+          <button class="ctrl-btn btn-play" disabled aria-label="播放，请先选择歌曲">
+            <PlaybackIcon name="play" />
+          </button>
+          <button class="ctrl-btn next-button" disabled aria-label="下一首，请先选择歌曲">
+            <PlaybackIcon name="next" />
+          </button>
+        </div>
+        <PlayerSeekProgress
+          v-if="isStandard"
+          :position="0"
+          :duration="0"
+          :live="false"
+          :ab-start="null"
+          :ab-end="null"
+          :format-time="formatTime"
+        />
+        <div v-else-if="isMini" class="mini-progress-rail" aria-hidden="true">
+          <div class="mini-progress-track"></div>
+          <span class="mini-progress-time">0:00 / 0:00</span>
+        </div>
+      </div>
+      <div class="player-right">
+        <button
+          v-if="isStandard"
+          class="ctrl-btn mode-btn-right"
+          disabled
+          aria-label="顺序播放，请先选择歌曲"
+        >
+          <img :src="sequentialIcon" alt="" />
+        </button>
+        <div v-if="isStandard" class="volume-anchor">
+          <button class="volume-control-button icon-btn" disabled aria-label="音量，请先选择歌曲">
+            <PlayerControlIcon name="volume" />
+          </button>
+        </div>
+        <button class="icon-btn" disabled aria-label="歌词，请先选择歌曲">
+          <span class="desktop-lyrics-icon" aria-hidden="true">词</span>
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 

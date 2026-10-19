@@ -3,6 +3,12 @@ import SettingsGroup from './SettingsGroup.vue'
 import { computed, ref } from 'vue'
 import type { GlobalShortcutSettings, PlayerShortcutStatus } from '../../types/settings'
 import { isCommandPaletteAccelerator } from '../../../../shared/commandPaletteShortcut.ts'
+import {
+  LOCAL_SHORTCUTS,
+  isCloseWindowAccelerator,
+  type ShortcutEnabledSettings,
+  type ShortcutId
+} from '../../../../shared/shortcutPreferences.ts'
 
 type BindingKey = keyof GlobalShortcutSettings
 type StatusTone = 'idle' | 'ok' | 'failed'
@@ -11,11 +17,13 @@ const props = defineProps<{
   globalShortcuts: boolean
   shortcutStatuses: PlayerShortcutStatus[]
   shortcutBindings: GlobalShortcutSettings
+  shortcutEnabled?: ShortcutEnabledSettings
 }>()
 
 const emit = defineEmits<{
   'update:globalShortcuts': [value: boolean]
   'update:shortcutBindings': [patch: Partial<GlobalShortcutSettings>]
+  'update:shortcutEnabled': [patch: ShortcutEnabledSettings]
 }>()
 
 /** 与 src/main/core/settings.ts 的 DEFAULT_GLOBAL_SHORTCUT_BINDINGS 保持一致。 */
@@ -63,6 +71,7 @@ const recordingKey = ref<BindingKey | null>(null)
 const conflictBinding = ref<BindingKey | null>(null)
 const conflictWith = ref<BindingKey | null>(null)
 const reservedConflict = ref(false)
+const reservedLabel = ref('')
 
 const bindingValues = computed<Record<BindingKey, string>>(() => ({
   volumeUp: props.shortcutBindings.volumeUp,
@@ -90,12 +99,14 @@ const modifiedKeys = computed(() =>
 )
 
 const failedStatuses = computed(() =>
-  props.globalShortcuts ? props.shortcutStatuses.filter((status) => !status.registered) : []
+  props.globalShortcuts
+    ? props.shortcutStatuses.filter((status) => status.enabled !== false && !status.registered)
+    : []
 )
 
 const statusSummary = computed<{ tone: StatusTone; text: string }>(() => {
   if (!props.globalShortcuts) {
-    return { tone: 'idle', text: '快捷键状态：已关闭，上方组合键当前不会向系统注册。' }
+    return { tone: 'idle', text: '全局快捷键已关闭，下方组合键与媒体键当前不会向系统注册。' }
   }
   if (props.shortcutStatuses.length === 0) {
     return { tone: 'idle', text: '快捷键状态：读取中…' }
@@ -109,11 +120,16 @@ const statusSummary = computed<{ tone: StatusTone; text: string }>(() => {
       text: `快捷键状态：${failedStatuses.value.length} 项注册失败 — ${detail}`
     }
   }
-  return { tone: 'ok', text: `快捷键状态：${props.shortcutStatuses.length} 项已全部注册。` }
+  const registered = props.shortcutStatuses.filter((status) => status.registered).length
+  const disabled = props.shortcutStatuses.filter((status) => status.enabled === false).length
+  return {
+    tone: registered ? 'ok' : 'idle',
+    text: `快捷键状态：${registered} 项已注册，${disabled} 项已关闭。`
+  }
 })
 
 const conflictTip = computed(() => {
-  if (reservedConflict.value) return 'Ctrl+K / ⌘K 已保留给应用内命令面板，已保留原值'
+  if (reservedConflict.value) return `${reservedLabel.value}，已保留原值`
   if (!conflictBinding.value) return ''
   const other = EDITABLE_BINDINGS.find((item) => item.key === conflictWith.value)
   return other ? `与「${other.label}」的组合键重复，已保留原值` : '与其他快捷键冲突，已保留原值'
@@ -125,11 +141,12 @@ function formatAccelerator(accelerator: string): string {
 }
 
 function statusToneOf(status: PlayerShortcutStatus | undefined): StatusTone {
-  if (!props.globalShortcuts || !status) return 'idle'
+  if (!props.globalShortcuts || !status || status.enabled === false) return 'idle'
   return status.registered ? 'ok' : 'failed'
 }
 
 function statusTitleOf(status: PlayerShortcutStatus | undefined): string {
+  if (status?.enabled === false) return '此快捷键已关闭'
   if (!props.globalShortcuts) return '全局快捷键已关闭'
   if (!status) return '状态读取中'
   return status.registered ? '已注册' : status.error || '注册失败'
@@ -145,6 +162,18 @@ function mediaLabelOf(label: string): string {
 
 function onToggle(): void {
   emit('update:globalShortcuts', !props.globalShortcuts)
+}
+
+function isEnabled(id: ShortcutId): boolean {
+  return props.shortcutEnabled?.[id] !== false
+}
+
+function toggleShortcut(id: ShortcutId): void {
+  emit('update:shortcutEnabled', { [id]: !isEnabled(id) })
+}
+
+function mediaId(status: PlayerShortcutStatus): ShortcutId {
+  return status.accelerator as ShortcutId
 }
 
 function findConflict(key: BindingKey, accelerator: string): BindingKey | null {
@@ -221,7 +250,10 @@ function handleShortcutKeydown(key: BindingKey, event: KeyboardEvent): void {
 function applyBinding(key: BindingKey, accelerator: string): void {
   const trimmed = accelerator.trim()
   if (!trimmed) return
-  reservedConflict.value = isCommandPaletteAccelerator(trimmed)
+  reservedConflict.value = isCommandPaletteAccelerator(trimmed) || isCloseWindowAccelerator(trimmed)
+  reservedLabel.value = isCloseWindowAccelerator(trimmed)
+    ? 'Ctrl+W / ⌘W 已保留给应用内关闭窗口'
+    : 'Ctrl+K / ⌘K 已保留给应用内命令面板'
   if (reservedConflict.value) {
     conflictBinding.value = key
     conflictWith.value = null
@@ -269,7 +301,35 @@ function onRecorderBlur(key: BindingKey): void {
       <i class="pi pi-key"></i>
       <h3>快捷键</h3>
     </div>
-    <p class="shortcut-panel-hint">Ctrl+K / ⌘K：打开应用内命令面板。无需启用全局快捷键。</p>
+    <div data-setting-id="local-shortcuts" id="setting-local-shortcuts" class="shortcut-panel">
+      <div class="shortcut-panel-head">
+        <h3>应用内快捷键</h3>
+        <span class="shortcut-panel-hint">仅在应用窗口内生效，可逐项开关。</span>
+      </div>
+      <ul class="shortcut-rows">
+        <li v-for="item in LOCAL_SHORTCUTS" :key="item.id" class="shortcut-row">
+          <span
+            class="shortcut-state"
+            :class="isEnabled(item.id) ? 'ok' : 'idle'"
+            :title="isEnabled(item.id) ? '已启用' : '已关闭'"
+          ></span>
+          <span class="shortcut-label">{{ item.label }}</span>
+          <kbd class="shortcut-key static">{{ formatAccelerator(item.accelerator) }}</kbd>
+          <button
+            type="button"
+            class="toggle-switch"
+            :class="{ active: isEnabled(item.id), inactive: !isEnabled(item.id) }"
+            role="switch"
+            :aria-label="`${item.label}快捷键`"
+            :aria-checked="isEnabled(item.id)"
+            @click="toggleShortcut(item.id)"
+          ></button>
+        </li>
+      </ul>
+      <p class="shortcut-panel-hint">
+        关闭窗口遵循「关闭窗口时」设置：退出、收起到托盘或切换到迷你播放器。
+      </p>
+    </div>
     <div class="setting-list">
       <div data-setting-id="global-shortcuts" id="setting-global-shortcuts" class="setting-item">
         <div class="setting-copy">
@@ -354,6 +414,15 @@ function onRecorderBlur(key: BindingKey): void {
                   : formatAccelerator(bindingValues[item.key])
               }}
             </button>
+            <button
+              type="button"
+              class="toggle-switch"
+              :class="{ active: isEnabled(item.key), inactive: !isEnabled(item.key) }"
+              role="switch"
+              :aria-label="`${item.label}全局快捷键`"
+              :aria-checked="isEnabled(item.key)"
+              @click="toggleShortcut(item.key)"
+            ></button>
           </li>
         </ul>
         <p v-if="conflictBinding" class="shortcut-note failed">{{ conflictTip }}</p>
@@ -378,6 +447,15 @@ function onRecorderBlur(key: BindingKey): void {
             ></span>
             <span class="shortcut-label">{{ mediaLabelOf(status.label) }}</span>
             <kbd class="shortcut-key static">{{ status.accelerator }}</kbd>
+            <button
+              type="button"
+              class="toggle-switch"
+              :class="{ active: isEnabled(mediaId(status)), inactive: !isEnabled(mediaId(status)) }"
+              role="switch"
+              :aria-label="`${mediaLabelOf(status.label)}媒体快捷键`"
+              :aria-checked="isEnabled(mediaId(status))"
+              @click="toggleShortcut(mediaId(status))"
+            ></button>
           </li>
         </ul>
       </div>
@@ -439,7 +517,7 @@ function onRecorderBlur(key: BindingKey): void {
 
 .shortcut-rows {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(276px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
   gap: 2px 20px;
   margin: 0;
   padding: 0;

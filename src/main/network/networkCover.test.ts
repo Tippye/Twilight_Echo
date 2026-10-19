@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { readCoverDataUrl } from './networkCover.ts'
+import { coverExtension, readCoverDataUrl } from './networkCover.ts'
 
 const ENTRY_ID = 'a'.repeat(64)
 const TINY_PNG = Buffer.from(
@@ -50,4 +50,36 @@ test('readCoverDataUrl returns null for missing covers and rejects invalid ids',
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
+})
+
+test('readCoverDataUrl serves webp, gif and bmp covers with the matching mime', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'network-cover-'))
+  try {
+    const cases: Array<[string, string, string]> = [
+      ['c', 'webp', 'image/webp'],
+      ['d', 'gif', 'image/gif'],
+      ['e', 'bmp', 'image/bmp']
+    ]
+    for (const [prefix, extension, mime] of cases) {
+      const id = prefix.repeat(64)
+      await writeFile(join(dir, `${id}.${extension}`), Buffer.from(`payload-${extension}`))
+      const url = await readCoverDataUrl(id, dir)
+      assert.equal(
+        url,
+        `data:${mime};base64,${Buffer.from(`payload-${extension}`).toString('base64')}`
+      )
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('coverExtension normalizes known image mimes and falls back to jpg', () => {
+  assert.equal(coverExtension('image/jpeg'), 'jpeg')
+  assert.equal(coverExtension('image/png'), 'png')
+  assert.equal(coverExtension('image/webp'), 'webp')
+  assert.equal(coverExtension('image/gif'), 'gif')
+  assert.equal(coverExtension('image/tiff'), 'tiff')
+  assert.equal(coverExtension('image/svg+xml'), 'jpg')
+  assert.equal(coverExtension(undefined), 'jpg')
 })

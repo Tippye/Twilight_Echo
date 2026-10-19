@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import CoverImg from '../CoverImg.vue'
-import ThemeIcon from '../ThemeIcon.vue'
 
 defineProps<{
   cover?: string | null
@@ -21,13 +20,6 @@ defineProps<{
       :loading="eager ? 'eager' : 'lazy'"
       class="album-artwork-image"
     >
-      <template #placeholder>
-        <div class="album-artwork-placeholder" role="img" :aria-label="`${name}暂无封面`">
-          <span class="album-artwork-disc" aria-hidden="true"
-            ><ThemeIcon icon-slot="library.album"
-          /></span>
-        </div>
-      </template>
     </CoverImg>
   </div>
 </template>

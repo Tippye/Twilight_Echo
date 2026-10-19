@@ -371,6 +371,24 @@ bool pcmFormatsSemanticallyMatch(const AudioFormat& left, const AudioFormat& rig
          effectivePcmBitDepth(left) == effectivePcmBitDepth(right);
 }
 
+bool pcmFormatsPreserveSource(const AudioFormat& source, const AudioFormat& output) {
+  if (pcmFormatsSemanticallyMatch(source, output)) return true;
+  if (output.sampleFormat != AudioSampleFormat::Int32Interleaved ||
+      effectivePcmBitDepth(output) != 32) {
+    return false;
+  }
+
+  const int bits = effectivePcmBitDepth(source);
+  const bool integerSource =
+      (source.sampleFormat == AudioSampleFormat::Int16Interleaved && bits == 16) ||
+      ((source.sampleFormat == AudioSampleFormat::Int24Interleaved ||
+        source.sampleFormat == AudioSampleFormat::Int24In32Interleaved) && bits == 24);
+
+  return integerSource &&
+         source.sampleRate > 0 && source.sampleRate == output.sampleRate &&
+         source.channelCount > 0 && source.channelCount == output.channelCount;
+}
+
 bool isDsdSampleFormat(AudioSampleFormat format) {
   return format == AudioSampleFormat::DsdInt8Lsb1 || format == AudioSampleFormat::DsdInt8Msb1 ||
          format == AudioSampleFormat::DsdInt8Ner8;
@@ -432,7 +450,7 @@ PerfectResult evaluatePerfect(const PerfectEvaluation& evaluation) {
   result.formatMatched =
       dsdFormatMatched || (evaluation.sourceDsd ? pcmFormatsSemanticallyMatch(decodedFormat, evaluation.outputFormat)
                                                 : pcmFormatsExactMatch(decodedFormat, evaluation.outputFormat));
-  result.sourceFormatMatched = pcmFormatsSemanticallyMatch(evaluation.sourceFormat, evaluation.outputFormat);
+  result.sourceFormatMatched = pcmFormatsPreserveSource(evaluation.sourceFormat, evaluation.outputFormat);
   result.resampled = evaluation.backendResampled || !result.formatMatched;
   result.processingActive =
       evaluation.loudnormActive || evaluation.replayGainActive || evaluation.eqActive || evaluation.convolverActive ||
@@ -443,12 +461,11 @@ PerfectResult evaluatePerfect(const PerfectEvaluation& evaluation) {
       evaluation.routingMode,
       decodedFormat.channelCount,
       evaluation.outputFormat.channelCount);
-  // A 24-bit source reaching a 24-in-32 wire format keeps every bit, so only a
-  // payload change (int -> float, or a different significant-bit count) counts
-  // as losing the integer path.
+  // Integer widening retains the source samples. Float conversion or narrowing
+  // does not preserve the lossless integer path.
   const bool losslessPcmDecodedConverted =
       !evaluation.sourceDsd && evaluation.sourceLossless &&
-      !pcmFormatsSemanticallyMatch(evaluation.sourceFormat, decodedFormat);
+      !pcmFormatsPreserveSource(evaluation.sourceFormat, decodedFormat);
   result.pcmPassthrough = evaluation.pcmPassthrough && result.formatMatched && !evaluation.backendResampled &&
                           !losslessPcmDecodedConverted;
   const bool pcmOutputPerfect =

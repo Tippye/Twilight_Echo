@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
+import { diagnosticContext, withDiagnosticContext, writeDiagnostic } from '../diagnostics/logger.ts'
+import type { DiagnosticLevel } from '../../shared/diagnostics.ts'
 
 export type RemoteMediaKind = 'audio' | 'image'
 
@@ -56,7 +58,14 @@ export class RemoteMediaGrantService {
         : this.createToken()
     if (!token || /[/?#]/.test(token)) throw new Error('Remote media grant token is invalid')
     this.grants.set(token, { source: normalized, kind, lastAccessAt: this.now() })
-    return `twilight-media://${kind}/${token}`
+    const handle = `twilight-media://${kind}/${token}`
+    writeDiagnostic(
+      'media.remote',
+      'grant.issued',
+      { source: normalized, handleUrl: handle, kind },
+      'debug'
+    )
+    return handle
   }
 
   resolve(url: string, expectedKind?: RemoteMediaKind): RemoteMediaGrant {
@@ -86,80 +95,140 @@ export function createRemoteMediaRequestHandler(
   options: RemoteMediaRequestHandlerOptions
 ): (request: Request) => Promise<Response> {
   const grants = options.grants ?? remoteMediaGrants
-  return async (request) => {
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      return failedRemoteMediaResponse(405, 'Method not allowed')
-    }
-
-    let grant: RemoteMediaGrant
-    try {
-      grant = grants.resolve(request.url)
-    } catch {
-      return failedRemoteMediaResponse(403, 'Remote media authorization failed')
-    }
-
-    const range = request.headers.get('range')
-    if (range && !isSingleByteRange(range)) {
-      return failedRemoteMediaResponse(416, 'Requested range is not supported')
-    }
-
-    const cacheable = grant.kind === 'image' && request.method === 'GET' && !range
-    if (cacheable && options.imageCache) {
-      const cached = await options.imageCache.read(grant.source)
-      if (cached) return cached
-    }
-
-    let upstream: Response
-    try {
-      upstream = await fetchRemoteMediaWithRedirects(options.fetch, grant.source, {
-        method: request.method,
-        headers: buildUpstreamRequestHeaders(grant.source, grant.kind, range)
-      })
-    } catch {
-      return failedRemoteMediaResponse(502, 'Remote media request failed')
-    }
-
-    if (!upstream.ok && upstream.status !== 206) {
-      return failedRemoteMediaResponse(502, 'Remote media request failed')
-    }
-    if (!isExpectedMediaType(upstream.headers.get('content-type'), grant.kind)) {
-      return failedRemoteMediaResponse(415, 'Remote media type is not authorized')
-    }
-
-    const maximumBytes = maxResponseBytesFor(grant.kind)
-    const contentLength = parseContentLength(upstream.headers.get('content-length'))
-    if (contentLength !== null && contentLength > maximumBytes) {
-      return failedRemoteMediaResponse(413, 'Remote media response is too large')
-    }
-
-    const response = new Response(limitResponseBody(upstream.body, maximumBytes), {
-      status: upstream.status,
-      statusText: upstream.statusText,
-      headers: filteredResponseHeaders(upstream.headers)
-    })
-    if (
-      cacheable &&
-      options.imageCache &&
-      upstream.status === 200 &&
-      !/no-store|no-cache|private|max-age\s*=\s*0(?:\D|$)/i.test(
-        upstream.headers.get('cache-control') ?? ''
-      )
-    ) {
-      try {
-        const bytes = new Uint8Array(await response.arrayBuffer())
-        await options.imageCache.write(
-          grant.source,
-          upstream.headers.get('content-type') ?? '',
-          bytes
+  return (request) =>
+    withDiagnosticContext({ requestId: randomUUID() }, async () => {
+      const started = performance.now()
+      const context = { ...diagnosticContext() }
+      let source: string | undefined = undefined
+      const record: MediaDiagnostic = (event, details = {}, level = 'debug') => {
+        writeDiagnostic(
+          'media.remote',
+          event,
+          {
+            handleUrl: request.url,
+            source,
+            method: request.method,
+            durationMs: performance.now() - started,
+            ...details
+          },
+          level,
+          context
         )
-        return new Response(bytes, { status: response.status, headers: response.headers })
-      } catch {
-        return failedRemoteMediaResponse(502, 'Remote image response failed')
       }
-    }
-    return response
-  }
+      record('request.start')
+      const fail = (status: number, reason: string, message: string, error?: unknown) => {
+        record(
+          'request.failed',
+          { status, reason, ...(error === undefined ? {} : { error }) },
+          'warn'
+        )
+        return failedRemoteMediaResponse(status, message)
+      }
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        return fail(405, 'method', 'Method not allowed')
+      }
+
+      let grant: RemoteMediaGrant
+      try {
+        grant = grants.resolve(request.url)
+      } catch (error) {
+        return fail(403, 'authorization', 'Remote media authorization failed', error)
+      }
+      source = grant.source
+      record('authorization.complete', { kind: grant.kind })
+
+      const range = request.headers.get('range')
+      if (range && !isSingleByteRange(range)) {
+        return fail(416, 'range', 'Requested range is not supported')
+      }
+
+      const cacheable = grant.kind === 'image' && request.method === 'GET' && !range
+      if (cacheable && options.imageCache) {
+        try {
+          const cached = await options.imageCache.read(grant.source)
+          record('cache.lookup', { hit: Boolean(cached) })
+          if (cached) {
+            record('response.ready', { status: cached.status, fromCache: true })
+            return cached
+          }
+        } catch (error) {
+          record('cache.read.failed', { error }, 'warn')
+          throw error
+        }
+      }
+
+      let upstream: Response
+      try {
+        upstream = await fetchRemoteMediaWithRedirects(
+          options.fetch,
+          grant.source,
+          {
+            method: request.method,
+            headers: buildUpstreamRequestHeaders(grant.source, grant.kind, range)
+          },
+          record
+        )
+      } catch (error) {
+        return fail(502, 'upstream-fetch', 'Remote media request failed', error)
+      }
+
+      if (!upstream.ok && upstream.status !== 206) {
+        return fail(502, 'upstream-status', 'Remote media request failed')
+      }
+      if (!isExpectedMediaType(upstream.headers.get('content-type'), grant.kind)) {
+        return fail(415, 'content-type', 'Remote media type is not authorized')
+      }
+
+      const maximumBytes = maxResponseBytesFor(grant.kind)
+      const contentLength = parseContentLength(upstream.headers.get('content-length'))
+      if (contentLength !== null && contentLength > maximumBytes) {
+        return fail(413, 'content-length', 'Remote media response is too large')
+      }
+
+      const response = new Response(limitResponseBody(upstream.body, maximumBytes, record), {
+        status: upstream.status,
+        statusText: upstream.statusText,
+        headers: filteredResponseHeaders(upstream.headers)
+      })
+      if (
+        cacheable &&
+        options.imageCache &&
+        upstream.status === 200 &&
+        !/no-store|no-cache|private|max-age\s*=\s*0(?:\D|$)/i.test(
+          upstream.headers.get('cache-control') ?? ''
+        )
+      ) {
+        try {
+          const bytes = new Uint8Array(await response.arrayBuffer())
+          await options.imageCache.write(
+            grant.source,
+            upstream.headers.get('content-type') ?? '',
+            bytes
+          )
+          record('response.ready', {
+            status: response.status,
+            fromCache: false,
+            bytes: bytes.byteLength
+          })
+          return new Response(bytes, { status: response.status, headers: response.headers })
+        } catch (error) {
+          return fail(502, 'body-or-cache-write', 'Remote image response failed', error)
+        }
+      }
+      if (cacheable)
+        record('cache.write.skipped', {
+          reason: options.imageCache ? 'response-policy' : 'unconfigured'
+        })
+      record('response.ready', { status: response.status, fromCache: false })
+      return response
+    })
 }
+
+type MediaDiagnostic = (
+  event: string,
+  details?: Record<string, unknown>,
+  level?: DiagnosticLevel
+) => void
 
 export function protectProviderMedia<T>(
   value: T,
@@ -322,7 +391,8 @@ function refererForRemoteMediaSource(source: string): string | null {
 async function fetchRemoteMediaWithRedirects(
   fetchImpl: RemoteMediaRequestHandlerOptions['fetch'],
   source: string,
-  init: { method: string; headers?: HeadersInit }
+  init: { method: string; headers?: HeadersInit },
+  record: MediaDiagnostic
 ): Promise<Response> {
   let current = source
   const baseHeaders = headersInitToRecord(init.headers)
@@ -331,12 +401,24 @@ async function fetchRemoteMediaWithRedirects(
     const hopHeaders: Record<string, string> = { ...baseHeaders }
     const hopReferer = refererForRemoteMediaSource(current)
     if (hopReferer) hopHeaders.Referer = hopReferer
+    record('upstream.request.start', { hop, address: current })
     const response = await fetchImpl(current, {
       method: init.method,
       headers: hopHeaders,
       credentials: 'omit',
       redirect: 'manual'
     })
+    record(
+      'upstream.response.headers',
+      {
+        hop,
+        address: current,
+        status: response.status,
+        contentType: response.headers.get('content-type'),
+        contentLength: parseContentLength(response.headers.get('content-length'))
+      },
+      response.status >= 400 ? 'warn' : 'debug'
+    )
     if (response.status < 300 || response.status >= 400) return response
     if (hop === MAX_REMOTE_MEDIA_REDIRECTS) {
       throw new Error('Remote media redirect limit exceeded')
@@ -349,6 +431,7 @@ async function fetchRemoteMediaWithRedirects(
     } catch {
       throw new Error('Remote media redirect target is not authorized')
     }
+    record('upstream.redirect', { hop, address: current, targetUrl: next, status: response.status })
     // Drop the body so sockets are not held while hopping CDN edge hosts.
     try {
       await response.body?.cancel()
@@ -486,27 +569,44 @@ function filteredResponseHeaders(headers: Headers): Headers {
 
 function limitResponseBody(
   body: ReadableStream<Uint8Array> | null,
-  maximumBytes: number
+  maximumBytes: number,
+  record: MediaDiagnostic
 ): ReadableStream<Uint8Array> | null {
-  if (!body) return null
+  if (!body) {
+    record('body.complete', { bytes: 0 })
+    return null
+  }
   const reader = body.getReader()
   let bytesRead = 0
+  let settled = false
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
-      const next = await reader.read()
-      if (next.done) {
-        controller.close()
-        return
+      try {
+        const next = await reader.read()
+        if (settled) return
+        if (next.done) {
+          settled = true
+          record('body.complete', { bytes: bytesRead })
+          controller.close()
+          return
+        }
+        bytesRead += next.value.byteLength
+        if (bytesRead > maximumBytes) {
+          await reader.cancel('Remote media response exceeded its size limit')
+          throw new Error('Remote media response exceeded its size limit')
+        }
+        controller.enqueue(next.value)
+      } catch (error) {
+        if (settled) return
+        settled = true
+        record('body.failed', { bytes: bytesRead, maximumBytes, error }, 'warn')
+        controller.error(error)
       }
-      bytesRead += next.value.byteLength
-      if (bytesRead > maximumBytes) {
-        await reader.cancel('Remote media response exceeded its size limit')
-        controller.error(new Error('Remote media response exceeded its size limit'))
-        return
-      }
-      controller.enqueue(next.value)
     },
     cancel(reason) {
+      if (settled) return
+      settled = true
+      record('body.cancelled', { bytes: bytesRead }, 'debug')
       return reader.cancel(reason)
     }
   })

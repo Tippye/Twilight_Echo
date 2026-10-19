@@ -18,6 +18,19 @@ export interface LibraryCollectionViewState {
   genre: string | null
 }
 
+export function resolveLibraryArtistTracks(tracks: readonly Track[], name: string): Track[] {
+  const artistName = name.trim()
+  if (!artistName) return []
+  return tracks.filter((track) => {
+    // Keep full display-name links and the unknown-artist collection working.
+    if ((track.artist.trim() || '未知艺术家') === artistName) return true
+    const names = track.artists?.length
+      ? track.artists.map((artist) => artist.name)
+      : track.artist.split(/\s+\/\s+/)
+    return names.some((name) => name.trim() === artistName)
+  })
+}
+
 const DEFAULT_STATE: LibraryCollectionViewState = {
   sort: 'name-asc',
   genre: null

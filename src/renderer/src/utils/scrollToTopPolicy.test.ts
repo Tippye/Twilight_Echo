@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  SCROLL_CONTROL_STACK_GAP,
   SCROLL_TOP_BUTTON_SIZE,
   SCROLL_TOP_EDGE_GAP,
   SCROLL_TOP_MIN_CONTAINER_HEIGHT,
@@ -53,6 +54,38 @@ test('the anchor sits inside the scrollbar gutter at the bottom-right of the cli
     left: 1200 - 10 - SCROLL_TOP_EDGE_GAP - SCROLL_TOP_BUTTON_SIZE,
     top: 800 - SCROLL_TOP_EDGE_GAP - SCROLL_TOP_BUTTON_SIZE
   })
+})
+
+test('a locate action reserves a second control below back-to-top', () => {
+  const anchor = resolveScrollTopAnchor({
+    rect: rect(0, 0, 1200, 800),
+    clientWidth: 1200,
+    viewportWidth: 1200,
+    viewportHeight: 800,
+    obstruction: { top: 700, left: 0, right: 1200 },
+    controlCount: 2
+  })
+  assert.ok(anchor)
+  const locateTop = anchor.top + SCROLL_TOP_BUTTON_SIZE + SCROLL_CONTROL_STACK_GAP
+  assert.equal(
+    anchor.top,
+    700 - SCROLL_TOP_EDGE_GAP - SCROLL_TOP_BUTTON_SIZE * 2 - SCROLL_CONTROL_STACK_GAP
+  )
+  assert.equal(locateTop + SCROLL_TOP_BUTTON_SIZE, 700 - SCROLL_TOP_EDGE_GAP)
+})
+
+test('a two-control stack needs room for both controls', () => {
+  assert.equal(
+    resolveScrollTopAnchor({
+      rect: rect(0, 0, 1200, 800),
+      clientWidth: 1200,
+      viewportWidth: 1200,
+      viewportHeight: 800,
+      obstruction: { top: 100, left: 0, right: 1200 },
+      controlCount: 2
+    }),
+    null
+  )
 })
 
 test('a player bar spanning the container lifts the anchor above it', () => {

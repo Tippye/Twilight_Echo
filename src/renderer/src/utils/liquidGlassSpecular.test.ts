@@ -558,19 +558,27 @@ test('highlight cache keeps eight recent maps and refreshes recency on a hit', (
   clearSpecularMapCache()
   let encodes = 0
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'document')
+  const previousImageData = Object.getOwnPropertyDescriptor(globalThis, 'ImageData')
   t.after(() => {
     if (previous) Object.defineProperty(globalThis, 'document', previous)
     else Reflect.deleteProperty(globalThis, 'document')
+    if (previousImageData) Object.defineProperty(globalThis, 'ImageData', previousImageData)
+    else Reflect.deleteProperty(globalThis, 'ImageData')
     clearSpecularMapCache()
+  })
+  Object.defineProperty(globalThis, 'ImageData', {
+    configurable: true,
+    value: class {
+      constructor(data: Uint8ClampedArray, width: number, height: number) {
+        Object.assign(this, { data, width, height })
+      }
+    }
   })
   Object.defineProperty(globalThis, 'document', {
     configurable: true,
     value: {
       createElement: () => ({
         getContext: () => ({
-          createImageData: (width: number, height: number) => ({
-            data: new Uint8ClampedArray(width * height * 4)
-          }),
           putImageData: () => {}
         }),
         toDataURL: () => `data:image/png;base64,${++encodes}`
