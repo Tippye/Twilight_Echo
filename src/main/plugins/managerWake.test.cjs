@@ -385,52 +385,42 @@ async function fixture(
   }
 }
 
-async function nativePlaybackFixture(t, caseId) {
+async function providerPlaybackFixture(t, caseId) {
   const f = await fixture(t, {
     pluginId: 'com.twilightecho.provider.qqmusic',
     providerId: 'qq',
     supportedMethods: ['searchSongs', 'getPlaybackUrl', 'logout', 'getQrLogin'],
     capabilities: ['search', 'playbackUrl', 'login']
   })
-  f.descriptor.permissions.push('dsp:native')
-  const { bindProviderPcmWorker } = await import(
-    pathToFileURL(path.join(__dirname, '../audio/providerPcmWorker.ts')).href
-  )
   const envelope = (revision = 'initial') => ({
     id: `public-lifecycle-${caseId}`,
     streamUrl: `https://audio.example.test/public-lifecycle-${caseId}-${revision}.flac`,
     providerSource: {
-      effect: 'qq-excellent',
       actualQuality: 'flac',
       expiresAt: Date.now() + 60000
     }
   })
   const publish = (value) =>
-    f.manager.callProvider('qq', 'getPlaybackUrl', [value, { quality: 'excellent' }])
+    f.manager.callProvider('qq', 'getPlaybackUrl', [value, { quality: 'flac' }])
   const initial = envelope()
   const waking = publish(initial)
   await f.activationStarted
   f.register()
   f.activate()
   await waking
-  const canBind = (source = initial.streamUrl) => {
+  const isCurrent = (source = initial.streamUrl) => {
     try {
-      return !!bindProviderPcmWorker({ id: initial.id, source }, source, {
-        identities: f.identities,
-        workerPath: 'C:/public-fixed-resource/worker.exe',
-        platform: 'win32',
-        exists: () => true
-      }).pcmWorkerExecutable
+      return f.identities.get(source)?.pluginId === f.descriptor.id
     } catch {
       return false
     }
   }
-  assert.equal(canBind(), true)
-  return { ...f, envelope, publish, source: initial.streamUrl, canBind }
+  assert.equal(isCurrent(), true)
+  return { ...f, envelope, publish, source: initial.streamUrl, isCurrent }
 }
 
-test('current host exit revokes native source authority and leaves other plugins intact', async (t) => {
-  const f = await nativePlaybackFixture(t, 'host-exit')
+test('current host exit revokes provider source authority and leaves other plugins intact', async (t) => {
+  const f = await providerPlaybackFixture(t, 'host-exit')
   const otherPlugin = 'com.example.other-lifecycle'
   const otherSource = 'https://audio.example.test/public-lifecycle-other.flac'
   f.identities.record('other', 'public-other', 'auto', otherSource, otherPlugin)
@@ -438,12 +428,12 @@ test('current host exit revokes native source authority and leaves other plugins
   f.children[0].emit('exit', 1)
   assert.equal(f.manager.running.has(f.descriptor.id), false)
   assert.equal(typeof f.manager.state[f.descriptor.id].lastError, 'string')
-  assert.equal(f.canBind(), false)
+  assert.equal(f.isCurrent(), false)
   assert.equal(f.identities.get(otherSource)?.pluginId, otherPlugin)
 })
 
 test('a retired child exit cannot revoke the current host source authority', async (t) => {
-  const f = await nativePlaybackFixture(t, 'retired-exit')
+  const f = await providerPlaybackFixture(t, 'retired-exit')
   await f.manager.stopPlugin(f.descriptor.id)
   const restarting = f.manager.startPlugin(f.descriptor)
   await new Promise(setImmediate)
@@ -452,25 +442,25 @@ test('a retired child exit cannot revoke the current host source authority', asy
   await restarting
   const current = f.envelope('current')
   await f.publish(current)
-  assert.equal(f.canBind(current.streamUrl), true)
+  assert.equal(f.isCurrent(current.streamUrl), true)
   f.children[0].emit('exit', 1)
   assert.equal(f.manager.running.get(f.descriptor.id)?.process, f.children[1])
   assert.equal(f.manager.state[f.descriptor.id].lastError, undefined)
-  assert.equal(f.canBind(current.streamUrl), true)
+  assert.equal(f.isCurrent(current.streamUrl), true)
 })
 
 test('intentional hibernation preserves a still valid CDN source authority', async (t) => {
-  const f = await nativePlaybackFixture(t, 'hibernation')
+  const f = await providerPlaybackFixture(t, 'hibernation')
   await f.manager.hibernatePlugin(f.descriptor.id)
   assert.equal(f.manager.running.has(f.descriptor.id), false)
   assert.equal(f.manager.isHibernated(f.descriptor.id), true)
-  assert.equal(f.canBind(), true)
+  assert.equal(f.isCurrent(), true)
 })
 
 for (const method of ['logout', 'getQrLogin']) {
   for (const ok of [false, true]) {
     test(`${method} revokes before its pending cleanup and cannot revoke a newer source (${ok})`, async (t) => {
-      const f = await nativePlaybackFixture(t, `${method}-${ok}`)
+      const f = await providerPlaybackFixture(t, `${method}-${ok}`)
       const child = f.children[0]
       const postMessage = child.postMessage.bind(child)
       let completeDispatch
@@ -490,10 +480,10 @@ for (const method of ['logout', 'getQrLogin']) {
       const pending = f.manager.callProvider('qq', method, [])
       const outcome = ok ? pending : assert.rejects(pending, /public synthetic cleanup failure/)
       await dispatched
-      const revokedAtDispatch = !f.canBind()
+      const revokedAtDispatch = !f.isCurrent()
       const current = f.envelope('new-session')
       await f.publish(current)
-      assert.equal(f.canBind(current.streamUrl), true)
+      assert.equal(f.isCurrent(current.streamUrl), true)
       child.emit('message', {
         kind: 'provider-result',
         requestId: request.requestId,
@@ -503,9 +493,9 @@ for (const method of ['logout', 'getQrLogin']) {
       })
       await outcome
       assert.equal(revokedAtDispatch, true, 'dispatch must revoke before the response')
-      assert.equal(f.canBind(), false)
+      assert.equal(f.isCurrent(), false)
       assert.equal(
-        f.canBind(current.streamUrl),
+        f.isCurrent(current.streamUrl),
         true,
         'a late response must not revoke newer authority'
       )
@@ -513,11 +503,11 @@ for (const method of ['logout', 'getQrLogin']) {
   }
 
   test(`an already cancelled ${method} cannot revoke current playback authority`, async (t) => {
-    const f = await nativePlaybackFixture(t, `cancelled-${method}`)
+    const f = await providerPlaybackFixture(t, `cancelled-${method}`)
     const controller = new AbortController()
     controller.abort()
     await assert.rejects(f.manager.callProvider('qq', method, [], { signal: controller.signal }))
-    assert.equal(f.canBind(), true)
+    assert.equal(f.isCurrent(), true)
     assert.equal(
       f.children[0].messages.some((message) => message.method === method),
       false
@@ -525,7 +515,7 @@ for (const method of ['logout', 'getQrLogin']) {
   })
 
   test(`${method} cancels earlier playback RPCs before delayed results can create new authority`, async (t) => {
-    const f = await nativePlaybackFixture(t, `late-${method}`)
+    const f = await providerPlaybackFixture(t, `late-${method}`)
     const { parseAppError } = await import(
       pathToFileURL(path.join(__dirname, '../../shared/errors/appError.ts')).href
     )
@@ -561,7 +551,7 @@ for (const method of ['logout', 'getQrLogin']) {
       assert.equal(outcome.rejected, true)
       assert.equal(outcome.code, 'provider.playbackUnavailable')
     }
-    assert.equal(f.canBind(), false)
+    assert.equal(f.isCurrent(), false)
     for (const message of held) {
       child.emit('message', {
         kind: 'provider-result',
@@ -569,12 +559,12 @@ for (const method of ['logout', 'getQrLogin']) {
         ok: true,
         value: message.args[0]
       })
-      assert.equal(f.canBind(message.args[0].streamUrl), false)
+      assert.equal(f.isCurrent(message.args[0].streamUrl), false)
     }
     const current = f.envelope('current-session')
     await f.publish(current)
     assert.equal(
-      f.canBind(current.streamUrl),
+      f.isCurrent(current.streamUrl),
       true,
       'cancellation must not poison the new session circuit'
     )
@@ -582,7 +572,7 @@ for (const method of ['logout', 'getQrLogin']) {
 }
 
 test('a stop awaiting auth cleanup cannot publish a new playback source', async (t) => {
-  const f = await nativePlaybackFixture(t, 'stop-dispatch')
+  const f = await providerPlaybackFixture(t, 'stop-dispatch')
   let finishCleanup
   f.manager.qqAuth.clear = () =>
     new Promise((resolve) => {
@@ -599,8 +589,8 @@ test('a stop awaiting auth cleanup cannot publish a new playback source', async 
     rejected = true
   }
   const callsAfter = child.messages.filter((message) => message.kind === 'provider-call').length
-  const oldAuthorityRetained = f.canBind()
-  const newAuthorityPublished = f.canBind(next.streamUrl)
+  const oldAuthorityRetained = f.isCurrent()
+  const newAuthorityPublished = f.isCurrent(next.streamUrl)
   const hostRetainedDuringCleanup = f.manager.running.has(f.descriptor.id)
   const stopPending = f.manager.stopOperations.has(f.descriptor.id)
   finishCleanup()

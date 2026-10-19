@@ -45,7 +45,7 @@ function terminalReason(error) {
   assert.equal(/PRIVATE|https?:\/\/|vkey=|PUBLIC_RAW/.test(reason), false)
   return reason
 }
-function fallbackHarness({ sizes = {}, outcome = () => 'success', onAttempt, hugeVip = 0 } = {}) {
+function fallbackHarness({ sizes = {}, outcome = () => 'success', onAttempt } = {}) {
   const song = structuredClone(fixture.publicSongs[0])
   for (const [quality, field] of Object.entries(qualityFields)) {
     song.file[field] = Object.hasOwn(sizes, quality) ? sizes[quality] : 1000
@@ -68,11 +68,12 @@ function fallbackHarness({ sizes = {}, outcome = () => 'success', onAttempt, hug
     transform.dispose()
     return [quality, cipher]
   }))
-  const attempts = [], mediaRequests = [], writes = []
+  const attempts = [], mediaRequests = [], writes = [], apiRequests = []
   let details = 0
   const h = harness({ onRequest: async (request, key) => {
     let data = session
-    if (key === 'VipLogin.VipLoginInter.vip_login_base') data = { identity: { HugeVip: hugeVip } }
+    apiRequests.push(key)
+    assert.notEqual(key, 'VipLogin.VipLoginInter.vip_login_base')
     if (key === 'Protocol_UpdateSongInfo') {
       details++
       assert.deepEqual(request[key].param, { ids: [97773], types: [0], ctx: 0, scene: 0 })
@@ -108,23 +109,33 @@ function fallbackHarness({ sizes = {}, outcome = () => 'success', onAttempt, hug
   const set = h.context.settings.set
   h.context.settings.set = async (key, value) => { writes.push(key); return set(key, value) }
   h.storage.set('windows-auth', session)
-  return { ...h, get provider() { return h.provider }, attempts, mediaRequests, plain, writes, get details() { return details } }
+  return { ...h, get provider() { return h.provider }, attempts, mediaRequests, plain, writes, apiRequests, get details() { return details } }
 }
 
-test('Excellent is a gated local effect on ordinary SQ, never a new Vkey file quality', { skip: process.platform !== 'win32' }, async () => {
+test('retired composite selections use the same recording in ordinary128 without any effect or VIP RPC', { skip: process.platform !== 'win32' }, async () => {
   const original = globalThis.fetch
-  for (const hugeVip of [1, 0, '1']) {
-    const h = fallbackHarness({ hugeVip })
-    globalThis.fetch = h.fetch
-    try {
-      await activate(h.context)
-      const result = await h.provider.getPlaybackUrl({ id: 'qq:0039MnYb0qxYhV:97773' }, { quality: 'excellent' }, {})
-      assert.deepEqual(h.attempts, ['flac'])
-      assert.equal(result.providerSource.actualQuality, 'flac')
-      assert.equal(result.providerSource.effect, hugeVip === 1 ? 'qq-excellent' : undefined)
-      assert.equal(result.providerSource.bytes, h.plain.flac.length)
-      assert.equal(h.attempts.includes('hires'), false)
-    } finally { await deactivate(); globalThis.fetch = original }
+  for (const retired of ['excellent', 'excellentSpatial']) {
+    for (const persisted of [false, true]) {
+      const h = fallbackHarness()
+      if (persisted) h.storage.set('windows-playback-quality', retired)
+      globalThis.fetch = h.fetch
+      try {
+        await activate(h.context)
+        const result = await h.provider.getPlaybackUrl({ id: 'qq:0039MnYb0qxYhV:97773' },
+          persisted ? {} : { quality: retired }, {})
+        assert.deepEqual(h.attempts, ['128'])
+        assert.equal(h.details, 1)
+        assert.equal(result.providerSource.actualQuality, '128')
+        assert.equal(Object.hasOwn(result.providerSource, 'effect'), false)
+        assert.equal(result.providerSource.bytes, h.plain['128'].length)
+        assert.equal(h.apiRequests.includes('VipLogin.VipLoginInter.vip_login_base'), false)
+        if (persisted) {
+          assert.equal(h.storage.get('windows-playback-quality'), '128')
+          assert.equal((await h.provider.getPlaybackQuality({})).quality, '128')
+          assert.equal(h.writes.filter(key => key === 'windows-playback-quality').length, 1)
+        }
+      } finally { await deactivate(); globalThis.fetch = original }
+    }
   }
 })
 

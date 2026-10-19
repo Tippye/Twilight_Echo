@@ -1925,8 +1925,7 @@ export class TwilightPluginManager extends EventEmitter {
           metadata.playbackTrackId,
           metadata.playbackQuality ?? 'auto',
           message.value,
-          pluginId,
-          this.running.get(pluginId)?.descriptor.permissions.includes('dsp:native') === true
+          pluginId
         )
       }
       if (metadata.method === 'getPlaybackUrl' && isPluginHostedPlaybackUrl(playbackSource)) {

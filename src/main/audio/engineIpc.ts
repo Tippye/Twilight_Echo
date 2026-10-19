@@ -10,8 +10,7 @@ import { AudioEngineServiceBinding } from '../audioEngineServiceClient.ts'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { readFile, stat, writeFile } from 'node:fs/promises'
 import { release } from 'node:os'
-import { dirname, join } from 'path'
-import { existsSync } from 'node:fs'
+import { join } from 'path'
 import { runtime } from '../core/runtime'
 import { sleepTimerService } from '../sleepTimer.ts'
 import { createDeviceProfileHandlers } from './deviceProfilesIpc.ts'
@@ -55,9 +54,7 @@ import {
   importDspProfileArchive
 } from '../dsp/dspProfileArchive.ts'
 import { Vst3CatalogService } from '../dsp/vst3Catalog.ts'
-import { getNativeAddonCandidates, rendererFallbackAllowed } from './nativeBinding.ts'
-import { bindProviderPcmWorker } from './providerPcmWorker.ts'
-import { publicAudioQueueItem } from './audioEngineHelpers.ts'
+import { rendererFallbackAllowed } from './nativeBinding.ts'
 import { importFrequencyResponseFromDialog } from './importFrequencyResponse.ts'
 import {
   AudioDiagnosticRecorder,
@@ -774,7 +771,7 @@ async function initializeAudioEngineRuntime(): Promise<void> {
 
   runtime.audioEngineManager.on('queue-change', (queue) => {
     void runtime.pluginManager?.broadcastEvent('player:queue-change', {
-      queue: queue.map(publicAudioQueueItem)
+      queue: queue.map((item) => ({ ...item }))
     })
   })
 
@@ -980,16 +977,9 @@ function registerAudioEngineIpcHandlers(): void {
         queue.map((item) => item.source),
         resolveAuthorizedPlaybackSource
       )
-      const authorizedQueue = queue.map((item) => {
-        const source = sources.get(item.source)!
-        const metadata = bindPlaybackSourceMetadata(item, source)
-        const candidates = getNativeAddonCandidates().map((file) =>
-          join(dirname(file), 'twilight-qq-excellent-worker.exe')
-        )
-        return bindProviderPcmWorker(metadata, source, {
-          workerPath: candidates.find((file) => existsSync(file)) ?? candidates[0]
-        })
-      })
+      const authorizedQueue = queue.map((item) =>
+        bindPlaybackSourceMetadata(item, sources.get(item.source)!)
+      )
       const sourceRevisions = authorizedQueue.map((item) =>
         providerPlaybackIdentities.revision(item.source)
       )
@@ -1002,7 +992,7 @@ function registerAudioEngineIpcHandlers(): void {
       )
       const engine = await ensureAudioEngineRuntime()
       // Runtime initialization may yield to logout, disable or a newer
-      // resolution. A previously bound executable is no continuing authority.
+      // resolution. A previously authorized source is no continuing authority.
       for (const [index, item] of authorizedQueue.entries()) {
         providerPlaybackIdentities.assertCurrent(item.source)
         if (providerPlaybackIdentities.revision(item.source) !== sourceRevisions[index])

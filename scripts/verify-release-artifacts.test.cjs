@@ -9,7 +9,6 @@ const {
   REQUIRED_RELEASE_NATIVE_BINARIES,
   assertBudget,
   assertX64Pe,
-  assertShippedArchitecture,
   listNativeBinaries,
   listReleaseNativeBinaries,
   listRuntimeDependencies,
@@ -19,17 +18,21 @@ const {
 } = require('./verify-release-artifacts.cjs')
 const { createMinimalPe } = require('./pe-fixture.cjs')
 
-test('only the named isolated effect worker uses the x86 ABI', () => {
+test('release native verification rejects a retired worker regardless of PE architecture', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'twilight-worker-pe-'))
   try {
-    const worker = path.join(dir, 'twilight-qq-excellent-worker.exe')
-    const engine = path.join(dir, 'twilight-audio-engine.dll')
-    fs.writeFileSync(worker, createMinimalPe({ machine: 0x14c }))
-    fs.writeFileSync(engine, createMinimalPe({ machine: 0x14c }))
-    assert.doesNotThrow(() => assertShippedArchitecture(worker))
-    assert.throws(() => assertShippedArchitecture(engine), /not a Windows x64/)
-    fs.writeFileSync(worker, createMinimalPe())
-    assert.throws(() => assertShippedArchitecture(worker), /Windows x86 effect ABI/)
+    for (const name of REQUIRED_RELEASE_NATIVE_BINARIES) {
+      fs.writeFileSync(path.join(dir, name), createMinimalPe())
+    }
+    assert.equal(listReleaseNativeBinaries(dir).length, REQUIRED_RELEASE_NATIVE_BINARIES.length)
+    const worker = path.join(dir, 'Twilight-QQ-Excellent-Worker.EXE')
+    for (const machine of [0x14c, 0x8664]) {
+      fs.writeFileSync(worker, createMinimalPe({ machine }))
+      assert.throws(
+        () => listReleaseNativeBinaries(dir),
+        /Removed native runtime must not be shipped/
+      )
+    }
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }

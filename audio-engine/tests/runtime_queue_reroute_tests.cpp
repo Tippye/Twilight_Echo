@@ -858,11 +858,8 @@ std::atomic<int> g_maxDopCarrierSampleRate{0};
 constexpr const char* kMissingDsdProxyDeviceId = "missing-dsd-proxy";
 std::atomic<int> g_decodeFirstReadDelayMs{0};
 std::atomic<int> g_decodeEveryReadDelayMs{0};
-std::atomic<bool> g_pcmEffectReadsFail{false};
-std::atomic<unsigned> g_pcmEffectFailureReads{0};
-std::atomic<unsigned> g_boundTransformDecoders{0};
-std::atomic<unsigned> g_createdTransformDecoders{0};
-std::atomic<unsigned> g_transformCancelCalls{0};
+std::atomic<bool> g_decodeReadsFail{false};
+std::atomic<unsigned> g_decodeFailureReads{0};
 std::atomic<size_t> g_startupProducedFrames{0};
 std::atomic<size_t> g_startupFramesAtBackendStart{0};
 std::atomic<size_t> g_startupNonzeroSamples{0};
@@ -1853,7 +1850,6 @@ void testLogicalStopPreservesRetirementAndDspUntilCallbackAcknowledgement() {
   AudioPipeline pipeline;
   QueueItem current; current.id = "current"; current.source = "retirement-current.flac";
   QueueItem next; next.id = "next"; next.source = "retirement-next.flac";
-  next.pcmWorker = PcmWorkerSpec{"C:/synthetic-unused-worker.exe", {}, UINT64_MAX};
   std::string error;
   assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
       "{\"dspEnabled\":true,\"fftEnabled\":false,\"gapless\":true}", true, &error) == TAE_RESULT_OK);
@@ -1867,7 +1863,6 @@ void testLogicalStopPreservesRetirementAndDspUntilCallbackAcknowledgement() {
   assert(pipeline.preloadNext(std::nullopt, &error));
   (void)pipeline.status();
   assert(pipeline.retiredDecodeStreamCountForTests() == 1);
-  assert(g_boundTransformDecoders.load() == 1);
   const auto epoch = pipeline.appliedRenderDspEpochForTests();
   assert(pipeline.applyDspState(9001,
       "{\"revision\":9001,\"processing\":{\"dspEnabled\":true,\"fftEnabled\":false},"
@@ -1879,7 +1874,6 @@ void testLogicalStopPreservesRetirementAndDspUntilCallbackAcknowledgement() {
   (void)pipeline.status();
   assert(pipeline.appliedRenderDspEpochForTests() > epoch);
   assert(pipeline.retiredDecodeStreamCountForTests() == 0);
-  assert(waitUntil([] { return g_boundTransformDecoders.load() == 0; }));
   pipeline.stop();
 }
 
@@ -4732,18 +4726,17 @@ void testAutoNextPrefersPreloadedPromoteWithoutReopen() {
   assertLatestPlaybackContains(engine, "\"queueIndex\":1");
 }
 
-void testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(bool withEffect = true) {
+void testPcmDecodeFailureDoesNotPromoteReadyNextAndReportsOnce() {
   EngineHarness harness;
   AudioPipeline pipeline;
   QueueItem current;
-  current.id = "failed-effect";
-  current.source = withEffect ? "pcm-effect-failure-current.flac" : "pcm-effect-failure-plain-current.flac";
-  if (withEffect) current.pcmWorker = PcmWorkerSpec{"C:/synthetic-unused-worker.exe", {}, UINT64_MAX};
+  current.id = "failed-decode";
+  current.source = "pcm-decode-failure-current.flac";
   QueueItem next;
   next.id = "plain-next";
   next.source = "auto-promote-next.flac";
   std::string error;
-  g_pcmEffectReadsFail = true;
+  g_decodeReadsFail = true;
   assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
       "{\"gapless\":true,\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
   const auto backend = waitForLatestStartedBackendState();
@@ -4757,7 +4750,7 @@ void testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(bool withEffect =
   assert(!pipeline.consumeTrackStarted(&started));
   assert(!pipeline.consumeEnded());
   assert(pipeline.consumeRenderError(&error) && !error.empty());
-  if (!withEffect) assert(error.find("PCM 音效") == std::string::npos);
+  assert(error.find("PCM 音效") == std::string::npos);
   assert(!pipeline.consumeRenderError(&error));
   assert(!pipeline.consumeEnded());
   renderBackendFrames(backend, 256);
@@ -4765,16 +4758,16 @@ void testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(bool withEffect =
   assert(!pipeline.consumeTrackStarted(&started));
   // A successful seek is an explicit retry and may report a new failure once.
   error.clear();
-  const auto failures = g_pcmEffectFailureReads.load();
+  const auto failures = g_decodeFailureReads.load();
   assert(pipeline.seek(0, &error) == TAE_RESULT_OK);
-  assert(waitUntil([&] { return g_pcmEffectFailureReads.load() > failures; }));
+  assert(waitUntil([&] { return g_decodeFailureReads.load() > failures; }));
   assert(waitUntil([&] { return pipeline.consumeRenderError(&error); }));
   assert(!pipeline.consumeRenderError(&error));
   pipeline.stop();
-  g_pcmEffectReadsFail = false;
+  g_decodeReadsFail = false;
 }
 
-void testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted() {
+void testFailedPcmPreloadIsNotReadyOrAutomaticallyPromoted() {
   for (const double volume : {0.5, 1.0}) {
     EngineHarness harness;
     AudioPipeline pipeline;
@@ -4782,17 +4775,16 @@ void testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted() {
     current.id = "plain-current";
     current.source = "auto-promote-current.flac";
     QueueItem next;
-    next.id = "failed-effect-next";
-    next.source = "pcm-effect-failure-next.flac";
-    next.pcmWorker = PcmWorkerSpec{"C:/synthetic-unused-worker.exe", {}, UINT64_MAX};
+    next.id = "failed-decode-next";
+    next.source = "pcm-decode-failure-next.flac";
     std::string error;
-    const auto failures = g_pcmEffectFailureReads.load();
-    g_pcmEffectReadsFail = true;
+    const auto failures = g_decodeFailureReads.load();
+    g_decodeReadsFail = true;
     assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", volume,
         "{\"gapless\":true,\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
     const auto backend = waitForLatestStartedBackendState();
     assert(backend);
-    assert(waitUntil([&] { return g_pcmEffectFailureReads.load() > failures; }));
+    assert(waitUntil([&] { return g_decodeFailureReads.load() > failures; }));
     assert(!pipeline.status().preloadReady);
     for (unsigned block = 0; block < 32; ++block) renderBackendFrames(backend, 256);
     assert(pipeline.status().currentItem.id == current.id);
@@ -4801,7 +4793,7 @@ void testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted() {
     assert(pipeline.consumeEnded());
     assert(!pipeline.consumeRenderError(&error));
     pipeline.stop();
-    g_pcmEffectReadsFail = false;
+    g_decodeReadsFail = false;
   }
 }
 
@@ -4810,18 +4802,18 @@ void testReadFailureDrainsAlreadyDecodedPcmWithoutPromotingNext() {
   AudioPipeline pipeline;
   QueueItem current;
   current.id = "buffered-read-failure";
-  current.source = "pcm-effect-failure-plain-buffered.flac";
+  current.source = "pcm-decode-failure-buffered.flac";
   QueueItem next;
   next.id = "ready-next";
   next.source = "auto-promote-next.flac";
-  const auto failures = g_pcmEffectFailureReads.load();
-  g_pcmEffectReadsFail = true;
+  const auto failures = g_decodeFailureReads.load();
+  g_decodeReadsFail = true;
   std::string error;
   assert(pipeline.play(current, next, 0, "wasapi-exclusive", "auto", 0.5,
       "{\"gapless\":true,\"crossfadeSeconds\":0}", true, &error) == TAE_RESULT_OK);
   const auto backend = waitForLatestStartedBackendState();
   assert(backend);
-  assert(waitUntil([&] { return g_pcmEffectFailureReads.load() > failures; }));
+  assert(waitUntil([&] { return g_decodeFailureReads.load() > failures; }));
   assert(waitUntil([&] { return pipeline.status().preloadReady; }));
   assert(!pipeline.consumeRenderError(&error));
   assert(!pipeline.consumeEnded());
@@ -4833,7 +4825,7 @@ void testReadFailureDrainsAlreadyDecodedPcmWithoutPromotingNext() {
   assert(!pipeline.consumeRenderError(&error));
   assert(!pipeline.consumeEnded());
   pipeline.stop();
-  g_pcmEffectReadsFail = false;
+  g_decodeReadsFail = false;
 }
 
 void testSlowNextOpenDoesNotBlockCurrentOutputOrPlayAcknowledgement() {
@@ -5026,102 +5018,6 @@ void testSourceChangeDuringPreloadJoinRejectsTheOldSubmission() {
   pipeline.stop();
   g_nextOpenGate = nullptr;
   assert(sought == TAE_RESULT_OK && !submitted && !stalePublished);
-}
-
-std::string workerQueueEntry(const char* id, const char* source, const char* executable = "A") {
-  return "{\"id\":\"" + std::string(id) + "\",\"source\":\"" + source +
-      "\",\"pcmWorkerExecutable\":\"C:/synthetic-worker-" + executable +
-      ".exe\",\"pcmWorkerExpiresAt\":4102444800000}";
-}
-
-void testQueueReloadRevokesWorkerPreloadWithoutReopeningCurrent() {
-  EngineHarness harness;
-  auto& engine = harness.engine();
-  assert(engine.setVolume(0.5) == TAE_RESULT_OK);
-  assert(engine.setDspConfig("{\"gapless\":true}") == TAE_RESULT_OK);
-  const std::string plain = "{\"id\":\"plain\",\"source\":\"revocation-plain.flac\"}";
-  assert(engine.loadQueue("[" + plain + "," + workerQueueEntry("effect", "revocation-next.flac") + "]", 0) == TAE_RESULT_OK);
-  assert(engine.play("revocation-plain.flac", 0) == TAE_RESULT_OK);
-  const auto backend = waitForLatestStartedBackendState();
-  assert(backend);
-  assert(waitUntil([&] { return jsonContains(engine.getPlaybackInfoJson(), "\"preloadReady\":true"); }));
-  renderBackendFrames(backend, 512);
-  assert(waitUntil([&] { return playbackJsonNumber(engine.getPlaybackInfoJson(), "position") > 0; }));
-  assert(engine.pause() == TAE_RESULT_OK);
-  const auto position = playbackJsonNumber(engine.getPlaybackInfoJson(), "position");
-  const auto backends = g_backendRegistry.snapshots().size();
-  const auto cancellations = g_transformCancelCalls.load();
-  assert(engine.loadQueue("[" + plain + "]", 0) == TAE_RESULT_OK);
-  assert(g_transformCancelCalls.load() > cancellations);
-  assertLatestPlaybackContains(engine, "\"state\":\"paused\"");
-  assert(playbackJsonNumber(engine.getPlaybackInfoJson(), "position") == position);
-  assert(waitUntil([&] { return !jsonContains(engine.getPlaybackInfoJson(), "\"preloadReady\":true"); }));
-  assert(g_backendRegistry.snapshots().size() == backends);
-  renderBackendFrames(backend, 256); // Acknowledge retirement while still paused.
-  assert(waitUntil([&] { return g_boundTransformDecoders.load() == 0; }));
-}
-
-void testQueueReloadRemovingOrReplacingSameSourceWorkerStopsOldTransform() {
-  for (const bool replace : {false, true}) {
-    EngineHarness harness;
-    auto& engine = harness.engine();
-    const char* source = "revocation-current-effect.flac";
-    assert(engine.loadQueue("[" + workerQueueEntry("effect", source) + "]", 0) == TAE_RESULT_OK);
-    assert(engine.play(source, 0) == TAE_RESULT_OK);
-    const auto backend = waitForLatestStartedBackendState();
-    assert(backend);
-    const auto cancellations = g_transformCancelCalls.load();
-    const auto created = g_createdTransformDecoders.load();
-    const std::string entry = replace ? workerQueueEntry("effect", source, "B")
-        : "{\"id\":\"effect\",\"source\":\"" + std::string(source) + "\"}";
-    assert(engine.loadQueue("[" + entry + "]", 0) == TAE_RESULT_OK);
-    assertLatestPlaybackContains(engine, "\"state\":\"stopped\"");
-    assert(g_transformCancelCalls.load() > cancellations);
-    assert(waitUntil([&] { return g_boundTransformDecoders.load() == 0; }));
-    assert(g_createdTransformDecoders.load() == created);
-    assert(engine.play(source, 0) == TAE_RESULT_OK);
-    assert(g_createdTransformDecoders.load() == created + (replace ? 1 : 0));
-    engine.stop();
-  }
-}
-
-void testQueueReloadRevokesWorkerPromotedBeforeClockAcknowledgement() {
-  struct Capture {
-    std::mutex mutex;
-    std::condition_variable wake;
-    bool entered = false, release = false;
-  } capture;
-  EngineHarness harness;
-  auto& engine = harness.engine();
-  assert(engine.setVolume(0.5) == TAE_RESULT_OK);
-  assert(engine.setDspConfig("{\"gapless\":true}") == TAE_RESULT_OK);
-  const std::string plain = "{\"id\":\"plain\",\"source\":\"auto-promote-current.flac\"}";
-  assert(engine.loadQueue("[" + plain + "," + workerQueueEntry("effect", "auto-promote-next.flac") + "]", 0) == TAE_RESULT_OK);
-  assert(engine.play("auto-promote-current.flac", 0) == TAE_RESULT_OK);
-  const auto backend = waitForLatestStartedBackendState();
-  assert(backend);
-  assert(waitUntil([&] { return jsonContains(engine.getPlaybackInfoJson(), "\"preloadReady\":true"); }));
-  engine.setEventCallback([](const char* event, const char*, void* context) {
-    auto& c = *static_cast<Capture*>(context);
-    std::unique_lock lock(c.mutex);
-    if (std::string_view(event) == "config-applied" && !c.release) {
-      c.entered = true;
-      c.wake.notify_all();
-      c.wake.wait(lock, [&] { return c.release; });
-    }
-  }, &capture);
-  assert(engine.setVolume(0.6) == TAE_RESULT_OK);
-  renderBackendFrames(backend, 256);
-  assert(waitUntil([&] { std::lock_guard lock(capture.mutex); return capture.entered; }));
-  renderBackendFrames(backend, 4096); // Promote in the callback; clock remains blocked.
-  const auto cancellations = g_transformCancelCalls.load();
-  assert(engine.loadQueue("[" + plain + "]", 0) == TAE_RESULT_OK);
-  assertLatestPlaybackContains(engine, "\"state\":\"stopped\"");
-  assert(g_transformCancelCalls.load() > cancellations);
-  assert(waitUntil([&] { return g_boundTransformDecoders.load() == 0; }));
-  { std::lock_guard lock(capture.mutex); capture.release = true; }
-  capture.wake.notify_all();
-  engine.setEventCallback(nullptr, nullptr);
 }
 
 void testSingleFileCueSegmentsSeekPromoteGaplesslyAndRetainReplayGain() {
@@ -5473,31 +5369,18 @@ struct FFmpegDecoder::Impl {
   TrackProfile profile;
   AudioFormat outputFormat;
   size_t positionFrames = 0;
-  bool transformBound = false;
 };
 
 FFmpegDecoder::FFmpegDecoder()
     : impl_(std::make_unique<Impl>()) {}
 
-FFmpegDecoder::~FFmpegDecoder() {
-  if (impl_->transformBound) --g_boundTransformDecoders;
-}
+FFmpegDecoder::~FFmpegDecoder() = default;
 void FFmpegDecoder::setInterrupt(int (*interrupt)(void*), void* context) {
   impl_->interrupt = interrupt;
   impl_->interruptContext = context;
 }
-void FFmpegDecoder::setPcmStreamTransformFactory(PcmStreamTransformFactory factory) {
-  const bool bound = static_cast<bool>(factory);
-  if (bound != impl_->transformBound) {
-    if (bound) { ++g_boundTransformDecoders; ++g_createdTransformDecoders; }
-    else --g_boundTransformDecoders;
-    impl_->transformBound = bound;
-  }
-}
-void FFmpegDecoder::cancelPcmStreamTransform() noexcept {
-  if (impl_->transformBound) ++g_transformCancelCalls;
-}
-bool FFmpegDecoder::restartPcmStreamTransform(std::string*) { return true; }
+void FFmpegDecoder::cancelPendingIo() noexcept {}
+bool FFmpegDecoder::restartCancelledIo(std::string*) { return true; }
 
 bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   (void)error;
@@ -5534,12 +5417,11 @@ void FFmpegDecoder::setResamplerQuality(ResamplerQuality quality) {
 }
 
 size_t FFmpegDecoder::readFrames(float* output, size_t frameCount, std::string* error) {
-  if ((impl_->transformBound || impl_->profile.stream.source.find("pcm-effect-failure-plain-") != std::string::npos) &&
-      g_pcmEffectReadsFail.load() &&
+  if (g_decodeReadsFail.load() &&
       (impl_->profile.stream.source.find("-buffered") == std::string::npos || impl_->positionFrames >= 4096) &&
-      impl_->profile.stream.source.find("pcm-effect-failure-") != std::string::npos) {
-    if (error) *error = "synthetic PCM effect failure";
-    ++g_pcmEffectFailureReads;
+      impl_->profile.stream.source.find("pcm-decode-failure-") != std::string::npos) {
+    if (error) *error = "synthetic PCM decode failure";
+    ++g_decodeFailureReads;
     return 0;
   }
   if (impl_->outputFormat.sampleFormat != AudioSampleFormat::Float32Interleaved) return 0;
@@ -5573,12 +5455,11 @@ size_t FFmpegDecoder::readFrames(float* output, size_t frameCount, std::string* 
 }
 
 size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
-  if ((impl_->transformBound || impl_->profile.stream.source.find("pcm-effect-failure-plain-") != std::string::npos) &&
-      g_pcmEffectReadsFail.load() &&
+  if (g_decodeReadsFail.load() &&
       (impl_->profile.stream.source.find("-buffered") == std::string::npos || impl_->positionFrames >= 4096) &&
-      impl_->profile.stream.source.find("pcm-effect-failure-") != std::string::npos) {
-    if (error) *error = "synthetic PCM effect failure";
-    ++g_pcmEffectFailureReads;
+      impl_->profile.stream.source.find("pcm-decode-failure-") != std::string::npos) {
+    if (error) *error = "synthetic PCM decode failure";
+    ++g_decodeFailureReads;
     return 0;
   }
   if (!output.data || output.frames == 0) return 0;
@@ -5685,13 +5566,9 @@ int main() {
   if(std::getenv("TAE_RUNTIME_PCM_FAILURE_ONLY")) {
     RUN_RUNTIME_CASE(testLogicalStopPreservesRetirementAndDspUntilCallbackAcknowledgement());
     RUN_RUNTIME_CASE(testFiniteHighRateHttpStartsWithExistingRingPrefilled());
-    RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce());
-    RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(false));
+    RUN_RUNTIME_CASE(testPcmDecodeFailureDoesNotPromoteReadyNextAndReportsOnce());
     RUN_RUNTIME_CASE(testReadFailureDrainsAlreadyDecodedPcmWithoutPromotingNext());
-    RUN_RUNTIME_CASE(testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted());
-    RUN_RUNTIME_CASE(testQueueReloadRevokesWorkerPreloadWithoutReopeningCurrent());
-    RUN_RUNTIME_CASE(testQueueReloadRemovingOrReplacingSameSourceWorkerStopsOldTransform());
-    RUN_RUNTIME_CASE(testQueueReloadRevokesWorkerPromotedBeforeClockAcknowledgement());
+    RUN_RUNTIME_CASE(testFailedPcmPreloadIsNotReadyOrAutomaticallyPromoted());
     RUN_RUNTIME_CASE(testOutputStartDoesNotWaitForPrerollTimeoutAtEof());
     RUN_RUNTIME_CASE(testAutoNextPrefersPreloadedPromoteWithoutReopen());
     RUN_RUNTIME_CASE(testPcmTypedGaplessPreservesBytesWithoutReopen());
@@ -5839,8 +5716,7 @@ int main() {
   RUN_RUNTIME_CASE(testGaplessBlockedReasonReportsCrossfadeAndDisabled());
   RUN_RUNTIME_CASE(testDecodedTimelineOverridesRoundedQueueDurations());
   RUN_RUNTIME_CASE(testAutoNextPrefersPreloadedPromoteWithoutReopen());
-  RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce());
-  RUN_RUNTIME_CASE(testPcmEffectFailureDoesNotPromoteReadyNextAndReportsOnce(false));
+  RUN_RUNTIME_CASE(testPcmDecodeFailureDoesNotPromoteReadyNextAndReportsOnce());
   RUN_RUNTIME_CASE(testReadFailureDrainsAlreadyDecodedPcmWithoutPromotingNext());
   RUN_RUNTIME_CASE(testSlowNextOpenDoesNotBlockCurrentOutputOrPlayAcknowledgement());
   RUN_RUNTIME_CASE(testPendingPreloadIsCancelledBeforeStopQueueSeekOrFormatChange());
@@ -5848,10 +5724,7 @@ int main() {
   RUN_RUNTIME_CASE(testAutoMixModeChangeRearmsPendingPreloadWithLatestEligibility());
   RUN_RUNTIME_CASE(testQueueChangeDuringSeekCannotResurrectOldUpcoming());
   RUN_RUNTIME_CASE(testSourceChangeDuringPreloadJoinRejectsTheOldSubmission());
-  RUN_RUNTIME_CASE(testFailedPcmEffectPreloadIsNotReadyOrAutomaticallyPromoted());
-  RUN_RUNTIME_CASE(testQueueReloadRevokesWorkerPreloadWithoutReopeningCurrent());
-  RUN_RUNTIME_CASE(testQueueReloadRemovingOrReplacingSameSourceWorkerStopsOldTransform());
-  RUN_RUNTIME_CASE(testQueueReloadRevokesWorkerPromotedBeforeClockAcknowledgement());
+  RUN_RUNTIME_CASE(testFailedPcmPreloadIsNotReadyOrAutomaticallyPromoted());
   RUN_RUNTIME_CASE(testContinuityPolicyConvertsMixedFormatsAndRejectsDsdPreload());
   RUN_RUNTIME_CASE(testOriginalPolicyRejectsMixedFormatAndPolicySwitchRetainsPause());
   RUN_RUNTIME_CASE(testSingleFileCueSegmentsSeekPromoteGaplesslyAndRetainReplayGain());

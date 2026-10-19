@@ -107,24 +107,6 @@ test('release strip rejects a package without the VST3 helper pair', () => {
   )
 })
 
-test('QQ effect worker is stripped when shipped and remains optional for other clients', () => {
-  const worker = 'twilight-qq-excellent-worker.exe'
-  assert.ok(NATIVE_RUNTIME_FILES.includes(worker))
-  assert.ok(!REQUIRED_NATIVE_RUNTIME_FILES.includes(worker))
-  const packagedDir = path.resolve('C:/release/no-qq/resources/audio-engine')
-  const result = stripNativeArtifacts(packagedDir, {
-    exists: (filePath) =>
-      REQUIRED_NATIVE_RUNTIME_FILES.some((name) => filePath === path.join(packagedDir, name)),
-    run: () => ({ status: 0 }),
-    copy: () => {},
-    remove: () => {},
-    clearDebugDirectory: () => {},
-    clearSymbolTablePointer: () => {}
-  })
-  assert.equal(result.stripped.length, REQUIRED_NATIVE_RUNTIME_FILES.length)
-  assert.deepEqual(result.missing, [path.join(packagedDir, worker)])
-})
-
 test('release strip clears PE debug directory records and referenced data', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'twilight-clear-pe-debug-'))
   try {

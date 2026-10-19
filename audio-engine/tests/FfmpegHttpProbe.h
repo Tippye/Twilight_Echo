@@ -41,7 +41,7 @@ inline int runFfmpegHttpSeekBudgetProbe(const std::string& url, const std::strin
       }
       if (mode == "cancel") cancellation = std::thread([&] {
         std::this_thread::sleep_for(std::chrono::milliseconds(150));
-        decoder.cancelPcmStreamTransform();
+        decoder.cancelPendingIo();
       });
       const auto purpose = mode == "startup" || mode == "precise-startup"
           ? FFmpegDecoder::SeekPurpose::Startup : FFmpegDecoder::SeekPurpose::Transport;
@@ -86,7 +86,7 @@ inline int runFfmpegHttpProbe(const std::string& url, int interruptMs, bool seek
   const auto requestCancellation = [&] {
     cancellation = std::thread([&] {
       std::this_thread::sleep_for(std::chrono::milliseconds(150));
-      decoder.cancelPcmStreamTransform();
+      decoder.cancelPendingIo();
     });
   };
   if (cancelOpen) requestCancellation();
@@ -120,7 +120,7 @@ inline int runFfmpegHttpProbe(const std::string& url, int interruptMs, bool seek
   bool restarted = false;
   if (restartAfterCancel && configured && cancelledBeforeRestart) {
     error.clear();
-    restarted = decoder.restartPcmStreamTransform(&error);
+    restarted = decoder.restartCancelledIo(&error);
     // The loopback fixture responds to this control event by releasing its
     // held response body. There is no media data in this output.
     std::cout << "{\"event\":\"resume-source\"}" << std::endl;

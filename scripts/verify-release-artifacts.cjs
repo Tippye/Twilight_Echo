@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const { collectImportClosure } = require('./pe-imports.cjs')
+const { RETIRED_NATIVE_RUNTIME_FILES } = require('./release-artifact-strip.cjs')
 
 const MIB = 1024 * 1024
 const DEFAULT_BUDGETS = Object.freeze({
@@ -11,7 +12,6 @@ const DEFAULT_BUDGETS = Object.freeze({
   'twilight-asio-helper.exe': 32 * MIB,
   'twilight-vst3-host.exe': 32 * MIB,
   'twilight-vst3-scanner.exe': 32 * MIB,
-  'twilight-qq-excellent-worker.exe': 512 * 1024,
   // The pinned LGPL shared FFmpeg 8.1 Windows codec library is 86.7 MiB.
   // Keep this dependency-specific allowance separate from product/other DLLs.
   'avcodec-62.dll': 96 * MIB,
@@ -120,15 +120,6 @@ function assertX64Pe(filePath) {
   )
 }
 
-function assertShippedArchitecture(filePath) {
-  if (path.basename(filePath) !== 'twilight-qq-excellent-worker.exe') return assertX64Pe(filePath)
-  assert.equal(
-    readPeHeader(filePath).machine,
-    0x14c,
-    'twilight-qq-excellent-worker.exe must match the isolated Windows x86 effect ABI'
-  )
-}
-
 function assertStrippedPe(filePath) {
   const pe = readPeHeader(filePath)
   assert.equal(pe.symbolTableOffset, 0, `${path.basename(filePath)} retains a COFF symbol table`)
@@ -163,12 +154,13 @@ function listNativeBinaries(nativeDir) {
 }
 
 function listReleaseNativeBinaries(nativeDir) {
-  const worker = 'twilight-qq-excellent-worker.exe'
-  const names = [
-    ...REQUIRED_RELEASE_NATIVE_BINARIES,
-    ...(fs.existsSync(path.resolve(nativeDir, worker)) ? [worker] : [])
-  ]
-  return names.map((name) => {
+  for (const name of fs.readdirSync(nativeDir)) {
+    assert.ok(
+      !RETIRED_NATIVE_RUNTIME_FILES.includes(name.toLowerCase()),
+      `Removed native runtime must not be shipped: ${name}`
+    )
+  }
+  return REQUIRED_RELEASE_NATIVE_BINARIES.map((name) => {
     const filePath = path.resolve(nativeDir, name)
     assert.ok(fs.existsSync(filePath), `Missing required release native binary: ${filePath}`)
     return filePath
@@ -233,7 +225,7 @@ function findInstaller(options) {
 function verifyReleaseArtifacts(options) {
   const nativeBinaries = listReleaseNativeBinaries(options.nativeDir)
   const shippedBinaries = listShippedBinaries(options.nativeDir)
-  for (const filePath of shippedBinaries) assertShippedArchitecture(filePath)
+  for (const filePath of shippedBinaries) assertX64Pe(filePath)
   const runtimeDependencies = listRuntimeDependencies(options.nativeDir, nativeBinaries)
   const installer = findInstaller(options)
   const sizes = {}
@@ -273,7 +265,6 @@ module.exports = {
   assertBudget,
   assertStrippedPe,
   assertX64Pe,
-  assertShippedArchitecture,
   findInstaller,
   listNativeBinaries,
   listReleaseNativeBinaries,

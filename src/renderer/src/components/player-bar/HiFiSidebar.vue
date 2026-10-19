@@ -96,7 +96,6 @@ const props = defineProps<{
     | 'sourceSampleRate'
     | 'sourceBitDepth'
     | 'sourceChannels'
-    | 'sourceEffect'
     | 'bitrate'
   > | null
   desktopLyricsOn: boolean
@@ -808,7 +807,6 @@ const deckAccentVars = computed(() => {
                 </div>
               </div>
               <p class="deck-note">来源 · {{ sourceQuality.source }}</p>
-              <p v-if="sourceInfo?.sourceEffect" class="deck-note">{{ sourceInfo.sourceEffect }}</p>
             </section>
 
             <section class="deck-card">

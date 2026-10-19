@@ -10,9 +10,6 @@ import {
   providerPlaybackIdentities,
   ProviderPlaybackIdentityRegistry
 } from './audio/providerPlaybackIdentity.ts'
-import { bindProviderPcmWorker } from './audio/providerPcmWorker.ts'
-import { dirname, join } from 'node:path'
-import { publicAudioQueueItem } from './audio/audioEngineHelpers.ts'
 import { normalizeFiniteNumber } from './security/ipcValidation.ts'
 
 function readPreloadSources(): string {
@@ -48,7 +45,7 @@ const deviceHotplugSource = readFileSync(
 )
 const windowSource = readFileSync(new URL('./app/window.ts', import.meta.url), 'utf8')
 
-test('plugin queue events omit main-only worker paths and expiry without mutating native queue', () => {
+test('plugin queue events preserve ordinary source metadata without mutating native queue', () => {
   const start = source.indexOf("runtime.audioEngineManager.on('queue-change'")
   const declaration = source.slice(
     start,
@@ -68,15 +65,12 @@ test('plugin queue events omit main-only worker paths and expiry without mutatin
           received = payload
         }
       }
-    },
-    publicAudioQueueItem
+    }
   })
   const item = {
     id: 'public-song',
     source: 'public.flac',
-    pcmWorkerExecutable: 'C:/private/worker.exe',
-    pcmWorkerExpiresAt: 123456,
-    sourceEffect: 'local effect',
+    sourceBytes: 123456,
     rendererSource: 'twilight-media://public'
   }
   callback([item])
@@ -85,12 +79,13 @@ test('plugin queue events omit main-only worker paths and expiry without mutatin
       {
         id: 'public-song',
         source: 'public.flac',
-        sourceEffect: 'local effect',
+        sourceBytes: 123456,
         rendererSource: 'twilight-media://public'
       }
     ]
   })
-  assert.equal(item.pcmWorkerExecutable, 'C:/private/worker.exe')
+  assert.equal(item.sourceBytes, 123456)
+  assert.notEqual((received as { queue: unknown[] }).queue[0], item)
 })
 
 test('audioEngine loadQueue IPC accepts renderer queue items with source field', () => {
@@ -130,15 +125,14 @@ test('queue normalization drops untrusted renderer source aliases and byte count
     stripTypeScriptTypes(`${textDeclaration}\n${declaration}\nresult = toQueueItem({
     id: 'qq:fixture', source: 'twilight-media://audio/fixture',
     rendererSource: 'twilight-media://audio/forged', sourceBytes: 123,
-    pcmWorkerExecutable: 'C:/forged.exe', pcmWorkerExpiresAt: 9999999999999, sourceEffect: 'fake'
+    unknownField: 'untrusted'
   })`),
     context
   )
   assert.equal(context.result?.source, 'twilight-media://audio/fixture')
   assert.equal(Object.hasOwn(context.result!, 'rendererSource'), false)
   assert.equal(Object.hasOwn(context.result!, 'sourceBytes'), false)
-  for (const key of ['pcmWorkerExecutable', 'pcmWorkerExpiresAt', 'sourceEffect'])
-    assert.equal(Object.hasOwn(context.result!, key), false)
+  assert.equal(Object.hasOwn(context.result!, 'unknownField'), false)
 })
 
 test('audio engine cold start passes persisted software volume into the manager', () => {
@@ -313,7 +307,6 @@ test('audioEngine IPC normalizes untrusted renderer parameters', () => {
   )
   assert.match(source, /queue\.length !== items\.length/)
   assert.match(source, /await resolveAuthorizationBatch\(/)
-  assert.match(source, /bindPlaybackSourceMetadata\(item, source\)/)
   assert.match(source, /normalizeIpcString\(source, 'audio source'/)
   assert.match(source, /await resolveAuthorizedPlaybackSource\(/)
   assert.match(source, /normalizeFiniteNumber\(time, 'seek time', 0, 0, Number\.MAX_SAFE_INTEGER\)/)
@@ -360,12 +353,7 @@ test('loadQueue authorizes duplicate sources once, retains CUE entries, and awai
     normalizeInteger: (index: number) => index,
     resolveAuthorizationBatch,
     bindPlaybackSourceMetadata,
-    bindProviderPcmWorker,
     providerPlaybackIdentities,
-    getNativeAddonCandidates: () => ['C:/app/audio-engine/twilight_audio_node.node'],
-    dirname,
-    join,
-    existsSync: () => true,
     resolveAuthorizedPlaybackSource: async () => {
       resolutions++
       return 'canonical.flac'
@@ -411,17 +399,15 @@ test('queue authorization is checked again after awaited runtime startup', async
     identities.record(
       'qq',
       'song',
-      'excellent',
+      'flac',
       {
         streamUrl: stream,
         providerSource: {
-          effect: 'qq-excellent',
           actualQuality: 'flac',
           expiresAt: Date.now() + 60000
         }
       },
-      plugin,
-      true
+      plugin
     )
     let handler!: (event: unknown, items: unknown[], index: number) => Promise<unknown>
     let ready!: () => void, announce!: () => void
@@ -449,22 +435,7 @@ test('queue authorization is checked again after awaited runtime startup', async
         item: Parameters<typeof bindPlaybackSourceMetadata>[0],
         value: string
       ) => bindPlaybackSourceMetadata(item, value, identities),
-      bindProviderPcmWorker: (
-        item: Parameters<typeof bindProviderPcmWorker>[0],
-        value: string,
-        options: Parameters<typeof bindProviderPcmWorker>[2]
-      ) =>
-        bindProviderPcmWorker(item, value, {
-          ...options,
-          identities,
-          platform: 'win32',
-          exists: () => true
-        }),
       providerPlaybackIdentities: identities,
-      getNativeAddonCandidates: () => ['C:/app/audio-engine/twilight_audio_node.node'],
-      dirname,
-      join,
-      existsSync: () => true,
       resolveAuthorizedPlaybackSource: async () => stream,
       ensureAudioEngineRuntime: async () => {
         announce()
@@ -484,17 +455,15 @@ test('queue authorization is checked again after awaited runtime startup', async
       identities.record(
         'qq',
         'song',
-        'excellent',
+        'flac',
         {
           streamUrl: stream,
           providerSource: {
-            effect: 'qq-excellent',
             actualQuality: '128',
             expiresAt: mutation === 'expire' ? 1 : Date.now() + 60000
           }
         },
-        plugin,
-        true
+        plugin
       )
     ready()
     await assert.rejects(pending, /resolution_changed|expired/, mutation)

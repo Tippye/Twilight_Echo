@@ -32,7 +32,7 @@ const fallbackChains = Object.freeze({
 export const WINDOWS_QUALITY_OPTIONS = Object.freeze([
   ['标准 MP3（128 kbps）', '128'], ['高品质 MP3（320 kbps）', '320'], ['无损 FLAC', 'flac'],
   ['Hi-Res 无损', 'hires'], ['杜比全景声', 'dolby'], ['5.1 品质', 'surround'],
-  ['臻品母带', 'master'], ['臻品全景声', 'galaxy'], ['臻品音质（本地音效）', 'excellent']
+  ['臻品母带', 'master'], ['臻品全景声', 'galaxy']
 ].map(([label, value]) => Object.freeze({ label, value })))
 export const WINDOWS_FILE_QUALITY_OPTIONS = Object.freeze(WINDOWS_QUALITY_OPTIONS.filter(option =>
   Object.hasOwn(definitions, option.value)))
@@ -43,9 +43,6 @@ export function windowsQualityDefinition(value) {
 }
 
 export function windowsQualityFallbacks(value) {
-  // Main's Excellent handler sets the local effect flag and requests ordinary
-  // SQ (UI2), then HQ/standard. It never invents an Excellent Vkey filename.
-  if (value === 'excellent') return ['flac', '320', '128']
   if (!windowsQualityDefinition(value)) return []
   const key = Object.hasOwn(aliases, value) ? aliases[value] : value
   return [...fallbackChains[key]]
@@ -76,15 +73,6 @@ export function windowsQualityMediaMid(vs, quality) {
 
 export function windowsQualityCandidates(file, vs) {
   return WINDOWS_QUALITY_OPTIONS.map(option => {
-    if (option.value === 'excellent') {
-      const sizes = ['flac', '320', '128'].map(value => windowsQualityMetadataSize(file, value))
-      const size = sizes.find(value => value > 0)
-      const availability = size !== undefined ? 'candidate' : sizes.every(value => value === 0)
-        ? 'unavailable' : 'unknown'
-      return { ...option, availability,
-        reason: '普通音源上的本地臻品音效，需验证账号与已安装的 QQ 音乐组件',
-        ...(size === undefined ? {} : { metadataSize: size }) }
-    }
     const size = windowsQualityMetadataSize(file, option.value)
     const missingIdentity = windowsQualityDefinition(option.value).otherMidIndex !== undefined &&
       windowsQualityMediaMid(vs, option.value) === null

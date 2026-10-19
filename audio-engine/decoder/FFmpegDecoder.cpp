@@ -240,23 +240,18 @@ struct FFmpegDecoder::Impl {
   AudioStreamInfo streamInfo;
   AudioFormat outputFormat;
   bool eof = false;
-  PcmStreamTransformFactory transformFactory;
-  std::shared_ptr<IPcmStreamTransform> transform;
-  std::atomic<bool> transformCancelled{false};
+  std::atomic<bool> ioCancelled{false};
   FFmpegDecoder::ResamplerQuality resamplerQuality = FFmpegDecoder::ResamplerQuality::Native;
   // ICY StreamTitle snapshot (decode-thread writes; control/status may read).
   mutable std::mutex streamTitleMutex;
   std::string streamTitle;
 
-  void cancelTransform() noexcept {
-    transformCancelled.store(true, std::memory_order_release);
-    if (const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire)) {
-      active->cancel();
-    }
+  void cancelPendingIo() noexcept {
+    ioCancelled.store(true, std::memory_order_release);
   }
 
   bool cancelled(std::string* error) const {
-    if (transformCancelled.load(std::memory_order_acquire) ||
+    if (ioCancelled.load(std::memory_order_acquire) ||
         (interrupt && interrupt(interruptContext))) {
       if (error) *error = "decode_cancelled";
       return true;
@@ -271,17 +266,6 @@ struct FFmpegDecoder::Impl {
   AVPacket* packet = nullptr;
   AVFrame* frame = nullptr;
   SwrContext* swr = nullptr;
-  SwrContext* sourceFloatSwr = nullptr;
-  AudioFormat transformOutputFormat;
-  std::vector<float> sourceFloatScratch;
-  std::vector<float> transformOutputScratch;
-  bool transformPrepared = false;
-  bool transformPullPending = false;
-  bool transformInputFinished = false;
-  bool transformOutputFinished = false;
-  bool transformFailed = false;
-  bool sourceFloatFlushed = false;
-  bool codecFinished = false;
   int audioStreamIndex = -1;
   bool inputEof = false;
   bool resamplerFlushed = false;
@@ -295,8 +279,6 @@ struct FFmpegDecoder::Impl {
   std::optional<int64_t> exactInputCursor;
   int64_t exactOutputCursor = 0;
   AVChannelLayout targetLayout{};
-  AVChannelLayout transformLayout{};
-  static constexpr int kTransformPullFrames = 4096;
   // Only the FFmpeg IO owner thread reads/writes phase, byte progress and
   // deadlines. Cross-thread stop uses the existing cancellation atomic above.
   using IoClock = std::chrono::steady_clock;
@@ -357,7 +339,7 @@ struct FFmpegDecoder::Impl {
 
   static int interruptIo(void* context) {
     auto& owner = *static_cast<Impl*>(context);
-    if (owner.transformCancelled.load(std::memory_order_acquire) ||
+    if (owner.ioCancelled.load(std::memory_order_acquire) ||
         (owner.interrupt && owner.interrupt(owner.interruptContext))) return 1;
     if (owner.ioPhase == IoPhase::None) return 0;
     const auto now = IoClock::now();
@@ -438,25 +420,8 @@ struct FFmpegDecoder::Impl {
     if (streamTitle != title) streamTitle = std::move(title);
   }
 
-  void discardTransform() {
-    cancelTransform();
-    std::atomic_store_explicit(&transform, std::shared_ptr<IPcmStreamTransform>{}, std::memory_order_release);
-    if (sourceFloatSwr) swr_free(&sourceFloatSwr);
-    av_channel_layout_uninit(&transformLayout);
-    sourceFloatScratch.clear();
-    transformOutputScratch.clear();
-    transformOutputFormat = {};
-    transformPrepared = false;
-    transformPullPending = false;
-    transformInputFinished = false;
-    transformOutputFinished = false;
-    transformFailed = false;
-    sourceFloatFlushed = false;
-    codecFinished = false;
-  }
-
   void close() {
-    discardTransform();
+    cancelPendingIo();
     if (swr) {
       swr_free(&swr);
     }
@@ -511,9 +476,6 @@ struct FFmpegDecoder::Impl {
     av_channel_layout_uninit(&targetLayout);
     av_channel_layout_default(&targetLayout, format.channelCount);
 
-    AVChannelLayout* inputLayout = transformPrepared ? &transformLayout : &codecContext->ch_layout;
-    const AVSampleFormat inputSampleFormat = transformPrepared ? AV_SAMPLE_FMT_FLT : codecContext->sample_fmt;
-    const int inputRate = transformPrepared ? transformOutputFormat.sampleRate : codecContext->sample_rate;
     const auto allocateSwr = [&]() -> int {
       if (swr) swr_free(&swr);
       return swr_alloc_set_opts2(
@@ -521,9 +483,9 @@ struct FFmpegDecoder::Impl {
           &targetLayout,
           swrSampleFormatFor(format.sampleFormat),
           format.sampleRate,
-          inputLayout,
-          inputSampleFormat,
-          inputRate,
+          &codecContext->ch_layout,
+          codecContext->sample_fmt,
+          codecContext->sample_rate,
           0,
           nullptr);
     };
@@ -607,139 +569,9 @@ struct FFmpegDecoder::Impl {
     return true;
   }
 
-  bool transformError(std::string* error, const std::string& message) {
-    transformFailed = true;
+  bool decodeError(std::string* error, const std::string& message) {
     if (error && error->empty()) *error = message;
     return false;
-  }
-
-  bool ensureTransform(std::string* error) {
-    if (!transformFactory || transformPrepared) return !transformFailed && !cancelled(error);
-    if (cancelled(error) || transformFailed) return false;
-    try {
-      std::shared_ptr<IPcmStreamTransform> active = transformFactory();
-      if (!active) return transformError(error, "PCM transform factory returned no instance");
-      std::atomic_store_explicit(&transform, active, std::memory_order_release);
-      if (cancelled(error)) {
-        active->cancel();
-        return false;
-      }
-      PcmStreamTransformInput input;
-      input.format.sampleRate = codecContext->sample_rate;
-      input.format.channelCount = codecContext->ch_layout.nb_channels;
-      input.format.bitDepth = 32;
-      input.format.sampleFormat = AudioSampleFormat::Float32Interleaved;
-      input.encodedBitrate = streamInfo.bitrate;
-      if (!active->prepare(input, &transformOutputFormat, error))
-        return transformError(error, "PCM transform prepare failed");
-      if (cancelled(error)) return false;
-      if (transformOutputFormat.sampleRate <= 0 || transformOutputFormat.channelCount <= 0 ||
-          transformOutputFormat.sampleFormat != AudioSampleFormat::Float32Interleaved ||
-          transformOutputFormat.dopEncoded) {
-        return transformError(error, "PCM transform returned an invalid Float32 output format");
-      }
-      transformOutputFormat.bitDepth = 32;
-      const size_t outputChannels = static_cast<size_t>(transformOutputFormat.channelCount);
-      if (outputChannels > transformOutputScratch.max_size() / kTransformPullFrames)
-        return transformError(error, "PCM transform output channel count exceeds buffer capacity");
-      av_channel_layout_default(&transformLayout, transformOutputFormat.channelCount);
-      const int allocated = swr_alloc_set_opts2(
-          &sourceFloatSwr, &codecContext->ch_layout, AV_SAMPLE_FMT_FLT, codecContext->sample_rate,
-          &codecContext->ch_layout, codecContext->sample_fmt, codecContext->sample_rate, 0, nullptr);
-      if (allocated < 0 || !sourceFloatSwr || swr_init(sourceFloatSwr) < 0)
-        return transformError(error, "Unable to configure source-rate Float32 conversion");
-      transformOutputScratch.resize(kTransformPullFrames * outputChannels);
-      transformPrepared = true;
-      if (!configureOutputResampler(outputFormat, error))
-        return transformError(error, "Unable to configure transformed PCM output resampler");
-      return true;
-    } catch (const std::exception& exception) {
-      return transformError(error, std::string("PCM transform setup failed: ") + exception.what());
-    } catch (...) {
-      return transformError(error, "PCM transform setup failed");
-    }
-  }
-
-  bool pushSourceFloat(const uint8_t** input, int frames, std::string* error) {
-    if (cancelled(error)) return false;
-    const int capacity = swr_get_out_samples(sourceFloatSwr, frames);
-    if (capacity < 0) return transformError(error, "Invalid source Float32 conversion capacity");
-    const size_t channels = static_cast<size_t>(codecContext->ch_layout.nb_channels);
-    const size_t allocatedFrames = static_cast<size_t>(std::max(1, capacity));
-    if (channels == 0 || allocatedFrames > sourceFloatScratch.max_size() / channels)
-      return transformError(error, "Source Float32 conversion exceeds buffer capacity");
-    sourceFloatScratch.resize(allocatedFrames * channels);
-    uint8_t* output[] = {reinterpret_cast<uint8_t*>(sourceFloatScratch.data())};
-    const int produced = swr_convert(sourceFloatSwr, output, capacity, input, frames);
-    if (produced < 0) return transformError(error, "Source Float32 conversion failed");
-    if (produced == 0) {
-      if (!input) sourceFloatFlushed = true;
-      return true;
-    }
-    const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire);
-    if (!active->push(sourceFloatScratch.data(), static_cast<size_t>(produced), error))
-      return transformError(error, "PCM transform input failed");
-    if (cancelled(error)) return false;
-    transformPullPending = true;
-    return true;
-  }
-
-  bool pullTransformOutput(std::string* error) {
-    if (cancelled(error)) return false;
-    const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire);
-    PcmStreamTransformReadResult result;
-    if (!active->pull(transformOutputScratch.data(), kTransformPullFrames, &result, error))
-      return transformError(error, "PCM transform output failed");
-    if (cancelled(error)) return false;
-    if (result.frames > kTransformPullFrames)
-      return transformError(error, "PCM transform output exceeds supplied capacity");
-    if (result.status != PcmStreamTransformReadStatus::Output && result.frames != 0)
-      return transformError(error, "PCM transform returned frames without Output status");
-    switch (result.status) {
-      case PcmStreamTransformReadStatus::NeedInput:
-        if (transformInputFinished)
-          return transformError(error, "PCM transform requested input after finish");
-        transformPullPending = false;
-        return true;
-      case PcmStreamTransformReadStatus::Finished:
-        if (!transformInputFinished)
-          return transformError(error, "PCM transform finished before end of input");
-        transformOutputFinished = true;
-        transformPullPending = false;
-        return true;
-      case PcmStreamTransformReadStatus::Output: {
-        if (result.frames == 0)
-          return transformError(error, "PCM transform Output status made no progress");
-        const size_t samples = result.frames * static_cast<size_t>(transformOutputFormat.channelCount);
-        if (!std::all_of(transformOutputScratch.begin(), transformOutputScratch.begin() + samples,
-                         [](float sample) { return std::isfinite(sample); }))
-          return transformError(error, "PCM transform returned non-finite samples");
-        const int capacity = swr_get_out_samples(swr, static_cast<int>(result.frames));
-        if (capacity < 0) return transformError(error, "Invalid transformed resampler capacity");
-        if (capacity == 0) return transformError(error, "Transformed resampler has no input capacity");
-        const uint8_t* input[] = {reinterpret_cast<const uint8_t*>(transformOutputScratch.data())};
-        if (!convertSamples(input, static_cast<int>(result.frames), capacity, error))
-          return transformError(error, "Transformed PCM resampling failed");
-        return true;
-      }
-    }
-    return transformError(error, "PCM transform returned an unknown output status");
-  }
-
-  bool finishTransformInput(std::string* error) {
-    if (!sourceFloatFlushed) {
-      if (!pushSourceFloat(nullptr, 0, error)) return false;
-      if (transformPullPending) return true;
-    }
-    if (!transformInputFinished) {
-      const auto active = std::atomic_load_explicit(&transform, std::memory_order_acquire);
-      if (cancelled(error)) return false;
-      if (!active->finish(error)) return transformError(error, "PCM transform finish failed");
-      if (cancelled(error)) return false;
-      transformInputFinished = true;
-      transformPullPending = true;
-    }
-    return true;
   }
 
   // Drains whatever the resampler still holds once the decoder has run dry. swr keeps up
@@ -754,9 +586,6 @@ struct FFmpegDecoder::Impl {
   }
 
   bool convertFrame(std::string* error) {
-    if (transformFactory) {
-      return pushSourceFloat(const_cast<const uint8_t**>(frame->extended_data), frame->nb_samples, error);
-    }
     if (!swr) {
       if (error) *error = "解码重采样器尚未初始化";
       return false;
@@ -875,25 +704,9 @@ struct FFmpegDecoder::Impl {
       if (error) *error = readFailure;
       return false;
     }
-    if (transformFactory && !ensureTransform(error)) return false;
 
     while (true) {
       if (cancelled(error)) return false;
-      if (transformFactory && transformPullPending) {
-        if (!pullTransformOutput(error)) return false;
-        if (!pending.empty()) return true;
-        continue;
-      }
-      if (transformFactory && codecFinished) {
-        if (!transformOutputFinished) {
-          if (!finishTransformInput(error)) return false;
-          continue;
-        }
-        if (!drainResamplerOnce(error)) return false;
-        if (!pending.empty()) return true;
-        eof = true;
-        return false;
-      }
       int ret = avcodec_receive_frame(codecContext, frame);
       if (ret == 0) {
         const bool ok = convertFrame(error);
@@ -905,10 +718,6 @@ struct FFmpegDecoder::Impl {
         return true;
       }
       if (ret == AVERROR_EOF) {
-        if (transformFactory) {
-          codecFinished = true;
-          continue;
-        }
         if (!drainResamplerOnce(error)) return false;
         if (!pending.empty()) return true;
         eof = true;
@@ -922,10 +731,6 @@ struct FFmpegDecoder::Impl {
       if (inputEof) {
         ret = avcodec_send_packet(codecContext, nullptr);
         if (ret == AVERROR_EOF) {
-          if (transformFactory) {
-            codecFinished = true;
-            continue;
-          }
           if (!drainResamplerOnce(error)) return false;
           if (!pending.empty()) return true;
           eof = true;
@@ -976,15 +781,14 @@ struct FFmpegDecoder::Impl {
     try {
       return decodeOneFrameImpl(error);
     } catch (const std::exception& exception) {
-      return transformError(error, std::string("PCM decode pipeline failed: ") + exception.what());
+      return decodeError(error, std::string("PCM decode pipeline failed: ") + exception.what());
     } catch (...) {
-      return transformError(error, "PCM decode pipeline failed");
+      return decodeError(error, "PCM decode pipeline failed");
     }
   }
 #else
   void close() {
-    cancelTransform();
-    std::atomic_store_explicit(&transform, std::shared_ptr<IPcmStreamTransform>{}, std::memory_order_release);
+    cancelPendingIo();
     streamInfo = {};
     outputFormat = {};
     eof = false;
@@ -1009,18 +813,12 @@ void FFmpegDecoder::setInterrupt(int (*callback)(void*), void* context) {
   impl_->interruptContext = context;
 }
 
-void FFmpegDecoder::setPcmStreamTransformFactory(PcmStreamTransformFactory factory) {
-  close();
-  impl_->transformFactory = std::move(factory);
-  impl_->transformCancelled.store(false, std::memory_order_release);
+void FFmpegDecoder::cancelPendingIo() noexcept {
+  impl_->cancelPendingIo();
 }
 
-void FFmpegDecoder::cancelPcmStreamTransform() noexcept {
-  impl_->cancelTransform();
-}
-
-bool FFmpegDecoder::restartPcmStreamTransform(std::string* error) {
-  if (!impl_->transformCancelled.load(std::memory_order_acquire)) return true;
+bool FFmpegDecoder::restartCancelledIo(std::string* error) {
+  if (!impl_->ioCancelled.load(std::memory_order_acquire)) return true;
 #if defined(TAE_HAS_FFMPEG)
   if (impl_->readFailureWasCancelled) {
     impl_->readFailure.clear();
@@ -1032,21 +830,15 @@ bool FFmpegDecoder::restartPcmStreamTransform(std::string* error) {
       impl_->formatContext->pb->eof_reached = 0;
     }
   }
-  if (impl_->transformFactory) {
-    impl_->discardTransform();
-    if (impl_->codecContext && !impl_->configureOutputResampler(impl_->outputFormat, error)) return false;
-  }
-#else
-  (void)error;
-  std::atomic_store_explicit(&impl_->transform, std::shared_ptr<IPcmStreamTransform>{}, std::memory_order_release);
 #endif
-  impl_->transformCancelled.store(false, std::memory_order_release);
+  (void)error;
+  impl_->ioCancelled.store(false, std::memory_order_release);
   return true;
 }
 
 bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   close();
-  impl_->transformCancelled.store(false, std::memory_order_release);
+  impl_->ioCancelled.store(false, std::memory_order_release);
   if (impl_->interrupt && impl_->interrupt(impl_->interruptContext)) {
     if (error) *error = "decode_cancelled";
     return false;
@@ -1310,10 +1102,6 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
 
   while (copiedFrames < output.frames) {
     if (impl_->cancelled(error)) break;
-    if (impl_->transformFactory && impl_->transformFailed) {
-      if (error && error->empty()) *error = "PCM transform stream has failed";
-      break;
-    }
     const size_t pendingFrames =
         impl_->pending.size() / bytesPerFrame > impl_->pendingFrameOffset
             ? impl_->pending.size() / bytesPerFrame - impl_->pendingFrameOffset
@@ -1348,7 +1136,7 @@ bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose
 #if defined(TAE_HAS_FFMPEG)
   if (!impl_->formatContext || impl_->audioStreamIndex < 0) return false;
   // The transport owner has stopped/joined the old reader before seeking.
-  impl_->transformCancelled.store(false, std::memory_order_release);
+  impl_->ioCancelled.store(false, std::memory_order_release);
   impl_->readFailure.clear();
   impl_->readFailureWasCancelled = false;
   Impl::SeekBudgetScope positioning(*impl_, purpose);
@@ -1363,11 +1151,7 @@ bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose
   }
   avcodec_flush_buffers(impl_->codecContext);
   // Decoder flush does not clear swr history from the old playback position.
-  if (impl_->transformFactory) {
-    impl_->discardTransform();
-    impl_->transformCancelled.store(false, std::memory_order_release);
-    if (!impl_->configureOutputResampler(impl_->outputFormat, error)) return false;
-  } else if (impl_->swr) {
+  if (impl_->swr) {
     swr_close(impl_->swr);
     if (swr_init(impl_->swr) < 0) { if (error) *error = "Unable to reset seek resampler"; return false; }
   }
@@ -1388,10 +1172,6 @@ bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose
 
 bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error, SeekPurpose purpose) {
 #if defined(TAE_HAS_FFMPEG)
-  if (impl_->transformFactory) {
-    if (error) *error = "Precise PCM seek is unsupported for transformed streams";
-    return false;
-  }
   if (!impl_->formatContext || !impl_->swr || impl_->outputFormat.sampleRate <= 0 ||
       frame >= static_cast<uint64_t>(INT64_MAX)) return false;
   // One second supplies codec and resampler history, bounded independent of

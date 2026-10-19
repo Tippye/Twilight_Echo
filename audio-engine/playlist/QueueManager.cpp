@@ -250,23 +250,6 @@ std::optional<double> extractTopLevelNumberField(const std::string& object, cons
   return *value;
 }
 
-std::optional<std::string> extractTopLevelStringField(const std::string& object, const std::string& key) {
-  const auto start = findTopLevelFieldValue(object, key);
-  if (!start || object[*start] != '"') return std::nullopt;
-  bool escaped = false;
-  for (size_t end = *start + 1; end < object.size(); ++end) {
-    const char ch = object[end];
-    if (escaped) { escaped = false; continue; }
-    if (ch == '\\') { escaped = true; continue; }
-    if (ch != '"') continue;
-    size_t next = end + 1;
-    while (next < object.size() && std::isspace(static_cast<unsigned char>(object[next]))) ++next;
-    if (next >= object.size() || (object[next] != ',' && object[next] != '}')) return std::nullopt;
-    return unescapeJsonString(object.substr(*start + 1, end - *start - 1));
-  }
-  return std::nullopt;
-}
-
 std::optional<std::string> extractTopLevelObjectField(const std::string& object, const std::string& key) {
   const auto valueStart = findTopLevelFieldValue(object, key);
   if (!valueStart || object[*valueStart] != '{') return std::nullopt;
@@ -296,17 +279,6 @@ struct ParsedQueueItem {
 ParsedQueueItem parseQueueItem(const std::string& object) {
   ParsedQueueItem parsed;
   QueueItem& item = parsed.item;
-  // This internal field is omitted by the renderer IPC normalizer and injected
-  // only by the main process after source/owner authorization. Do not export it.
-  if (auto executable = extractTopLevelStringField(object, "pcmWorkerExecutable"); executable && !executable->empty()) {
-    const auto expiry = extractTopLevelNumberField(object, "pcmWorkerExpiresAt");
-    if (!expiry || !std::isfinite(*expiry) || *expiry <= 0 || std::floor(*expiry) != *expiry ||
-        *expiry > 9007199254740991.0 || executable->size() > 4096 || executable->find('\0') != std::string::npos) {
-      parsed.valid = false;
-      return parsed;
-    }
-    item.pcmWorker = PcmWorkerSpec{*executable, {}, static_cast<uint64_t>(*expiry)};
-  }
   item.id = extractStringField(object, "id").value_or("");
   item.title = extractStringField(object, "title").value_or(extractStringField(object, "name").value_or(""));
   item.artist = extractStringField(object, "artist").value_or("");
@@ -559,13 +531,6 @@ std::optional<QueueItem> QueueManager::advanceAfterEnd() {
 }
 
 std::string QueueManager::queueJson() const {
-  if (rawQueueJson_.find("\"pcmWorkerExecutable\"") != std::string::npos ||
-      rawQueueJson_.find("\"pcmWorkerExpiresAt\"") != std::string::npos) {
-    for (const auto& object : splitTopLevelObjects(rawQueueJson_)) {
-      if (findTopLevelFieldValue(object, "pcmWorkerExecutable") ||
-          findTopLevelFieldValue(object, "pcmWorkerExpiresAt")) return itemsToJson(items_);
-    }
-  }
   return rawQueueJson_;
 }
 

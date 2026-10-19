@@ -4,8 +4,6 @@ import type { AudioEngineQueueItem } from '../../shared/audioEngineTypes.ts'
 
 export interface ProviderPlaybackIdentity {
   pluginId?: string
-  effect?: string
-  nativePcmAuthorized?: boolean
   providerId: string
   trackId: string
   source: string
@@ -39,8 +37,7 @@ export class ProviderPlaybackIdentityRegistry extends EventEmitter {
     trackId: string,
     requestedQuality: string,
     result: unknown,
-    pluginId?: string,
-    nativePcmAuthorized = false
+    pluginId?: string
   ): void {
     const envelope = object(result)
     const source = text(envelope.streamUrl ?? result)
@@ -48,8 +45,6 @@ export class ProviderPlaybackIdentityRegistry extends EventEmitter {
     const meta = object(envelope.providerSource)
     const identity: ProviderPlaybackIdentity = {
       ...(pluginId ? { pluginId } : {}),
-      ...(meta.effect === 'qq-excellent' ? { effect: 'qq-excellent' } : {}),
-      ...(nativePcmAuthorized ? { nativePcmAuthorized: true } : {}),
       providerId,
       trackId,
       source,

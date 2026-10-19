@@ -4635,7 +4635,7 @@ test('provider revocation stops only the matching source and cannot overwrite a 
   assert.equal(service.stopCalls, 1)
 })
 
-test('provider revocation removes queued workers while preserving unrelated paused playback', async (t) => {
+test('provider revocation removes queued sources while preserving unrelated paused playback', async (t) => {
   const native = new FakeNativeBinding()
   const manager = makeManager({ exclusiveMode: false }, native)
   t.after(() => manager.destroy())
@@ -4643,9 +4643,7 @@ test('provider revocation removes queued workers while preserving unrelated paus
     [
       {
         id: 'revoked',
-        source: 'revoked.flac',
-        pcmWorkerExecutable: 'C:/public/worker.exe',
-        pcmWorkerExpiresAt: Date.now() + 60000
+        source: 'revoked.flac'
       },
       { id: 'keep', source: 'keep.flac' },
       { id: 'next', source: 'next.flac' }
@@ -4661,10 +4659,6 @@ test('provider revocation removes queued workers while preserving unrelated paus
     native.lastLoadedQueue.map((item) => item.source),
     ['keep.flac', 'next.flac']
   )
-  assert.equal(
-    native.lastLoadedQueue.some((item) => !!item.pcmWorkerExecutable),
-    false
-  )
   const preserved = await manager.getPlaybackInfo()
   assert.equal(preserved.source, 'keep.flac')
   assert.equal(preserved.state, 'paused')
@@ -4676,7 +4670,7 @@ test('provider revocation removes queued workers while preserving unrelated paus
   assert.equal(await manager.revokeProviderSources(['unknown.flac']), false)
 })
 
-test('a revoked pending LoadQueue acknowledgement cannot publish or roll back its worker queue', async (t) => {
+test('a revoked pending LoadQueue acknowledgement cannot publish or roll back its source queue', async (t) => {
   const service = new FakeAudioServiceBinding()
   const manager = makeManager({ exclusiveMode: false }, service)
   t.after(() => manager.destroy())
@@ -4702,9 +4696,7 @@ test('a revoked pending LoadQueue acknowledgement cannot publish or roll back it
   const pending = manager.loadQueue([
     {
       id: 'revoked',
-      source: 'revoked.flac',
-      pcmWorkerExecutable: 'C:/public/worker.exe',
-      pcmWorkerExpiresAt: Date.now() + 60000
+      source: 'revoked.flac'
     }
   ])
   const rejected = assert.rejects(pending, /audio_queue_load_superseded/)

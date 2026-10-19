@@ -87,6 +87,69 @@ test('invalid quality values reject without overwriting an existing preference',
   await assert.rejects(windowsPlaybackQuality(s), /无效/)
 })
 
+test('retired composite preferences migrate once to ordinary128 without losing unrelated settings', async () => {
+  for (const quality of ['excellent', 'excellentSpatial']) {
+    const disk = new Map([[WINDOWS_QUALITY_KEY, quality], ['windows-auth', { publicSynthetic: true }]])
+    const writes = []
+    const sdk = { get: async key => disk.get(key), set: async (key, value) => { writes.push([key, value]); disk.set(key, value) }, delete: async () => {} }
+    const [a, b] = await Promise.all([windowsQualityState(sdk), windowsQualityState(sdk)])
+    assert.equal(a.quality, '128')
+    assert.equal(b.quality, '128')
+    assert.equal(await windowsPlaybackQuality(sdk), '128')
+    assert.deepEqual(writes, [[WINDOWS_QUALITY_KEY, '128']])
+    assert.deepEqual(disk.get('windows-auth'), { publicSynthetic: true })
+    assert.equal(a.options.some(option => ['excellent', 'excellentSpatial'].includes(option.value)), false)
+    await assert.rejects(setWindowsPlaybackQuality(sdk, quality), /有效/)
+  }
+})
+
+test('retired preference migration and a newer selection share one atomic storage transaction', async () => {
+  let stored = 'excellent', release, announce
+  const held = new Promise(resolve => { release = resolve })
+  const started = new Promise(resolve => { announce = resolve })
+  const writes = []
+  const sdk = { get: async () => { const value = stored; announce(); await held; return value },
+    set: async (key, value) => { writes.push(value); stored = value }, delete: async () => {} }
+  const first = windowsPlaybackQuality(sdk)
+  await started
+  const later = setWindowsPlaybackQuality(sdk, 'flac')
+  release()
+  assert.equal(await first, '128')
+  assert.equal((await later).quality, 'flac')
+  assert.deepEqual(writes, ['128', 'flac'])
+  assert.equal(stored, 'flac')
+})
+
+test('cancelled retired-preference migration cannot start a write after its read returns', async () => {
+  let release, announce, writes = 0
+  const held = new Promise(resolve => { release = resolve })
+  const started = new Promise(resolve => { announce = resolve })
+  const sdk = { get: async () => { announce(); await held; return 'excellentSpatial' },
+    set: async () => { writes++ }, delete: async () => {} }
+  const controller = new AbortController()
+  const read = windowsPlaybackQuality(sdk, { guard: () => controller.signal.throwIfAborted() })
+  const rejected = assert.rejects(read, { name: 'AbortError' })
+  await started
+  controller.abort(); release()
+  await rejected
+  assert.equal(writes, 0)
+})
+
+test('a failed retired-preference migration is surfaced without poisoning the settings owner', async () => {
+  let stored = 'excellent', failing = true, writes = 0
+  const sdk = { get: async () => stored, set: async (_key, value) => {
+    writes++
+    if (failing) throw new Error('synthetic migration write failure')
+    stored = value
+  }, delete: async () => {} }
+  await assert.rejects(windowsPlaybackQuality(sdk), /synthetic migration write failure/)
+  assert.equal(stored, 'excellent')
+  failing = false
+  assert.equal(await windowsPlaybackQuality(sdk), '128')
+  assert.equal(await windowsPlaybackQuality(sdk), '128')
+  assert.equal(writes, 2)
+})
+
 test('playback quality DTO uses every shared option and only reads the preference key', async () => {
   const reads = [], writes = []
   const disk = new Map()

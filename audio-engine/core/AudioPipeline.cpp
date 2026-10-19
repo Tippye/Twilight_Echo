@@ -1,5 +1,4 @@
 #include "AudioPipeline.h"
-#include "../decoder/Win32PcmWorkerTransform.h"
 #include "AudioPipelineDsdUtils.h"
 #include "AudioPipelineRenderUtils.h"
 #include "CrossfadePolicy.h"
@@ -814,10 +813,6 @@ struct AudioPipeline::DecodeStream {
     routingSourceToken.store(nextRoutingSourceToken(), std::memory_order_release);
     mode = Mode::Pcm;
     decoder = std::make_unique<FFmpegDecoder>();
-    if (item.pcmWorker) {
-      const auto spec = *item.pcmWorker;
-      decoder->setPcmStreamTransformFactory([spec] { return createPcmWorkerTransform(spec); });
-    }
     ta_am_source_stamp before{}, after{};
     const bool hadBefore = ta_am_source_snapshot(item.source.c_str(), &before) != 0;
     decoder->setInterrupt([](void* p) { return ta_am_cancelled(static_cast<const ta_am_cancel*>(p)); },
@@ -833,7 +828,7 @@ struct AudioPipeline::DecodeStream {
     // Local CUE segments share an absolute output-frame grid with prepared
     // lanes. A packet-boundary seek can start early and shift every later
     // logical position, even when its timestamp is labelled as the cue start.
-    precisePcmSeek = !item.pcmWorker && sourceStampKnown && hasCueRange();
+    precisePcmSeek = sourceStampKnown && hasCueRange();
     stream.source = item.source;
     if (hasCueRange()) {
       stream.durationSeconds = cueLogicalDurationSeconds();
@@ -947,8 +942,7 @@ struct AudioPipeline::DecodeStream {
     } else if (sourceStart > 0.0 && !(precisePcmSeek
         ? decoder->seekOutputFrame(preciseSourceFrame(sourceStart), error, FFmpegDecoder::SeekPurpose::Startup)
         : decoder->seek(sourceStart, error, FFmpegDecoder::SeekPurpose::Startup))) return false;
-    sourceTimelineExact = !item.pcmWorker &&
-        (exactLogicalStart.has_value() || sourceStart == 0 || precisePcmSeek);
+    sourceTimelineExact = (exactLogicalStart.has_value() || sourceStart == 0 || precisePcmSeek);
 
     if (hasCueRange()) {
       remainingSegmentFrames = remainingFramesForSourcePosition(sourceStart);
@@ -1075,7 +1069,7 @@ struct AudioPipeline::DecodeStream {
     if ((!decoder && !dsdReader) || running.load() || eof.load()) return;
     if (decoder) {
       std::string error;
-      if (!decoder->restartPcmStreamTransform(&error)) {
+      if (!decoder->restartCancelledIo(&error)) {
         processingFailed = true;
         markEof();
         return;
@@ -1087,7 +1081,7 @@ struct AudioPipeline::DecodeStream {
 
   void requestStop() {
     running = false;
-    if (decoder) decoder->cancelPcmStreamTransform();
+    if (decoder) decoder->cancelPendingIo();
     buffer.notifyAll();
   }
 
@@ -1112,7 +1106,7 @@ struct AudioPipeline::DecodeStream {
       start();
       return false;
     }
-    sourceTimelineExact = !item.pcmWorker && (precisePcmSeek || sourceSeconds == 0);
+    sourceTimelineExact = (precisePcmSeek || sourceSeconds == 0);
     processingFailed = false;
     processingFailureReported = false;
     // A DoP stream has an alternating 0x05/0xfa marker phase.  The decoder may
@@ -1525,11 +1519,7 @@ bool sameQueueSegment(const QueueItem& left, const QueueItem& right) {
          left.cueVirtualPregapSeconds == right.cueVirtualPregapSeconds;
 }
 bool samePreloadRequest(const QueueItem& left, const QueueItem& right) {
-  if (!sameQueueSegment(left, right) || left.id != right.id ||
-      left.pcmWorker.has_value() != right.pcmWorker.has_value()) return false;
-  return !left.pcmWorker || (left.pcmWorker->executable == right.pcmWorker->executable &&
-      left.pcmWorker->arguments == right.pcmWorker->arguments &&
-      left.pcmWorker->expiresAt == right.pcmWorker->expiresAt);
+  return sameQueueSegment(left, right) && left.id == right.id;
 }
 }  // namespace
 
@@ -1786,7 +1776,7 @@ bool AudioPipeline::setAutoMixMode(const std::string& mode, std::string* error) 
       // Enabling on an existing PCM stream also affects later user seeks.
       // An already approximate cursor remains inexact until the engine realigns it.
       for (const auto& stream : {activeStream_, preloadStream_}) {
-        if (stream && !stream->item.pcmWorker && stream->sourceStampKnown && stream->mode == DecodeStream::Mode::Pcm)
+        if (stream && stream->sourceStampKnown && stream->mode == DecodeStream::Mode::Pcm)
           stream->precisePcmSeek = true;
       }
     }
@@ -2849,7 +2839,6 @@ TAE_Result AudioPipeline::playInternal(
     // sample-format enum here sent every 24-bit track through Float32 on devices
     // that only accept the 32-bit container.
     const bool canUseTypedPassthrough =
-        !item.pcmWorker &&
         requestedAutoMixMode_.load(std::memory_order_acquire) == TA_AM_OFF &&
         !outputConfig.continuityFirst && !pcmToDsdPath && !active->stream.isDsd && !processingRequiresPcm &&
         backendCanTypedPassthrough(backendId) && formatCanTypedPassthrough(active->stream.sourceFormat) &&
@@ -2865,7 +2854,7 @@ TAE_Result AudioPipeline::playInternal(
 
     active->setResamplerQuality(
         outputStageRequest.targetSampleRate > 0 ? outputStageRequest.resamplerQuality : requestedDspConfig.resamplerQuality);
-    if (!active->item.pcmWorker && active->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
+    if (active->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
       active->precisePcmSeek = true;
     if (!active->configure(decodeFormat, startTimeSeconds, error, canUseTypedPassthrough)) {
       output->close();
@@ -5115,7 +5104,7 @@ bool AudioPipeline::configureActiveStreamLocked(
     std::string* error) {
   if (!stream) return false;
   if (!stream->openSource(item, error)) return false;
-  if (!stream->item.pcmWorker && stream->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
+  if (stream->sourceStampKnown && requestedAutoMixMode_.load(std::memory_order_acquire) != TA_AM_OFF)
     stream->precisePcmSeek = true;
   if (!stream->configure(decodeFormat_, startTimeSeconds, error)) return false;
   return true;
@@ -5183,7 +5172,7 @@ bool AudioPipeline::updatePerfectLocked() {
   evaluation.eqActive = dspStatus_.eqActive;
   evaluation.convolverActive = dspStatus_.convolverActive;
   evaluation.crossfeedActive = dspStatus_.crossfeedActive;
-  evaluation.nativeDspActive = dspStatus_.nativeDspActive || currentItem_.pcmWorker.has_value();
+  evaluation.nativeDspActive = dspStatus_.nativeDspActive;
   evaluation.crossfadeActive = (dspStatus_.crossfadeActive || dspConfig_.crossfadeSeconds > 0.0001);
   evaluation.routingMode = outputConfig_.routingMode;
   evaluation.pcmPassthrough =

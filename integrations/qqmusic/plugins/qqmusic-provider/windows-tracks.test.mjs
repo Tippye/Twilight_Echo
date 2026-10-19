@@ -26,7 +26,7 @@ test('quality fallback chains stay bounded, never upgrade ordinary selections or
   for (const [alias, target] of [['default', '128'], ['high', '320'], ['lossless', 'flac']]) {
     assert.deepEqual(windowsQualityFallbacks(alias), expected[target])
   }
-  for (const invalid of [null, '', 'auto', 'toString', 320]) assert.deepEqual(windowsQualityFallbacks(invalid), [])
+  for (const invalid of [null, '', 'auto', 'toString', 320, 'excellent', 'excellentSpatial']) assert.deepEqual(windowsQualityFallbacks(invalid), [])
 })
 
 test('observed Windows song DTO maps a stable Track without persisting media credentials', () => {
@@ -67,7 +67,7 @@ test('per-track qualities retain native format candidates, explicit zero and unk
   assert.deepEqual(result.options.map(({ value, availability, metadataSize }) =>
     [value, availability, metadataSize]), [['128', 'candidate', 1000], ['320', 'candidate', 2000],
     ['flac', 'candidate', 3000], ['hires', 'unavailable', 0], ['dolby', 'candidate', 4000], ['surround', 'unknown', undefined],
-    ['master', 'unavailable', undefined], ['galaxy', 'unavailable', undefined], ['excellent', 'candidate', 3000]])
+    ['master', 'unavailable', undefined], ['galaxy', 'unavailable', undefined]])
   assert.match(result.options.find(option => option.value === 'dolby').reason, /当前账号验证/)
   assert.equal(windowsSongMedia(song).sizes.surround, null)
   assert.equal(windowsSongMedia(song).sizes.hires, 0)

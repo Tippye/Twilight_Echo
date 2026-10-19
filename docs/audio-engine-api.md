@@ -4,7 +4,7 @@
 
 ## 网络读取与下一首准备
 
-HTTP 音源的打开、探测和完整首次定位（包括精确定位的 preroll 读取）共享同一 15 秒启动绝对期限，各阶段不会重新获得预算。运行中的 seek 同时受 5 秒实际读取字节无进展期限和 15 秒绝对期限约束；字节推进只更新前者，不能延长后者。普通播放读取仍使用 15 秒字节无进展期限，没有整首累计期限；本地文件不新增这些网络限制。普通网络读取和 PCM worker 都响应停止取消，已有取消优先于网络期限检查。非 EOF 读取错误走播放失败路径，不作为自然播完自动推进队列。取消后的 decoder restart 仅清除取消产生的错误；它不保证被中断的压缩包逐帧连续，需要精确定位时应重新 seek。
+HTTP 音源的打开、探测和完整首次定位（包括精确定位的 preroll 读取）共享同一 15 秒启动绝对期限，各阶段不会重新获得预算。运行中的 seek 同时受 5 秒实际读取字节无进展期限和 15 秒绝对期限约束；字节推进只更新前者，不能延长后者。普通播放读取仍使用 15 秒字节无进展期限，没有整首累计期限；本地文件不新增这些网络限制。普通网络读取响应停止取消，已有取消优先于网络期限检查。非 EOF 读取错误走播放失败路径，不作为自然播完自动推进队列。取消后的 decoder restart 仅清除取消产生的错误；它不保证被中断的压缩包逐帧连续，需要精确定位时应重新 seek。
 
 下一首的打开、探测和预解码在单个可取消的准备任务中执行。`preloadNext()` 返回 true 表示接受准备意图，完成状态以 `preloadReady` 为准；当前歌曲启动和 Play ACK 不等待下一首。停止、换曲、清空或修改下一项、seek 和输出格式变化会取消或重新准备，迟到结果必须匹配当前源和准备版本后才能发布。普通 DSP 参数更新保留仍然有效的准备意图。
 
@@ -76,17 +76,11 @@ Renderer 的 session clock 在 seek admission 保留当前观察位置，并进�
 
 PCM 直通无缝衔接保留实际设备的 Int16 / Int24 / Int24-in-32 / Int32 / Float32 格式：下一首预解码到相同格式，当前曲耗尽后在同一个设备回调内继续写入下一首的原始 PCM 字节，不插入静音、不经过 Float32 处理、不停止或重新打开设备。采样率、声道数和有效位深必须兼容；24-bit 的打包容器可由解码器无损匹配设备格式。格式不兼容或 DSD 曲目撤下预加载并报告阻断，随后使用正常切歌路径。无缝衔接本身不改变 `pcmPassthrough` / `outputPerfect` 判定；音频文件内原有的静音仍按源内容播放。
 
-## Source-native PCM transforms
+## Current-source audio metadata
 
-`FFmpegDecoder` accepts an optional `IPcmStreamTransform` factory before open. The decode thread normalizes the original decoded frame to source-rate interleaved Float32, prepares the transform with the actual source layout and encoded bitrate, then feeds its declared output format through the existing final SWR/output conversion. Ordinary sources retain the existing decode path. This is distinct from fixed-rate post-DSP and never runs native model work on the realtime device callback.
+Source codec/rate/encoded depth/channels and verified file bytes are facts bound to the matching current queue source. `decoded*` describes PCM entering the pipeline after decoder conversion, and `outputInfo` describes the final device. Float32 processing width is not encoded bit depth. HiFi and visualizer share the current-source metadata projection; unknown parameters remain unknown.
 
-Transforms consume whole input blocks and expose bounded `NeedInput` / `Output` / `Finished` results. At genuine decoder EOF, `finish` stops input and drains available output before final SWR flush. Stop cancels outstanding worker I/O before joining decode; seek recreates the transform. A processing failure remains distinct from EOF, reports once and prevents automatic queue promotion. Source-native processing with unproved sample alignment does not advertise an exact timeline and is excluded from exact AutoMix bounded decode/continuation. It also prevents typed passthrough and output-perfect claims.
-
-The QQ Excellent integration uses an isolated Windows x86 worker over numeric/PCM pipes. It loads only supported, pinned files from separately installed QQ Music; the application does not redistribute those DLLs/models. Current processing supports proved stereo44.1/48kHz recipes; an inactive96k handle and rejected192k creation are not support. Available native EOF output may be shorter than the theoretical source duration. No invented model-tail padding, cropping or duration-exact claim is made.
-
-The provider verifies the current signed account capability and selects an ordinary source plus an effect marker. Main binds a fixed helper path only for the current authorized provider/plugin permission and source expiry. `pcmWorkerExecutable` / `pcmWorkerExpiresAt` are internal queue fields: renderer input cannot set them, native queue exports and public queue/upcoming events omit them. A queue commit rechecks source resolution after awaited runtime initialization. Logout, QR reauthorization, disable and unexpected host exit revoke current, queued, preloaded and in-flight playback authority; stale RPC/queue acknowledgements cannot restore it. Intentional eligible provider hibernation retains its existing semantics.
-
-`PlaybackInfo.sourceEffect` is an optional descriptive local-effect label bound to the matching current queue source. Source codec/rate/encoded depth/channels and verified file bytes remain source facts. `decoded*` describes PCM entering the pipeline after transform/final decoder conversion, and `outputInfo` describes the final device. Do not infer the model's intermediate rate from either source rate or device rate, or present Float32 processing width as encoded bit depth. HiFi and visualizer share the current-source metadata projection; unknown parameters remain unknown.
+The strict QQ integration contains ordinary authorized network media only. It does not bind QQ component workers or local effect markers. Logout, QR reauthorization, disable and unexpected host exit still revoke current, queued, preloaded and in-flight provider playback authority; stale RPC/queue acknowledgements cannot restore it. Intentional eligible provider hibernation retains its existing semantics.
 
 ## Visualization API
 

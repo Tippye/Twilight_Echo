@@ -234,10 +234,6 @@ export interface AudioOutputState {
 }
 
 export interface AudioEngineQueueItem {
-  /** Main-only: renderer queue input is normalized without these fields. */
-  pcmWorkerExecutable?: string
-  pcmWorkerExpiresAt?: number
-  sourceEffect?: string
   id: string
   source: string
   /** Main-bound renderer identity before source authorization; never supplied by native. */
@@ -452,8 +448,6 @@ export interface PlaybackOutputInfoMirror extends Pick<
 }
 
 export interface PlaybackInfo extends PlaybackOutputInfoMirror {
-  /** Source-bound effect label, independent of encoded audio quality. */
-  sourceEffect?: string
   state: 'stopped' | 'playing' | 'paused'
   position: number
   duration: number

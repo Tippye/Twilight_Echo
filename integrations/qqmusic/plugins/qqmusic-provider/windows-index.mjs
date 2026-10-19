@@ -23,7 +23,7 @@ import { buildWindowsUserPlaylistsCall, WINDOWS_USER_PLAYLISTS_REQUEST_KEY,
 import { decodeWindowsCreatedPlaylists, decodeWindowsFavoritePlaylists,
   decodeWindowsPlaylistDetail, windowsPlaylistReference } from './lib/windows/playlist-data.mjs'
 import { serializeWindowsSettings, windowsPlaybackQuality, windowsQualityForm, saveWindowsQuality,
-  windowsQualityState, setWindowsPlaybackQuality, WINDOWS_QUALITY_COMMAND } from './lib/windows/settings.mjs'
+  windowsQualityState, setWindowsPlaybackQuality, normalizeRetiredWindowsQuality, WINDOWS_QUALITY_COMMAND } from './lib/windows/settings.mjs'
 
 let active = null
 const playbackFailures = new WeakSet()
@@ -488,13 +488,10 @@ async function getPlaybackUrl(state, args, invocation) {
     // rematches a recording, or writes the user's preferred quality.
     const song = windowsSongMedia(await getSong(state, args[0], signal, { refresh: true }))
     await confirmCurrent()
-    const preferred = options.quality ?? await windowsPlaybackQuality(state.settings)
+    const preferred = normalizeRetiredWindowsQuality(options.quality ?? await windowsPlaybackQuality(state.settings))
     await confirmCurrent()
     const candidates = windowsQualityFallbacks(preferred)
     if (!candidates.length) throw playbackUnavailable('QQ 音乐音质参数无效')
-    const excellent = preferred === 'excellent' &&
-      (await state.client.getExcellentCapability({ signal })).available
-    await confirmCurrent()
     let lastFailure = playbackUnavailable('当前歌曲没有可用的播放音质')
     for (const quality of candidates) {
       await confirmCurrent()
@@ -528,7 +525,6 @@ async function getPlaybackUrl(state, args, invocation) {
         }
         await confirmCurrent()
         return { streamUrl: lease.url, providerSource: { actualQuality: quality,
-          ...(excellent ? { effect: 'qq-excellent' } : {}),
           ...(lease.bytes === undefined ? {} : { bytes: lease.bytes }), expiresAt: lease.expiresAt } }
       } catch (error) {
         if (entry) { clearTimeout(entry.timer); state.playbacks.delete(lease.url) }

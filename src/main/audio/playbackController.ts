@@ -35,7 +35,6 @@ import {
   normalizeVisualizationData,
   normalizeVisualizationOptions,
   parseNativeJson,
-  publicAudioQueueItem,
   resolveQueueIndexForSource,
   sourceLooksDsd,
   withPrecomputedVisualizerBars
@@ -1239,7 +1238,7 @@ export class PlaybackController {
     const now = this.scheduler.now()
     const cached = this.lastUpcomingTrackCache
     if (cached && now - cached.readAt <= UPCOMING_TRACK_CACHE_TTL_MS) {
-      return cached.track ? publicAudioQueueItem(cached.track) : null
+      return cached.track ? { ...cached.track } : null
     }
     try {
       const track = parseNativeJson(
@@ -1247,11 +1246,9 @@ export class PlaybackController {
         null as AudioEngineQueueItem | null
       )
       this.lastUpcomingTrackCache = { readAt: now, track }
-      return track ? publicAudioQueueItem(track) : null
+      return track ? { ...track } : null
     } catch {
-      return this.playbackInfo.upcomingTrack
-        ? publicAudioQueueItem(this.playbackInfo.upcomingTrack)
-        : null
+      return this.playbackInfo.upcomingTrack ? { ...this.playbackInfo.upcomingTrack } : null
     }
   }
 
@@ -2011,10 +2008,7 @@ export class PlaybackController {
       queueToken: ownsQueueSource ? this.queueToken : undefined,
       rendererSource: ownsQueueSource ? indexed.rendererSource : undefined,
       sourceBytes: ownsQueueSource ? indexed.sourceBytes : undefined,
-      sourceEffect: ownsQueueSource ? indexed.sourceEffect : undefined,
-      upcomingTrack: this.playbackInfo.upcomingTrack
-        ? publicAudioQueueItem(this.playbackInfo.upcomingTrack)
-        : null
+      upcomingTrack: this.playbackInfo.upcomingTrack ? { ...this.playbackInfo.upcomingTrack } : null
     }
   }
 

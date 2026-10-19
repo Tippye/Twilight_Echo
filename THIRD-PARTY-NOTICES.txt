@@ -1,6 +1,6 @@
 Twilight Echo third-party notices
 
-Windows audio runtime for the QQ adaptation
+Windows audio runtime
 
 FFmpeg n8.1.3-18-g46d899d7a0, LGPL shared build:
 https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-10-17-20-51
@@ -12,10 +12,6 @@ See audio-engine/FFmpeg-LICENSE.txt in the installed resources for LGPL v3.
 libebur128 v1.2.6 (MIT), Copyright (c) 2011 Jan Kokemueller:
 https://github.com/jiixyj/libebur128/tree/v1.2.6
 See audio-engine/libebur128-COPYING.txt in installed resources for its full license.
-
-The Twilight QQ Excellent helper is our own isolated x86 executable. It loads
-only supported, hash-pinned files from a separately installed QQ Music client.
-No QQ Music DLL, model, account profile, credential or media file is bundled.
 
 Steinberg VST3 SDK v3.8.0_build_66
 Commit: 9fad9770f2ae8542ab1a548a68c1ad1ac690abe0

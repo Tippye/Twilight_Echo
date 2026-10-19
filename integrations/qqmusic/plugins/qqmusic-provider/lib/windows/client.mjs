@@ -157,7 +157,6 @@ export class WindowsMusicClient {
   #writes = Promise.resolve()
   #checks = Promise.resolve()
   #verified = null
-  #excellent = null
 
   constructor({ settings, getDevice, fetch = globalThis.fetch, now = Date.now } = {}) {
     if (!settings || typeof settings.get !== 'function' || typeof settings.set !== 'function' ||
@@ -184,7 +183,6 @@ export class WindowsMusicClient {
   #advance() {
     this.#epoch += 1
     this.#verified = null
-    this.#excellent = null
     for (const controller of this.#controllers) controller.abort()
   }
 
@@ -265,7 +263,6 @@ export class WindowsMusicClient {
 
   async #reject(epoch, expected) {
     this.#verified = null
-    this.#excellent = null
     return this.#enqueue(async () => {
       this.#assert(epoch)
       const current = normalizedSession(await this.#settings.get(WINDOWS_AUTH_KEY))
@@ -394,42 +391,6 @@ export class WindowsMusicClient {
     const result = this.#checks.then(() => this.#checkLogin(epoch, signal))
     this.#checks = result.catch(() => {})
     return waitFor(result, signal)
-  }
-
-  /** The native Excellent gate is identity.HugeVip (JsonCpp signed Int), not
-   * ordinary login/svip. Cache only this current session/device, in memory. */
-  async getExcellentCapability({ signal } = {}) {
-    const epoch = this.#epoch
-    this.#assert(epoch, signal)
-    if (!await this.checkLogin({ signal })) return { known: true, available: false, reason: 'login' }
-    const session = await this.#stored(epoch)
-    const expected = fingerprint(session)
-    if (!session) throw abortError()
-    const device = await this.#device(epoch, signal)
-    const assertOwner = async () => {
-      this.#assert(epoch, signal)
-      if (fingerprint(await this.#stored(epoch)) !== expected ||
-          (await this.#device(epoch, signal)).guid !== device.guid) throw abortError()
-      this.#assert(epoch, signal)
-    }
-    await assertOwner()
-    const time = this.#time()
-    if (this.#excellent?.session === expected && this.#excellent.guid === device.guid &&
-        time >= this.#excellent.at && time - this.#excellent.at < VERIFIED_TTL_MS) {
-      return { ...this.#excellent.result }
-    }
-    const data = await this.request('VipLogin.VipLoginInter.vip_login_base', {
-      module: 'VipLogin.VipLoginInter', method: 'vip_login_base', param: {}
-    }, { session, signal })
-    await assertOwner()
-    const value = object(data?.identity) && Object.hasOwn(data.identity, 'HugeVip')
-      ? data.identity.HugeVip : undefined
-    const known = typeof value === 'number' && Number.isInteger(value) &&
-      value >= -0x80000000 && value <= 0x7fffffff
-    const result = { known, available: known && value !== 0,
-      ...(!known ? { reason: 'unknown' } : value === 0 ? { reason: 'membership' } : {}) }
-    this.#excellent = { session: expected, guid: device.guid, at: this.#time(), result }
-    return { ...result }
   }
 
   async #checkLogin(epoch, signal) {
