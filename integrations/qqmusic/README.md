@@ -1,6 +1,6 @@
 # QQ 音乐 Windows 插件源码
 
-本目录维护 QQ 音乐插件源码、测试和打包工具，配套 Twilight Echo 1.3.1-qq.16；插件版本为 0.4.0-rc.12，最低宿主为 1.3.1-qq.13。
+本目录维护 QQ 音乐插件源码、测试和打包工具，配套 Twilight Echo 1.3.1-qq.17；插件版本为 0.4.0-rc.12，最低宿主为 1.3.1-qq.13。
 
 源码最初同步自 [Tippye/Twilight-Echo-plugins](https://github.com/Tippye/Twilight-Echo-plugins/tree/7d261d81ef36713df135a2de8a29db7bb4f57df4)，保留原作者、LICENSE 和 THIRD_PARTY_NOTICES。此分支中的 QQ 适配以本目录为维护入口，修改、测试和打包均在 Twilight_Echo 内完成，无需检出独立插件仓库。其他插件不受此安排影响。
 

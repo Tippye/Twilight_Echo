@@ -28,9 +28,9 @@ extern "C" {
 
 namespace twilight::audio::test {
 
-inline std::vector<uint8_t> makeSparseIndexedFlac(bool indexed) {
-  constexpr int rate = 96000;
-  constexpr int64_t frames = 90LL * rate;
+inline std::vector<uint8_t> makeSparseIndexedFlac(
+    bool indexed, int rate = 96000, int64_t frames = 90LL * 96000,
+    std::vector<size_t>* frameOffsets = nullptr) {
   const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_FLAC);
   assert(codec);
   AVCodecContext* encoder = avcodec_alloc_context3(codec);
@@ -63,6 +63,7 @@ inline std::vector<uint8_t> makeSparseIndexedFlac(bool indexed) {
       // and its actual packet PTS determine the seekpoint's sample count.
       if (packet->size == 0) { av_packet_unref(packet); continue; }
       assert(packet->pts >= 0 && packet->pts < frames);
+      if (frameOffsets) frameOffsets->push_back(payload.size());
       if (static_cast<uint64_t>(packet->pts) >= nextPoint) {
         points.push_back({static_cast<uint64_t>(packet->pts), payload.size(),
                           static_cast<uint16_t>(std::min<int64_t>(encoder->frame_size, frames - packet->pts))});
@@ -87,7 +88,8 @@ inline std::vector<uint8_t> makeSparseIndexedFlac(bool indexed) {
   }
   assert(avcodec_send_frame(encoder, nullptr) == 0);
   collect();
-  assert(encoder->extradata_size == 34 && points.size() == 3);
+  assert(encoder->extradata_size == 34 &&
+         points.size() == static_cast<size_t>((frames - 1) / (30LL * rate) + 1));
   std::vector<uint8_t> bytes{'f', 'L', 'a', 'C'};
   const auto be = [&](uint64_t value, int width) {
     for (int i = width - 1; i >= 0; --i) bytes.push_back(static_cast<uint8_t>(value >> (i * 8)));
@@ -102,6 +104,7 @@ inline std::vector<uint8_t> makeSparseIndexedFlac(bool indexed) {
       be(point.sample, 8); be(point.offset, 8); be(point.samples, 2);
     }
   }
+  if (frameOffsets) for (auto& offset : *frameOffsets) offset += bytes.size();
   bytes.insert(bytes.end(), payload.begin(), payload.end());
   av_packet_free(&packet); av_frame_free(&frame); avcodec_free_context(&encoder);
   return bytes;

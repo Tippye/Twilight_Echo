@@ -276,6 +276,8 @@ struct FFmpegDecoder::Impl {
   int audioStreamIndex = -1;
   bool inputEof = false;
   bool resamplerFlushed = false;
+  uint64_t flacTotalSamples = 0;
+  bool flacEndReached = false;
   bool icyEnabled = false;
   std::vector<uint8_t> pending;
   std::vector<uint8_t> convertedScratch;
@@ -477,6 +479,8 @@ struct FFmpegDecoder::Impl {
     audioStreamIndex = -1;
     inputEof = false;
     resamplerFlushed = false;
+    flacTotalSamples = 0;
+    flacEndReached = false;
     icyEnabled = false;
     eof = false;
     readFailure.clear();
@@ -516,6 +520,7 @@ struct FFmpegDecoder::Impl {
     }
     inputEof = false;
     resamplerFlushed = false;
+    flacEndReached = false;
     eof = false;
     resetPending();
     exactSeek = false;
@@ -774,9 +779,19 @@ struct FFmpegDecoder::Impl {
 
     while (true) {
       if (cancelled(error)) return false;
-      int ret = avcodec_receive_frame(codecContext, frame);
+      // STREAMINFO counts audio samples, excluding any appended container data.
+      // Only a successfully converted frame at that exact boundary proves EOF.
+      int ret = flacEndReached ? AVERROR_EOF : avcodec_receive_frame(codecContext, frame);
       if (ret == 0) {
         const bool ok = convertFrame(error);
+        if (ok && flacTotalSamples && frame->best_effort_timestamp != AV_NOPTS_VALUE) {
+          const auto* stream = formatContext->streams[audioStreamIndex];
+          const auto origin = stream->start_time == AV_NOPTS_VALUE ? 0 : stream->start_time;
+          const auto first = av_rescale_q(frame->best_effort_timestamp - origin,
+              stream->time_base, AVRational{1, codecContext->sample_rate});
+          flacEndReached = first >= 0 && frame->nb_samples > 0 &&
+              static_cast<uint64_t>(first) + frame->nb_samples == flacTotalSamples;
+        }
         av_frame_unref(frame);
         if (!ok) return failRead(error && !error->empty() ? *error : "Audio frame conversion failed", error);
         if (pending.empty()) {
@@ -1053,6 +1068,14 @@ bool FFmpegDecoder::open(const std::string& source, std::string* error) {
 
   AVStream* stream = impl_->formatContext->streams[impl_->audioStreamIndex];
   const AVCodecParameters* params = stream->codecpar;
+  // Native FLAC STREAMINFO has an exact 36-bit sample count. Zero is unknown;
+  // other containers and codecs retain the normal demuxer EOF/error path.
+  if (impl_->formatContext->iformat == av_find_input_format("flac") &&
+      params->codec_id == AV_CODEC_ID_FLAC && params->extradata_size == 34 && params->extradata) {
+    impl_->flacTotalSamples = params->extradata[13] & 0x0f;
+    for (int i = 14; i < 18; ++i)
+      impl_->flacTotalSamples = (impl_->flacTotalSamples << 8) | params->extradata[i];
+  }
   const AVCodec* codec = avcodec_find_decoder(params->codec_id);
   if (!codec) {
     if (error) *error = "当前音频格式没有可用解码器";
