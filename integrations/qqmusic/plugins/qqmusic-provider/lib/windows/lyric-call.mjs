@@ -26,8 +26,8 @@ function name(value, field) {
 }
 
 /**
- * Wire type is the server song type. Native local ClientSongType conversion is
- * not reconstructed here. requestMode is caller-supplied; no default is inferred.
+ * Wire type is the server song type; callers provide the matching song type.
+ * requestMode is caller-supplied; no default is inferred.
  * Zero timestamps mean a cold request by adapter policy, not native caller defaults.
  */
 export function buildWindowsPlayLyricInfoCall({ songID, songName, singerName, albumName,

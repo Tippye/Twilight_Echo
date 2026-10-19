@@ -6,7 +6,7 @@ import { transformWindowsData, WINDOWS_DATA_TRANSFORM_PROVENANCE } from './data-
 // Expected bytes were produced by the original x86 DLL, not this implementation.
 const fixture = JSON.parse(readFileSync(new URL('./data-transform-vectors.json', import.meta.url)))
 
-test('native oracle fixture refers to the reconstructed DLL identity and 32-bit runtime', () => {
+test('reference fixture pins the DLL identity and 32-bit runtime', () => {
   assert.equal(fixture.source.artifactSha256, WINDOWS_DATA_TRANSFORM_PROVENANCE.artifactSha256)
   assert.equal(fixture.source.pointerBits, 32)
   assert.equal(fixture.vectors.length, 26)
