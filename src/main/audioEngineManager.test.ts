@@ -4591,6 +4591,247 @@ test('a superseded paused play cannot pause the newer source after delayed Play 
   }
 })
 
+test('provider revocation stops only the matching source and cannot overwrite a newer play', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  service.Play = (source = '', position = 0) => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      position,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  await manager.play('revoked.flac', 4)
+  assert.equal(await manager.revokeProviderSources(['other.flac']), false)
+  assert.equal(service.stopCalls, 0)
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    const result = await original(method, args)
+    if (method === 'Stop') {
+      announce()
+      await wait
+    }
+    return result
+  }
+  const pending = manager.revokeProviderSources(['revoked.flac'])
+  await started
+  // A confirmed newer safe queue supersedes the old revocation transaction
+  // even if that transaction's Stop acknowledgement is still in flight.
+  await manager.loadQueue([{ id: 'new', source: 'new.flac' }])
+  await manager.play('new.flac', 9)
+  release()
+  assert.equal(await pending, true)
+  assert.equal((await manager.getPlaybackInfo()).source, 'new.flac')
+  assert.equal((await manager.getPlaybackInfo()).state, 'playing')
+  assert.equal(service.stopCalls, 1)
+})
+
+test('provider revocation removes queued sources while preserving unrelated paused playback', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  await manager.loadQueue(
+    [
+      {
+        id: 'revoked',
+        source: 'revoked.flac'
+      },
+      { id: 'keep', source: 'keep.flac' },
+      { id: 'next', source: 'next.flac' }
+    ],
+    1
+  )
+  await manager.play('keep.flac', 19, { paused: true })
+  const oldToken = manager.getQueueToken()
+  const revoking = manager.revokeProviderSources(['revoked.flac'])
+  assert.notEqual(manager.getQueueToken(), oldToken, 'invalidate selections before yielding')
+  assert.equal(await revoking, true)
+  assert.deepEqual(
+    native.lastLoadedQueue.map((item) => item.source),
+    ['keep.flac', 'next.flac']
+  )
+  const preserved = await manager.getPlaybackInfo()
+  assert.equal(preserved.source, 'keep.flac')
+  assert.equal(preserved.state, 'paused')
+  assert.equal(preserved.position, 19)
+  assert.equal(preserved.queueIndex, 0)
+  assert.equal(native.stopCalls, 0)
+  await manager.next()
+  assert.equal(native.playCalls.at(-1)?.source, 'next.flac')
+  assert.equal(await manager.revokeProviderSources(['unknown.flac']), false)
+})
+
+test('a revoked pending LoadQueue acknowledgement cannot publish or roll back its source queue', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  await manager.loadQueue([{ id: 'keep', source: 'keep.flac' }])
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  let held = false
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    const result = await original(method, args)
+    if (method === 'LoadQueue' && !held) {
+      held = true
+      announce()
+      await wait
+    }
+    return result
+  }
+  const pending = manager.loadQueue([
+    {
+      id: 'revoked',
+      source: 'revoked.flac'
+    }
+  ])
+  const rejected = assert.rejects(pending, /audio_queue_load_superseded/)
+  await started
+  await manager.revokeProviderSources(['revoked.flac'])
+  const safeToken = manager.getQueueToken()
+  assert.deepEqual(
+    service.queue.map((item) => item.source),
+    ['keep.flac']
+  )
+  release()
+  await rejected
+  assert.equal(manager.getQueueToken(), safeToken)
+  assert.deepEqual(
+    service.queue.map((item) => item.source),
+    ['keep.flac']
+  )
+})
+
+test('revocation stops a dispatched Play even while its acknowledgement leaves the main mirror idle', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  service.Play = (source = '', position = 0) => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      position,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    const result = await original(method, args)
+    if (method === 'Play' && args[0] === 'revoked.flac') {
+      announce()
+      await wait
+    }
+    return result
+  }
+  const playing = manager.play('revoked.flac', 4)
+  await started
+  assert.equal(service.playbackInfo.state, 'playing')
+  assert.equal(await manager.revokeProviderSources(['revoked.flac']), true)
+  assert.equal(service.stopCalls, 1)
+  assert.equal(service.playbackInfo.state, 'stopped')
+  release()
+  assert.equal((await playing).superseded, true)
+  assert.equal((await manager.getPlaybackInfo()).nativePlaybackActive, false)
+})
+
+test('revoking before native dispatch cancels preparation without stopping an unrelated source', async (t) => {
+  const native = new FakeNativeBinding()
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  await manager.loadQueue([
+    { id: 'keep', source: 'keep.flac' },
+    { id: 'revoked', source: 'revoked.flac' }
+  ])
+  await manager.play('keep.flac', 17, { paused: true })
+  let release!: () => void, announce!: () => void
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  ;(
+    manager as unknown as { prepareLoudnormForPlay(source: string): Promise<void> }
+  ).prepareLoudnormForPlay = async (source) => {
+    if (source === 'revoked.flac') {
+      announce()
+      await wait
+    }
+  }
+  const preparing = manager.play('revoked.flac')
+  await started
+  await manager.revokeProviderSources(['revoked.flac'])
+  release()
+  assert.equal((await preparing).superseded, true)
+  assert.equal(native.stopCalls, 0)
+  assert.equal(
+    native.playCalls.some((call) => call.source === 'revoked.flac'),
+    false
+  )
+  const info = await manager.getPlaybackInfo()
+  assert.equal(info.source, 'keep.flac')
+  assert.equal(info.state, 'paused')
+  assert.equal(info.position, 17)
+})
+
+test('a failed revocation queue reload stops playback and blocks restart until a confirmed safe load', async (t) => {
+  const service = new FakeAudioServiceBinding()
+  const manager = makeManager({ exclusiveMode: false }, service)
+  t.after(() => manager.destroy())
+  service.Play = (source = '') => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  await manager.loadQueue([
+    { id: 'keep', source: 'keep.flac' },
+    { id: 'revoked', source: 'revoked.flac' }
+  ])
+  await manager.play('keep.flac')
+  let rejectQueue = true
+  const original = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'LoadQueue' && rejectQueue) throw new Error('public queue rejection')
+    return original(method, args)
+  }
+  await assert.rejects(manager.revokeProviderSources(['revoked.flac']))
+  assert.equal(service.playbackInfo.state, 'stopped')
+  await assert.rejects(manager.play('keep.flac'), /provider_queue_authorization_pending/)
+  await assert.rejects(manager.next(), /provider_queue_authorization_pending/)
+  await assert.rejects(manager.togglePause(), /provider_queue_authorization_pending/)
+  rejectQueue = false
+  await manager.loadQueue([{ id: 'keep', source: 'keep.flac' }])
+  await manager.play('keep.flac')
+  assert.equal(service.playbackInfo.state, 'playing')
+  assert.deepEqual(
+    service.queue.map((item) => item.source),
+    ['keep.flac']
+  )
+})
+
 test('a paused Play with delayed Pause acknowledgement cannot overwrite a newer play, next or stop', async (t) => {
   for (const action of ['play', 'next', 'stop']) {
     const service = new FakeAudioServiceBinding()
@@ -6056,6 +6297,743 @@ test('setVolume re-dispatches while the service native volume is not confirmed s
   assert.equal(service.volumeCalls, 1)
   assert.equal(service.volume, 0.31)
   manager.destroy()
+})
+
+async function acknowledgedSeekFixture() {
+  const service = new FakeAudioServiceBinding()
+  service.Play = (source = '', position = 0) => {
+    service.playbackInfo = makePlaybackInfo({
+      source,
+      position,
+      state: 'playing',
+      nativePlaybackActive: true
+    })
+  }
+  service.Pause = () => {
+    service.playbackInfo.state = service.playbackInfo.state === 'paused' ? 'playing' : 'paused'
+  }
+  service.Seek = (position = 0) => {
+    service.playbackInfo.position = position
+  }
+  const manager = makeManager({ exclusiveMode: false }, service)
+  await manager.play('acknowledged-seek.flac', 3, { paused: true })
+  service.callOrder = []
+  return { service, manager }
+}
+
+test('acknowledged seek holds resume until the real seek and readback complete without publishing a fake target', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  let announce!: () => void, release!: () => void
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  let acknowledgedPathEntered = false
+  service.callAsync = async (method, args) => {
+    if (method === 'Seek') {
+      acknowledgedPathEntered = true
+      announce()
+      await held
+    }
+    return call(method, args)
+  }
+  const positions: number[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'time-pos') positions.push(data)
+  })
+  const seek = manager.seek(45)
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(acknowledgedPathEntered, true, 'Seek must enter the acknowledged service path')
+  await started
+  const resume = manager.togglePause()
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.equal(service.callOrder.includes('Pause'), false)
+  assert.equal((await manager.getPlaybackInfo()).position, 3)
+  assert.equal(positions.includes(45), false)
+  release()
+  await Promise.all([seek, resume])
+  assert.deepEqual(
+    service.callOrder.filter((m) => m === 'Seek' || m === 'Pause'),
+    ['Seek', 'Pause']
+  )
+  assert.equal(service.playbackInfo.state, 'playing')
+  assert.equal(service.playbackInfo.position, 45)
+  assert.equal((await manager.getPlaybackInfo()).position, 45)
+})
+
+async function rendererEofFixture() {
+  const { default: ts } = await import('typescript')
+  const vm = await import('node:vm')
+  const text = readFileSync(
+    new URL('../renderer/src/stores/usePlayerStore.ts', import.meta.url),
+    'utf8'
+  )
+  const ast = ts.createSourceFile('store.ts', text, ts.ScriptTarget.Latest, true)
+  const names = [
+    'applyNativePlaybackInfo',
+    'handleNativePlaybackEnded',
+    'handlePlaybackEnded',
+    'advanceAfterPlaybackEnded'
+  ]
+  const declarations: string[] = []
+  let propertyCallback = ''
+  function visit(node: import('typescript').Node): void {
+    if (ts.isFunctionDeclaration(node) && names.includes(node.name?.text ?? ''))
+      declarations.push(node.getText(ast))
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === 'onPropertyChange'
+    )
+      propertyCallback = node.arguments[0].getText(ast)
+    ts.forEachChild(node, visit)
+  }
+  visit(ast)
+  assert.equal(declarations.length, names.length)
+  assert.ok(propertyCallback)
+  const current = {
+    id: 'qq:current',
+    filePath: 'current.flac',
+    duration: 252,
+    queueEntryId: 'entry:current'
+  }
+  const next = { id: 'qq:next', filePath: 'next.flac', duration: 255, queueEntryId: 'entry:next' }
+  const loads: string[] = []
+  const context = {
+    currentTrack: { value: current },
+    queue: { value: [current, next] },
+    queueIndex: { value: 0 },
+    restoredPlaybackPending: false,
+    nativePlaybackActive: false,
+    nativeQueueDelegated: false,
+    isLoading: { value: true },
+    isPlaying: { value: true },
+    playbackInfo: { value: null },
+    streamNowPlaying: { value: '' },
+    nativePlaybackInfoIntent: null,
+    playbackToggleIntent: null,
+    loadedTrackId: current.id,
+    // This fixture's snapshot is the still-current source and queue entry.
+    findTrackIndexFromPlaybackInfo: () => 0,
+    shouldIgnoreNativePlaybackInfo: () => false,
+    normalizeNativePlaybackInfo: (info: unknown) => info,
+    mergeTrackTransientData: (track: typeof current) => track,
+    toPlaybackQueueSnapshot: (track: typeof current) => ({ ...track }),
+    lastActiveTrack: null,
+    duration: { value: 252 },
+    cueDuration: () => 252,
+    getLatestPlaybackTime: () => 81,
+    applyPlaybackPositionSample: () => {},
+    applyNativePlayingState: () => {},
+    applyNativeStreamBufferingFromInfo: () => {},
+    playbackHistoryController: { recordPlaybackStart: () => {} },
+    nativeHistoryRestartPending: false,
+    sourceRecoveryDisabledLoadToken: 1,
+    activeLoadToken: 1,
+    autoAdvanceInFlight: false,
+    advancingFromEndedTrackId: '',
+    restoredPlaybackPosition: 0,
+    scheduleCrossfadeIfNeeded: () => {},
+    getSleepTimerController: () => ({ reportBoundary: async () => false }),
+    flushLatestCurrentTime: () => {},
+    clearCrossfadeTimer: () => {},
+    applyPendingRendererPlayModeAtBoundary: () => {},
+    playMode: { value: 'sequential' },
+    activateCurrentTrack: (track: typeof current) => {
+      context.currentTrack.value = track
+    },
+    loadAndPlay: async (track: typeof current) => {
+      loads.push(track.id)
+    },
+    shouldApplyNativeTimePosition: () => true
+  }
+  vm.createContext(context)
+  const code = ts.transpileModule(
+    `${declarations.join('\n')}\nglobalThis.propertyCallback = ${propertyCallback}`,
+    {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 }
+    }
+  ).outputText
+  vm.runInContext(code, context)
+  return {
+    context,
+    loads,
+    info: vm.runInContext('applyNativePlaybackInfo', context) as (info: PlaybackInfo) => boolean,
+    property: vm.runInContext('propertyCallback', context) as (event: {
+      name: string
+      data: unknown
+    }) => void
+  }
+}
+
+test('explicit Stop cannot turn a polled stopped snapshot into renderer next-track playback', async (t) => {
+  for (const state of ['playing', 'paused'] as const)
+    await t.test(state, async (t) => {
+      const service = new FakeAudioServiceBinding()
+      service.Play = (source = '', position = 0) => {
+        service.playbackInfo = makePlaybackInfo({
+          source,
+          position,
+          duration: 252,
+          queueIndex: 0,
+          state: 'playing'
+        })
+      }
+      const manager = makeManager({ exclusiveMode: false }, service)
+      t.after(() => manager.destroy())
+      await manager.loadQueue([{ id: 'qq:current', source: 'current.flac', duration: 252 }], 0)
+      await manager.play('current.flac', 81)
+      if (state === 'paused') await manager.togglePause()
+      const renderer = await rendererEofFixture()
+      manager.on('playback-info', renderer.info)
+      manager.on('property-change', renderer.property)
+      const ends: boolean[] = []
+      manager.on('property-change', ({ name, data }) => {
+        if (name === 'eof-reached') ends.push(data)
+      })
+      let release!: () => void
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      const call = service.callAsync.bind(service)
+      service.callAsync = async (method, args) => {
+        if (method === 'Stop') {
+          service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 0 }
+          await held
+          return undefined
+        }
+        return call(method, args)
+      }
+      const stopping = manager.stop()
+      // Native has stopped, but the asynchronous Stop acknowledgement is held.
+      // Paused native polling has a four-tick cadence; exercise both states.
+      for (let tick = 0; tick < 4; tick++) manager.tick()
+      await new Promise((resolve) => setImmediate(resolve))
+      release()
+      await stopping
+      await new Promise((resolve) => setImmediate(resolve))
+      assert.deepEqual(
+        ends,
+        [false],
+        'explicit Stop only clears EOF; it does not publish natural EOF'
+      )
+      assert.deepEqual(
+        renderer.loads,
+        [],
+        'neither playing nor paused quality reload may start the adjacent row'
+      )
+      assert.equal(renderer.context.currentTrack.value.id, 'qq:current')
+    })
+})
+
+test('renderer EOF reset false and unknown payload do not advance an active track while true still does', async () => {
+  const renderer = await rendererEofFixture()
+  renderer.context.nativePlaybackActive = true
+  renderer.property({ name: 'eof-reached', data: false })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(renderer.loads, [])
+  renderer.property({ name: 'eof-reached', data: undefined })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(renderer.loads, [])
+  renderer.property({ name: 'eof-reached', data: true })
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(renderer.loads, ['qq:next'])
+})
+
+test('failed Stop restores EOF eligibility and a later natural EOF still advances once', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  await manager.play('acknowledged-seek.flac', 81)
+  const renderer = await rendererEofFixture()
+  manager.on('playback-info', renderer.info)
+  manager.on('property-change', renderer.property)
+  const ends: unknown[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'eof-reached') ends.push(data)
+  })
+  let release!: () => void
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'Stop') {
+      await held
+      throw new Error('fixture stop rejected')
+    }
+    return call(method, args)
+  }
+  const stopping = manager.stop()
+  manager.tick()
+  assert.deepEqual(ends, [])
+  release()
+  await assert.rejects(stopping, /native stop failed/)
+  assert.equal((await manager.getPlaybackInfo()).state, 'playing')
+  assert.deepEqual(ends, [], 'a failed explicit Stop is not a terminal boundary')
+  service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 252, duration: 252 }
+  manager.tick()
+  manager.tick()
+  await new Promise((resolve) => setImmediate(resolve))
+  assert.deepEqual(ends, [true])
+  assert.deepEqual(renderer.loads, ['qq:next'])
+})
+
+test('superseded Stop acknowledgement cannot stop new playback or block its natural EOF', async (t) => {
+  for (const rejectStop of [false, true])
+    await t.test(String(rejectStop), async (t) => {
+      const { service, manager } = await acknowledgedSeekFixture()
+      t.after(() => manager.destroy())
+      await manager.play('acknowledged-seek.flac', 81)
+      const ends: unknown[] = []
+      manager.on('property-change', ({ name, data }) => {
+        if (name === 'eof-reached') ends.push(data)
+      })
+      let release!: () => void
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      const call = service.callAsync.bind(service)
+      service.callAsync = async (method, args) => {
+        if (method === 'Stop') {
+          await held
+          if (rejectStop) throw new Error('fixture old stop rejected')
+          return undefined
+        }
+        return call(method, args)
+      }
+      const stopping = manager.stop()
+      await manager.play('replacement.flac', 12)
+      service.playbackInfo.position = 13
+      manager.tick()
+      assert.equal((await manager.getPlaybackInfo()).source, 'replacement.flac')
+      assert.equal((await manager.getPlaybackInfo()).position, 13)
+      // A stale pending Stop must not suppress the new source's real terminal event.
+      service.playbackInfo = {
+        ...service.playbackInfo,
+        state: 'stopped',
+        position: 252,
+        duration: 252
+      }
+      manager.tick()
+      assert.deepEqual(ends, [true])
+      release()
+      await stopping
+      assert.deepEqual(
+        ends,
+        [true],
+        'old Stop success/failure cannot publish a reset for the new transport'
+      )
+      assert.equal((await manager.getPlaybackInfo()).position, 252)
+    })
+})
+
+test('an older Stop completion cannot restore EOF eligibility revoked by a newer Stop', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  await manager.play('acknowledged-seek.flac', 81)
+  const ends: unknown[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'eof-reached') ends.push(data)
+  })
+  const releases: Array<() => void> = []
+  const call = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'Stop') {
+      service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 0 }
+      await new Promise<void>((resolve) => {
+        releases.push(resolve)
+      })
+      return undefined
+    }
+    return call(method, args)
+  }
+  const first = manager.stop()
+  const latest = manager.stop()
+  assert.equal(releases.length, 2)
+  releases[0]()
+  await first
+  manager.tick()
+  assert.deepEqual(ends, [])
+  releases[1]()
+  await latest
+  manager.tick()
+  assert.deepEqual(ends, [false])
+  await manager.play('acknowledged-seek.flac', 81)
+  service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 252, duration: 252 }
+  manager.tick()
+  assert.deepEqual(ends, [false, true])
+})
+
+test('new seek or queue admission cannot turn a held explicit Stop into natural EOF', async (t) => {
+  for (const action of ['seek', 'queue'] as const)
+    await t.test(action, async (t) => {
+      const { service, manager } = await acknowledgedSeekFixture()
+      t.after(() => manager.destroy())
+      await manager.play('acknowledged-seek.flac', 81)
+      const ends: unknown[] = []
+      manager.on('property-change', ({ name, data }) => {
+        if (name === 'eof-reached') ends.push(data)
+      })
+      let releaseStop!: () => void, releaseNext!: () => void
+      const heldStop = new Promise<void>((resolve) => {
+        releaseStop = resolve
+      })
+      const heldNext = new Promise<void>((resolve) => {
+        releaseNext = resolve
+      })
+      const call = service.callAsync.bind(service)
+      service.callAsync = async (method, args) => {
+        if (method === 'Stop') {
+          service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 0 }
+          await heldStop
+          return undefined
+        }
+        if (method === (action === 'seek' ? 'Seek' : 'LoadQueue')) {
+          await heldNext
+          if (action === 'seek') {
+            service.playbackInfo = {
+              ...service.playbackInfo,
+              state: 'paused',
+              position: Number(args[0])
+            }
+            return undefined
+          }
+        }
+        return call(method, args)
+      }
+      const stopping = manager.stop()
+      const next =
+        action === 'seek'
+          ? manager.seek(45)
+          : manager.loadQueue([{ id: 'replacement', source: 'replacement.flac' }], 0)
+      await new Promise((resolve) => setImmediate(resolve))
+      manager.tick()
+      assert.deepEqual(ends, [], 'admission is not a confirmed fresh playback lifecycle')
+      releaseStop()
+      await stopping
+      manager.tick()
+      assert.deepEqual(
+        ends,
+        [],
+        'a queue/seek admission does not turn explicit stopped0 into EOF after old ACK'
+      )
+      releaseNext()
+      await next
+      manager.tick()
+      assert.deepEqual(ends, [])
+      await manager.play('replacement.flac', 12)
+      service.playbackInfo = {
+        ...service.playbackInfo,
+        state: 'stopped',
+        position: 252,
+        duration: 252
+      }
+      manager.tick()
+      assert.deepEqual(ends, [true], 'a confirmed new Play restores natural EOF')
+    })
+})
+
+test('failed Stop superseded by unchanged queue still permits the original stream natural EOF', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  const queue = [{ id: 'current', source: 'acknowledged-seek.flac' }]
+  await manager.loadQueue(queue, 0)
+  await manager.play(queue[0].source, 81)
+  const ends: unknown[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'eof-reached') ends.push(data)
+  })
+  let release!: () => void
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'Stop') {
+      await held
+      throw new Error('fixture old Stop never stopped playback')
+    }
+    return call(method, args)
+  }
+  const stopping = manager.stop()
+  await manager.loadQueue(queue, 0)
+  release()
+  await stopping
+  assert.deepEqual(ends, [])
+  assert.equal((await manager.getPlaybackInfo()).state, 'playing')
+  service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 252, duration: 252 }
+  manager.tick()
+  manager.tick()
+  assert.deepEqual(ends, [true])
+})
+
+test('acknowledged new Play restores EOF eligibility when its first info response is unavailable', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  await manager.stop()
+  const ends: unknown[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'eof-reached') ends.push(data)
+  })
+  const call = service.callAsync.bind(service)
+  let firstInfo = true
+  service.callAsync = async (method, args) => {
+    if (method === 'GetPlaybackInfo' && firstInfo) {
+      firstInfo = false
+      return null
+    }
+    return call(method, args)
+  }
+  await manager.play('replacement.flac', 12)
+  assert.equal(firstInfo, false)
+  manager.tick()
+  service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 252, duration: 252 }
+  manager.tick()
+  assert.deepEqual(ends, [true])
+})
+
+test('unacknowledged same-source Play and an old active poll cannot restore explicit Stop EOF eligibility', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  await manager.play('acknowledged-seek.flac', 81)
+  const ends: unknown[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'eof-reached') ends.push(data)
+  })
+  let releaseStop!: () => void, releasePlay!: () => void
+  const heldStop = new Promise<void>((resolve) => {
+    releaseStop = resolve
+  })
+  const heldPlay = new Promise<void>((resolve) => {
+    releasePlay = resolve
+  })
+  const call = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'Stop') {
+      service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 0 }
+      await heldStop
+      return undefined
+    }
+    if (method === 'Play') await heldPlay
+    return call(method, args)
+  }
+  const stopping = manager.stop()
+  const playing = manager.play('acknowledged-seek.flac', 12)
+  await new Promise((resolve) => setImmediate(resolve))
+  // A service cache may still expose the old active sample while Play is queued.
+  service.playbackInfo = { ...service.playbackInfo, state: 'playing', position: 81 }
+  manager.tick()
+  service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 0 }
+  manager.tick()
+  assert.deepEqual(ends, [])
+  releaseStop()
+  await stopping
+  releasePlay()
+  await playing
+  service.playbackInfo = { ...service.playbackInfo, state: 'stopped', position: 252, duration: 252 }
+  manager.tick()
+  assert.deepEqual(ends, [true])
+})
+
+test('acknowledged seek coalesces same-turn and queued seeks to the latest intent', async (t) => {
+  for (const heldFirst of [false, true])
+    await t.test(String(heldFirst), async (t) => {
+      const { service, manager } = await acknowledgedSeekFixture()
+      t.after(() => manager.destroy())
+      let announce!: () => void, release!: () => void
+      const started = new Promise<void>((resolve) => {
+        announce = resolve
+      })
+      const held = new Promise<void>((resolve) => {
+        release = resolve
+      })
+      const call = service.callAsync.bind(service)
+      const dispatched: number[] = []
+      service.callAsync = async (method, args) => {
+        if (method === 'Seek') {
+          dispatched.push(Number(args[0]))
+          if (heldFirst && dispatched.length === 1) {
+            announce()
+            await held
+          }
+        }
+        return call(method, args)
+      }
+      const first = manager.seek(10)
+      if (heldFirst) await started
+      const second = manager.seek(20),
+        third = manager.seek(30)
+      release()
+      await Promise.all([first, second, third])
+      assert.deepEqual(dispatched, heldFirst ? [10, 30] : [30])
+      assert.equal((await manager.getPlaybackInfo()).position, 30)
+    })
+})
+
+test('acknowledged seek commits a backward paused position instead of applying stale-tick rewind protection', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  await manager.seek(91)
+  await manager.seek(45)
+  assert.equal(service.playbackInfo.position, 45)
+  assert.equal((await manager.getPlaybackInfo()).position, 45)
+  assert.equal((await manager.getPlaybackInfo()).state, 'paused')
+})
+
+test('acknowledged seek retains a rejected barrier without a fake position until an explicit retry succeeds', async (t) => {
+  for (const behavior of ['failure', 'timeout', 'unconfirmed'])
+    await t.test(behavior, async (t) => {
+      const { service, manager } = await acknowledgedSeekFixture()
+      t.after(() => manager.destroy())
+      const call = service.callAsync.bind(service)
+      service.callAsync = async (method, args) => {
+        if (method === 'Seek') {
+          if (behavior === 'unconfirmed') return undefined
+          const error = new Error('synthetic seek ' + behavior)
+          if (behavior === 'timeout') Object.assign(error, { code: 'ERR_AUDIO_SERVICE_TIMEOUT' })
+          throw error
+        }
+        return call(method, args)
+      }
+      await assert.rejects(manager.seek(45), /native seek failed/)
+      assert.equal((await manager.getPlaybackInfo()).position, 3)
+      const pauseCalls = service.callOrder.filter((m) => m === 'Pause').length
+      await assert.rejects(manager.togglePause(), /requires an acknowledged seek/)
+      assert.equal(service.callOrder.filter((m) => m === 'Pause').length, pauseCalls)
+      service.callAsync = call
+      const retryPosition = behavior === 'timeout' ? 3 : 20
+      await manager.seek(retryPosition)
+      await manager.togglePause()
+      assert.equal(service.playbackInfo.position, retryPosition)
+      assert.equal(service.playbackInfo.state, 'playing')
+    })
+})
+
+test('acknowledged seek and its dependent pause cannot publish or toggle a newer play or stop', async (t) => {
+  for (const phase of ['Seek', 'GetPlaybackInfo'])
+    for (const action of ['play', 'stop'])
+      await t.test(`${phase} then ${action}`, async (t) => {
+        const { service, manager } = await acknowledgedSeekFixture()
+        t.after(() => manager.destroy())
+        let announce!: () => void, release!: () => void
+        const started = new Promise<void>((resolve) => {
+          announce = resolve
+        })
+        const held = new Promise<void>((resolve) => {
+          release = resolve
+        })
+        const call = service.callAsync.bind(service)
+        let seekApplied = false,
+          suspended = false
+        service.callAsync = async (method, args) => {
+          const result = await call(method, args)
+          if (method === 'Seek') seekApplied = true
+          if (!suspended && seekApplied && method === phase) {
+            suspended = true
+            announce()
+            await held
+          }
+          return result
+        }
+        const seek = manager.seek(45)
+        await started
+        const pause = manager.togglePause()
+        await new Promise((resolve) => setImmediate(resolve))
+        const published: PlaybackInfo[] = []
+        manager.on('playback-info', (info) => published.push(info))
+        if (action === 'play') await manager.play('new-seek-source.flac', 9)
+        else await manager.stop()
+        const afterNewIntent = published.length
+        release()
+        await Promise.all([seek, pause])
+        assert.equal(service.callOrder.includes('Pause'), false)
+        assert.equal(published.length, afterNewIntent)
+        const info = await manager.getPlaybackInfo()
+        assert.equal(info.position, action === 'play' ? 9 : 0)
+        assert.equal(info.state, action === 'play' ? 'playing' : 'stopped')
+      })
+})
+
+test('acknowledged seek invalidates a dependent resume when a newer seek owns the same source', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  let announce!: () => void, release!: () => void
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  let first = true
+  service.callAsync = async (method, args) => {
+    const result = await call(method, args)
+    if (method === 'Seek' && first) {
+      first = false
+      announce()
+      await held
+    }
+    return result
+  }
+  const oldSeek = manager.seek(45)
+  await started
+  const oldResume = manager.togglePause()
+  await new Promise((resolve) => setImmediate(resolve))
+  const latestSeek = manager.seek(20)
+  release()
+  await Promise.all([oldSeek, oldResume, latestSeek])
+  assert.equal(service.callOrder.includes('Pause'), false)
+  assert.equal((await manager.getPlaybackInfo()).position, 20)
+  assert.equal((await manager.getPlaybackInfo()).state, 'paused')
+})
+
+test('acknowledged seek preserves two dependent toggles rather than cancelling their parity', async (t) => {
+  const { service, manager } = await acknowledgedSeekFixture()
+  t.after(() => manager.destroy())
+  let announce!: () => void, release!: () => void
+  const started = new Promise<void>((resolve) => {
+    announce = resolve
+  })
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const call = service.callAsync.bind(service)
+  service.callAsync = async (method, args) => {
+    if (method === 'Seek') {
+      announce()
+      await held
+    }
+    return call(method, args)
+  }
+  const seek = manager.seek(45)
+  await started
+  const first = manager.togglePause(),
+    second = manager.togglePause()
+  release()
+  await Promise.all([seek, first, second])
+  assert.equal(service.callOrder.filter((m) => m === 'Pause').length, 2)
+  assert.equal(service.playbackInfo.state, 'paused')
+  assert.equal(service.playbackInfo.position, 45)
+})
+
+test('failed direct seek rejects without publishing a target', async (t) => {
+  const native = new FakeNativeBinding({ state: 'paused', position: 3 })
+  native.Seek = () => {
+    throw new Error('synthetic direct seek failure')
+  }
+  const manager = makeManager({ exclusiveMode: false }, native)
+  t.after(() => manager.destroy())
+  const positions: number[] = []
+  manager.on('property-change', ({ name, data }) => {
+    if (name === 'time-pos') positions.push(data)
+  })
+  await assert.rejects(manager.seek(45), /native seek failed/)
+  assert.equal(positions.includes(45), false)
+  assert.notEqual((await manager.getPlaybackInfo()).position, 45)
 })
 
 test('seek skips native call and fanout when paused position is unchanged', async () => {

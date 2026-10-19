@@ -18,6 +18,26 @@ const {
 } = require('./verify-release-artifacts.cjs')
 const { createMinimalPe } = require('./pe-fixture.cjs')
 
+test('release native verification rejects a retired worker regardless of PE architecture', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'twilight-worker-pe-'))
+  try {
+    for (const name of REQUIRED_RELEASE_NATIVE_BINARIES) {
+      fs.writeFileSync(path.join(dir, name), createMinimalPe())
+    }
+    assert.equal(listReleaseNativeBinaries(dir).length, REQUIRED_RELEASE_NATIVE_BINARIES.length)
+    const worker = path.join(dir, 'Twilight-QQ-Excellent-Worker.EXE')
+    for (const machine of [0x14c, 0x8664]) {
+      fs.writeFileSync(worker, createMinimalPe({ machine }))
+      assert.throws(
+        () => listReleaseNativeBinaries(dir),
+        /Removed native runtime must not be shipped/
+      )
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('release artifact arguments require a native directory and installer target', () => {
   assert.throws(() => parseArgs([]), /--native-dir is required/)
   assert.throws(() => parseArgs(['--native-dir', 'native']), /--installer or --artifact-dir/)

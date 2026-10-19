@@ -264,7 +264,10 @@ test('provider and UI RPC cancellation is wired through protocol, host AbortSign
   )
   assert.match(pluginApiSource, /interface TwilightUiCommandContext[\s\S]*signal: AbortSignal/)
   assert.match(managerSource, /interface TwilightProviderCallOptions[\s\S]*signal\?: AbortSignal/)
-  assert.match(managerSource, /kind: 'provider-call'[\s\S]*signal: options\.signal/)
+  assert.match(
+    managerSource,
+    /kind: 'provider-call'[\s\S]*signal:[\s\S]*AbortSignal\.any\(\[options\.signal, running\.playbackSession\.signal\]\)/
+  )
 })
 
 test('provider downloads are capability-gated and final file access remains host-only', () => {

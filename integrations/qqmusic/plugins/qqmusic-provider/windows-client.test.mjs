@@ -48,6 +48,10 @@ function deferred() {
   return { promise, resolve, reject }
 }
 
+test('the Windows client exposes no local-effect capability RPC', () => {
+  assert.equal(typeof WindowsMusicClient.prototype.getExcellentCapability, 'undefined')
+})
+
 test('QQ code login signs its owned Windows bytes and commits only a complete server session', async () => {
   const h = harness({ fetch: async (url, options) => {
     assert.equal(url, 'https://u6.y.qq.com/cgi-bin/musics.fcg')

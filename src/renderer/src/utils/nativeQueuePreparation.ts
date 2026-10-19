@@ -29,7 +29,7 @@ export interface PreparedNativeQueue {
   items: NativeQueueLoadItem[]
   startIndex: number
   delegated: boolean
-  /** Logical indices for a partial queue. Such a window must never loop itself. */
+  /** Logical indices for a partial queue; -1 has no logical binding. Such a window must never loop itself. */
   queueIndices?: number[]
 }
 
@@ -83,7 +83,7 @@ export async function prepareNativeQueue(
   if (options.isCurrent?.() === false) return null
 
   const currentIndex = findCurrentQueueIndex(options)
-  if (currentIndex < 0) return asCurrentOnly(currentItem)
+  if (currentIndex < 0) return asCurrentOnly(currentItem, -1)
 
   // A whole-library queue can exceed what one loadQueue IPC accepts. Delegating
   // it would be rejected by main before playback ever starts. Bound it before
@@ -129,7 +129,7 @@ async function prepareNcmWindow(
   if (nextIndex >= options.queue.length && playModeWrapsAtQueueEnd(mode)) nextIndex = 0
   const next = mode !== 'repeat' && mode !== 'heart' ? options.queue[nextIndex] : undefined
   if (getTrackSource(options.currentTrack) !== 'ncm' && (!next || getTrackSource(next) !== 'ncm')) {
-    return asCurrentOnly(currentItem)
+    return asCurrentOnly(currentItem, currentIndex)
   }
   const prepared: PreparedNativeQueue = {
     items: [currentItem],
@@ -151,14 +151,26 @@ export function preparedNativePlayMode(prepared: PreparedNativeQueue, mode: Play
   return prepared.queueIndices && mode !== 'repeat' ? 'sequential' : toNativePlayMode(mode)
 }
 
-function asCurrentOnly(item: NativeQueueLoadItem): PreparedNativeQueue {
-  return { items: [item], startIndex: 0, delegated: false }
+function asCurrentOnly(item: NativeQueueLoadItem, logicalIndex: number): PreparedNativeQueue {
+  return {
+    items: [item],
+    startIndex: 0,
+    delegated: false,
+    queueIndices: [logicalIndex]
+  }
 }
 
 function findCurrentQueueIndex(options: PrepareNativeQueueOptions): number {
+  const entryId = options.currentTrack.queueEntryId
+  const matches = (track: Track): boolean =>
+    track.id === options.currentTrack.id && (!entryId || track.queueEntryId === entryId)
   const candidate = options.queue[options.currentIndex]
-  if (candidate?.id === options.currentTrack.id) return options.currentIndex
-  return options.queue.findIndex((track) => track.id === options.currentTrack.id)
+  if (candidate && matches(candidate)) return options.currentIndex
+  const index = options.queue.findIndex(matches)
+  if (index < 0) return -1
+  return options.queue.some((track, otherIndex) => otherIndex > index && matches(track))
+    ? -1
+    : index
 }
 
 function getTrackTarget(track: Track): string {

@@ -548,6 +548,18 @@ void verifyAutoMixTransport(const std::filesystem::path& root) {
       resetBackend();
       AudioPipeline pipeline;
       std::string error;
+      const auto waitForPreload = [&](const char* stage) {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+        while (!pipeline.status().preloadReady &&
+               std::chrono::steady_clock::now() < deadline) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        const auto ready = pipeline.status();
+        if (!ready.preloadReady)
+          std::cerr << "AutoMix preload not ready stage=" << stage << " mode=" << mode
+                    << " cue=" << cue << " reason=" << ready.gaplessBlockedReason << '\n';
+        assert(ready.preloadReady);
+      };
       if (fixture.external) {
         OutputConfig output;
         output.continuityFirst = true;
@@ -573,6 +585,7 @@ void verifyAutoMixTransport(const std::filesystem::path& root) {
       assert(backend && backend->render);
       const int renderRate = backend->format.sampleRate;
       assert(renderRate == 48000);
+      waitForPreload("initial");
       std::vector<float> scratch(kCallbackFrames * kChannels);
       backend->render(scratch.data(), kCallbackFrames); // ACK preload graph
       const auto decoded = pipeline.status();
@@ -695,6 +708,7 @@ void verifyAutoMixTransport(const std::filesystem::path& root) {
                            "{\"gapless\":true,\"fftEnabled\":false}", true,
                            &error) == TAE_RESULT_OK);
       backend = latestBackend();
+      waitForPreload("identity-replay");
       backend->render(scratch.data(), kCallbackFrames);
       std::string mismatch = request;
       const auto where = mismatch.find(ah);
@@ -762,6 +776,7 @@ void verifyAutoMixTransport(const std::filesystem::path& root) {
         backend = latestBackend(); backend->render(scratch.data(), kCallbackFrames);
         assert(pipeline.setAutoMixMode(mode, &error));
         assert(pipeline.preloadNext(next, &error));
+        waitForPreload("approximate-timeline");
         backend->render(scratch.data(), kCallbackFrames);
         const bool prepared = pipeline.prepareAutoMix(request, &error);
         if (prepared || error != "source_timeline_not_exact")

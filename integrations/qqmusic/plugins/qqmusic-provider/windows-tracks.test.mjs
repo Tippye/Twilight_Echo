@@ -14,7 +14,8 @@ const unsupportedSong = () => ({ ...structuredClone(fixture.publicSongs[0]), id:
 test('quality fallback chains stay bounded, never upgrade ordinary selections or cross spatial formats', () => {
   const expected = { '128': ['128'], '320': ['320', '128'], flac: ['flac', '320', '128'],
     hires: ['hires', 'flac', '320', '128'], dolby: ['dolby', 'hires', 'flac', '320', '128'],
-    surround: ['surround', 'hires', 'flac', '320', '128'] }
+    surround: ['surround', 'hires', 'flac', '320', '128'],
+    master: ['master', 'hires', 'flac', '320', '128'], galaxy: ['galaxy', 'hires', 'flac', '320', '128'] }
   for (const [quality, chain] of Object.entries(expected)) {
     assert.deepEqual(windowsQualityFallbacks(quality), chain)
     assert.equal(new Set(chain).size, chain.length)
@@ -25,7 +26,7 @@ test('quality fallback chains stay bounded, never upgrade ordinary selections or
   for (const [alias, target] of [['default', '128'], ['high', '320'], ['lossless', 'flac']]) {
     assert.deepEqual(windowsQualityFallbacks(alias), expected[target])
   }
-  for (const invalid of [null, '', 'auto', 'toString', 320]) assert.deepEqual(windowsQualityFallbacks(invalid), [])
+  for (const invalid of [null, '', 'auto', 'toString', 320, 'excellent', 'excellentSpatial']) assert.deepEqual(windowsQualityFallbacks(invalid), [])
 })
 
 test('observed Windows song DTO maps a stable Track without persisting media credentials', () => {
@@ -59,16 +60,67 @@ test('per-track qualities retain native format candidates, explicit zero and unk
   Object.assign(song.file, { size_128mp3: 1000, size_320mp3: 2000, size_flac: 3000,
     size_hires: 0, size_dolby: 4000 })
   delete song.file.size_dts
+  delete song.file.size_new
+  delete song.vs
   const result = windowsTrackPlaybackQualities(song)
   assert.equal(result.trackId, 'qq:0039MnYb0qxYhV:97773')
   assert.deepEqual(result.options.map(({ value, availability, metadataSize }) =>
     [value, availability, metadataSize]), [['128', 'candidate', 1000], ['320', 'candidate', 2000],
-    ['flac', 'candidate', 3000], ['hires', 'unavailable', 0], ['dolby', 'candidate', 4000], ['surround', 'unknown', undefined]])
+    ['flac', 'candidate', 3000], ['hires', 'unavailable', 0], ['dolby', 'candidate', 4000], ['surround', 'unknown', undefined],
+    ['master', 'unavailable', undefined], ['galaxy', 'unavailable', undefined]])
   assert.match(result.options.find(option => option.value === 'dolby').reason, /当前账号验证/)
   assert.equal(windowsSongMedia(song).sizes.surround, null)
   assert.equal(windowsSongMedia(song).sizes.hires, 0)
   assert.equal(windowsSongMedia(song).sizes.dolby, 4000)
   assert.equal(Object.hasOwn(result.options[5], 'metadataSize'), false)
+})
+
+test('premium sizes keep zero, candidate and unknown distinct and require their exact native vs identity', () => {
+  const song = structuredClone(fixture.publicSongs[0])
+  song.vs = Array(30).fill('')
+  song.vs[3] = '003xkcSf3NBRlX'
+  song.vs[29] = '004astzo2Y5HDU'
+  song.file.size_new = Array(16).fill(0)
+  song.file.size_new[8] = 52832835
+  let options = windowsTrackPlaybackQualities(song).options
+  assert.deepEqual(options.filter(option => ['master', 'galaxy'].includes(option.value))
+    .map(({ value, availability, metadataSize }) => [value, availability, metadataSize]),
+  [['master', 'unavailable', 0], ['galaxy', 'candidate', 52832835]])
+  const media = windowsSongMedia(song)
+  assert.equal(media.sizes.master, 0)
+  assert.equal(media.sizes.galaxy, 52832835)
+  assert.deepEqual(media.qualityMedia.galaxy, { songmid: song.mid, songid: String(song.id),
+    mediaMid: song.file.media_mid, songtype: song.type, type: 15, otherMediaMid: '004astzo2Y5HDU' })
+  song.vs[29] = '00000000000001'
+  assert.equal(media.qualityMedia.galaxy.otherMediaMid, '004astzo2Y5HDU')
+  for (const bad of [undefined, null, {}, { 0: 50, 8: 50 }, [], [50], Array(5).fill(50)]) {
+    song.file.size_new = bad
+    options = windowsTrackPlaybackQualities(song).options
+    for (const quality of ['master', 'galaxy']) {
+      const option = options.find(option => option.value === quality)
+      assert.equal(option.availability, 'unknown')
+      assert.equal(Object.hasOwn(option, 'metadataSize'), false)
+      assert.equal(windowsSongMedia(song).sizes[quality], null)
+    }
+  }
+  for (const bad of [undefined, null, '0', -1, 0.5, 0x80000000, NaN, Infinity]) {
+    song.file.size_new = Array(16).fill(bad)
+    for (const quality of ['master', 'galaxy']) {
+      assert.equal(windowsTrackPlaybackQualities(song).options.find(option => option.value === quality).availability, 'unknown')
+    }
+  }
+  song.file.size_new = Array(16).fill(1000)
+  for (const bad of [undefined, null, {}, [], Array(30).fill(''), Array(30).fill('bad'),
+    Array(30).fill('003xkcSf3NBRlX\n'), Array(30).fill('003xkcSf3NBR/X')]) {
+    song.vs = bad
+    for (const quality of ['master', 'galaxy']) {
+      const option = windowsTrackPlaybackQualities(song).options.find(option => option.value === quality)
+      assert.equal(option.availability, 'unavailable')
+      assert.equal(option.metadataSize, 1000)
+      assert.match(option.reason, /媒体标识/)
+      assert.equal(windowsSongMedia(song).qualityMedia[quality].otherMediaMid, null)
+    }
+  }
 })
 
 test('malformed or missing format sizes cannot turn unknown into unavailable or permission success', () => {

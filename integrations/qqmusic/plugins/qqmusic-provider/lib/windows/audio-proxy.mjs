@@ -1,24 +1,76 @@
 import { createServer } from 'node:http'
 import { createHash, randomBytes } from 'node:crypto'
+import { performance } from 'node:perf_hooks'
 import { WindowsMediaStream } from './media-stream.mjs'
 
 const MAX_UINT64 = 0xffffffffffffffffn
+const RANGE_BLOCK_BYTES = 512 * 1024
+const RANGE_WINDOW = 4
+const MAX_AHEAD_BLOCKS = 16
+const PARALLEL_MIN_BYTES = BigInt(RANGE_BLOCK_BYTES * RANGE_WINDOW)
 const REDIRECTS = new Set([301, 302, 303, 307, 308])
 const REFRESH_CODES = new Set([401, 403, 410])
+const TRANSIENT_HTTP_CODES = new Set([408, 429, 500, 502, 503, 504])
+const TRANSIENT_NETWORK_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT',
+  'ENETUNREACH', 'EHOSTUNREACH', 'EAI_AGAIN', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'])
 const OWNED_HEADERS = new Set(['host', 'range', 'accept-encoding', 'content-length',
   'connection', 'transfer-encoding', 'proxy-authorization'])
+// Diagnostics never inspect or stringify an untrusted exception. This weak map
+// contains only proxy-owned codes and boundary labels, never source metadata.
+const diagnosticErrors = new WeakMap()
 
-function failure(code = 'SOURCE') {
+function diagnostic(error, phase, code = 'UNKNOWN', httpStatus) {
+  if (error && (typeof error === 'object' || typeof error === 'function') && !diagnosticErrors.has(error)) {
+    diagnosticErrors.set(error, { phase, code,
+      ...(Number.isInteger(httpStatus) && httpStatus >= 100 && httpStatus <= 599 ? { httpStatus } : {}) })
+  }
+  return error
+}
+
+function failure(code = 'SOURCE', phase, httpStatus) {
   const error = new Error('QQ 音乐音频代理请求失败')
   error.name = 'WindowsAudioProxyError'
   error.code = code
+  diagnostic(error, phase, code, httpStatus)
   return error
 }
 
 function aborted() {
   const error = new Error('QQ 音乐音频请求已取消')
   error.name = 'AbortError'
+  diagnostic(error, undefined, 'CANCELLED')
   return error
+}
+
+// Only call at the fetch/read boundary. A resolver/auth error with the same code
+// is not transport evidence; messages and generic TypeError are never sufficient.
+function transientNetwork(error) {
+  try {
+    return TRANSIENT_NETWORK_CODES.has(error?.code) || TRANSIENT_NETWORK_CODES.has(error?.cause?.code)
+  } catch { return false }
+}
+
+function retryDelay(response) {
+  const value = response.headers.get('retry-after')
+  if (value === null) return 0
+  if (/^\d+$/.test(value)) {
+    const milliseconds = Number(value) * 1000
+    return Number.isSafeInteger(milliseconds) ? milliseconds : Infinity
+  }
+  // Accept IMF-fixdate only. Date.parse alone also accepts malformed numeric
+  // values such as -1/1.5 and normalizes impossible calendar dates.
+  const match = /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat), (\d{2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) (\d{4}) (\d{2}):(\d{2}):(\d{2}) GMT$/.exec(value)
+  if (!match) return Infinity
+  const day = Number(match[2]), month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(match[3])
+  const year = Number(match[4]), hour = Number(match[5]), minute = Number(match[6]), second = Number(match[7])
+  if (year < 1601) return Infinity
+  const date = new Date(Date.UTC(year, month, day, hour, minute, second))
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month || date.getUTCDate() !== day ||
+      date.getUTCHours() !== hour || date.getUTCMinutes() !== minute || date.getUTCSeconds() !== second ||
+      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getUTCDay()] !== match[1]) return Infinity
+  return Math.max(0, date.getTime() - Date.now())
 }
 
 function uint64(value) {
@@ -66,8 +118,11 @@ function childController(parent) {
   return { controller, cleanup() { parent.removeEventListener('abort', cancel) } }
 }
 
-async function timedWait(promise, controller, timeoutMs, discard) {
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+async function timedWait(promise, controller, timeoutMs, discard, onTimeout) {
+  const timer = setTimeout(() => {
+    if (!controller.signal.aborted) onTimeout?.()
+    controller.abort()
+  }, timeoutMs)
   timer.unref?.()
   try { return await wait(promise, controller.signal, discard) }
   finally { clearTimeout(timer) }
@@ -125,10 +180,49 @@ async function drain(response, signal) {
   })
 }
 
+// Separate callers use the same abortable FIFO for transport jobs and retained
+// ciphertext. Always reserve memory before transport, never the reverse.
+function rangeSlots(limit) {
+  let available = limit
+  const queue = []
+  const reserve = () => {
+    available -= 1
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      available += 1
+      pump()
+    }
+  }
+  const pump = () => {
+    while (available > 0 && queue.length) {
+      const ticket = queue.shift()
+      ticket.signal.removeEventListener('abort', ticket.cancel)
+      ticket.resolve(reserve())
+    }
+  }
+  const acquire = (signal) => new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(aborted()); return }
+    const ticket = { signal, resolve, cancel() {
+      const index = queue.indexOf(ticket)
+      if (index !== -1) queue.splice(index, 1)
+      reject(aborted())
+    } }
+    queue.push(ticket)
+    signal.addEventListener('abort', ticket.cancel, { once: true })
+    pump()
+  })
+  acquire.tryAcquire = () => available > 0 && !queue.length ? reserve() : null
+  return acquire
+}
+
 /**
  * An authorization lease contains metadata only. Each resolve transfers a new owned
  * internal key or mode1 transform owner, released after that connection or cancellation.
  * The caller establishes container boundaries and stable content identity.
+ * A separate proxy-wide owner may retain at most four verified ciphertext windows
+ * within the existing memory credits; it retains no key or decoder authority.
  */
 export class WindowsAudioProxy {
   #fetch
@@ -136,6 +230,7 @@ export class WindowsAudioProxy {
   #now
   #ttl
   #timeout
+  #onFailure
   #server
   #listening
   #closing = false
@@ -143,9 +238,13 @@ export class WindowsAudioProxy {
   #leases = new Map()
   #opening = new Set()
   #disposed = new WeakSet()
+  #transportSlot = rangeSlots(8)
+  #memorySlot = rangeSlots(32)
+  #memo = []
+  #memoClock = 0
 
   constructor({ allowedOrigins, fetch = globalThis.fetch, now = Date.now,
-    leaseTtlMs = 600000, requestTimeoutMs = 15000 } = {}) {
+    leaseTtlMs = 600000, requestTimeoutMs = 15000, onFailure } = {}) {
     if (!Array.isArray(allowedOrigins) || !allowedOrigins.length || typeof fetch !== 'function' ||
       typeof now !== 'function' || !Number.isSafeInteger(leaseTtlMs) || leaseTtlMs <= 0 ||
       leaseTtlMs > 0x7fffffff || !Number.isSafeInteger(requestTimeoutMs) || requestTimeoutMs <= 0 ||
@@ -160,6 +259,23 @@ export class WindowsAudioProxy {
     this.#now = now
     this.#ttl = leaseTtlMs
     this.#timeout = requestTimeoutMs
+    this.#onFailure = typeof onFailure === 'function' ? onFailure : null
+  }
+
+  #report(error, phase) {
+    const detail = diagnosticErrors.get(error)
+    if (detail?.code === 'CANCELLED') return
+    this.#emit({ ...detail, phase: detail?.phase ?? phase, code: detail?.code ?? 'UNKNOWN' })
+  }
+
+  #emit(event) {
+    // Observability is optional and cannot alter bytes, retries or cancellation.
+    try { Promise.resolve(this.#onFailure?.(Object.freeze(event))).catch(() => {}) } catch {}
+  }
+
+  #timed(promise, controller, phase, discard) {
+    return timedWait(promise, controller, this.#timeout, discard,
+      () => this.#emit({ phase, code: 'TIMEOUT' })).catch(error => { throw diagnostic(error, phase) })
   }
 
   #url(value, base) {
@@ -240,7 +356,9 @@ export class WindowsAudioProxy {
     const { signal } = controller
     const pending = Promise.resolve().then(() => lease.resolve({ signal, refresh }))
       .then((input) => this.#adopt(input))
-    const source = await timedWait(pending, controller, this.#timeout, (late) => this.#dispose(late))
+    let source
+    try { source = await this.#timed(pending, controller, 'resolve', (late) => this.#dispose(late)) }
+    catch (error) { throw diagnostic(error, 'resolve') }
     if (signal.aborted) { await this.#dispose(source); throw aborted() }
     if (lease.identity !== undefined && this.#identity(source) !== lease.identity) {
       await this.#dispose(source)
@@ -258,6 +376,7 @@ export class WindowsAudioProxy {
         source = await this.#resolve(lease, true, child.controller)
         if (source.transport.expiresAt <= this.#now()) throw failure('EXPIRED')
         lease.transport = source.transport
+        lease.transportRevision += 1
         return source.transport
       } finally {
         await this.#dispose(source)
@@ -271,7 +390,8 @@ export class WindowsAudioProxy {
     if (!this.#listening) {
       const server = createServer({ maxHeaderSize: 8192 }, (request, response) => {
         response.on('error', () => {})
-        this.#handle(request, response).catch(() => {
+        this.#handle(request, response).catch((error) => {
+          this.#report(error, 'serve')
           if (response.headersSent) response.destroy()
           else { response.statusCode = 502; response.end('QQ audio stream failed') }
         })
@@ -291,7 +411,7 @@ export class WindowsAudioProxy {
     return this.#listening
   }
 
-  async open({ resolve, signal } = {}) {
+  async open({ resolve, signal, durationSeconds } = {}) {
     if (this.#closing || typeof resolve !== 'function') throw failure('CLOSED')
     const parent = new AbortController()
     const cancel = () => parent.abort()
@@ -299,12 +419,22 @@ export class WindowsAudioProxy {
     signal?.addEventListener('abort', cancel, { once: true })
     const child = childController(parent.signal)
     this.#opening.add(parent)
-    const lease = { resolve, controller: parent, tasks: new Set(), refreshing: null }
+    const lease = { resolve, controller: parent, tasks: new Set(), refreshing: null, transportRevision: 0 }
     let source
     try {
       source = await this.#resolve(lease, false, child.controller)
       lease.identity = this.#identity(source)
       lease.length = source.length
+      // TrackInfo duration is a scheduling hint only. Actual verified source
+      // length owns the byte estimate; this does not establish decoded duration.
+      let ahead = BigInt(RANGE_WINDOW)
+      if (Number.isSafeInteger(durationSeconds) && durationSeconds > 0) {
+        const duration = BigInt(durationSeconds), block = BigInt(RANGE_BLOCK_BYTES)
+        const target = (source.length * 20n + duration - 1n) / duration
+        const rounded = (target + block - 1n) / block
+        ahead = rounded < ahead ? ahead : rounded
+      }
+      lease.aheadBlocks = Number(ahead > BigInt(MAX_AHEAD_BLOCKS) ? BigInt(MAX_AHEAD_BLOCKS) : ahead)
       lease.transport = source.transport
       if (source.transport.expiresAt <= this.#now()) await wait(this.#refresh(lease), child.controller.signal)
       await this.#dispose(source)
@@ -338,6 +468,7 @@ export class WindowsAudioProxy {
   async #revoke(lease) {
     if (lease.closed) return lease.revoking ?? Promise.resolve()
     lease.closed = true
+    this.#retireMemo(lease)
     clearTimeout(lease.timer)
     lease.detach?.()
     this.#leases.delete(lease.path)
@@ -400,15 +531,21 @@ export class WindowsAudioProxy {
     }
   }
 
-  async #upstream(transport, selected, controller) {
+  async #upstream(transport, selected, controller, recovery) {
     const { signal } = controller
     let url = transport.url
     let headers = { ...transport.headers, Range: `bytes=${selected.start}-${selected.end}`,
       'Accept-Encoding': 'identity' }
     for (let redirects = 0; ; redirects += 1) {
-      const response = await timedWait(this.#fetch(this.#url(url), {
-        method: 'GET', redirect: 'manual', headers, signal
-      }), controller, this.#timeout, cancelBody)
+      let response
+      try {
+        response = await this.#timed(this.#fetch(this.#url(url), {
+          method: 'GET', redirect: 'manual', headers, signal
+        }), controller, 'upstream', cancelBody)
+      } catch (error) {
+        if (recovery && transientNetwork(error)) recovery.network = true
+        throw diagnostic(error, 'upstream')
+      }
       if (!REDIRECTS.has(response.status)) return response
       try {
         if (redirects >= 3 || !response.headers.get('location')) throw failure('REDIRECT')
@@ -422,79 +559,393 @@ export class WindowsAudioProxy {
     }
   }
 
+  async #transport(lease, source, controller) {
+    // A later-resolving old snapshot can carry a longer URL expiry. Once a
+    // refresh is published, its live transport wins over that stale snapshot.
+    const published = lease.transportRevision > 0 && lease.transport?.expiresAt > this.#now()
+    let transport = published || lease.transport?.expiresAt > source.transport.expiresAt
+      ? lease.transport : source.transport
+    if (transport.expiresAt <= this.#now()) transport = await wait(this.#refresh(lease), controller.signal)
+    // Stamp the transport in the same turn as selection. An await in the caller
+    // must not attach a newer refresh revision to an already selected old URL.
+    return { transport, revision: lease.transportRevision }
+  }
+
+  async #fetchRange(lease, source, selected, controller, recovery) {
+    let { transport, revision } = await this.#transport(lease, source, controller)
+    let upstream = await this.#upstream(transport, selected, controller, recovery)
+    if (REFRESH_CODES.has(upstream.status)) {
+      if (recovery) recovery.auth = true
+      cancelBody(upstream)
+      // A delayed rejection from an older wave uses the identity-checked
+      // transport already published by its sibling instead of refreshing again.
+      transport = lease.transportRevision !== revision && lease.transport?.expiresAt > this.#now()
+        ? lease.transport : await wait(this.#refresh(lease), controller.signal)
+      upstream = await this.#upstream(transport, selected, controller, recovery)
+    }
+    return upstream
+  }
+
+  async #endOfRange(reader, controller) {
+    const part = await this.#timed(reader.read(), controller, 'read')
+    if (!part.done) throw failure('UPSTREAM_LENGTH')
+  }
+
+  #position(upstream, source, selected, allowWhole = true) {
+    const encoding = upstream.headers.get('content-encoding')
+    if (encoding && encoding !== 'identity') throw failure('ENCODING', 'upstream', upstream.status)
+    if (upstream.status === 206) {
+      const expected = `bytes ${selected.start}-${selected.end}/${source.upstreamLength}`
+      if (upstream.headers.get('content-range') !== expected) throw failure('UPSTREAM_RANGE', 'upstream', upstream.status)
+      const length = upstream.headers.get('content-length')
+      if (length !== null && uint64(length) !== selected.end - selected.start + 1n) throw failure('UPSTREAM_LENGTH', 'upstream', upstream.status)
+    } else if (upstream.status === 200 && allowWhole) {
+      if (uint64(upstream.headers.get('content-length')) !== source.upstreamLength) throw failure('UPSTREAM_LENGTH')
+    } else throw failure('UPSTREAM_STATUS', 'upstream', upstream.status)
+    if (!upstream.body?.getReader) throw failure('BODY')
+    return upstream.status === 206 ? selected.start : 0n
+  }
+
+  async #write(response, source, cipher, data, first, signal) {
+    for (let offset = 0; offset < data.length; offset += 65536) {
+      if (signal.aborted) throw aborted()
+      const bytes = Buffer.from(data.subarray(offset, offset + 65536))
+      const absoluteOffset = (first + BigInt(offset)).toString()
+      const transformed = cipher ? cipher.transform(bytes, absoluteOffset) : source.kind === 'mode1'
+        ? source.input.decoder.transform(bytes, absoluteOffset) : bytes
+      if (!(transformed instanceof Uint8Array) || transformed.length !== bytes.length) throw failure('DECODER')
+      if (!response.write(transformed)) await drain(response, signal)
+    }
+  }
+
+  #memoWindow(lease, selected, method) {
+    // Restrict memo admission to large media partial reads. Full GET and small
+    // media retain their original streaming path, including first-byte behavior.
+    if (method !== 'GET' || !selected.partial || lease.length < PARALLEL_MIN_BYTES) return null
+    const size = BigInt(RANGE_BLOCK_BYTES)
+    const tail = lease.length > size ? lease.length - size : 0n
+    const start = selected.start >= tail && selected.end === lease.length - 1n
+      ? tail : selected.start / size * size
+    const end = start + size - 1n
+    return { start, end: end < lease.length ? end : lease.length - 1n }
+  }
+
+  #retireMemo(lease) {
+    for (const slot of [...this.#memo]) if (!lease || slot.lease === lease) {
+      slot.retired = true
+      slot.child.controller.abort()
+      this.#disposeMemo(slot)
+    }
+  }
+
+  #disposeMemo(slot) {
+    if (!slot.retired || !slot.settled || slot.borrowers) return
+    slot.block.bytes?.fill(0)
+    slot.block.bytes = null
+    slot.block.release?.()
+    slot.child.cleanup()
+    const index = this.#memo.indexOf(slot)
+    if (index !== -1) this.#memo.splice(index, 1)
+  }
+
+  #validateMemo() {
+    for (const slot of [...this.#memo]) {
+      if (slot.expiresAt <= this.#now() || slot.lease.expiresAt <= this.#now() ||
+          slot.revision !== slot.lease.transportRevision || slot.lease.closed ||
+          slot.identity !== slot.lease.identity) {
+        slot.retired = true
+        slot.child.controller.abort()
+        this.#disposeMemo(slot)
+      }
+    }
+  }
+
+  #borrowMemo(lease, selected) {
+    this.#validateMemo()
+    const slot = this.#memo.find(s => s.lease === lease && !s.retired && s.ready &&
+      selected.start >= s.selected.start && selected.start <= s.selected.end)
+    if (!slot) return null
+    slot.borrowers += 1
+    slot.used = ++this.#memoClock
+    const end = selected.end < slot.selected.end ? selected.end : slot.selected.end
+    let released = false
+    return { end, bytes: slot.block.bytes.subarray(Number(selected.start - slot.selected.start),
+      Number(end - slot.selected.start + 1n)), release: () => {
+      if (released) return
+      released = true
+      slot.borrowers -= 1
+      this.#disposeMemo(slot)
+    } }
+  }
+
+  #prefetchMemo(lease, selected, stamp, requestSignal) {
+    if (!selected || requestSignal.aborted || lease.closed || lease.controller.signal.aborted ||
+        stamp.transport.expiresAt <= this.#now()) return
+    if (this.#memo.some(s => !s.retired && s.lease === lease &&
+        s.selected.start === selected.start && s.selected.end === selected.end)) return
+    if (this.#memo.length >= RANGE_WINDOW) {
+      const victim = this.#memo.filter(s => !s.retired && !s.borrowers)
+        .sort((a,b) => a.used - b.used)[0]
+      if (!victim) return
+      victim.retired = true
+      victim.child.controller.abort()
+      this.#disposeMemo(victim)
+      if (this.#memo.length >= RANGE_WINDOW) return
+    }
+    const memory = this.#memorySlot.tryAcquire()
+    if (!memory) return
+    const transport = this.#transportSlot.tryAcquire()
+    if (!transport) { memory(); return }
+    const child = childController(lease.controller.signal)
+    const block = this.#bufferBlock(lease, selected, child.controller, { memory, transport })
+    const slot = { lease, selected, child, block, borrowers: 0, ready: false,
+      retired: false, settled: false, expiresAt: stamp.transport.expiresAt,
+      revision: stamp.revision, identity: lease.identity, used: ++this.#memoClock }
+    this.#memo.push(slot)
+    // Background warnings do not indicate failure of the admitting HTTP response.
+    const task = block.done.then(() => {
+      if (!slot.retired && !lease.closed && !child.controller.signal.aborted &&
+          slot.expiresAt > this.#now() && slot.revision === lease.transportRevision) slot.ready = true
+      else slot.retired = true
+    }, () => { slot.retired = true }).finally(() => {
+      slot.settled = true
+      lease.tasks.delete(task)
+      this.#disposeMemo(slot)
+    })
+    lease.tasks.add(task)
+  }
+
+  #bufferBlock(lease, selected, controller, reservation) {
+    const block = { selected, release: null, bytes: null }
+    block.done = (async () => {
+      block.release = reservation?.memory ?? await this.#memorySlot(controller.signal)
+      let releaseTransport
+      try {
+        releaseTransport = reservation?.transport ?? await this.#transportSlot(controller.signal)
+        // Unpublished ciphertext can be discarded and requested once more. Keep
+        // the permit through both attempts. Healthy first attempts retain existing
+        // per-read timeouts; recovery gets only what remains of this same budget.
+        const deadline = performance.now() + this.#timeout
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          let source, upstream, reader, timer, retry = false, delay = 0
+          const recovery = { network: false, auth: false }
+          const child = childController(controller.signal)
+          try {
+            if (attempt > 0) {
+              const remaining = deadline - performance.now()
+              if (remaining <= 0) throw failure('UPSTREAM_TIMEOUT')
+              timer = setTimeout(() => {
+                if (!child.controller.signal.aborted) this.#emit({ phase: 'future', code: 'TIMEOUT' })
+                child.controller.abort()
+              }, remaining)
+              timer.unref?.()
+            }
+            source = await this.#resolve(lease, false, child.controller)
+            upstream = await this.#fetchRange(lease, source, selected, child.controller, recovery)
+            if (TRANSIENT_HTTP_CODES.has(upstream.status)) {
+              recovery.http = true
+              delay = retryDelay(upstream)
+              throw failure('UPSTREAM_STATUS', 'upstream', upstream.status)
+            }
+            this.#position(upstream, source, selected, false)
+            // Each attempt independently verifies session/content identity and
+            // releases its extra decoder; the response owns the ordered transform.
+            await this.#dispose(source)
+            source = null
+            reader = upstream.body.getReader()
+            const read = async () => {
+              try { return await this.#timed(reader.read(), child.controller, 'read') }
+              catch (error) { recovery.network = transientNetwork(error); throw diagnostic(error, 'read') }
+            }
+            block.bytes = Buffer.alloc(Number(selected.end - selected.start + 1n))
+            let filled = 0
+            while (filled < block.bytes.length) {
+              const part = await read()
+              if (part.done || !(part.value instanceof Uint8Array)) throw failure('TRUNCATED')
+              if (part.value.length > block.bytes.length - filled) throw failure('UPSTREAM_LENGTH')
+              block.bytes.set(part.value, filled)
+              filled += part.value.length
+            }
+            if (!(await read()).done) throw failure('UPSTREAM_LENGTH')
+            return
+          } catch (error) {
+            retry = attempt === 0 && !controller.signal.aborted && !child.controller.signal.aborted &&
+              !recovery.auth && (recovery.network || recovery.http) &&
+              delay < deadline - performance.now()
+            if (!retry) throw error
+          } finally {
+            clearTimeout(timer)
+            child.controller.abort()
+            child.cleanup()
+            await this.#dispose(source)
+            if (reader) { try { Promise.resolve(reader.cancel()).catch(() => {}) } catch {} }
+            else cancelBody(upstream)
+            if (retry) { block.bytes?.fill(0); block.bytes = null }
+          }
+          if (delay > 0) {
+            let delayTimer
+            try { await wait(new Promise(resolve => { delayTimer = setTimeout(resolve, delay) }), controller.signal) }
+            finally { clearTimeout(delayTimer) }
+          }
+        }
+      } finally { releaseTransport?.() }
+    })().catch((error) => { this.#report(error, 'future'); controller.abort(); throw error })
+    block.done.catch(() => {}) // A later block may fail before ordered consumption.
+    return block
+  }
+
+  async #parallel(response, lease, source, selected, controller, reader, cipher, releaseFirstMemory, releaseFirstTransport) {
+    const blocks = new Set()
+    const queue = []
+    const firstEnd = selected.start + BigInt(RANGE_BLOCK_BYTES) - 1n
+    let next = firstEnd + 1n
+    let complete = false
+    let firstPending = true, inFlight = 1
+    const pump = () => {
+      while (!controller.signal.aborted && next <= selected.end && inFlight < RANGE_WINDOW &&
+        blocks.size + (firstPending ? 1 : 0) < lease.aheadBlocks) {
+        const end = next + BigInt(RANGE_BLOCK_BYTES) - 1n
+        const block = this.#bufferBlock(lease, { start: next, end: end < selected.end ? end : selected.end }, controller)
+        next = block.selected.end + 1n
+        blocks.add(block)
+        queue.push(block)
+        inFlight += 1
+        block.done.then(() => { inFlight -= 1; pump() }, () => { inFlight -= 1 })
+      }
+    }
+    const discard = (block) => {
+      block.bytes?.fill(0)
+      block.bytes = null
+      block.release?.()
+      blocks.delete(block)
+    }
+    try {
+      pump()
+      let position = selected.start
+      while (position <= firstEnd) {
+        const part = await this.#timed(reader.read(), controller, 'read')
+        if (part.done || !(part.value instanceof Uint8Array)) throw failure('TRUNCATED')
+        if (BigInt(part.value.length) > firstEnd - position + 1n) throw failure('UPSTREAM_LENGTH')
+        await this.#write(response, source, cipher, part.value, position, controller.signal)
+        position += BigInt(part.value.length)
+      }
+      await this.#endOfRange(reader, controller)
+      firstPending = false
+      inFlight -= 1
+      releaseFirstTransport()
+      releaseFirstMemory()
+      pump()
+      while (queue.length) {
+        const block = queue.shift()
+        await block.done
+        await this.#write(response, source, cipher, block.bytes, block.selected.start, controller.signal)
+        discard(block)
+        pump()
+      }
+      complete = true
+    } finally {
+      if (!complete) controller.abort()
+      await Promise.allSettled([...blocks].map((block) => block.done))
+      for (const block of blocks) discard(block)
+      releaseFirstTransport()
+      releaseFirstMemory()
+    }
+  }
+
   async #serve(request, response, lease, selected, controller) {
     const { signal } = controller
-    let source
-    let upstream
-    let reader
-    let cipher
+    let source, upstream, reader, cipher, borrowed
+    let releaseFirstMemory, releaseFirstTransport
     try {
+      // Full GET has no memo path and retains its original admission ordering.
+      const originalCount = selected.end - selected.start + 1n
+      if (request.method === 'GET' && !selected.partial && originalCount >= PARALLEL_MIN_BYTES) {
+        releaseFirstMemory = await this.#memorySlot(signal)
+        releaseFirstTransport = await this.#transportSlot(signal)
+      }
       source = await this.#resolve(lease, false, controller)
-      let transport = lease.transport?.expiresAt > source.transport.expiresAt
-        ? lease.transport : source.transport
-      if (transport.expiresAt <= this.#now()) transport = await wait(this.#refresh(lease), signal)
+      const stamp = await this.#transport(lease, source, controller)
+      this.#validateMemo()
+      if (signal.aborted) throw aborted()
       if (request.method === 'HEAD' || source.length === 0n) {
+        this.#retireMemo(lease)
         responseHeaders(response, source, selected)
         response.end(); return
       }
-      upstream = await this.#upstream(transport, selected, controller)
-      if (REFRESH_CODES.has(upstream.status)) {
-        await cancelBody(upstream)
-        transport = await wait(this.#refresh(lease), signal)
-        upstream = await this.#upstream(transport, selected, controller)
-      }
-      const encoding = upstream.headers.get('content-encoding')
-      if (encoding && encoding !== 'identity') throw failure('ENCODING')
-      let position
-      const count = selected.end - selected.start + 1n
-      if (upstream.status === 206) {
-        const expected = `bytes ${selected.start}-${selected.end}/${source.upstreamLength}`
-        if (upstream.headers.get('content-range') !== expected) throw failure('UPSTREAM_RANGE')
-        const length = upstream.headers.get('content-length')
-        if (length !== null && uint64(length) !== count) throw failure('UPSTREAM_LENGTH')
-        position = selected.start
-      } else if (upstream.status === 200) {
-        if (uint64(upstream.headers.get('content-length')) !== source.upstreamLength) {
-          throw failure('UPSTREAM_LENGTH')
-        }
-        position = 0n
-      } else throw failure('UPSTREAM_STATUS')
-      if (!upstream.body?.getReader) throw failure('BODY')
+      // Ciphertext reuse is not authorization. Every request reaches the original
+      // identity/expiry/session/transport guards before inspecting this owner.
       if (source.kind === 'mode2') {
         cipher = new WindowsMediaStream(source.key)
         source.key.fill(0)
       }
+      let remaining = selected
+      for (let prefix = 0; selected.partial && prefix < RANGE_WINDOW; prefix += 1) {
+        borrowed = this.#borrowMemo(lease, remaining)
+        if (!borrowed) break
+        if (!response.headersSent) responseHeaders(response, source, selected)
+        await this.#write(response, source, cipher, borrowed.bytes, remaining.start, signal)
+        remaining = { ...selected, start: borrowed.end + 1n }
+        borrowed.release(); borrowed = null
+        if (remaining.start > selected.end) { response.end(); return }
+      }
+      // Local response metadata always describes the original requested range.
+      // A cached prefix never fabricates EOF at its retained-window boundary.
+      const count = remaining.end - remaining.start + 1n
+      const parallel = count >= PARALLEL_MIN_BYTES
+      if (parallel && selected.partial && !response.headersSent) {
+        responseHeaders(response, source, selected)
+        response.flushHeaders()
+      }
+      if (parallel) {
+        releaseFirstMemory ??= await this.#memorySlot(signal)
+        releaseFirstTransport ??= await this.#transportSlot(signal)
+      }
+      const initial = parallel ? { start: remaining.start,
+        end: remaining.start + BigInt(RANGE_BLOCK_BYTES) - 1n } : remaining
+      upstream = await this.#fetchRange(lease, source, initial, controller)
+      let position = this.#position(upstream, source, initial)
+      // Original requested fetch/metadata validation is complete before optional
+      // prefill. It neither waits for credits nor inherits connection-close.
+      if (upstream.status === 206 && !signal.aborted) this.#prefetchMemo(lease,
+        this.#memoWindow(lease, remaining, request.method), stamp, signal)
       reader = upstream.body.getReader()
-      responseHeaders(response, source, selected)
+      if (!response.headersSent) responseHeaders(response, source, selected)
+      if (parallel && upstream.status === 206) {
+        await this.#parallel(response, lease, source, remaining, controller, reader,
+          cipher, releaseFirstMemory, releaseFirstTransport)
+        response.end(); return
+      }
       let delivered = 0n
       while (delivered < count) {
-        const part = await timedWait(reader.read(), controller, this.#timeout)
+        const part = await this.#timed(reader.read(), controller, 'read')
         if (part.done || !(part.value instanceof Uint8Array)) throw failure('TRUNCATED')
         const begin = position
         position += BigInt(part.value.length)
-        if (upstream.status === 206 && position > selected.end + 1n) throw failure('UPSTREAM_LENGTH')
-        const first = selected.start > begin ? selected.start : begin
-        const last = selected.end + 1n < position ? selected.end + 1n : position
+        if (upstream.status === 206 && position > remaining.end + 1n) throw failure('UPSTREAM_LENGTH')
+        const first = remaining.start > begin ? remaining.start : begin
+        const last = remaining.end + 1n < position ? remaining.end + 1n : position
         if (last <= first) continue
         const data = part.value.subarray(Number(first - begin), Number(last - begin))
-        for (let offset = 0; offset < data.length; offset += 65536) {
-          if (signal.aborted) throw aborted()
-          const bytes = Buffer.from(data.subarray(offset, offset + 65536))
-          const absoluteOffset = (first + BigInt(offset)).toString()
-          const transformed = cipher ? cipher.transform(bytes, absoluteOffset) : source.kind === 'mode1'
-            ? source.input.decoder.transform(bytes, absoluteOffset) : bytes
-          if (!(transformed instanceof Uint8Array) || transformed.length !== bytes.length) throw failure('DECODER')
-          if (!response.write(transformed)) await drain(response, signal)
-          delivered += BigInt(bytes.length)
-        }
+        await this.#write(response, source, cipher, data, first, signal)
+        delivered += BigInt(data.length)
       }
       response.end()
+    } catch (error) {
+      // Closing one HTTP connection is not a lease revocation. Owned guard and
+      // media failures retire bytes; normal FFmpeg seek-close only drops borrow.
+      if (diagnosticErrors.get(error)?.code !== 'CANCELLED') this.#retireMemo(lease)
+      throw error
     } finally {
-      cipher?.dispose()
-      await this.#dispose(source)
-      // An unresponsive upstream cancel promise must not retain a request or its key.
-      if (reader) { try { Promise.resolve(reader.cancel()).catch(() => {}) } catch {} }
-      else cancelBody(upstream)
+      try {
+        cipher?.dispose()
+        await this.#dispose(source)
+      } finally {
+        borrowed?.release()
+        if (reader) { try { Promise.resolve(reader.cancel()).catch(() => {}) } catch {} }
+        else cancelBody(upstream)
+        releaseFirstTransport?.()
+        releaseFirstMemory?.()
+      }
     }
   }
 }

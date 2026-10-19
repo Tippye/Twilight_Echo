@@ -1,6 +1,10 @@
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import vm from 'node:vm'
+import ts from 'typescript'
+import { computed, ref } from 'vue'
+import { matchesPlaybackAudioSource } from './audioVisualizerFormatting.ts'
 
 test('now playing lyrics do not surface original/translated source path chips', () => {
   const source = readFileSync(new URL('./PlayingMusic.vue', import.meta.url), 'utf8')
@@ -520,6 +524,76 @@ test('the HiFi signal path reports runtime DSP state instead of the configured m
   assert.match(sidebar, /处理链已开启 · 当前直通旁路/)
   assert.doesNotMatch(sidebar, /<em>\{\{ dspMasterOn \? 'ENGAGED' : 'BYPASS' \}\}<\/em>/)
   assert.match(playerBar, /:dsp-active="playbackInfo\?\.dspActive === true"/)
+})
+
+test('the HiFi signal path shares current source identity checks with its source card', () => {
+  const component = readFileSync(new URL('./PlayerBar.vue', import.meta.url), 'utf8')
+  const script = component.match(/<script setup lang="ts">([\s\S]*?)<\/script>/)?.[1] ?? ''
+  const ast = ts.createSourceFile('bar.ts', script, ts.ScriptTarget.Latest, true)
+  const names = ['currentSourceInfo', 'outputChainText']
+  const code = names
+    .map((name) => {
+      const statement = ast.statements.find(
+        (node) =>
+          ts.isVariableStatement(node) &&
+          node.declarationList.declarations.some(
+            (declaration) => declaration.name.getText(ast) === name
+          )
+      )
+      assert.ok(statement, name)
+      return statement.getText(ast)
+    })
+    .join('\n')
+  const target = 'twilight-media://audio/current'
+  const track = { filePath: 'qq:current', streamUrl: target }
+  const snapshot = {
+    source: 'http://127.0.0.1:2/current',
+    rendererSource: target,
+    nativePlaybackActive: true,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceBitDepth: 24,
+    decodedSampleRate: 48000,
+    actualBackend: 'wasapi'
+  }
+  const context = {
+    computed,
+    currentTrack: ref(track),
+    playbackInfo: ref(snapshot),
+    outputInfo: ref(null),
+    props: { preview: false },
+    matchesPlaybackAudioSource,
+    isDsdSource: () => false,
+    isSacdIsoSource: () => false,
+    compactRate: (rate: number) => `${rate}Hz`,
+    formatDsdSource: () => 'DSD',
+    formatDecodedStage: () => 'float32',
+    compactPcm: () => 'PCM',
+    formatBackendLabel: (value: string) => value,
+    canonicalSourceExact: () => true,
+    canonicalOutputPerfect: () => true,
+    resolvePerfectReasonText: () => ''
+  }
+  vm.createContext(context)
+  vm.runInContext(
+    ts.transpileModule(code, {
+      compilerOptions: { target: ts.ScriptTarget.ES2022 }
+    }).outputText,
+    context
+  )
+  const chain = () => vm.runInContext('outputChainText.value', context) as string
+  assert.match(chain(), /flac 24bit 96000Hz/)
+  context.currentTrack.value = { ...track, streamUrl: 'twilight-media://audio/new-track' }
+  assert.equal(chain(), '', 'an outgoing snapshot cannot label the new track signal path')
+  context.currentTrack.value = track
+  context.playbackInfo.value = { ...snapshot, nativePlaybackActive: false }
+  assert.equal(chain(), '', 'an inactive snapshot is not current native source evidence')
+  context.playbackInfo.value = snapshot
+  assert.match(
+    chain(),
+    /flac 24bit 96000Hz/,
+    'a valid renderer alias need not equal the native URL'
+  )
 })
 
 test('desktop lyrics window exposes concise song metadata on hover', () => {

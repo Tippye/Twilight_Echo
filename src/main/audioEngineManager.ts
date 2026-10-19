@@ -1343,6 +1343,11 @@ export class AudioEngineManager extends EventEmitter {
     return this.playback.stop()
   }
 
+  async revokeProviderSources(sources: readonly string[]): Promise<boolean> {
+    this.autoMixCoordinator?.invalidate('provider_sources_revoked')
+    return this.playback.revokeProviderSources(sources)
+  }
+
   async loadQueue(items: AudioEngineQueueItem[], startIndex = 0): Promise<void> {
     this.autoMixCoordinator?.invalidate('queue_changed')
     return this.playback.loadQueue(items, startIndex)

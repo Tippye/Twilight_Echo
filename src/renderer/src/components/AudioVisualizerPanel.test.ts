@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import vm from 'node:vm'
+import ts from 'typescript'
+import { computed, nextTick, ref, watch } from 'vue'
+import { getTrackSource } from '@renderer/utils/trackSourceIdentity.ts'
 
 import {
   buildVisualizerQualityString,
   formatVisualizerBitrate,
   formatVisualizerSource,
+  matchesPlaybackAudioSource,
+  resolvePlaybackAudioMetadata,
   resolveVisualizerAudioMetadata
 } from './audioVisualizerFormatting.ts'
 
@@ -13,8 +19,88 @@ test('visualizer bitrate formatting converts bps to kbps', () => {
   assert.equal(formatVisualizerBitrate(1737220), '1737 kbps')
 })
 
+test('HiFi and visualizer share current-grant facts through the renderer grant identity', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/current',
+    size: 3_460_301,
+    sampleRate: 44100,
+    bitDepth: 16,
+    bitrate: 128000
+  }
+  const info = {
+    source: 'http://127.0.0.1:1234/audio/current',
+    rendererSource: track.streamUrl,
+    sourceBytes: 88_129_955,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceChannels: 6,
+    sourceBitDepth: 24,
+    bitrate: 2800000
+  }
+  assert.equal(matchesPlaybackAudioSource(track, info), true)
+  assert.deepEqual(resolvePlaybackAudioMetadata(track, info), {
+    format: 'FLAC',
+    sampleRate: 96000,
+    bitDepth: 24,
+    channels: 6,
+    bitrate: 2800000,
+    size: 88_129_955
+  })
+  assert.equal(matchesPlaybackAudioSource(track, { ...info, rendererSource: 'old-grant' }), false)
+  const lossy = resolvePlaybackAudioMetadata(track, {
+    ...info,
+    codec: 'mp3float',
+    sourceBytes: undefined,
+    sourceSampleRate: 0,
+    sourceBitDepth: 32,
+    bitrate: 128000
+  })
+  assert.equal(lossy.sampleRate, undefined)
+  assert.equal(lossy.bitDepth, undefined)
+  assert.equal(lossy.size, undefined)
+})
+
 test('visualizer bitrate formatting keeps existing kbps values', () => {
   assert.equal(formatVisualizerBitrate(320), '320 kbps')
+})
+
+test('shared source facts normalize lowercase local lossless formats for HiFi badges', () => {
+  assert.equal(
+    resolvePlaybackAudioMetadata({
+      id: 'D:/Music/fixture.flac',
+      filePath: 'D:/Music/fixture.flac',
+      fileName: 'fixture.flac',
+      size: 1,
+      format: 'flac'
+    }).format,
+    'FLAC'
+  )
+})
+
+test('inferred transport suffixes can never become source format labels', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture',
+    size: 0,
+    format: '1:1234/audio/public-fixture'
+  }
+  assert.equal(resolvePlaybackAudioMetadata(track).format, '')
+  assert.equal(
+    resolvePlaybackAudioMetadata(track, {
+      source: track.filePath,
+      codec: 'http://127.0.0.1:1234/audio/public-fixture',
+      sourceSampleRate: 48000,
+      sourceBitDepth: 24,
+      bitrate: 1000000
+    }).format,
+    ''
+  )
 })
 
 test('visualizer quality string includes normalized bitrate and source fields', () => {
@@ -209,6 +295,252 @@ test('visualizer preserves local file size and PCM container names', () => {
   assert.equal(metadata.format, 'WAV')
   assert.equal(metadata.filesize, '25.5 MB')
   assert.equal(metadata.bitdepth, '24-bit')
+})
+
+test('remote source facts stay unknown without a current native match, including inactive null', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/current',
+    size: 3_460_301,
+    format: 'flac',
+    sampleRate: 96000,
+    bitDepth: 24,
+    bitrate: 2800000
+  }
+  const stale = {
+    source: 'http://127.0.0.1:1234/audio/old',
+    rendererSource: 'twilight-media://audio/old',
+    sourceBytes: 88_129_955,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceChannels: 2,
+    sourceBitDepth: 24,
+    bitrate: 2800000
+  }
+  for (const info of [undefined, null, stale]) {
+    assert.deepEqual(resolvePlaybackAudioMetadata(track, info), {
+      format: '',
+      sampleRate: undefined,
+      bitDepth: undefined,
+      channels: undefined,
+      bitrate: undefined,
+      size: undefined
+    })
+    const display = resolveVisualizerAudioMetadata(track, info)
+    assert.ok(Object.values(display).every((value) => value === ''))
+  }
+})
+
+test('remote empty or unknown native codec never inherits catalog file extension', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/current',
+    size: 3_460_301,
+    format: 'mp3'
+  }
+  for (const codec of ['', 'unknown', '未知']) {
+    const actual = resolvePlaybackAudioMetadata(track, {
+      source: track.streamUrl,
+      codec,
+      sourceSampleRate: 0,
+      sourceBitDepth: 0,
+      bitrate: 0
+    })
+    assert.equal(actual.format, '')
+    assert.equal(actual.size, undefined)
+  }
+  const local = {
+    ...track,
+    id: 'D:/Music/fixture.mp3',
+    source: 'local',
+    filePath: 'D:/Music/fixture.mp3'
+  }
+  assert.equal(resolvePlaybackAudioMetadata(local).format, 'MP3')
+  assert.equal(resolvePlaybackAudioMetadata(local).size, local.size)
+})
+
+test('HiFi actual source-quality computed shows Unknown for missing remote evidence and keeps native/local badges', () => {
+  const sidebar = readFileSync(new URL('./player-bar/HiFiSidebar.vue', import.meta.url), 'utf8')
+  const start = sidebar.indexOf('const sourceQuality = computed(')
+  const end = sidebar.indexOf('\nconst lyricsSourceLabel', start)
+  assert.ok(start >= 0 && end > start)
+  const actual = ts.transpileModule(`${sidebar.slice(start, end)}\nsourceQuality`, {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }
+  }).outputText
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/current',
+    size: 3_460_301,
+    format: 'flac',
+    sampleRate: 96000,
+    bitDepth: 24,
+    bitrate: 2800000
+  }
+  const native = {
+    source: track.streamUrl,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceBitDepth: 24,
+    sourceChannels: 2,
+    bitrate: 2800000
+  }
+  const evaluate = (currentTrack = track, sourceInfo: typeof native | null = null) => {
+    return vm.runInNewContext(actual, {
+      props: { currentTrack, sourceInfo },
+      computed,
+      getTrackSource,
+      resolvePlaybackAudioMetadata,
+      resolveVisualizerAudioMetadata
+    }).value
+  }
+  for (const info of [null, { ...native, source: 'old-source' }, { ...native, codec: 'unknown' }]) {
+    const value = evaluate(track, info)
+    assert.equal(value.badge, 'Unknown')
+    assert.equal(value.format, '—')
+  }
+  const missing = evaluate(track)
+  assert.equal(
+    evaluate({ ...track, format: 'mp3', sampleRate: 0, bitDepth: 0, bitrate: 0 }).badge,
+    'Unknown',
+    'failed/inactive remote MP3 catalog entry must not regain the default Standard badge'
+  )
+  for (const field of ['rate', 'depth', 'bitrate', 'channels', 'filesize'])
+    assert.equal(missing[field], '—')
+  assert.equal(evaluate({ ...track, fileName: 'catalog.dsf' }).badge, 'Unknown')
+  assert.equal(evaluate(track, native).badge, 'Hi-Res')
+  assert.equal(
+    evaluate(track, {
+      ...native,
+      codec: 'mp3float',
+      sourceSampleRate: 44100,
+      sourceBitDepth: 32,
+      bitrate: 128000
+    }).badge,
+    'Lossy'
+  )
+  assert.equal(
+    evaluate(track, { ...native, codec: 'pcm_s24le', sourceSampleRate: 48000, sourceBitDepth: 16 })
+      .format,
+    'PCM'
+  )
+  for (const codec of ['dsd_lsbf', 'dsd_msbf', 'dsd_lsbf_planar', 'dsd_msbf_planar', 'dst']) {
+    assert.equal(evaluate(track, { ...native, codec, sourceSampleRate: 2822400 }).badge, 'DSD')
+  }
+  const local = {
+    ...track,
+    id: 'D:/Music/fixture.flac',
+    source: 'local',
+    filePath: 'D:/Music/fixture.flac',
+    fileName: 'fixture.flac',
+    sampleRate: 48000,
+    bitDepth: 16
+  }
+  assert.equal(evaluate(local).badge, 'Lossless')
+  assert.equal(evaluate({ ...local, fileName: 'album.sacd', format: '' }).badge, 'DSD')
+})
+
+test('explicit inactive native snapshots cannot authorize remote facts but local fallback and active pause remain valid', () => {
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/current',
+    size: 3_460_301,
+    format: 'flac',
+    sampleRate: 44100,
+    bitDepth: 16,
+    bitrate: 128000
+  }
+  const snapshot = {
+    source: track.streamUrl,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceChannels: 2,
+    sourceBitDepth: 24,
+    bitrate: 2800000,
+    nativePlaybackActive: false
+  }
+  assert.equal(matchesPlaybackAudioSource(track, snapshot), false)
+  const inactive = resolveVisualizerAudioMetadata(track, snapshot)
+  assert.ok(Object.values(inactive).every((value) => value === ''))
+  const active = resolveVisualizerAudioMetadata(track, { ...snapshot, nativePlaybackActive: true })
+  assert.equal(active.format, 'FLAC')
+  assert.equal(active.samplerate, '96.0 kHz')
+  const local = {
+    ...track,
+    id: 'D:/Music/fixture.mp3',
+    source: 'local',
+    filePath: 'D:/Music/fixture.mp3',
+    format: 'mp3'
+  }
+  const fallback = resolveVisualizerAudioMetadata(local, { ...snapshot, source: local.filePath })
+  assert.equal(fallback.format, 'MP3')
+  assert.equal(fallback.samplerate, '44.1 kHz')
+  assert.equal(fallback.bitrate, '128 kbps')
+})
+
+test('actual visualizer metadata watch refreshes the iframe when only native activity changes', async () => {
+  const panel = readFileSync(new URL('./AudioVisualizerPanel.vue', import.meta.url), 'utf8')
+  const start = panel.indexOf('watch(\n  [\n    () => playbackInfo.value?.source,')
+  const end = panel.indexOf('// Post cover URL', start)
+  assert.ok(start >= 0 && end > start)
+  const actual = ts.transpileModule(panel.slice(start, end), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }
+  }).outputText
+  const track = {
+    id: 'qq:fixture',
+    source: 'qq',
+    filePath: 'qq:fixture',
+    fileName: 'fixture.mp3',
+    streamUrl: 'twilight-media://audio/current',
+    size: 1
+  }
+  const playbackInfo = ref({
+    source: track.streamUrl,
+    codec: 'flac',
+    sourceSampleRate: 96000,
+    sourceChannels: 2,
+    sourceBitDepth: 24,
+    bitrate: 2800000,
+    nativePlaybackActive: true
+  })
+  const posts: Array<{
+    kind: string
+    metadata: ReturnType<typeof resolveVisualizerAudioMetadata>
+  }> = []
+  const stop = vm.runInNewContext(actual, {
+    watch,
+    currentTrack: ref(track),
+    playbackInfo,
+    iframeReady: ref(true),
+    pendingTrack: null,
+    resolveVisualizerAudioMetadata,
+    post: (value: (typeof posts)[number]) => posts.push(value)
+  })
+  try {
+    playbackInfo.value.nativePlaybackActive = false
+    await nextTick()
+    assert.equal(posts.length, 1)
+    assert.equal(posts[0].kind, 'technical-metadata')
+    assert.ok(Object.values(posts[0].metadata).every((value) => value === ''))
+    playbackInfo.value.nativePlaybackActive = true
+    await nextTick()
+    assert.equal(posts.length, 2)
+    assert.equal(posts[1].metadata.format, 'FLAC')
+    assert.equal(posts[1].metadata.samplerate, '96.0 kHz')
+  } finally {
+    stop()
+  }
 })
 
 test('audio visualizer renderer avoids random low-frequency texture', () => {

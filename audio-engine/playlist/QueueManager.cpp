@@ -402,6 +402,7 @@ bool QueueManager::loadFromJson(const std::string& queueJson, int startIndex, st
     if (!parsed.valid) {
       if (error) *error = "Invalid CUE range in playback queue";
       items_.clear();
+      rawQueueJson_ = "[]";
       orderPosition_ = -1;
       rebuildPlayOrder();
       return false;

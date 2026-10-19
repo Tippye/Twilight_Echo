@@ -1,6 +1,7 @@
 // Public Windows desktop search DTO observed in qq-windows-anonymous-song-dto-probe.json.
 // Native TrackInfo accepts UInt32 IDs. Persist both IDs in the SDK's retained string ID.
-import { WINDOWS_QUALITY_OPTIONS, windowsQualityCandidates, windowsQualityDefinition, windowsQualityMetadataSize } from './quality.mjs'
+import { WINDOWS_FILE_QUALITY_OPTIONS, windowsQualityCandidates, windowsQualityDefinition,
+  windowsQualityMetadataSize, windowsQualityMediaMid } from './quality.mjs'
 const MID = { test: value => typeof value === 'string' && value.length === 14 && /^[a-zA-Z0-9]+$/.test(value) }
 const decimal = value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
   ? String(value) : typeof value === 'string' && value.length > 0 && !/[^0-9]/.test(value) ? value : null
@@ -72,9 +73,18 @@ export function windowsSongMedia(song) {
     !Number.isInteger(song.type) || song.type < -0x80000000 || song.type > 0x7fffffff) {
     throw new Error('QQ 音乐歌曲详情缺少媒体信息')
   }
-  return { songmid: song.mid, songid: nativeId(song.id), mediaMid: song.file.media_mid,
-    songtype: Number.isInteger(song.type) ? song.type : 0,
-    sizes: { ...Object.fromEntries(WINDOWS_QUALITY_OPTIONS.map(option =>
+  const identity = { songmid: song.mid, songid: nativeId(song.id), mediaMid: song.file.media_mid,
+    songtype: song.type }
+  return { ...identity,
+    // Variant identities belong to this exact TrackInfo record; they cannot be
+    // transferred to a different canonical song or base media identity.
+    qualityMedia: Object.fromEntries(WINDOWS_FILE_QUALITY_OPTIONS.filter(option =>
+      windowsQualityDefinition(option.value).otherMidIndex !== undefined).map(option => {
+      const definition = windowsQualityDefinition(option.value)
+      return [option.value, { ...identity, type: definition.type,
+        otherMediaMid: windowsQualityMediaMid(song.vs, option.value) }]
+    })),
+    sizes: { ...Object.fromEntries(WINDOWS_FILE_QUALITY_OPTIONS.map(option =>
       [windowsQualityDefinition(option.value).sizeKey, windowsQualityMetadataSize(song.file, option.value)])),
       ogg_192: count(song.file.size_192ogg) },
     title: text(song.name), singerName: Array.isArray(song.singer)
@@ -84,7 +94,7 @@ export function windowsSongMedia(song) {
 
 export function windowsTrackPlaybackQualities(song) {
   const media = windowsSongMedia(song)
-  return { trackId: `qq:${media.songmid}:${media.songid}`, options: windowsQualityCandidates(song.file) }
+  return { trackId: `qq:${media.songmid}:${media.songid}`, options: windowsQualityCandidates(song.file, song.vs) }
 }
 
 /** Provider policy for SDK offset pagination, independent of native enum mapping. */

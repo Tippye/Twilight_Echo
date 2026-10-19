@@ -68,10 +68,12 @@ function fallbackHarness({ sizes = {}, outcome = () => 'success', onAttempt } = 
     transform.dispose()
     return [quality, cipher]
   }))
-  const attempts = [], mediaRequests = [], writes = []
+  const attempts = [], mediaRequests = [], writes = [], apiRequests = []
   let details = 0
   const h = harness({ onRequest: async (request, key) => {
     let data = session
+    apiRequests.push(key)
+    assert.notEqual(key, 'VipLogin.VipLoginInter.vip_login_base')
     if (key === 'Protocol_UpdateSongInfo') {
       details++
       assert.deepEqual(request[key].param, { ids: [97773], types: [0], ctx: 0, scene: 0 })
@@ -107,8 +109,70 @@ function fallbackHarness({ sizes = {}, outcome = () => 'success', onAttempt } = 
   const set = h.context.settings.set
   h.context.settings.set = async (key, value) => { writes.push(key); return set(key, value) }
   h.storage.set('windows-auth', session)
-  return { ...h, get provider() { return h.provider }, attempts, mediaRequests, plain, writes, get details() { return details } }
+  return { ...h, get provider() { return h.provider }, attempts, mediaRequests, plain, writes, apiRequests, get details() { return details } }
 }
+
+test('the registered Windows provider writes only safe proxy failure records to its normal logger', { skip: process.platform !== 'win32' }, async () => {
+  const original = globalThis.fetch, messages = [], h = fallbackHarness()
+  let fail = false
+  h.context.logger = { warn: message => messages.push(message) }
+  globalThis.fetch = (url, options) => fail && !options.body
+    ? Promise.resolve(new Response(null, { status: 416 })) : h.fetch(url, options)
+  try {
+    await activate(h.context)
+    const result = await h.provider.getPlaybackUrl({ id: 'qq:0039MnYb0qxYhV:97773' }, { quality: 'flac' }, {})
+    fail = true
+    assert.equal((await original(result.streamUrl)).status, 502)
+    assert.deepEqual(messages, ['QQ audio proxy failure: {"phase":"upstream","code":"UPSTREAM_STATUS","httpStatus":416}'])
+    assert.equal(/https?:|vkey|PUBLIC|sourceId|fingerprint|session|access_token/.test(messages.join('')), false)
+  } finally { await deactivate(); globalThis.fetch = original }
+})
+
+test('retired composite selections use the same recording in ordinary128 without any effect or VIP RPC', { skip: process.platform !== 'win32' }, async () => {
+  const original = globalThis.fetch
+  for (const retired of ['excellent', 'excellentSpatial']) {
+    for (const persisted of [false, true]) {
+      const h = fallbackHarness()
+      if (persisted) h.storage.set('windows-playback-quality', retired)
+      globalThis.fetch = h.fetch
+      try {
+        await activate(h.context)
+        const result = await h.provider.getPlaybackUrl({ id: 'qq:0039MnYb0qxYhV:97773' },
+          persisted ? {} : { quality: retired }, {})
+        assert.deepEqual(h.attempts, ['128'])
+        assert.equal(h.details, 1)
+        assert.equal(result.providerSource.actualQuality, '128')
+        assert.equal(Object.hasOwn(result.providerSource, 'effect'), false)
+        assert.equal(result.providerSource.bytes, h.plain['128'].length)
+        assert.equal(h.apiRequests.includes('VipLogin.VipLoginInter.vip_login_base'), false)
+        if (persisted) {
+          assert.equal(h.storage.get('windows-playback-quality'), '128')
+          assert.equal((await h.provider.getPlaybackQuality({})).quality, '128')
+          assert.equal(h.writes.filter(key => key === 'windows-playback-quality').length, 1)
+        }
+      } finally { await deactivate(); globalThis.fetch = original }
+    }
+  }
+})
+
+test('read-ahead duration hint belongs to the freshly fetched TrackInfo rather than renderer fields or quality sizes', { skip: process.platform !== 'win32' }, async () => {
+  const originalFetch = globalThis.fetch, originalOpen = WindowsAudioProxy.prototype.open
+  const hints = [], h = fallbackHarness({ sizes: { hires: 123456789 } })
+  WindowsAudioProxy.prototype.open = function(options) {
+    hints.push(options.durationSeconds)
+    return originalOpen.call(this, options)
+  }
+  globalThis.fetch = h.fetch
+  try {
+    await activate(h.context)
+    const result = await h.provider.getPlaybackUrl({ id: 'qq:0039MnYb0qxYhV:97773', duration: 1, interval: 1 },
+      { quality: 'hires', durationSeconds: 1 }, {})
+    assert.deepEqual(hints, [fixture.publicSongs[0].interval])
+    assert.equal(h.details, 1)
+    assert.equal(result.providerSource.bytes, 2048)
+    assert.equal(Object.hasOwn(result.providerSource, 'durationSeconds'), false)
+  } finally { await deactivate(); globalThis.fetch = originalFetch; WindowsAudioProxy.prototype.open = originalOpen }
+})
 
 test('same-track spatial fallback tries each candidate once, preserves preference, and binds one real loopback source', { skip: process.platform !== 'win32' }, async () => {
   const original = globalThis.fetch

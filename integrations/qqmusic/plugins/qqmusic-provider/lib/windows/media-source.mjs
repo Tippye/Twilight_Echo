@@ -20,11 +20,13 @@ const HEADERS = Object.freeze({ 'User-Agent': WINDOWS_USER_AGENT, Accept: '*/*' 
 const failureCodes = new Set(['SOURCE', 'LOGIN', 'DEVICE', 'LENGTH', 'URL', 'ORIGIN',
   'VKEY_RESPONSE', 'VKEY_RETCODE', 'VKEY_ITEMS', 'VKEY_FILENAME', 'VKEY_SONGMID', 'VKEY_EMPTY',
   'REDIRECT', 'ENCODING', 'BODY', 'TRUNCATED', 'RANGE', 'HEADER', 'IDENTITY', 'KEY',
-  'CONFIG', 'QUALITY', 'QUALITY_UNAVAILABLE', 'SONG', 'TIME', 'SESSION', 'CLOSED', 'CONTAINER'])
+  'CONFIG', 'QUALITY', 'QUALITY_UNAVAILABLE', 'QUALITY_IDENTITY', 'SONG', 'TIME', 'SESSION', 'CLOSED', 'CONTAINER'])
 const ownedFailureCodes = new WeakMap()
+const ownedCancellations = new WeakSet()
 
 function failureMessage(code, phase) {
   if (code === 'QUALITY_UNAVAILABLE') return '当前歌曲未提供所选音质'
+  if (code === 'QUALITY_IDENTITY') return '当前歌曲缺少所选音质的媒体标识'
   if (code === 'LOGIN') return '请先使用手机 QQ 扫码登录'
   if (code === 'VKEY_EMPTY') return 'QQ 音乐未返回所选音质的播放地址'
   if (Number.isSafeInteger(code)) return phase === 'http' ? `QQ 音乐音频请求失败（HTTP ${code}）`
@@ -52,6 +54,7 @@ export function windowsPlaybackFailureDetails(error) {
 function aborted() {
   const error = new Error('QQ 音乐播放源请求已取消')
   error.name = 'AbortError'
+  ownedCancellations.add(error)
   return error
 }
 function check(signal) { if (signal.aborted) throw aborted() }
@@ -271,8 +274,18 @@ export function createWindowsPlaybackResolver({ client, getDevice, song, quality
   if (song.sizes?.[selected.sizeKey] === 0) throw failure('QUALITY_UNAVAILABLE', 'source', true)
   const descriptor = { songmid: song.songmid, songid: BigInt(song.songid).toString(),
     mediaMid: song.mediaMid, songtype: song.songtype }
+  let otherMediaMid = ''
+  if (selected.otherMidIndex !== undefined) {
+    const variant = song.qualityMedia?.[quality]
+    if (!variant || typeof variant.otherMediaMid !== 'string' || variant.otherMediaMid.length !== 14 ||
+      !MID.test(variant.otherMediaMid)) throw failure('QUALITY_IDENTITY', 'source', true)
+    if (variant.songmid !== descriptor.songmid || variant.songid !== descriptor.songid ||
+      variant.songtype !== descriptor.songtype || variant.mediaMid !== descriptor.mediaMid ||
+      variant.type !== selected.type) throw failure('SONG')
+    otherMediaMid = variant.otherMediaMid
+  }
   const filename = buildWindowsMediaFilename({ mediaMid: descriptor.mediaMid, type: selected.type,
-    sourceMode: 1, encrypted: selected.encrypted, suffix: '', auxiliaryFlag: false })
+    sourceMode: 1, encrypted: selected.encrypted, otherMediaMid, auxiliaryFlag: false })
   let closed = false
   let cache = null
   let queue = Promise.resolve()
@@ -292,8 +305,10 @@ export function createWindowsPlaybackResolver({ client, getDevice, song, quality
     check(signal)
     if (closed) throw failure('CLOSED')
   }
-  async function run(refresh, signal) {
+  async function run(refresh, signal, callerCancelled) {
     let observed
+    const previous = cache
+    let preserveCanceledCache = !refresh
     let phase = 'source'
     const qualityOwner = Symbol()
     try {
@@ -302,14 +317,17 @@ export function createWindowsPlaybackResolver({ client, getDevice, song, quality
       if (await wait(client.checkLogin({ signal }), signal) !== true) { clear(); throw failure('LOGIN') }
       const session = await wait(client.getSession(), signal)
       const fingerprint = sessionFingerprint(session)
+      if (previous && previous.fingerprint !== fingerprint) preserveCanceledCache = false
       const device = await wait(Promise.resolve().then(getDevice), signal)
       const guid = deviceGuid(device)
+      if (previous && previous.guid !== guid) preserveCanceledCache = false
       check(signal)
       const started = time()
       if (!refresh && cache && cache.expiresAt > started && cache.fingerprint === fingerprint && cache.guid === guid) {
         await confirmCurrent(fingerprint, guid, signal)
         return owned(cache)
       }
+      preserveCanceledCache = false
       // downloadfrom0 and musicfile=filename were anonymously accepted; they are caller choices.
       const call = buildWindowsVkeyCall({ songs: { filename: [filename], musicfile: [filename],
         songmid: [descriptor.songmid], songtype: [descriptor.songtype] }, guid,
@@ -330,7 +348,16 @@ export function createWindowsPlaybackResolver({ client, getDevice, song, quality
       observed = null
       return owned(cache)
     } catch (error) {
-      clear()
+      // Closing one old HTTP Range is not evidence that this lease's existing
+      // transport became invalid. Preserve only our own caller cancellation,
+      // before any observed invalidation; the next read still revalidates all
+      // authorization and the original TTL. Timeout/dispose/refresh never qualify.
+      let keep = false
+      if (preserveCanceledCache && previous && cache === previous && !closed &&
+        callerCancelled() && ownedCancellations.has(error)) {
+        try { keep = previous.expiresAt > time() } catch {}
+      }
+      if (!keep) clear()
       throw normalizedError(error, signal, phase, qualityOwner)
     } finally { observed?.key?.fill(0) }
   }
@@ -342,13 +369,16 @@ export function createWindowsPlaybackResolver({ client, getDevice, song, quality
         return Promise.reject(failure('CONFIG'))
       }
       const controller = new AbortController()
-      const cancel = () => controller.abort()
+      let canceledByCaller = false
+      const cancel = () => {
+        if (!controller.signal.aborted) { canceledByCaller = true; controller.abort() }
+      }
       if (signal?.aborted) cancel()
       else signal?.addEventListener('abort', cancel, { once: true })
-      const timer = setTimeout(cancel, TIMEOUT_MS)
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
       timer.unref?.()
       active.add(controller)
-      const task = queue.then(() => run(refresh, controller.signal)).finally(() => {
+      const task = queue.then(() => run(refresh, controller.signal, () => canceledByCaller)).finally(() => {
         clearTimeout(timer)
         signal?.removeEventListener('abort', cancel)
         active.delete(controller)

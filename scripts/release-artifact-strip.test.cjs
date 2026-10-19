@@ -6,6 +6,7 @@ const test = require('node:test')
 
 const {
   NATIVE_RUNTIME_FILES,
+  REQUIRED_NATIVE_RUNTIME_FILES,
   clearPeDebugDirectory,
   clearPeSymbolTablePointer,
   executableCandidates,

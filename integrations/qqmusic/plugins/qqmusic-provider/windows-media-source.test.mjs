@@ -5,6 +5,7 @@ import { request } from 'node:http'
 import { createWindowsPlaybackResolver, windowsPlaybackFailureDetails, WINDOWS_MEDIA_ALLOWED_ORIGINS } from './lib/windows/media-source.mjs'
 import { WindowsMediaStream } from './lib/windows/media-stream.mjs'
 import { WindowsAudioProxy } from './lib/windows/audio-proxy.mjs'
+import { windowsSongMedia } from './lib/windows/tracks.mjs'
 
 // Immutable original-DLL vectors are public synthetic seeds, never account Ekeys.
 const vectors = JSON.parse(readFileSync(new URL('./test/fixtures/windows-ekey-native-v1.json', import.meta.url))).vectors
@@ -15,6 +16,13 @@ const origin = WINDOWS_MEDIA_ALLOWED_ORIGINS[0]
 const song = { songmid: '0039MnYb0qxYhV', songid: '97773', mediaMid: '003Qui1q2u1Zho', songtype: 0 }
 const device = { guid: '0123456789abcdef0123456789abcdef' }
 const session = { musicid: '42', loginType: 2, access_token: 'public-synthetic-token' }
+function premiumSong() {
+  const vs = Array(30).fill('')
+  vs[3] = '003xkcSf3NBRlX'
+  vs[29] = '004astzo2Y5HDU'
+  return windowsSongMedia({ mid: song.songmid, id: Number(song.songid), type: song.songtype,
+    file: { media_mid: song.mediaMid, size_new: Array(16).fill(4096) }, vs })
+}
 function mp3() { const bytes = Buffer.alloc(2048, 19); bytes.write('ID3'); bytes[3] = 4; bytes.fill(0, 6, 10); return bytes }
 function flac() { const bytes = Buffer.alloc(2048, 19); bytes.write('fLaC'); bytes[4] = 0; bytes.writeUIntBE(34, 5, 3); return bytes }
 function mp4() { const bytes = Buffer.alloc(2048, 19); bytes.writeUInt32BE(16, 0); bytes.write('ftypM4A ', 4); return bytes }
@@ -180,9 +188,11 @@ test('plain MP3 uses verified session, native call, real length and bounded CDN 
 test('explicit quality mappings preserve their native filename and encrypted service', async t => {
   for (const [quality, prefix, mode] of [['128', 'M500', 'plain'], ['high', 'M800', 'plain'], ['320', 'M800', 'plain'],
     ['flac', 'F0M0', 'mode2'], ['lossless', 'F0M0', 'mode2'], ['surround', 'D0MA', 'mode2'],
-    ['hires', 'RSM1', 'mode2'], ['dolby', 'D0M1', 'mode2']]) {
+    ['hires', 'RSM1', 'mode2'], ['dolby', 'D0M1', 'mode2'],
+    ['master', 'AIM0', 'mode2'], ['galaxy', 'Q0M0', 'mode2']]) {
     const requests = []
-    const h = harness(t, { quality, fetch: serving(mode === 'plain' ? mp3() : encrypted(quality === 'dolby' ? mp4() : flac()), requests) })
+    const h = harness(t, { quality, song: premiumSong(),
+      fetch: serving(mode === 'plain' ? mp3() : encrypted(quality === 'dolby' ? mp4() : flac()), requests) })
     const source = await h.resolver.resolve()
     assert.ok(h.calls[0].call.param.filename[0].startsWith(prefix))
     assert.equal(h.calls[0].call.module, mode === 'plain' ? 'music.vkey.GetVkey' : 'music.vkey.GetEVkey')
@@ -192,6 +202,66 @@ test('explicit quality mappings preserve their native filename and encrypted ser
   for (const quality of ['unverified-ai', 'auto', 'custom', '', null, 960]) {
     assert.throws(() => harness(t, { quality }), error => safeError(error, 'QUALITY'))
   }
+})
+
+test('premium native OtherMID replaces the filename identity while Vkey still binds the canonical song MID', async t => {
+  for (const [quality, expected] of [['master', 'AIM0003xkcSf3NBRlX.mflac'],
+    ['galaxy', 'Q0M0004astzo2Y5HDU.mflac']]) {
+    const descriptor = premiumSong()
+    const h = harness(t, { quality, song: descriptor, fetch: serving(encrypted(flac()), []) })
+    // Neither nested DTO mutation nor a transport refresh can change the
+    // resolver's selected filename identity after construction.
+    descriptor.qualityMedia[quality].otherMediaMid = '00000000000001'
+    descriptor.qualityMedia[quality].songmid = '00000000000002'
+    descriptor.mediaMid = '00000000000003'
+    const first = await h.resolver.resolve()
+    const refresh = await h.resolver.resolve({ refresh: true })
+    assert.deepEqual(h.calls.map(call => call.call.param.filename), [[expected], [expected]])
+    for (const { call } of h.calls) {
+      assert.deepEqual(call.param.musicfile, [expected])
+      assert.deepEqual(call.param.songmid, [song.songmid])
+      assert.deepEqual(call.param.songtype, [song.songtype])
+      assert.equal(call.module, 'music.vkey.GetEVkey')
+    }
+    assert.equal(first.sourceId, refresh.sourceId)
+    first.decoder.key.fill(0); refresh.decoder.key.fill(0)
+  }
+})
+
+test('premium identities must belong to this exact TrackInfo; missing identities never fall back to the base MID', async t => {
+  const requests = []
+  const setup = harness(t, { fetch: serving(encrypted(flac()), requests) })
+  for (const quality of ['master', 'galaxy']) {
+    for (const bad of [undefined, null, {}, { otherMediaMid: '' }, { otherMediaMid: '003xkcSf3NBRlX\n' }]) {
+      const descriptor = premiumSong()
+      descriptor.qualityMedia[quality] = bad
+      assert.throws(() => createWindowsPlaybackResolver({ client: setup.client, getDevice: () => device,
+        song: descriptor, quality }), error => safeError(error, 'QUALITY_IDENTITY') &&
+          windowsPlaybackFailureDetails(error).recoverableQuality === true)
+    }
+    for (const change of [{ songmid: '00000000000001' }, { songid: '97800' }, { songtype: 1 },
+      { mediaMid: '00000000000002' }, { type: 16 }]) {
+      const descriptor = premiumSong()
+      Object.assign(descriptor.qualityMedia[quality], change)
+      assert.throws(() => createWindowsPlaybackResolver({ client: setup.client, getDevice: () => device,
+        song: descriptor, quality }), error => safeError(error, 'SONG') &&
+          windowsPlaybackFailureDetails(error).recoverableQuality === false)
+    }
+    for (const size of [undefined, null]) {
+      const descriptor = premiumSong()
+      descriptor.sizes[quality] = size
+      const h = harness(t, { quality, song: descriptor, fetch: serving(encrypted(flac()), []) })
+      const source = await h.resolver.resolve()
+      assert.equal(h.calls.length, 1)
+      source.decoder.key.fill(0)
+    }
+    const descriptor = premiumSong()
+    descriptor.sizes[quality] = 0
+    assert.throws(() => createWindowsPlaybackResolver({ client: setup.client, getDevice: () => device,
+      song: descriptor, quality }), error => safeError(error, 'QUALITY_UNAVAILABLE'))
+  }
+  assert.equal(setup.calls.length, 0)
+  assert.equal(requests.length, 0)
 })
 
 test('explicit absent formats fail before issuer or media requests while unknown metadata remains testable', async t => {
@@ -256,6 +326,104 @@ test('each resolve transfers an independent key while cache still rechecks login
   assert.deepEqual(h.events, ['check', 'session', 'vkey', 'check', 'session',
     'check', 'session', 'check', 'session'])
   second.decoder.key.fill(0)
+})
+
+test('pure caller cancellation retains a warm source for fresh validation without repeating Vkey or preflight', async t => {
+  for (const phase of ['preaborted', 'cached-confirm']) {
+    const requests = [], h = harness(t, { quality: 'lossless', fetch: serving(encrypted(flac()), requests) })
+    const first = await h.resolver.resolve()
+    first.decoder.key.fill(0)
+    const controller = new AbortController(), entered = deferred(), release = deferred()
+    let checks = 0
+    h.client.checkLogin = async () => {
+      if (++checks === 2) { entered.resolve(); await release.promise }
+      return true
+    }
+    if (phase === 'preaborted') controller.abort()
+    const pending = h.resolver.resolve({ signal: controller.signal })
+    if (phase === 'cached-confirm') { await entered.promise; controller.abort(); release.resolve() }
+    await assert.rejects(pending, { name: 'AbortError' })
+    h.client.checkLogin = async () => true
+    const next = await h.resolver.resolve()
+    assert.equal(next.sourceId, first.sourceId)
+    assert.deepEqual(next.decoder.key, internalKey)
+    next.decoder.key.fill(0)
+    assert.equal(h.calls.length, 1, phase)
+    assert.equal(requests.length, 3, phase)
+  }
+})
+
+test('caller cancellation never preserves forced refresh, expired or observed changed authorization', async t => {
+  for (const variant of ['refresh', 'expired', 'session', 'device', 'unknown-abort']) {
+    let clock = 1000, token = session.access_token, guid = device.guid
+    const entered = deferred(), release = deferred()
+    let holdDevice = false, holdIssuer = false
+    const h = harness(t, { now: () => clock,
+      getDevice: async () => { if (holdDevice) { entered.resolve(); await release.promise }; return { guid } },
+      client: { getSession: async () => ({ ...session, access_token: token }) } })
+    await h.resolver.resolve()
+    const controller = new AbortController()
+    if (variant === 'refresh' || variant === 'expired') {
+      if (variant === 'expired') clock = 61000
+      controller.abort()
+    }
+    if (variant === 'session') { token = 'public-replaced'; holdDevice = true }
+    if (variant === 'device') {
+      guid = 'public-replaced-guid'; holdIssuer = true
+      const issue = h.client.request
+      h.client.request = async (...args) => { if (holdIssuer) { entered.resolve(); await release.promise }; return issue(...args) }
+    }
+    if (variant === 'unknown-abort') h.client.checkLogin = async () => { throw Object.assign(Error('PRIVATE'), { name: 'AbortError' }) }
+    const pending = h.resolver.resolve({ signal: controller.signal, refresh: variant === 'refresh' })
+    if (variant === 'session' || variant === 'device') { await entered.promise; controller.abort(); release.resolve() }
+    await assert.rejects(pending, { name: 'AbortError' })
+    holdDevice = false; holdIssuer = false; token = session.access_token; guid = device.guid; clock = 1000
+    h.client.checkLogin = async () => true
+    const before = h.calls.length
+    await h.resolver.resolve()
+    assert.equal(h.calls.length, before + 1, variant)
+  }
+})
+
+test('internal resolver timeout wins over a later caller abort and still clears cached authorization', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  t.after(() => t.mock.timers.reset())
+  const h = harness(t), entered = deferred(), release = deferred()
+  await h.resolver.resolve()
+  h.client.checkLogin = async () => { entered.resolve(); await release.promise; return true }
+  const controller = new AbortController(), pending = h.resolver.resolve({ signal: controller.signal })
+  await entered.promise
+  t.mock.timers.tick(10000)
+  controller.abort()
+  release.resolve()
+  await assert.rejects(pending, { name: 'AbortError' })
+  h.client.checkLogin = async () => true
+  await h.resolver.resolve()
+  assert.equal(h.calls.length, 2)
+})
+
+test('an observed unknown or owned failure still invalidates cache when caller abort follows its rejection', async t => {
+  for (const variant of ['unknown', 'owned-login']) {
+    const h = harness(t), entered = deferred()
+    let rejectCheck
+    const pendingCheck = new Promise((_, reject) => { rejectCheck = reject })
+    let error = Error('PRIVATE_UNKNOWN')
+    if (variant === 'owned-login') {
+      h.client.checkLogin = async () => false
+      try { await h.resolver.resolve() } catch (failure) { error = failure }
+      h.client.checkLogin = async () => true
+    }
+    await h.resolver.resolve()
+    h.client.checkLogin = () => { entered.resolve(); return pendingCheck }
+    const controller = new AbortController(), pending = h.resolver.resolve({ signal: controller.signal })
+    await entered.promise
+    rejectCheck(error)
+    queueMicrotask(() => controller.abort())
+    await assert.rejects(pending)
+    h.client.checkLogin = async () => true
+    await h.resolver.resolve()
+    assert.equal(h.calls.length, 2, variant)
+  }
 })
 
 test('refresh revalidates CDN identity; TTL and session changes invalidate transport cache', async t => {

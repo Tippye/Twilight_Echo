@@ -10,9 +10,10 @@ const {
   writeFileSync
 } = require('node:fs')
 const { tmpdir } = require('node:os')
-const { join, resolve } = require('node:path')
+const { basename, join, resolve } = require('node:path')
 const {
   NATIVE_RUNTIME_FILES,
+  RETIRED_NATIVE_RUNTIME_FILES,
   stripNativeFile: defaultStripNativeFile
 } = require('./release-artifact-strip.cjs')
 const { createAudioCapabilityManifest } = require('./generate-audio-capability-manifest.cjs')
@@ -70,7 +71,10 @@ function preparePackagedAudioStaging(
   for (const directory of new Set([sourceDir, isolatedDir].filter(Boolean))) {
     for (const name of readdirSync(directory)) {
       if (!NATIVE_RUNTIME_FILES.includes(name)) {
-        cpSync(join(directory, name), join(nativeDir, name), { recursive: true })
+        cpSync(join(directory, name), join(nativeDir, name), {
+          recursive: true,
+          filter: (source) => !RETIRED_NATIVE_RUNTIME_FILES.includes(basename(source).toLowerCase())
+        })
       }
     }
   }

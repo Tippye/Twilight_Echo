@@ -2,6 +2,30 @@
 
 本文记录当前 `PlaybackInfo`、`OutputInfo`、Capabilities、`sourceExact` / `outputPerfect` 与 Recovery diagnostics 的对外语义。
 
+## 网络读取与下一首准备
+
+HTTP 音源的打开、探测和完整首次定位（包括精确定位的 preroll 读取）共享同一 15 秒启动绝对期限，各阶段不会重新获得预算。运行中的 seek 同时受 5 秒实际读取字节无进展期限和 15 秒绝对期限约束；字节推进只更新前者，不能延长后者。普通播放读取仍使用 15 秒字节无进展期限，没有整首累计期限；本地文件不新增这些网络限制。普通网络读取响应停止取消，已有取消优先于网络期限检查。非 EOF 读取错误走播放失败路径，不作为自然播完自动推进队列。取消后的 decoder restart 仅清除取消产生的错误；它不保证被中断的压缩包逐帧连续，需要精确定位时应重新 seek。
+
+非超时、非取消的网络失败保留 `network_<open|probe|read|seek>_failed` 前缀，并可附带 `[averror=-N]` 数值原因；不拼接可能包含源地址的 FFmpeg 错误文本。该数值不能单独确定 HTTP 状态。`network_io_timeout` 和 `decode_cancelled` 仍使用原来的精确字符串。
+
+下一首的打开、探测和预解码在单个可取消的准备任务中执行。`preloadNext()` 返回 true 表示接受准备意图，完成状态以 `preloadReady` 为准；当前歌曲启动和 Play ACK 不等待下一首。停止、换曲、清空或修改下一项、seek 和输出格式变化会取消或重新准备，迟到结果必须匹配当前源和准备版本后才能发布。普通 DSP 参数更新保留仍然有效的准备意图。
+
+`gaplessBlockedReason=format_mismatch` 沿用既有的准备失败状态，也可能由打开音源或准备 DSP 失败产生；不能仅凭该字段判断源编码确实不兼容，也不能用它决定音质降级。
+
+音频服务 RPC 的调用方超时与原生请求完成分开处理：慢命令超时后，仍保留原生在途记录，直到 ACK、退出或一次有界完成宽限到期。状态轮询不会延长宽限，迟到 ACK 只释放在途记录，不覆盖较新的播放状态。
+
+服务模式的 `audioEngine.seek()` 等待原生 Seek ACK，并读取同一音源的实际位置后才完成和发布进度。同一歌曲在途跳转后的暂停/继续等待该跳转完成，再发送 Pause；连续跳转只保留正在执行的一次和最新等待意图。换曲、停止、服务重启或更新的跳转使旧结果失效。失败不发布请求位置，也不自动重试 toggle；调用方超时后的继续请求保持拒绝，直到新的显式跳转或播放动作替换失败状态，避免把继续请求排到完成时间未知的原生操作后面。
+
+Renderer 的 session clock 在 seek admission 保留当前观察位置，并进入既有 epoch；实际 ACK 和当前音源 readback 确认后，再权威更新位置及该 epoch，不能让普通防回退平滑规则拒绝已确认的后退定位。load、queue、source、entry 或 epoch 变化后，旧 ACK/readback 不能覆盖新状态。成功 native Play 可进行一次当前 owner 的 readback 刷新实际格式；可选刷新失败不把成功的 Play 改判失败，source 匹配要求保持不变。
+
+`eof-reached` 只有布尔值 `true` 表示播完；`false` 用于清除状态，缺失值或其他值不触发切歌。显式 Stop 的原生响应尚未完成时，不从其中间 `stopped` 快照推断自然 EOF；迟到旧响应不能覆盖更新的播放操作。
+
+自然 EOF 后的 `stopped` 与手动停止不同。当前音源真正播完且其来源/队列归属仍有效时，`TAE_Seek` 在本次慢操作中重新打开、定位并准备为 `paused`，成功 ACK 后的实际位置必须反映目标；后续 Pause 只切换这个已准备的流，不把本次 EOF 恢复的 HTTP open/probe 推迟到继续播放。新建未播放的引擎、手动 Stop 或队列替换后失效的旧 EOF，不具备此恢复资格；其 Stopped Seek 返回 `TAE_RESULT_NOT_INITIALIZED`（2），不再返回位置未改变的假成功。恢复尝试失败时照实返回原错误，且不保留 EOF 恢复资格，后续 Stopped Seek 同样返回 NOT_INITIALIZED。网络/处理/后端错误不能通过消费 EOF 掩盖；更换队列或迟到旧事件不能恢复已失效的来源。
+
+服务端 `Pause` 的调用期限按同一次 admission 决策分类，所选类别同时控制 caller deadline 和原生在途归属。默认普通期限为1.5秒；只有新鲜、权威的 native `stopped`，或 `paused` 且 `outputReleased=false`、`exclusive=false`、`accessMode=shared`，并且没有已知慢原生前驱时，才沿用此期限。未知、Playing、独占、已释放输出或排在慢请求后的 Pause 使用既有20秒慢期限及超时后的单次20秒完成宽限，其他命令的期限不因此放宽。Playing 的旧共享快照不能证明仍可走快路径，因为 native clock 自动换曲可在没有新 IPC 的情况下进入不同输出路线。
+
+该分类使用独立于展示缓存的小型 native 观察。任何状态变更命令 admission 后使观察失效；GetPlaybackInfo 在请求 admission 捕获变更版本，旧回复或与未完成状态变更重叠的回复不能恢复快路径资格。退出、重启和销毁同样失效，本地 synthetic `stopped` 回退不算 native 观察。已超时但仍在原生执行的慢查询也算前驱；后续 Pause 或轮询不能延长它原有的完成宽限。此边界不保证外部热拔插或任意驱动阻塞都能由缓存预知。
+
 ## 暂停淡出
 
 `TAE_Pause` / `audioEngine.togglePause()` 暂停 PCM 播放时，先在音频回调中执行 200 毫秒线性淡出，再提交 paused 状态；继续播放仍使用原来的软件音量。淡出是独立的临时增益，不修改或持久化 `volume`，支持 Float32、整数 PCM 直通及 PCM 转 DSD 调制前的 PCM。独占设备的自动释放发生在淡出结束之后。回调停止或设备异常时，控制线程最多等待 300 毫秒后完成暂停，避免无限等待。
@@ -20,7 +44,7 @@
 
 暂停释放后 `state` 仍为 `paused`，保留曲目、队列项身份、CUE 区间与进度。`outputInfo.outputReleased=true` 表示设备已释放，此时 `exclusive`、`outputPerfect` 和 `pcmPassthrough` 都为 false，`accessMode=released`，`perfectReasonCode=output_released`；保留的格式和设备诊断属于上一次播放观察，不能作为当前设备已打开的证明。旧引擎缺少该可选字段时不推断已释放。
 
-释放期间的 seek、设备、buffer、DSP 和音量调整只更新下一次播放的配置。暂停时开启自动启停立即释放；关闭后等用户继续播放再获取设备。恢复失败返回现有 Pause 调用的错误，保持暂停、原进度和独占偏好，不自动重试或改用共享输出；直播继续播放会重新连接当前流。释放态的输出事务 ACK 校验请求后端、设备及暂停状态，实际设备身份在下一次打开时重新验证。音频服务崩溃后的恢复顺序与手动续播要求不变。
+仍处于 `paused` 释放态期间的 seek、设备、buffer、DSP 和音量调整沿用延迟准备，只更新下一次播放的配置；它不同于上文自然 EOF 后 Stopped Seek 在该慢调用中完成准备的路径。暂停时开启自动启停立即释放；关闭后等用户继续播放再获取设备。释放态恢复可能重新打开 HTTP/设备，因此其服务 Pause 归慢类别。恢复失败返回现有 Pause 调用的错误，保持暂停、原进度和独占偏好，不自动重试或改用共享输出；直播继续播放会重新连接当前流。释放态的输出事务 ACK 校验请求后端、设备及暂停状态，实际设备身份在下一次打开时重新验证。音频服务崩溃后的恢复顺序与手动续播要求不变。
 
 关键字段：
 
@@ -55,6 +79,12 @@
 - `gaplessBlockedReason`：gapless 路径阻塞原因；空串表示未阻塞。取值：`disabled`（意图关或内部门控）、`dsd_path`（DoP/Native DSD）、`crossfade`（交叉淡入关闭 true gapless）、`format_mismatch`（相邻曲目无法在当前输出格式下 promote）。旧引擎的 `typed_passthrough` 原因保留前端兼容；当前 PCM 直通路径支持格式兼容的预加载。EOF auto-next 与手动 `next()` 均优先 `skipToPreloaded`，失败才走完整 `playQueueItem`/`stop()`。
 
 PCM 直通无缝衔接保留实际设备的 Int16 / Int24 / Int24-in-32 / Int32 / Float32 格式：下一首预解码到相同格式，当前曲耗尽后在同一个设备回调内继续写入下一首的原始 PCM 字节，不插入静音、不经过 Float32 处理、不停止或重新打开设备。采样率、声道数和有效位深必须兼容；24-bit 的打包容器可由解码器无损匹配设备格式。格式不兼容或 DSD 曲目撤下预加载并报告阻断，随后使用正常切歌路径。无缝衔接本身不改变 `pcmPassthrough` / `outputPerfect` 判定；音频文件内原有的静音仍按源内容播放。
+
+## Current-source audio metadata
+
+Source codec/rate/encoded depth/channels and verified file bytes are facts bound to the matching current queue source. `decoded*` describes PCM entering the pipeline after decoder conversion, and `outputInfo` describes the final device. Float32 processing width is not encoded bit depth. HiFi and visualizer share the current-source metadata projection; unknown parameters remain unknown.
+
+The strict QQ integration contains ordinary authorized network media only. It does not bind QQ component workers or local effect markers. Logout, QR reauthorization, disable and unexpected host exit still revoke current, queued, preloaded and in-flight provider playback authority; stale RPC/queue acknowledgements cannot restore it. Intentional eligible provider hibernation retains its existing semantics.
 
 ## Visualization API
 

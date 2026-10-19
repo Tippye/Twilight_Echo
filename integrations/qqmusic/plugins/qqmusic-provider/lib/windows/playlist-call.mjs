@@ -39,7 +39,7 @@ function unsignedJson(value) {
  * Native detail producer takes only the first caller record. Its zero-flag
  * branch emits dirid and uses the current session for both UIN fields; the
  * other branch omits dirid and obtains host_uin from that record. This API
- * accepts already resolved IDs, without reconstructing native record parsers.
+ * accepts already resolved IDs; callers handle their source record format.
  * No pagination or caller defaults are established by this producer.
  */
 export function buildWindowsPlaylistDetailCall({ loginUin, hostUin, disstid, dirid } = {}) {

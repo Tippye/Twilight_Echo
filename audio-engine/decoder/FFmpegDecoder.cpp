@@ -10,9 +10,13 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cctype>
+#include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
 #include <fstream>
 #include <mutex>
 #include <numeric>
@@ -236,13 +240,31 @@ struct FFmpegDecoder::Impl {
   AudioStreamInfo streamInfo;
   AudioFormat outputFormat;
   bool eof = false;
+  std::atomic<bool> ioCancelled{false};
   FFmpegDecoder::ResamplerQuality resamplerQuality = FFmpegDecoder::ResamplerQuality::Native;
   // ICY StreamTitle snapshot (decode-thread writes; control/status may read).
   mutable std::mutex streamTitleMutex;
   std::string streamTitle;
 
+  void cancelPendingIo() noexcept {
+    ioCancelled.store(true, std::memory_order_release);
+  }
+
+  bool cancelled(std::string* error) const {
+    if (ioCancelled.load(std::memory_order_acquire) ||
+        (interrupt && interrupt(interruptContext))) {
+      if (error) *error = "decode_cancelled";
+      return true;
+    }
+    return false;
+  }
+
 #if defined(TAE_HAS_FFMPEG)
   AVFormatContext* formatContext = nullptr;
+  decltype(AVFormatContext::io_open) originalIoOpen = nullptr;
+  int detectedProbeScore = -1;
+  bool httpFlacIndexedSeek = false;
+  int httpFlacHeaderEntries = 0;
   FFmpegFileInput fileInput;
   AVCodecContext* codecContext = nullptr;
   AVPacket* packet = nullptr;
@@ -261,6 +283,121 @@ struct FFmpegDecoder::Impl {
   std::optional<int64_t> exactInputCursor;
   int64_t exactOutputCursor = 0;
   AVChannelLayout targetLayout{};
+
+  static int openAndProbeHttp(AVFormatContext* context, AVIOContext** input,
+                              const char* url, int flags, AVDictionary** options) {
+    auto* self = static_cast<Impl*>(context->opaque);
+    if (!self || !self->originalIoOpen) return AVERROR(EINVAL);
+    const int opened = self->originalIoOpen(context, input, url, flags, options);
+    if (opened < 0 || context != self->formatContext || context->iformat || !(flags & AVIO_FLAG_READ))
+      return opened;
+    // This is the same probe init_input performs immediately after io_open.
+    // Reuse its AVIO buffer and select the actual format before read_header;
+    // no extra URL open, guessed extension, or custom-IO ownership is needed.
+    const AVInputFormat* detected = nullptr;
+    const int score = av_probe_input_buffer2(*input, &detected, url, context, 0,
+                                            context->format_probesize);
+    if (score < 0) return score;
+    context->iformat = detected;
+    self->detectedProbeScore = score;
+    if (detected == av_find_input_format("flac")) context->flags |= AVFMT_FLAG_FAST_SEEK;
+    return 0;
+  }
+  // Only the FFmpeg IO owner thread reads/writes phase, byte progress and
+  // deadlines. Cross-thread stop uses the existing cancellation atomic above.
+  using IoClock = std::chrono::steady_clock;
+  enum class IoPhase { None, Startup, Read, Seek };
+  IoPhase ioPhase = IoPhase::None;
+  IoClock::time_point ioIdleDeadline{};
+  IoClock::time_point ioAbsoluteDeadline{};
+  // Retained only for initial positioning after open/probe. Seek scopes also
+  // cover precise seek's decode/preroll reads, then restore ordinary read IO.
+  IoClock::time_point startupDeadline{};
+  IoClock::time_point positioningDeadline{};
+  bool positioning = false;
+  int64_t ioLastBytes = 0;
+  bool httpSource = false;
+  bool ioTimedOut = false;
+  std::string readFailure;
+  bool readFailureWasCancelled = false;
+
+  struct SeekBudgetScope {
+    Impl& owner;
+    bool previous;
+    IoClock::time_point previousDeadline;
+    SeekBudgetScope(Impl& impl, SeekPurpose purpose)
+        : owner(impl), previous(impl.positioning), previousDeadline(impl.positioningDeadline) {
+      if (!previous) owner.positioningDeadline = IoClock::now() + std::chrono::seconds(15);
+      if (purpose == SeekPurpose::Startup) {
+        owner.positioningDeadline = std::min(owner.positioningDeadline, owner.startupDeadline);
+      }
+      owner.positioning = true;
+    }
+    ~SeekBudgetScope() {
+      owner.positioning = previous;
+      owner.positioningDeadline = previousDeadline;
+    }
+  };
+
+  struct IoOperation {
+    Impl& owner;
+    IoOperation(Impl& impl, IoPhase phase) : owner(impl) {
+      owner.ioPhase = owner.httpSource ? phase : IoPhase::None;
+      owner.ioTimedOut = false;
+      owner.ioLastBytes = owner.formatContext && owner.formatContext->pb
+          ? owner.formatContext->pb->bytes_read : 0;
+      const auto now = IoClock::now();
+      if (phase == IoPhase::Startup) owner.startupDeadline = now + std::chrono::seconds(15);
+      owner.ioIdleDeadline = now + std::chrono::seconds(phase == IoPhase::Seek || owner.positioning ? 5 : 15);
+      owner.ioAbsoluteDeadline = phase == IoPhase::Read
+          ? IoClock::time_point::max() : now + std::chrono::seconds(15);
+      if (phase == IoPhase::Startup) {
+        owner.ioAbsoluteDeadline = std::min(owner.ioAbsoluteDeadline, owner.startupDeadline);
+      }
+      if (owner.positioning) {
+        owner.ioAbsoluteDeadline = std::min(owner.ioAbsoluteDeadline, owner.positioningDeadline);
+      }
+    }
+    ~IoOperation() { owner.ioPhase = IoPhase::None; }
+  };
+
+  static int interruptIo(void* context) {
+    auto& owner = *static_cast<Impl*>(context);
+    if (owner.ioCancelled.load(std::memory_order_acquire) ||
+        (owner.interrupt && owner.interrupt(owner.interruptContext))) return 1;
+    if (owner.ioPhase == IoPhase::None) return 0;
+    const auto now = IoClock::now();
+    if (now >= owner.ioAbsoluteDeadline) {
+      owner.ioTimedOut = true;
+      return 1;
+    }
+    if ((owner.ioPhase == IoPhase::Read || owner.ioPhase == IoPhase::Seek) &&
+        owner.formatContext && owner.formatContext->pb) {
+      const auto bytes = owner.formatContext->pb->bytes_read;
+      if (bytes != owner.ioLastBytes) {
+        owner.ioLastBytes = bytes;
+        owner.ioIdleDeadline = now + std::chrono::seconds(owner.ioPhase == IoPhase::Seek || owner.positioning ? 5 : 15);
+      }
+    }
+    if (now < owner.ioIdleDeadline) return 0;
+    owner.ioTimedOut = true;
+    return 1;
+  }
+
+  bool ioError(std::string* error, const char* operation, int ffmpegError) const {
+    if (cancelled(error)) return false;
+    if (error) {
+      if (ioTimedOut) {
+        *error = "network_io_timeout";
+      } else {
+        *error = (httpSource ? std::string("network_") : std::string("audio_")) + operation + "_failed";
+        // Preserve the stable failure class while retaining the numeric cause.
+        // Do not append FFmpeg prose, which may contain a source URL or path.
+        if (ffmpegError < 0) *error += " [averror=" + std::to_string(ffmpegError) + "]";
+      }
+    }
+    return false;
+  }
 
   static std::string avError(int code) {
     char buffer[AV_ERROR_MAX_STRING_SIZE] = {};
@@ -315,6 +452,7 @@ struct FFmpegDecoder::Impl {
   }
 
   void close() {
+    cancelPendingIo();
     if (swr) {
       swr_free(&swr);
     }
@@ -332,6 +470,10 @@ struct FFmpegDecoder::Impl {
       avformat_close_input(&formatContext);
     }
     fileInput.close();
+    originalIoOpen = nullptr;
+    detectedProbeScore = -1;
+    httpFlacIndexedSeek = false;
+    httpFlacHeaderEntries = 0;
     audioStreamIndex = -1;
     inputEof = false;
     resamplerFlushed = false;
@@ -346,6 +488,156 @@ struct FFmpegDecoder::Impl {
       std::lock_guard lock(streamTitleMutex);
       streamTitle.clear();
     }
+  }
+
+  bool seekPacket(double seconds, std::string* error, SeekPurpose purpose) {
+    if (!formatContext || audioStreamIndex < 0) return false;
+    // The transport owner has stopped/joined the old reader before seeking.
+    ioCancelled.store(false, std::memory_order_release);
+    readFailure.clear();
+    readFailureWasCancelled = false;
+    SeekBudgetScope positioning(*this, purpose);
+    IoOperation io(*this, IoPhase::Seek);
+    AVStream* stream = formatContext->streams[audioStreamIndex];
+    const int64_t timestamp = static_cast<int64_t>(seconds / av_q2d(stream->time_base));
+    const int ret = av_seek_frame(formatContext, audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
+    if (ret < 0 || interruptIo(this)) {
+      if (httpSource || cancelled(nullptr)) return ioError(error, "seek", ret);
+      if (error) *error = "音频跳转失败，错误码：" + std::to_string(ret);
+      return false;
+    }
+    avcodec_flush_buffers(codecContext);
+    // Decoder flush does not clear swr history from the old playback position.
+    if (swr) {
+      swr_close(swr);
+      if (swr_init(swr) < 0) { if (error) *error = "Unable to reset seek resampler"; return false; }
+    }
+    inputEof = false;
+    resamplerFlushed = false;
+    eof = false;
+    resetPending();
+    exactSeek = false;
+    exactInputCursor.reset();
+    return true;
+  }
+
+  bool configureOutputResampler(const AudioFormat& requestedFormat, std::string* error) {
+    const AudioFormat format = requestedFormat;
+    if (!codecContext) {
+      if (error) *error = "解码器尚未打开";
+      return false;
+    }
+    if (format.sampleRate <= 0 || format.channelCount <= 0) {
+      if (error) *error = "请求的输出格式无效";
+      return false;
+    }
+    if (streamInfo.isDsd && isTypedIntegerFormat(format.sampleFormat)) {
+      if (error) *error = "DSD PCM fallback 只能输出 Float32 工作格式";
+      return false;
+    }
+
+    if (swr) {
+      swr_free(&swr);
+    }
+    av_channel_layout_uninit(&targetLayout);
+    av_channel_layout_default(&targetLayout, format.channelCount);
+
+    const auto allocateSwr = [&]() -> int {
+      if (swr) swr_free(&swr);
+      return swr_alloc_set_opts2(
+          &swr,
+          &targetLayout,
+          swrSampleFormatFor(format.sampleFormat),
+          format.sampleRate,
+          &codecContext->ch_layout,
+          codecContext->sample_fmt,
+          codecContext->sample_rate,
+          0,
+          nullptr);
+    };
+    const auto applySwrQuality = [&](ResamplerQuality quality) {
+      switch (quality) {
+        case ResamplerQuality::Ultra:
+          av_opt_set_int(swr, "filter_size", 64, 0);
+          av_opt_set_int(swr, "phase_shift", 10, 0);
+          av_opt_set_double(swr, "cutoff", 0.99, 0);
+          break;
+        case ResamplerQuality::High:
+          av_opt_set_int(swr, "filter_size", 32, 0);
+          av_opt_set_int(swr, "phase_shift", 10, 0);
+          av_opt_set_double(swr, "cutoff", 0.97, 0);
+          break;
+        case ResamplerQuality::Native:
+        default:
+          av_opt_set_int(swr, "filter_size", 16, 0);
+          av_opt_set_int(swr, "phase_shift", 8, 0);
+          av_opt_set_double(swr, "cutoff", 0.90, 0);
+          break;
+      }
+    };
+
+    int ret = allocateSwr();
+    if (ret < 0 || !swr) {
+      if (error) *error = "无法分配解码重采样器";
+      return false;
+    }
+
+    const bool wantsSoxr = resamplerQuality == ResamplerQuality::SoxrHq ||
+                           resamplerQuality == ResamplerQuality::SoxrVhq;
+    bool initialized = false;
+    if (wantsSoxr && soxrRuntimeAvailability() != SoxrRuntimeState::Unavailable) {
+      // Probe the SoX engine at runtime. FFmpeg accepts the "resampler"/"engine"
+      // option name even when libsoxr is absent — the failure only shows up at
+      // swr_init ("Requested resampling engine is unavailable").
+      const int engineSet = av_opt_set(swr, "resampler", "soxr", 0);
+      if (engineSet >= 0) {
+        av_opt_set_int(
+            swr,
+            "precision",
+            resamplerQuality == ResamplerQuality::SoxrVhq ? 28 : 20,
+            0);
+        if (swr_init(swr) >= 0) {
+          initialized = true;
+          reportSoxrRuntimeAvailability(true);
+        }
+      }
+      if (!initialized) {
+        reportSoxrRuntimeAvailability(false);
+        // Recreate with the default swr engine; a failed init leaves the
+        // context poisoned with the unavailable engine selection.
+        ret = allocateSwr();
+        if (ret < 0 || !swr) {
+          if (error) *error = "无法分配解码重采样器";
+          return false;
+        }
+      }
+    }
+
+    if (!initialized) {
+      // Soxr tiers degrade to the strongest built-in swr settings when the
+      // engine is unavailable, keeping playback honest instead of failing.
+      applySwrQuality(wantsSoxr ? ResamplerQuality::Ultra : resamplerQuality);
+      ret = swr_init(swr);
+      if (ret < 0) {
+        if (error) *error = "无法初始化解码重采样器，错误码：" + std::to_string(ret);
+        return false;
+      }
+    }
+
+    outputFormat = format;
+    if (outputFormat.bitDepth <= 0) {
+      outputFormat.bitDepth = effectivePcmBitDepth(outputFormat);
+    }
+    streamInfo.decodedFormat = outputFormat;
+    // A brand new swr context has nothing buffered yet, so the drain has to be re-armed.
+    resamplerFlushed = false;
+    resetPending();
+    return true;
+  }
+
+  bool decodeError(std::string* error, const std::string& message) {
+    if (error && error->empty()) *error = message;
+    return false;
   }
 
   // Drains whatever the resampler still holds once the decoder has run dry. swr keeps up
@@ -472,10 +764,15 @@ struct FFmpegDecoder::Impl {
     return flushResampler(error);
   }
 
-  bool decodeOneFrame(std::string* error) {
+  bool decodeOneFrameImpl(std::string* error) {
     resetPending();
+    if (!readFailure.empty()) {
+      if (error) *error = readFailure;
+      return false;
+    }
 
     while (true) {
+      if (cancelled(error)) return false;
       int ret = avcodec_receive_frame(codecContext, frame);
       if (ret == 0) {
         const bool ok = convertFrame(error);
@@ -494,7 +791,6 @@ struct FFmpegDecoder::Impl {
       }
       if (ret != AVERROR(EAGAIN)) {
         if (error) *error = "解码器接收音频帧失败，错误码：" + std::to_string(ret);
-        eof = true;
         return false;
       }
 
@@ -508,14 +804,25 @@ struct FFmpegDecoder::Impl {
         }
         if (ret < 0 && ret != AVERROR(EAGAIN)) {
           if (error) *error = "解码器收尾失败，错误码：" + std::to_string(ret);
-          eof = true;
           return false;
         }
         continue;
       }
 
-      ret = av_read_frame(formatContext, packet);
-      if (ret < 0) {
+      {
+        IoOperation io(*this, IoPhase::Read);
+        ret = av_read_frame(formatContext, packet);
+      }
+      const int storedIoError = formatContext->pb ? formatContext->pb->error : 0;
+      if (ioTimedOut || cancelled(nullptr) || (ret < 0 && (ret != AVERROR_EOF ||
+          (storedIoError < 0 && storedIoError != AVERROR_EOF)))) {
+        av_packet_unref(packet);
+        readFailureWasCancelled = cancelled(nullptr);
+        ioError(&readFailure, "read", storedIoError < 0 && storedIoError != AVERROR_EOF ? storedIoError : ret);
+        if (error) *error = readFailure;
+        return false;
+      }
+      if (ret == AVERROR_EOF) {
         inputEof = true;
         continue;
       }
@@ -528,7 +835,6 @@ struct FFmpegDecoder::Impl {
         av_packet_unref(packet);
         if (ret < 0 && ret != AVERROR(EAGAIN)) {
           if (error) *error = "解码器提交音频包失败，错误码：" + std::to_string(ret);
-          eof = true;
           return false;
         }
       } else {
@@ -536,8 +842,19 @@ struct FFmpegDecoder::Impl {
       }
     }
   }
+
+  bool decodeOneFrame(std::string* error) {
+    try {
+      return decodeOneFrameImpl(error);
+    } catch (const std::exception& exception) {
+      return decodeError(error, std::string("PCM decode pipeline failed: ") + exception.what());
+    } catch (...) {
+      return decodeError(error, "PCM decode pipeline failed");
+    }
+  }
 #else
   void close() {
+    cancelPendingIo();
     streamInfo = {};
     outputFormat = {};
     eof = false;
@@ -562,8 +879,32 @@ void FFmpegDecoder::setInterrupt(int (*callback)(void*), void* context) {
   impl_->interruptContext = context;
 }
 
+void FFmpegDecoder::cancelPendingIo() noexcept {
+  impl_->cancelPendingIo();
+}
+
+bool FFmpegDecoder::restartCancelledIo(std::string* error) {
+  if (!impl_->ioCancelled.load(std::memory_order_acquire)) return true;
+#if defined(TAE_HAS_FFMPEG)
+  if (impl_->readFailureWasCancelled) {
+    impl_->readFailure.clear();
+    impl_->readFailureWasCancelled = false;
+    // FFmpeg caches an interrupted read in AVIO. Only this explicitly
+    // classified cancellation may be cleared for a joined reader's restart.
+    if (impl_->formatContext && impl_->formatContext->pb) {
+      impl_->formatContext->pb->error = 0;
+      impl_->formatContext->pb->eof_reached = 0;
+    }
+  }
+#endif
+  (void)error;
+  impl_->ioCancelled.store(false, std::memory_order_release);
+  return true;
+}
+
 bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   close();
+  impl_->ioCancelled.store(false, std::memory_order_release);
   if (impl_->interrupt && impl_->interrupt(impl_->interruptContext)) {
     if (error) *error = "decode_cancelled";
     return false;
@@ -599,6 +940,10 @@ bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   const bool looksHttp =
       source.rfind("http://", 0) == 0 || source.rfind("https://", 0) == 0 ||
       source.rfind("HTTP://", 0) == 0 || source.rfind("HTTPS://", 0) == 0;
+  impl_->httpSource = looksHttp;
+  impl_->readFailure.clear();
+  impl_->readFailureWasCancelled = false;
+  Impl::IoOperation startup(*impl_, Impl::IoPhase::Startup);
   AVDictionary* openOptions = nullptr;
   if (looksHttp) {
     av_dict_set(&openOptions, "icy", "1", 0);
@@ -643,16 +988,49 @@ bool FFmpegDecoder::open(const std::string& source, std::string* error) {
     if (error) *error = "Cannot allocate demuxer";
     return false;
   }
-  impl_->formatContext->interrupt_callback = {impl_->interrupt, impl_->interruptContext};
+  impl_->formatContext->interrupt_callback = {Impl::interruptIo, impl_.get()};
+  if (looksHttp) {
+    // Nested demuxers inherit opaque. Keep callback state in Impl, never on
+    // this open() stack; all non-root or already detected IO is delegated.
+    impl_->originalIoOpen = impl_->formatContext->io_open;
+    impl_->formatContext->opaque = impl_.get();
+    impl_->formatContext->io_open = Impl::openAndProbeHttp;
+  }
   int ret = avformat_open_input(&impl_->formatContext, source.c_str(), inputFormat, &openOptions);
   av_dict_free(&openOptions);
-  if (ret < 0) {
+  if (ret < 0 || Impl::interruptIo(impl_.get())) {
+    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "open", ret);
     if (error) *error = "打开音频失败，错误码：" + std::to_string(ret);
     return false;
   }
 
+  if (looksHttp && impl_->detectedProbeScore >= 0)
+    impl_->formatContext->probe_score = impl_->detectedProbeScore;
+  if (looksHttp && impl_->formatContext->iformat == av_find_input_format("flac")) {
+    // Check immediately after read_header, before stream-info probing can add
+    // generic packet entries. These entries came from the actual SEEKTABLE.
+    int headerEntries = 0;
+    if (impl_->formatContext->nb_streams) {
+      AVStream* audio = impl_->formatContext->streams[0];
+      headerEntries = avformat_index_get_entries_count(audio);
+      for (int i = 0; i < headerEntries; ++i) {
+        const AVIndexEntry* entry = avformat_index_get_entry(audio, i);
+        if (entry && entry->timestamp >= 0 && entry->pos >= 0 &&
+            (audio->duration <= 0 || entry->timestamp < audio->duration))
+          impl_->httpFlacIndexedSeek = true;
+      }
+    }
+    if (!impl_->httpFlacIndexedSeek) impl_->formatContext->flags &= ~AVFMT_FLAG_FAST_SEEK;
+    impl_->httpFlacHeaderEntries = headerEntries;
+    // Existing FFmpeg/service stderr diagnostics, strictly numeric and with no
+    // source/key/account. This is observation, not an error or a new API.
+    av_log(nullptr, AV_LOG_INFO, "[twilight-flac-index] entries=%d enabled=%d\n",
+           headerEntries, impl_->httpFlacIndexedSeek ? 1 : 0);
+  }
+
   ret = avformat_find_stream_info(impl_->formatContext, nullptr);
-  if (ret < 0) {
+  if (ret < 0 || Impl::interruptIo(impl_.get())) {
+    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "probe", ret);
     if (error) *error = "解析音频信息失败，错误码：" + std::to_string(ret);
     return false;
   }
@@ -770,116 +1148,7 @@ void FFmpegDecoder::close() {
 
 bool FFmpegDecoder::setOutputFormat(const AudioFormat& format, std::string* error) {
 #if defined(TAE_HAS_FFMPEG)
-  if (!impl_->codecContext) {
-    if (error) *error = "解码器尚未打开";
-    return false;
-  }
-  if (format.sampleRate <= 0 || format.channelCount <= 0) {
-    if (error) *error = "请求的输出格式无效";
-    return false;
-  }
-  if (impl_->streamInfo.isDsd && isTypedIntegerFormat(format.sampleFormat)) {
-    if (error) *error = "DSD PCM fallback 只能输出 Float32 工作格式";
-    return false;
-  }
-
-  if (impl_->swr) {
-    swr_free(&impl_->swr);
-  }
-  av_channel_layout_uninit(&impl_->targetLayout);
-  av_channel_layout_default(&impl_->targetLayout, format.channelCount);
-
-  const auto allocateSwr = [&]() -> int {
-    if (impl_->swr) swr_free(&impl_->swr);
-    return swr_alloc_set_opts2(
-        &impl_->swr,
-        &impl_->targetLayout,
-        swrSampleFormatFor(format.sampleFormat),
-        format.sampleRate,
-        &impl_->codecContext->ch_layout,
-        impl_->codecContext->sample_fmt,
-        impl_->codecContext->sample_rate,
-        0,
-        nullptr);
-  };
-  const auto applySwrQuality = [&](ResamplerQuality quality) {
-    switch (quality) {
-      case ResamplerQuality::Ultra:
-        av_opt_set_int(impl_->swr, "filter_size", 64, 0);
-        av_opt_set_int(impl_->swr, "phase_shift", 10, 0);
-        av_opt_set_double(impl_->swr, "cutoff", 0.99, 0);
-        break;
-      case ResamplerQuality::High:
-        av_opt_set_int(impl_->swr, "filter_size", 32, 0);
-        av_opt_set_int(impl_->swr, "phase_shift", 10, 0);
-        av_opt_set_double(impl_->swr, "cutoff", 0.97, 0);
-        break;
-      case ResamplerQuality::Native:
-      default:
-        av_opt_set_int(impl_->swr, "filter_size", 16, 0);
-        av_opt_set_int(impl_->swr, "phase_shift", 8, 0);
-        av_opt_set_double(impl_->swr, "cutoff", 0.90, 0);
-        break;
-    }
-  };
-
-  int ret = allocateSwr();
-  if (ret < 0 || !impl_->swr) {
-    if (error) *error = "无法分配解码重采样器";
-    return false;
-  }
-
-  const bool wantsSoxr = impl_->resamplerQuality == ResamplerQuality::SoxrHq ||
-                         impl_->resamplerQuality == ResamplerQuality::SoxrVhq;
-  bool initialized = false;
-  if (wantsSoxr && soxrRuntimeAvailability() != SoxrRuntimeState::Unavailable) {
-    // Probe the SoX engine at runtime. FFmpeg accepts the "resampler"/"engine"
-    // option name even when libsoxr is absent — the failure only shows up at
-    // swr_init ("Requested resampling engine is unavailable").
-    const int engineSet = av_opt_set(impl_->swr, "resampler", "soxr", 0);
-    if (engineSet >= 0) {
-      av_opt_set_int(
-          impl_->swr,
-          "precision",
-          impl_->resamplerQuality == ResamplerQuality::SoxrVhq ? 28 : 20,
-          0);
-      if (swr_init(impl_->swr) >= 0) {
-        initialized = true;
-        reportSoxrRuntimeAvailability(true);
-      }
-    }
-    if (!initialized) {
-      reportSoxrRuntimeAvailability(false);
-      // Recreate with the default swr engine; a failed init leaves the
-      // context poisoned with the unavailable engine selection.
-      ret = allocateSwr();
-      if (ret < 0 || !impl_->swr) {
-        if (error) *error = "无法分配解码重采样器";
-        return false;
-      }
-    }
-  }
-
-  if (!initialized) {
-    // Soxr tiers degrade to the strongest built-in swr settings when the
-    // engine is unavailable, keeping playback honest instead of failing.
-    applySwrQuality(wantsSoxr ? ResamplerQuality::Ultra : impl_->resamplerQuality);
-    ret = swr_init(impl_->swr);
-    if (ret < 0) {
-      if (error) *error = "无法初始化解码重采样器，错误码：" + std::to_string(ret);
-      return false;
-    }
-  }
-
-  impl_->outputFormat = format;
-  if (impl_->outputFormat.bitDepth <= 0) {
-    impl_->outputFormat.bitDepth = effectivePcmBitDepth(impl_->outputFormat);
-  }
-  impl_->streamInfo.decodedFormat = impl_->outputFormat;
-  // A brand new swr context has nothing buffered yet, so the drain has to be re-armed.
-  impl_->resamplerFlushed = false;
-  impl_->resetPending();
-  return true;
+  return impl_->configureOutputResampler(format, error);
 #else
   (void)format;
   if (error) *error = "当前构建未启用音频解码支持";
@@ -907,10 +1176,7 @@ size_t FFmpegDecoder::readFrames(float* output, size_t frameCount, std::string* 
 }
 
 size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
-  if (impl_->interrupt && impl_->interrupt(impl_->interruptContext)) {
-    if (error) *error = "decode_cancelled";
-    return 0;
-  }
+  if (impl_->cancelled(error)) return 0;
   if (!output.data || output.frames == 0) return 0;
 
 #if defined(TAE_HAS_FFMPEG)
@@ -932,6 +1198,7 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
   size_t copiedFrames = 0;
 
   while (copiedFrames < output.frames) {
+    if (impl_->cancelled(error)) break;
     const size_t pendingFrames =
         impl_->pending.size() / bytesPerFrame > impl_->pendingFrameOffset
             ? impl_->pending.size() / bytesPerFrame - impl_->pendingFrameOffset
@@ -962,37 +1229,34 @@ size_t FFmpegDecoder::readFrames(PcmBlock& output, std::string* error) {
 #endif
 }
 
-bool FFmpegDecoder::seek(double seconds, std::string* error) {
+bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose) {
 #if defined(TAE_HAS_FFMPEG)
-  if (!impl_->formatContext || impl_->audioStreamIndex < 0) return false;
-  AVStream* stream = impl_->formatContext->streams[impl_->audioStreamIndex];
-  const int64_t timestamp = static_cast<int64_t>(seconds / av_q2d(stream->time_base));
-  const int ret = av_seek_frame(impl_->formatContext, impl_->audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
-  if (ret < 0) {
-    if (error) *error = "音频跳转失败，错误码：" + std::to_string(ret);
-    return false;
+  const double frames = seconds * impl_->outputFormat.sampleRate;
+  const bool validFrame = std::isfinite(frames) && frames >= 0 && frames < static_cast<double>(INT64_MAX);
+  if (impl_->httpSource && impl_->formatContext &&
+      impl_->formatContext->iformat == av_find_input_format("flac") && validFrame) {
+    av_log(nullptr, AV_LOG_INFO,
+           "[twilight-flac-seek] entries=%d indexed=%d target_frame=%llu output_rate=%d\n",
+           impl_->httpFlacHeaderEntries, impl_->httpFlacIndexedSeek ? 1 : 0,
+           static_cast<unsigned long long>(std::llround(frames)), impl_->outputFormat.sampleRate);
   }
-  avcodec_flush_buffers(impl_->codecContext);
-  // Decoder flush does not clear swr history from the old playback position.
-  if (impl_->swr) {
-    swr_close(impl_->swr);
-    if (swr_init(impl_->swr) < 0) { if (error) *error = "Unable to reset seek resampler"; return false; }
+  if (impl_->httpFlacIndexedSeek) {
+    if (!validFrame) {
+      if (error) *error = "Invalid precise FLAC seek position";
+      return false;
+    }
+    return seekOutputFrame(static_cast<uint64_t>(std::llround(frames)), error, purpose);
   }
-  impl_->inputEof = false;
-  impl_->resamplerFlushed = false;
-  impl_->eof = false;
-  impl_->resetPending();
-  impl_->exactSeek = false;
-  impl_->exactInputCursor.reset();
-  return true;
+  return impl_->seekPacket(seconds, error, purpose);
 #else
   (void)seconds;
+  (void)purpose;
   if (error) *error = "当前构建未启用音频解码支持";
   return false;
 #endif
 }
 
-bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
+bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error, SeekPurpose purpose) {
 #if defined(TAE_HAS_FFMPEG)
   if (!impl_->formatContext || !impl_->swr || impl_->outputFormat.sampleRate <= 0 ||
       frame >= static_cast<uint64_t>(INT64_MAX)) return false;
@@ -1000,9 +1264,13 @@ bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
   // song duration. The final trim is in integer output frames, not seconds.
   const auto rate = static_cast<uint64_t>(impl_->outputFormat.sampleRate);
   const auto preroll = frame > rate ? frame - rate : 0;
-  if (!seek(static_cast<double>(preroll) / rate, error)) return false;
+  Impl::SeekBudgetScope positioning(*impl_, purpose);
+  if (!impl_->seekPacket(static_cast<double>(preroll) / rate, error, purpose)) return false;
   impl_->exactSeek = true;
-  impl_->exactFromStart = preroll == 0;
+  // Indexed raw FLAC has explicit sample timestamps and no codec priming.
+  // A dishonest table can point its sample-zero entry at a much later frame;
+  // do not relabel that real PTS as zero via the other-codec priming rule.
+  impl_->exactFromStart = preroll == 0 && !impl_->httpFlacIndexedSeek;
   impl_->exactTarget = frame;
   impl_->exactInputCursor.reset();
   while (impl_->exactSeek) {
@@ -1015,6 +1283,7 @@ bool FFmpegDecoder::seekOutputFrame(uint64_t frame, std::string* error) {
   return true;
 #else
   (void)frame;
+  (void)purpose;
   if (error) *error = "当前构建未启用音频解码支持";
   return false;
 #endif

@@ -12,6 +12,10 @@ const NATIVE_RUNTIME_FILES = Object.freeze([
   'twilight-vst3-scanner.exe'
 ])
 
+// Reject stale copies from earlier staging directories, including assets that
+// are no longer in the runtime list and would otherwise pass through unchanged.
+const RETIRED_NATIVE_RUNTIME_FILES = Object.freeze(['twilight-qq-excellent-worker.exe'])
+
 // The core playback runtime and isolated VST3 helper pair are required in a
 // Windows package. Packaging prepares the pair before electron-builder runs and
 // strips every shipped product binary from the copied package payload.
@@ -203,6 +207,7 @@ function stripNativeArtifacts(nativeDir, dependencies = {}) {
 
 module.exports = {
   NATIVE_RUNTIME_FILES,
+  RETIRED_NATIVE_RUNTIME_FILES,
   REQUIRED_NATIVE_RUNTIME_FILES,
   clearPeDebugDirectory,
   clearPeSymbolTablePointer,

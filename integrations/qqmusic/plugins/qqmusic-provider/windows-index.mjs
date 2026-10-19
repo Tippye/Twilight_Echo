@@ -7,6 +7,9 @@ import { buildWindowsTrackInfoCall, WINDOWS_TRACK_INFO_REQUEST_KEY } from './lib
 import { createWindowsPlaybackResolver, windowsPlaybackFailureDetails, windowsPlaybackSessionFingerprint, WINDOWS_MEDIA_ALLOWED_ORIGINS } from './lib/windows/media-source.mjs'
 import { windowsQualityDefinition, windowsQualityFallbacks } from './lib/windows/quality.mjs'
 import { WindowsAudioProxy } from './lib/windows/audio-proxy.mjs'
+import { createWindowsFavoriteMethods } from './lib/windows/favorite-state.mjs'
+import { buildWindowsFavoriteSongCall, decodeWindowsFavoriteSongResponse,
+  WINDOWS_ADD_FAVORITE_SONG_REQUEST_KEY, WINDOWS_REMOVE_FAVORITE_SONG_REQUEST_KEY } from './lib/windows/favorite-call.mjs'
 import { buildWindowsPlayLyricInfoCall, decodeWindowsPlayLyricResponse, WINDOWS_PLAY_LYRIC_REQUEST_KEY } from './lib/windows/lyric-call.mjs'
 import { searchWindowsCatalog } from './lib/windows/search-catalog.mjs'
 import { fetchWindowsAlbumTracks } from './lib/windows/album-call.mjs'
@@ -20,7 +23,7 @@ import { buildWindowsUserPlaylistsCall, WINDOWS_USER_PLAYLISTS_REQUEST_KEY,
 import { decodeWindowsCreatedPlaylists, decodeWindowsFavoritePlaylists,
   decodeWindowsPlaylistDetail, windowsPlaylistReference } from './lib/windows/playlist-data.mjs'
 import { serializeWindowsSettings, windowsPlaybackQuality, windowsQualityForm, saveWindowsQuality,
-  windowsQualityState, setWindowsPlaybackQuality, WINDOWS_QUALITY_COMMAND } from './lib/windows/settings.mjs'
+  windowsQualityState, setWindowsPlaybackQuality, normalizeRetiredWindowsQuality, WINDOWS_QUALITY_COMMAND } from './lib/windows/settings.mjs'
 
 let active = null
 const playbackFailures = new WeakSet()
@@ -44,10 +47,12 @@ export async function activate(context) {
   if (!context.twilight?.qqAuth) throw new Error('QQ 音乐 Windows 音源需要支持 QQ 官方登录桥的 Twilight 构建')
   if (process.platform !== 'win32') throw new Error('此 QQ 音乐适配版本需要 Windows')
   const state = { context, settings: serializeWindowsSettings(context.settings), client: null,
-    closed: false, epoch: 0, device: null, qr: null, songs: new Map(), discovery: null,
+    closed: false, epoch: 0, device: null, qr: null, songs: new Map(), discovery: null, favorites: null,
     playbackEpoch: 0, playbacks: new Map(), proxy: new WindowsAudioProxy({
-      allowedOrigins: WINDOWS_MEDIA_ALLOWED_ORIGINS, leaseTtlMs: 6 * 60 * 60 * 1000 }) }
+      allowedOrigins: WINDOWS_MEDIA_ALLOWED_ORIGINS, leaseTtlMs: 6 * 60 * 60 * 1000,
+      onFailure: event => context.logger?.warn?.(`QQ audio proxy failure: ${JSON.stringify(event)}`) }) }
   state.client = new WindowsMusicClient({ settings: state.settings, getDevice: () => getDevice(state) })
+  state.favorites = createFavorites(state)
   state.discovery = createWindowsDiscoveryMethods({ client: state.client,
     resolveBinding: ({ disstid, loginUin, signal }) => resolveWindowsPlaylistBinding({
       client: state.client, disstid, loginUin, signal }) })
@@ -89,6 +94,10 @@ export async function activate(context) {
     setPlaybackQuality: handler((s, args, invocation) => setWindowsPlaybackQuality(s.settings, args[0],
       { guard: qualityGuard(invocation) })),
     fetchUserLibrary: handler(fetchUserLibrary), fetchPlaylistTracks: handler(fetchPlaylistTracks),
+    isTrackLiked: handler((s, args, invocation) => s.favorites.isTrackLiked(favoriteTrackId(args[0]), invocation)),
+    likeTrack: handler(async (s, args, invocation) => {
+      await s.favorites.likeTrack(favoriteTrackId(args[0]), args[1], invocation)
+    }),
     fetchAlbumTracks: handler((s, args, invocation) => fetchWindowsAlbumTracks({
       client: s.client, album: args[0], signal: invocation?.signal })),
     fetchArtistTopSongs: handler((s, args, invocation) => artistDetail(s, args, invocation, fetchWindowsArtistTopSongs)),
@@ -107,7 +116,7 @@ export async function activate(context) {
     searchPlaylists: handler((s, args, invocation) => catalogSearch(s, 'playlist', args, invocation))
   })
   await context.twilight.ui.register({ id: 'qqmusic-windows-quality', kind: 'settingsPanel',
-    title: 'QQ 音乐播放音质', description: 'MP3、FLAC、Hi-Res、杜比全景声与 5.1 品质', command: WINDOWS_QUALITY_COMMAND })
+    title: 'QQ 音乐播放音质', description: 'MP3、FLAC、Hi-Res、杜比、5.1、臻品母带与臻品全景声', command: WINDOWS_QUALITY_COMMAND })
   context.twilight.ui.onCommand(WINDOWS_QUALITY_COMMAND, async (values, invocation) => {
     if (state.closed) throw new Error('QQ 音乐音源已停用')
     const options = { guard: qualityGuard(invocation) }
@@ -121,6 +130,7 @@ export async function deactivate() {
   if (!state) return
   state.closed = true
   state.epoch++
+  state.favorites.dispose()
   state.qr = null
   state.client.close()
   state.songs.clear()
@@ -157,6 +167,7 @@ async function getProfile(state, args, invocation) {
 
 async function logout(state) {
   state.epoch++
+  state.favorites.invalidate()
   state.qr = null
   const result = await Promise.allSettled([state.client.logout(), state.context.twilight.qqAuth.clear(), revokePlayback(state)])
   state.songs.clear()
@@ -166,6 +177,7 @@ async function logout(state) {
 
 async function getQrLogin(state, _args, invocation) {
   const epoch = ++state.epoch
+  state.favorites.invalidate()
   state.qr = null
   await state.client.cancelPending()
   await state.context.twilight.qqAuth.clear()
@@ -283,6 +295,62 @@ async function verifiedLibrarySession(state, signal) {
   const session = await state.client.getSession()
   if (!session) throw new Error('请先扫码登录 QQ 音乐')
   return { session, epoch: state.epoch }
+}
+
+function favoriteTrackId(value) {
+  // The renderer bridge removes the provider prefix for likeTrack/isTrackLiked.
+  const id = typeof value === 'string' && !value.startsWith('qq:') ? `qq:${value}` : value
+  const reference = windowsSongReference(id)
+  return `qq:${reference.songmid}:${reference.songid}`
+}
+
+function createFavorites(state) {
+  const assertOwner = async (owner, signal) => {
+    await checkLibraryRequest(state, owner, signal)
+    const current = await state.client.getSession()
+    checkLibraryEpoch(state, owner, signal)
+    if (!current || windowsPlaybackSessionFingerprint(current) !== owner.fingerprint) {
+      const error = new Error('QQ 音乐收藏会话已变化，请刷新后重试')
+      error.name = 'AbortError'
+      throw error
+    }
+  }
+  return createWindowsFavoriteMethods({
+    getOwner: async signal => {
+      const owner = await verifiedLibrarySession(state, signal)
+      const fingerprint = windowsPlaybackSessionFingerprint(owner.session)
+      return { ...owner, fingerprint, key: `${owner.epoch}:${fingerprint}` }
+    },
+    assertOwner,
+    readSnapshot: async (owner, signal) => {
+      const { likedPlaylist } = await fetchUserLibrary(state, [], { signal })
+      await assertOwner(owner, signal)
+      if (!likedPlaylist || likedPlaylist.owned !== true) throw new Error('QQ 音乐未返回当前账号的喜欢列表')
+      const reference = windowsPlaylistReference(likedPlaylist)
+      if (reference.dirid !== '201' || reference.hostUin !== owner.session.musicid) {
+        throw new Error('QQ 音乐喜欢列表身份无效')
+      }
+      const detail = await playlistDetail(state, likedPlaylist.id, signal)
+      await assertOwner(owner, signal)
+      return { playlist: likedPlaylist, trackIds: detail.tracks.map(track => track.id) }
+    },
+    write: async (id, liked, snapshot, owner, signal) => {
+      const reference = windowsPlaylistReference(snapshot.playlist)
+      if (reference.hostUin !== owner.session.musicid || reference.dirid !== '201' || snapshot.playlist.owned !== true) {
+        throw new Error('QQ 音乐喜欢列表身份无效')
+      }
+      const song = windowsSongMedia(await getSong(state, id, signal, { refresh: true }))
+      if (song.songtype !== 0) throw new Error('当前 QQ 音乐记录尚不支持修改喜欢状态')
+      const options = { ...reference, directoryName: snapshot.playlist.name,
+        songId: song.songid, songType: song.songtype, liked }
+      const call = buildWindowsFavoriteSongCall(options)
+      await assertOwner(owner, signal)
+      const data = await state.client.request(liked ? WINDOWS_ADD_FAVORITE_SONG_REQUEST_KEY
+        : WINDOWS_REMOVE_FAVORITE_SONG_REQUEST_KEY, call, { signal })
+      await assertOwner(owner, signal)
+      decodeWindowsFavoriteSongResponse(data, options)
+    }
+  })
 }
 
 async function artistDetail(state, args, invocation, fetcher) {
@@ -421,7 +489,7 @@ async function getPlaybackUrl(state, args, invocation) {
     // rematches a recording, or writes the user's preferred quality.
     const song = windowsSongMedia(await getSong(state, args[0], signal, { refresh: true }))
     await confirmCurrent()
-    const preferred = options.quality ?? await windowsPlaybackQuality(state.settings)
+    const preferred = normalizeRetiredWindowsQuality(options.quality ?? await windowsPlaybackQuality(state.settings))
     await confirmCurrent()
     const candidates = windowsQualityFallbacks(preferred)
     if (!candidates.length) throw playbackUnavailable('QQ 音乐音质参数无效')
@@ -436,7 +504,7 @@ async function getPlaybackUrl(state, args, invocation) {
         resolver = createWindowsPlaybackResolver({ client: state.client, getDevice: () => getDevice(state), song, quality })
         // A published lease keeps this exact resolver, including later transport
         // refreshes. Range identity cannot change to another quality midstream.
-        lease = await state.proxy.open({ signal, resolve: request => {
+        lease = await state.proxy.open({ signal, durationSeconds: song.interval, resolve: request => {
           assertCurrent()
           return resolver.resolve(request)
         } })

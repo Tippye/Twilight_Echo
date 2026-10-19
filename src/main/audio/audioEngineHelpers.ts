@@ -17,6 +17,7 @@ export {
   normalizeOutputConfig
 } from '../../shared/audioOutputConfig.ts'
 import { readFileSync } from 'fs'
+
 import type {
   AudioDeviceOption,
   AudioEngineQueueItem,

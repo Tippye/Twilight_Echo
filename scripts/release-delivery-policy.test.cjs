@@ -108,6 +108,56 @@ test('an incomplete isolated engine cannot silently package an older live engine
   }
 })
 
+test('packaging never copies retired worker assets from either staging source', async (t) => {
+  for (const origin of ['live', 'isolated']) {
+    await t.test(origin, () => {
+      const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'twilight-retired-package-'))
+      const liveDir = path.join(directory, 'resources', 'audio-engine')
+      const isolatedDir = path.join(directory, 'fresh')
+      fs.mkdirSync(liveDir, { recursive: true })
+      fs.mkdirSync(isolatedDir)
+      fs.writeFileSync(
+        path.join(directory, 'electron-builder.yml'),
+        'extraResources:\n  - from: resources/audio-engine\n'
+      )
+      for (const name of [
+        ...NATIVE_RUNTIME_FILES,
+        'msvcp140.dll',
+        'vcruntime140.dll',
+        'vcruntime140_1.dll'
+      ]) {
+        fs.writeFileSync(path.join(liveDir, name), createMinimalPe())
+      }
+      for (const name of ['twilight-audio-engine.dll', 'twilight_audio_node.node']) {
+        fs.writeFileSync(path.join(isolatedDir, name), createMinimalPe())
+      }
+      const staleDir = origin === 'live' ? liveDir : isolatedDir
+      const worker = 'Twilight-QQ-Excellent-Worker.EXE'
+      fs.writeFileSync(path.join(staleDir, worker), createMinimalPe({ machine: 0x14c }))
+      fs.mkdirSync(path.join(staleDir, 'old-assets'))
+      fs.writeFileSync(path.join(staleDir, 'old-assets', worker), Buffer.from('retired'))
+      fs.writeFileSync(path.join(staleDir, 'old-assets', 'ordinary.json'), '{}')
+      let staging
+      try {
+        staging = preparePackagedAudioStaging(directory, {
+          environment: { TAE_AUDIO_ENGINE_STAGE_DIR: isolatedDir },
+          stripNativeFile: () => undefined,
+          observeRuntime: () => null
+        })
+        const packagedDir = path.join(path.dirname(staging.configPath), 'audio-engine')
+        assert.equal(fs.existsSync(path.join(packagedDir, worker)), false)
+        assert.equal(fs.existsSync(path.join(packagedDir, 'old-assets', worker)), false)
+        assert.equal(fs.existsSync(path.join(packagedDir, 'old-assets', 'ordinary.json')), true)
+        assert.equal(fs.existsSync(path.join(staleDir, worker)), true)
+        assert.equal(fs.existsSync(path.join(staleDir, 'old-assets', worker)), true)
+      } finally {
+        staging?.dispose()
+        fs.rmSync(directory, { recursive: true, force: true })
+      }
+    })
+  }
+})
+
 test('release configuration is intentionally unsigned and does not advertise a placeholder updater', () => {
   const builder = read('electron-builder.yml')
   assert.doesNotMatch(builder, /example\.com\/auto-updates/)

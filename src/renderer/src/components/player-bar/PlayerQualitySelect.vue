@@ -209,9 +209,13 @@ async function onPluginsChanged(): Promise<void> {
   else if (!busy.value) void refresh()
 }
 
-watch(() => [props.track.id, props.track.source, props.track.queueEntryId], invalidate, {
-  immediate: true
-})
+watch(
+  [() => props.track.id, () => props.track.source, () => props.track.queueEntryId],
+  invalidate,
+  {
+    immediate: true
+  }
+)
 onMounted(() => {
   unsubscribe = window.api.plugins.onChanged(() => {
     void onPluginsChanged()

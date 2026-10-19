@@ -20,6 +20,10 @@ class FFmpegDecoder {
     SoxrVhq
   };
 
+  // Initial positioning shares open/probe's HTTP startup budget. Transport
+  // seeks have their own bounded budget; local-file behavior is unchanged.
+  enum class SeekPurpose { Transport, Startup };
+
   FFmpegDecoder();
   ~FFmpegDecoder();
 
@@ -30,16 +34,23 @@ class FFmpegDecoder {
   /* Set before open. Callback/context must outlive decoder IO; callback must
    * be thread-safe and nonblocking. Used by bounded background preparation. */
   void setInterrupt(int (*callback)(void*), void* context);
+  // Thread-safe cancellation of FFmpeg IO before stopping/joining the reader.
+  // A seek/open or restart after joining clears this shared cancellation flag.
+  void cancelPendingIo() noexcept;
+  // Call only after the decode reader stops. Clear classified IO cancellation.
+  // Otherwise no-op, including after seek/open. This does not seek the source:
+  // the transport owner must position it when exact continuation is required.
+  bool restartCancelledIo(std::string* error);
   void close();
 
   bool setOutputFormat(const AudioFormat& format, std::string* error);
   void setResamplerQuality(ResamplerQuality quality);
   size_t readFrames(float* output, size_t frameCount, std::string* error);
   size_t readFrames(PcmBlock& output, std::string* error);
-  bool seek(double seconds, std::string* error);
+  bool seek(double seconds, std::string* error, SeekPurpose purpose = SeekPurpose::Transport);
   /** Background-only: align decoded/resampled PCM to an absolute output frame.
    * Requires continuous frame timestamps; fails instead of inventing a clock. */
-  bool seekOutputFrame(uint64_t frame, std::string* error);
+  bool seekOutputFrame(uint64_t frame, std::string* error, SeekPurpose purpose = SeekPurpose::Transport);
   bool eof() const;
 
   const AudioStreamInfo& streamInfo() const;

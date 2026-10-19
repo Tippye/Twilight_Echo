@@ -115,12 +115,36 @@ export interface PlaybackControllerHost {
 // Nth tick; demand reads (getPlaybackInfo) still bypass this via the TTL gate.
 const NATIVE_IDLE_POLL_INTERVAL_TICKS = 4
 
+interface SeekTransaction {
+  state: 'pending' | 'confirmed' | 'failed'
+  acceptedRevision: number
+  source: string
+  queueRevision: number
+  queueIndex: number
+  native: NativeAudioBinding
+  completion: Promise<void>
+}
+
 export class PlaybackController {
   queue: AudioEngineQueueItem[] = []
   queueToken = ''
   queueJson = '[]'
   playbackInfo: PlaybackInfo
   private transportRevision = 0
+  // Explicit Stop revokes natural-EOF eligibility until a transport confirms
+  // active playback again. Queue/seek admission alone does not restore it.
+  private explicitStopRevision: number | null = null
+  private seekTransaction: SeekTransaction | null = null
+  private requestedPlaybackSource: {
+    revision: number
+    source: string
+    nativeDispatched: boolean
+    nativeAcknowledged: boolean
+    native: NativeAudioBinding | null
+  } | null = null
+  private queueRevision = 0
+  private pendingQueueLoad: { revision: number; items: AudioEngineQueueItem[] } | null = null
+  private queueAuthorizationBlocked = false
   timer: NodeJS.Timeout | null = null
   lastTick = 0
   lastNativePlaybackInfoTickReadAt = Number.NEGATIVE_INFINITY
@@ -314,6 +338,7 @@ export class PlaybackController {
   }
 
   resetCachesOnServiceCrash(): void {
+    this.seekTransaction = null
     this.lastVisualizationCache = null
     this.lastSpectrumCache = null
     this.invalidateUpcomingTrackCache()
@@ -329,7 +354,15 @@ export class PlaybackController {
     options: AudioEnginePlayOptions = {}
   ): Promise<AudioEnginePlayResult> {
     if (!source) throw audioEngineError('audio.source_empty', 'playback source is empty')
+    this.assertQueueAuthorization()
     const revision = ++this.transportRevision
+    this.requestedPlaybackSource = {
+      revision,
+      source,
+      nativeDispatched: false,
+      nativeAcknowledged: false,
+      native: null
+    }
     const paused = options.paused === true
     const isCurrent = () => !this.destroyed && revision === this.transportRevision
     const superseded: AudioEnginePlayResult = {
@@ -425,6 +458,8 @@ export class PlaybackController {
     // A paused-start transaction is not ready for polling publication until
     // its pause acknowledgement is confirmed below. Keep native tick/getInfo
     // from adopting an intermediate playing sample during that awaited step.
+    if (this.requestedPlaybackSource?.revision === revision)
+      this.requestedPlaybackSource.nativeAcknowledged = nativeStarted
     this.nativePlaybackActive = nativeStarted && !paused
     this.pendingNativeSource = nativeStarted ? source : null
     const nativeBinding = this.native
@@ -605,6 +640,7 @@ export class PlaybackController {
     this.lastNativeReportedPosition =
       nativePositionConfirmed && nativeInfo ? nativeInfo.position : Number.NaN
     this.pendingNativePositionTarget = nativePositionConfirmed ? null : boundedStartTime
+    if (nativeStarted) this.confirmNativeActivity(nativeInfo, source)
     this.emit('start-file')
     this.publishDuration(this.playbackInfo.duration, { force: true })
     this.publishProperty('pause', paused)
@@ -617,19 +653,50 @@ export class PlaybackController {
   }
 
   async togglePause(): Promise<void> {
-    this.transportRevision += 1
+    this.assertQueueAuthorization()
     const native = this.native
+    const source = this.playbackInfo.source
     if (!native) {
       this.lastNativeError = '未加载 twilight_audio_node.node'
       return
+    }
+    const previousRevision = this.transportRevision
+    const revision = ++this.transportRevision
+    const candidate = this.seekTransaction
+    const seek =
+      candidate && candidate.acceptedRevision === previousRevision && this.ownsSeekSource(candidate)
+        ? candidate
+        : null
+    // Both toggles in a rapid double click depend on the same seek. Extending
+    // only this transaction's accepted revision preserves their toggle parity;
+    // a new Play/Stop/Seek cannot extend or revive the old transaction.
+    if (seek) seek.acceptedRevision = revision
+    const isCurrent = () =>
+      !this.destroyed &&
+      native === this.native &&
+      (seek ? this.isCurrentSeek(seek) : revision === this.transportRevision)
+    if (seek) {
+      try {
+        await seek.completion
+      } catch (error) {
+        if (!isCurrent()) return
+        throw nativeAudioError(
+          'audio.pause_failed',
+          'resume requires an acknowledged seek',
+          error instanceof Error ? error.message : String(error)
+        )
+      }
+      if (!isCurrent()) return
     }
 
     // Service 模式：异步等待 utility 进程执行完毕，读取真实状态
     if (typeof native.callAsync === 'function') {
       try {
         await native.callAsync('Pause', [])
+        if (!isCurrent()) return
         // 等待原生引擎更新状态后读取真实播放信息
         const raw = await native.callAsync('GetPlaybackInfo', [])
+        if (!isCurrent()) return
         const realInfo = parseNativeJson(
           raw as string | PlaybackInfo | undefined,
           null as PlaybackInfo | null
@@ -638,12 +705,14 @@ export class PlaybackController {
           this.playbackInfo = this.mergeNativePlaybackInfo(
             this.normalizePlaybackInfo(realInfo, true)
           )
+          this.confirmNativeActivity(realInfo, source)
         }
         this.lastTick = this.scheduler.now()
         this.publishProperty('pause', this.playbackInfo.state !== 'playing')
         this.publishPlaybackInfo()
         return
       } catch (err) {
+        if (!isCurrent()) return
         const message = err instanceof Error ? err.message : String(err)
         this.lastNativeError = message
         throw nativeAudioError('audio.pause_failed', 'native pause/resume failed', message)
@@ -661,6 +730,7 @@ export class PlaybackController {
     const nativeInfo = this.readNativePlaybackInfo()
     if (nativeInfo) {
       this.playbackInfo = this.mergeNativePlaybackInfo(nativeInfo)
+      this.confirmNativeActivity(nativeInfo, source)
     }
     this.lastTick = this.scheduler.now()
     this.publishProperty('pause', this.playbackInfo.state !== 'playing')
@@ -676,17 +746,122 @@ export class PlaybackController {
   }
 
   async seek(time: number): Promise<void> {
+    this.assertQueueAuthorization()
     const position = clampQueueItemPosition(this.queue[this.playbackInfo.queueIndex], time)
-    if (this.playbackInfo.state !== 'playing' && Object.is(position, this.playbackInfo.position)) {
+    const currentSeek = this.seekTransaction
+    const unresolvedSeek =
+      currentSeek && this.isCurrentSeek(currentSeek) && currentSeek.state !== 'confirmed'
+    if (
+      !unresolvedSeek &&
+      this.playbackInfo.state !== 'playing' &&
+      Object.is(position, this.playbackInfo.position)
+    ) {
       return
     }
-    this.tryNative('跳转', (native) => native.Seek(position))
+    const native = this.native
+    if (native && typeof native.callAsync === 'function') {
+      const previous = this.seekTransaction
+      const transaction: SeekTransaction = {
+        state: 'pending',
+        acceptedRevision: ++this.transportRevision,
+        source: this.playbackInfo.source,
+        queueRevision: this.queueRevision,
+        queueIndex: this.playbackInfo.queueIndex,
+        native,
+        completion: Promise.resolve()
+      }
+      this.seekTransaction = transaction
+      transaction.completion = Promise.resolve().then(async () => {
+        // Preserve latest-seek coalescing: one in flight and only the latest
+        // waiting intent reach the service's synchronous native thread.
+        await previous?.completion.catch(() => {})
+        if (!this.isCurrentSeek(transaction)) return
+        const startedAt = this.scheduler.now()
+        try {
+          await native.callAsync!('Seek', [position])
+          if (!this.isCurrentSeek(transaction)) return
+          const raw = await native.callAsync!('GetPlaybackInfo', [])
+          if (!this.isCurrentSeek(transaction)) return
+          const parsed = parseNativeJson<PlaybackInfo | null>(
+            raw as string | PlaybackInfo | undefined,
+            null
+          )
+          if (!parsed) throw new Error('native seek acknowledgement has no playback information')
+          const info = this.normalizePlaybackInfo(parsed, true)
+          const rate =
+            info.actualSampleRate || info.outputSampleRate || info.sourceSampleRate || 48000
+          const frame = 1 / rate
+          const elapsed =
+            info.state === 'playing'
+              ? (Math.max(0, this.scheduler.now() - startedAt) / 1000) * (info.playbackRate || 1) +
+                (2 * (info.bufferSizeFrames || 0)) / rate
+              : 0
+          if (
+            (transaction.source && info.source !== transaction.source) ||
+            (this.queue[transaction.queueIndex] && info.queueIndex !== transaction.queueIndex) ||
+            !Number.isFinite(info.position) ||
+            info.position < position - frame ||
+            info.position > position + elapsed + frame
+          ) {
+            throw new Error('native seek position was not confirmed')
+          }
+          this.pendingNativePositionTarget = null
+          this.lastNativeReportedPosition = Number.NaN
+          this.playbackInfo = this.mergeNativePlaybackInfo(info)
+          // This is an acknowledged transport position, including backward
+          // seeks. Ordinary tick rewind protection must not retain the old
+          // soft playhead after this explicit confirmation.
+          this.playbackInfo.position = info.position
+          this.lastNativeReportedPosition = info.position
+          this.lastTick = this.scheduler.now()
+          transaction.state = 'confirmed'
+          this.confirmNativeActivity(info, transaction.source)
+          this.publishProperty('time-pos', this.playbackInfo.position)
+          this.publishPlaybackInfo()
+        } catch (error) {
+          if (!this.isCurrentSeek(transaction)) return
+          transaction.state = 'failed'
+          this.pendingNativePositionTarget = null
+          // Retain this rejected barrier: a caller timeout does not cancel
+          // native work. Resume stays closed until an explicit new transport
+          // action replaces it, rather than queueing Pause behind unknown work.
+          throw nativeAudioError(
+            'audio.play_failed',
+            'native seek failed',
+            error instanceof Error ? error.message : String(error)
+          )
+        }
+      })
+      return transaction.completion
+    }
+    if (!this.tryNative('跳转', (binding) => binding.Seek(position)))
+      throw nativeAudioError('audio.play_failed', 'native seek failed', this.lastNativeError)
+    if (this.explicitStopRevision !== null)
+      this.confirmNativeActivity(this.readNativePlaybackInfo(), this.playbackInfo.source)
     this.playbackInfo.position = position
     this.lastTick = this.scheduler.now()
     this.lastNativeReportedPosition = Number.NaN
     this.pendingNativePositionTarget = position
     this.publishProperty('time-pos', position)
     this.publishPlaybackInfo()
+  }
+
+  private ownsSeekSource(transaction: SeekTransaction): boolean {
+    return (
+      transaction.native === this.native &&
+      transaction.source === this.playbackInfo.source &&
+      transaction.queueRevision === this.queueRevision &&
+      transaction.queueIndex === this.playbackInfo.queueIndex
+    )
+  }
+
+  private isCurrentSeek(transaction: SeekTransaction): boolean {
+    return (
+      !this.destroyed &&
+      this.seekTransaction === transaction &&
+      transaction.acceptedRevision === this.transportRevision &&
+      this.ownsSeekSource(transaction)
+    )
   }
 
   async setVolume(volume: number): Promise<void> {
@@ -744,24 +919,100 @@ export class PlaybackController {
     }
   }
 
+  private assertQueueAuthorization(): void {
+    if (this.queueAuthorizationBlocked) throw new Error('provider_queue_authorization_pending')
+  }
+
+  async revokeProviderSources(sources: readonly string[]): Promise<boolean> {
+    const revoked = new Set(sources)
+    const currentRequest =
+      this.requestedPlaybackSource?.revision === this.transportRevision
+        ? this.requestedPlaybackSource
+        : null
+    const requestedRevoked = !!currentRequest && revoked.has(currentRequest.source)
+    const currentRevoked = revoked.has(this.pendingNativeSource ?? this.playbackInfo.source)
+    const queueAffected = this.queue.some((item) => revoked.has(item.source))
+    const pendingAffected =
+      this.pendingQueueLoad?.items.some((item) => revoked.has(item.source)) === true
+    if (!requestedRevoked && !currentRevoked && !queueAffected && !pendingAffected) return false
+
+    const revision = ++this.queueRevision
+    this.pendingQueueLoad = null
+    this.queueAuthorizationBlocked = true
+    const current = this.queue[this.playbackInfo.queueIndex]
+    this.queue = this.queue.filter((item) => !revoked.has(item.source))
+    this.queueJson = JSON.stringify(this.queue)
+    this.queueToken = randomUUID()
+    const preservedIndex =
+      current && !revoked.has(current.source) ? this.queue.indexOf(current) : -1
+    this.playbackInfo.queueIndex =
+      preservedIndex >= 0
+        ? preservedIndex
+        : this.queue.length
+          ? Math.min(Math.max(0, this.playbackInfo.queueIndex), this.queue.length - 1)
+          : -1
+    this.invalidateUpcomingTrackCache()
+
+    // Dispatch both native operations before yielding. A newer Play cannot
+    // overtake the queue that removes the revoked native worker specification.
+    const stop =
+      currentRevoked || (requestedRevoked && currentRequest.nativeDispatched)
+        ? this.stop()
+        : Promise.resolve()
+    if (requestedRevoked && !currentRequest.nativeDispatched && !currentRevoked)
+      this.transportRevision += 1
+    const reload = this.callNativeMaybeAsync(
+      '撤销音源后同步队列',
+      'LoadQueue',
+      this.queueJson,
+      this.playbackInfo.queueIndex
+    )
+    this.emit('queue-change', this.queue)
+    const [, loaded] = await Promise.all([stop, reload])
+    if (revision !== this.queueRevision) return true
+    if (!loaded) {
+      // A rejected service call does not prove LoadQueue never ran. Stop any
+      // remaining stream and require a confirmed queue load before restarting.
+      await this.stop()
+      throw nativeAudioError(
+        'audio.queue_load_failed',
+        'revoked source queue synchronization failed',
+        this.lastNativeError
+      )
+    }
+    this.queueAuthorizationBlocked = false
+    return true
+  }
+
   async stop(): Promise<void> {
-    this.transportRevision += 1
+    const nativeRequestPending =
+      this.requestedPlaybackSource?.revision === this.transportRevision &&
+      this.requestedPlaybackSource.nativeDispatched
+    const revision = ++this.transportRevision
     if (
       this.playbackInfo.state === 'stopped' &&
       this.playbackInfo.position === 0 &&
       !this.nativePlaybackActive &&
-      this.pendingNativeSource === null
+      this.pendingNativeSource === null &&
+      !nativeRequestPending
     ) {
       return
     }
-    if (this.nativePlaybackActive || this.pendingNativeSource !== null) {
+    this.explicitStopRevision = revision
+    const native = this.native
+    const source = this.playbackInfo.source
+    if (this.nativePlaybackActive || this.pendingNativeSource !== null || nativeRequestPending) {
       const stopped = await this.callNativeMaybeAsync('停止', 'Stop')
       if (!stopped) {
-        const nativeInfo = await this.readNativePlaybackInfoAsync()
+        const ownsStop = () => this.explicitStopRevision === revision && native === this.native
+        const nativeInfo = ownsStop() ? await this.readNativePlaybackInfoAsync() : null
+        if (ownsStop()) this.confirmNativeActivity(nativeInfo, source)
+        if (revision !== this.transportRevision) return
         if (nativeInfo) this.playbackInfo = this.mergeNativePlaybackInfo(nativeInfo)
         this.publishPlaybackInfo()
         throw nativeAudioError('audio.stop_failed', 'native stop failed', this.lastNativeError)
       }
+      if (revision !== this.transportRevision) return
     } else {
       this.tryNative('停止', (native) => native.Stop())
     }
@@ -776,14 +1027,21 @@ export class PlaybackController {
     this.publishPlaybackInfo()
   }
 
+  private confirmNativeActivity(info: PlaybackInfo | null, source: string): void {
+    if (source && info?.source === source && (info.state === 'playing' || info.state === 'paused'))
+      this.explicitStopRevision = null
+  }
+
   async loadQueue(items: AudioEngineQueueItem[], startIndex = 0): Promise<void> {
     this.transportRevision += 1
+    const revision = ++this.queueRevision
     const nextQueue = [...items]
     const nextQueueIndex =
       nextQueue.length > 0 ? Math.min(Math.max(0, startIndex), nextQueue.length - 1) : -1
     const nextQueueJson = JSON.stringify(nextQueue)
     if (
       this.queueToken &&
+      !this.queueAuthorizationBlocked &&
       nextQueueJson === this.queueJson &&
       nextQueueIndex === this.playbackInfo.queueIndex
     )
@@ -792,6 +1050,7 @@ export class PlaybackController {
     const previousQueueJson = this.queueJson
     const previousQueueIndex = this.playbackInfo.queueIndex
     const hasPreviousQueue = this.queue.length > 0
+    this.pendingQueueLoad = { revision, items: nextQueue }
     this.queueToken = ''
     try {
       const queueLoaded = await this.callNativeMaybeAsync(
@@ -807,6 +1066,7 @@ export class PlaybackController {
           this.lastNativeError
         )
       }
+      if (revision !== this.queueRevision) throw new Error('audio_queue_load_superseded')
       const playModeSynced = await this.callNativeMaybeAsync(
         '加载队列后同步播放模式',
         'SetPlayMode',
@@ -819,26 +1079,31 @@ export class PlaybackController {
           this.lastNativeError
         )
       }
+      if (revision !== this.queueRevision) throw new Error('audio_queue_load_superseded')
     } catch (error) {
       // In service mode a rejected LoadQueue does not prove the native side
       // never ran (slow-tier timeouts reject while the load may still land),
       // which would leave the engine on the new queue while the local mirror
       // keeps the old one. Best-effort restore closes that divergence.
-      if (hasPreviousQueue) {
+      if (revision === this.queueRevision && hasPreviousQueue) {
         this.rollbackQueueAfterFailedLoad(previousQueueJson, previousQueueIndex)
       }
       throw error
+    } finally {
+      if (this.pendingQueueLoad?.revision === revision) this.pendingQueueLoad = null
     }
 
     this.queue = nextQueue
     this.queueJson = nextQueueJson
     this.queueToken = randomUUID()
+    this.queueAuthorizationBlocked = false
     this.playbackInfo.queueIndex = nextQueueIndex
     this.invalidateUpcomingTrackCache()
     this.emit('queue-change', this.queue)
   }
 
   async selectQueueItem(selection: NativeQueueSelection): Promise<boolean> {
+    this.assertQueueAuthorization()
     const item = this.queue[selection.index]
     if (
       !this.queueToken ||
@@ -882,7 +1147,9 @@ export class PlaybackController {
   }
 
   async next(): Promise<void> {
+    this.assertQueueAuthorization()
     if (this.queue.length === 0) return
+    const queueRevision = this.queueRevision
     const revision = ++this.transportRevision
     this.invalidateUpcomingTrackCache()
     const fallbackIndex = (this.playbackInfo.queueIndex + 1) % this.queue.length
@@ -893,9 +1160,9 @@ export class PlaybackController {
       if (typeof this.native.callAsync === 'function') {
         try {
           await this.native.callAsync('Next', [])
-          if (revision !== this.transportRevision) return
+          if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
           nativeInfo = await this.readNativePlaybackInfoAsync()
-          if (revision !== this.transportRevision) return
+          if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
           this.lastNativeError = ''
         } catch (err) {
           this.lastNativeError = err instanceof Error ? err.message : String(err)
@@ -903,7 +1170,7 @@ export class PlaybackController {
       } else if (this.tryNative('下一首', (native) => native.Next?.())) {
         nativeInfo = this.readNativePlaybackInfo()
       }
-      if (revision !== this.transportRevision) return
+      if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
       if (
         nativeInfo &&
         nativeInfo.state === 'playing' &&
@@ -917,18 +1184,21 @@ export class PlaybackController {
         nextIndex = nativeInfo.queueIndex
         this.pendingNativeSource = null
         this.playbackInfo = this.mergeNativePlaybackInfo(nativeInfo)
+        this.confirmNativeActivity(nativeInfo, this.queue[nextIndex].source)
         this.emit('start-file')
         this.publishPlaybackInfo()
         return
       }
     }
-    if (revision !== this.transportRevision) return
+    if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
     this.playbackInfo.queueIndex = nextIndex
     await this.play(this.queue[nextIndex].source, 0)
   }
 
   async previous(): Promise<void> {
+    this.assertQueueAuthorization()
     if (this.queue.length === 0) return
+    const queueRevision = this.queueRevision
     const revision = ++this.transportRevision
     this.invalidateUpcomingTrackCache()
     const fallbackIndex =
@@ -940,9 +1210,9 @@ export class PlaybackController {
       if (typeof this.native.callAsync === 'function') {
         try {
           await this.native.callAsync('Previous', [])
-          if (revision !== this.transportRevision) return
+          if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
           nativeInfo = await this.readNativePlaybackInfoAsync()
-          if (revision !== this.transportRevision) return
+          if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
           this.lastNativeError = ''
         } catch (err) {
           this.lastNativeError = err instanceof Error ? err.message : String(err)
@@ -950,7 +1220,7 @@ export class PlaybackController {
       } else if (this.tryNative('上一首', (native) => native.Previous?.())) {
         nativeInfo = this.readNativePlaybackInfo()
       }
-      if (revision !== this.transportRevision) return
+      if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
       if (
         nativeInfo &&
         nativeInfo.state === 'playing' &&
@@ -964,12 +1234,13 @@ export class PlaybackController {
         nextIndex = nativeInfo.queueIndex
         this.pendingNativeSource = null
         this.playbackInfo = this.mergeNativePlaybackInfo(nativeInfo)
+        this.confirmNativeActivity(nativeInfo, this.queue[nextIndex].source)
         this.emit('start-file')
         this.publishPlaybackInfo()
         return
       }
     }
-    if (revision !== this.transportRevision) return
+    if (revision !== this.transportRevision || queueRevision !== this.queueRevision) return
     this.playbackInfo.queueIndex = nextIndex
     await this.play(this.queue[nextIndex].source, 0)
   }
@@ -999,7 +1270,7 @@ export class PlaybackController {
     const now = this.scheduler.now()
     const cached = this.lastUpcomingTrackCache
     if (cached && now - cached.readAt <= UPCOMING_TRACK_CACHE_TTL_MS) {
-      return cached.track
+      return cached.track ? { ...cached.track } : null
     }
     try {
       const track = parseNativeJson(
@@ -1007,9 +1278,9 @@ export class PlaybackController {
         null as AudioEngineQueueItem | null
       )
       this.lastUpcomingTrackCache = { readAt: now, track }
-      return track
+      return track ? { ...track } : null
     } catch {
-      return this.playbackInfo.upcomingTrack
+      return this.playbackInfo.upcomingTrack ? { ...this.playbackInfo.upcomingTrack } : null
     }
   }
 
@@ -1198,6 +1469,18 @@ export class PlaybackController {
   }
 
   mergeNativePlaybackInfo(nativeInfo: PlaybackInfo): PlaybackInfo {
+    const requested = this.requestedPlaybackSource
+    if (
+      this.explicitStopRevision !== null &&
+      this.nativePlaybackActive &&
+      requested?.revision === this.transportRevision &&
+      requested.nativeAcknowledged &&
+      requested.native === this.native
+    ) {
+      // A successful Play can precede its first usable info response. Only
+      // that still-owned, acknowledged Play may accept a later active sample.
+      this.confirmNativeActivity(nativeInfo, requested.source)
+    }
     const playbackRate =
       typeof nativeInfo.playbackRate === 'number' && Number.isFinite(nativeInfo.playbackRate)
         ? clampNumber(nativeInfo.playbackRate, 0.5, 2, this.playbackInfo.playbackRate ?? 1)
@@ -1644,6 +1927,7 @@ export class PlaybackController {
         }
         if (
           wasPlaying &&
+          this.explicitStopRevision === null &&
           !nativeIdentityPending &&
           this.pendingNativePositionTarget === null &&
           nativeInfo.state === 'stopped'
@@ -1712,6 +1996,13 @@ export class PlaybackController {
       this.lastNativeError = '未加载 twilight_audio_node.node'
       return false
     }
+    if (
+      this.requestedPlaybackSource?.revision === this.transportRevision &&
+      this.requestedPlaybackSource.source === source
+    ) {
+      this.requestedPlaybackSource.nativeDispatched = true
+      this.requestedPlaybackSource.native = this.native
+    }
     if (typeof this.native.callAsync === 'function') {
       try {
         await this.native.callAsync('Play', [source, startTime])
@@ -1763,7 +2054,8 @@ export class PlaybackController {
       nativePlaybackActive: this.nativePlaybackActive,
       queueToken: ownsQueueSource ? this.queueToken : undefined,
       rendererSource: ownsQueueSource ? indexed.rendererSource : undefined,
-      sourceBytes: ownsQueueSource ? indexed.sourceBytes : undefined
+      sourceBytes: ownsQueueSource ? indexed.sourceBytes : undefined,
+      upcomingTrack: this.playbackInfo.upcomingTrack ? { ...this.playbackInfo.upcomingTrack } : null
     }
   }
 

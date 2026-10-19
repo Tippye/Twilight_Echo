@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const { collectImportClosure } = require('./pe-imports.cjs')
+const { RETIRED_NATIVE_RUNTIME_FILES } = require('./release-artifact-strip.cjs')
 
 const MIB = 1024 * 1024
 const DEFAULT_BUDGETS = Object.freeze({
@@ -11,6 +12,9 @@ const DEFAULT_BUDGETS = Object.freeze({
   'twilight-asio-helper.exe': 32 * MIB,
   'twilight-vst3-host.exe': 32 * MIB,
   'twilight-vst3-scanner.exe': 32 * MIB,
+  // The pinned LGPL shared FFmpeg 8.1 Windows codec library is 86.7 MiB.
+  // Keep this dependency-specific allowance separate from product/other DLLs.
+  'avcodec-62.dll': 96 * MIB,
   installer: 384 * MIB
 })
 const DEFAULT_SHIPPED_BINARY_BUDGET = 64 * MIB
@@ -150,6 +154,12 @@ function listNativeBinaries(nativeDir) {
 }
 
 function listReleaseNativeBinaries(nativeDir) {
+  for (const name of fs.readdirSync(nativeDir)) {
+    assert.ok(
+      !RETIRED_NATIVE_RUNTIME_FILES.includes(name.toLowerCase()),
+      `Removed native runtime must not be shipped: ${name}`
+    )
+  }
   return REQUIRED_RELEASE_NATIVE_BINARIES.map((name) => {
     const filePath = path.resolve(nativeDir, name)
     assert.ok(fs.existsSync(filePath), `Missing required release native binary: ${filePath}`)

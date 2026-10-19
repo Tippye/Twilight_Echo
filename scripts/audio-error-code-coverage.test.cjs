@@ -155,8 +155,7 @@ test('every thrown audio error code has copy in every shipped locale', () => {
 test('no catalog entry claims an audio error that nothing throws', () => {
   const codes = collectThrownCodes()
   const keys = catalogKeys('zh-CN')
-  // Keys that describe app state rather than a throw site: they are rendered
-  // directly by the renderer or the diagnostics report, never thrown.
+  // Keys owned outside src/main: renderer state/throws or diagnostics copy.
   const RENDERER_OWNED = new Set([
     'error.audio.service_fatal',
     'error.audio.service_crashed',
@@ -174,6 +173,8 @@ test('no catalog entry claims an audio error that nothing throws', () => {
     'error.audio.native_fallback',
     'error.audio.playback_fallback_switched',
     'error.audio.playback_fallback_rematched',
+    // usePlayerStore throws this when the current queue target disappeared.
+    'error.audio.playback_target_unavailable',
     'error.audio.current_track'
   ])
   const orphans = []

@@ -2,7 +2,7 @@ const { createHash } = require('node:crypto')
 const fs = require('node:fs/promises')
 const path = require('node:path')
 
-const DEFAULT_TWILIGHT_ROOT = path.resolve(__dirname, '..', '..', 'Twilight_Echo-main')
+const DEFAULT_TWILIGHT_ROOT = path.resolve(__dirname, '..', '..', '..')
 
 function readArg(name) {
   const index = process.argv.indexOf(name)
@@ -121,7 +121,6 @@ async function main() {
 
   console.log(`Packed ${packagePath}`)
   console.log(`sha256 ${checksumSha256}`)
-  console.log('Run node scripts/generate-index.mjs to refresh plugins.json')
 }
 
 main().catch((error) => {

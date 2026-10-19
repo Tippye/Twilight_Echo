@@ -16,6 +16,14 @@ export function serializeWindowsSettings(settings) {
   }
   // A host read may migrate legacy sensitive values and write the same file.
   const owner = { get: (key, guard) => mutate(() => { guard?.(); return settings.get(key) }),
+    getNormalized: (key, normalize, guard) => mutate(async () => {
+      guard?.()
+      const stored = await settings.get(key)
+      guard?.()
+      const value = normalize(stored)
+      if (value !== stored) await settings.set(key, value)
+      return value
+    }),
     set: (key, value, guard) => mutate(() => { guard?.(); return settings.set(key, value) }),
     delete: key => mutate(() => settings.delete(key)) }
   owners.set(settings, owner)
@@ -23,9 +31,16 @@ export function serializeWindowsSettings(settings) {
   return owner
 }
 
+// Only the retired composite labels migrate. Unknown/corrupt values still fail,
+// and real network qualities (including master/galaxy) retain their identities.
+export function normalizeRetiredWindowsQuality(value) {
+  return value === 'excellent' || value === 'excellentSpatial' ? '128' : value
+}
+
 export async function windowsPlaybackQuality(settings, { guard } = {}) {
   guard?.()
-  const stored = await serializeWindowsSettings(settings).get(WINDOWS_QUALITY_KEY, guard)
+  const stored = await serializeWindowsSettings(settings).getNormalized(WINDOWS_QUALITY_KEY,
+    normalizeRetiredWindowsQuality, guard)
   guard?.()
   if (stored === undefined || stored === null) return '128'
   if (!OPTIONS.some(option => option.value === stored)) throw new Error('QQ 音乐音质设置无效')

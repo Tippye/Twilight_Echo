@@ -176,6 +176,8 @@ async function fixture(
     engineRange = '*',
     providerId = 'demo',
     pluginId = 'com.example.demo',
+    supportedMethods = ['searchSongs', 'getPlaybackUrl'],
+    capabilities = ['search', 'playbackUrl'],
     autoMixEnabled = () => false,
     ncm
   } = {}
@@ -293,6 +295,7 @@ async function fixture(
     Buffer,
     structuredClone,
     AbortController,
+    AbortSignal,
     process,
     setTimeout,
     clearTimeout,
@@ -339,8 +342,8 @@ async function fixture(
   const provider = {
     id: providerId,
     name: 'Demo',
-    capabilities: ['search', 'playbackUrl'],
-    supportedMethods: ['searchSongs', 'getPlaybackUrl']
+    capabilities,
+    supportedMethods
   }
   const info = fs.statSync(path.join(directory, 'index.mjs'))
   manager.contributionsCache[descriptor.id] = {
@@ -358,19 +361,248 @@ async function fixture(
     assert.ok(path.basename(directory).startsWith('twilight-plugin-wake-'))
     fs.rmSync(directory, { recursive: true, force: true })
   })
-  const register = () => {
-    children[0].emit('message', {
+  const register = (index = 0) => {
+    children[index].emit('message', {
       kind: 'api-call',
       requestId: 'register',
       namespace: 'providers',
       method: 'register',
       args: [provider]
     })
-    children[0].emit('message', { kind: 'api-event-subscribe', eventName: 'app:ready' })
+    children[index].emit('message', { kind: 'api-event-subscribe', eventName: 'app:ready' })
   }
-  const activate = () => children[0].emit('message', { kind: 'activated', pluginId: descriptor.id })
-  return { manager, descriptor, children, activationStarted, register, activate, directory }
+  const activate = (index = 0) =>
+    children[index].emit('message', { kind: 'activated', pluginId: descriptor.id })
+  return {
+    manager,
+    descriptor,
+    children,
+    activationStarted,
+    register,
+    activate,
+    directory,
+    identities: identities.providerPlaybackIdentities
+  }
 }
+
+async function providerPlaybackFixture(t, caseId) {
+  const f = await fixture(t, {
+    pluginId: 'com.twilightecho.provider.qqmusic',
+    providerId: 'qq',
+    supportedMethods: ['searchSongs', 'getPlaybackUrl', 'logout', 'getQrLogin'],
+    capabilities: ['search', 'playbackUrl', 'login']
+  })
+  const envelope = (revision = 'initial') => ({
+    id: `public-lifecycle-${caseId}`,
+    streamUrl: `https://audio.example.test/public-lifecycle-${caseId}-${revision}.flac`,
+    providerSource: {
+      actualQuality: 'flac',
+      expiresAt: Date.now() + 60000
+    }
+  })
+  const publish = (value) =>
+    f.manager.callProvider('qq', 'getPlaybackUrl', [value, { quality: 'flac' }])
+  const initial = envelope()
+  const waking = publish(initial)
+  await f.activationStarted
+  f.register()
+  f.activate()
+  await waking
+  const isCurrent = (source = initial.streamUrl) => {
+    try {
+      return f.identities.get(source)?.pluginId === f.descriptor.id
+    } catch {
+      return false
+    }
+  }
+  assert.equal(isCurrent(), true)
+  return { ...f, envelope, publish, source: initial.streamUrl, isCurrent }
+}
+
+test('current host exit revokes provider source authority and leaves other plugins intact', async (t) => {
+  const f = await providerPlaybackFixture(t, 'host-exit')
+  const otherPlugin = 'com.example.other-lifecycle'
+  const otherSource = 'https://audio.example.test/public-lifecycle-other.flac'
+  f.identities.record('other', 'public-other', 'auto', otherSource, otherPlugin)
+  t.after(() => f.identities.revokePlugin(otherPlugin))
+  f.children[0].emit('exit', 1)
+  assert.equal(f.manager.running.has(f.descriptor.id), false)
+  assert.equal(typeof f.manager.state[f.descriptor.id].lastError, 'string')
+  assert.equal(f.isCurrent(), false)
+  assert.equal(f.identities.get(otherSource)?.pluginId, otherPlugin)
+})
+
+test('a retired child exit cannot revoke the current host source authority', async (t) => {
+  const f = await providerPlaybackFixture(t, 'retired-exit')
+  await f.manager.stopPlugin(f.descriptor.id)
+  const restarting = f.manager.startPlugin(f.descriptor)
+  await new Promise(setImmediate)
+  f.register(1)
+  f.activate(1)
+  await restarting
+  const current = f.envelope('current')
+  await f.publish(current)
+  assert.equal(f.isCurrent(current.streamUrl), true)
+  f.children[0].emit('exit', 1)
+  assert.equal(f.manager.running.get(f.descriptor.id)?.process, f.children[1])
+  assert.equal(f.manager.state[f.descriptor.id].lastError, undefined)
+  assert.equal(f.isCurrent(current.streamUrl), true)
+})
+
+test('intentional hibernation preserves a still valid CDN source authority', async (t) => {
+  const f = await providerPlaybackFixture(t, 'hibernation')
+  await f.manager.hibernatePlugin(f.descriptor.id)
+  assert.equal(f.manager.running.has(f.descriptor.id), false)
+  assert.equal(f.manager.isHibernated(f.descriptor.id), true)
+  assert.equal(f.isCurrent(), true)
+})
+
+for (const method of ['logout', 'getQrLogin']) {
+  for (const ok of [false, true]) {
+    test(`${method} revokes before its pending cleanup and cannot revoke a newer source (${ok})`, async (t) => {
+      const f = await providerPlaybackFixture(t, `${method}-${ok}`)
+      const child = f.children[0]
+      const postMessage = child.postMessage.bind(child)
+      let completeDispatch
+      const dispatched = new Promise((resolve) => {
+        completeDispatch = resolve
+      })
+      let request
+      child.postMessage = (message) => {
+        if (message.kind === 'provider-call' && message.method === method) {
+          child.messages.push(message)
+          request = message
+          completeDispatch()
+          return
+        }
+        postMessage(message)
+      }
+      const pending = f.manager.callProvider('qq', method, [])
+      const outcome = ok ? pending : assert.rejects(pending, /public synthetic cleanup failure/)
+      await dispatched
+      const revokedAtDispatch = !f.isCurrent()
+      const current = f.envelope('new-session')
+      await f.publish(current)
+      assert.equal(f.isCurrent(current.streamUrl), true)
+      child.emit('message', {
+        kind: 'provider-result',
+        requestId: request.requestId,
+        ok,
+        value: null,
+        error: 'public synthetic cleanup failure'
+      })
+      await outcome
+      assert.equal(revokedAtDispatch, true, 'dispatch must revoke before the response')
+      assert.equal(f.isCurrent(), false)
+      assert.equal(
+        f.isCurrent(current.streamUrl),
+        true,
+        'a late response must not revoke newer authority'
+      )
+    })
+  }
+
+  test(`an already cancelled ${method} cannot revoke current playback authority`, async (t) => {
+    const f = await providerPlaybackFixture(t, `cancelled-${method}`)
+    const controller = new AbortController()
+    controller.abort()
+    await assert.rejects(f.manager.callProvider('qq', method, [], { signal: controller.signal }))
+    assert.equal(f.isCurrent(), true)
+    assert.equal(
+      f.children[0].messages.some((message) => message.method === method),
+      false
+    )
+  })
+
+  test(`${method} cancels earlier playback RPCs before delayed results can create new authority`, async (t) => {
+    const f = await providerPlaybackFixture(t, `late-${method}`)
+    const { parseAppError } = await import(
+      pathToFileURL(path.join(__dirname, '../../shared/errors/appError.ts')).href
+    )
+    const child = f.children[0]
+    const postMessage = child.postMessage.bind(child)
+    const held = []
+    let announce
+    const dispatched = new Promise((resolve) => {
+      announce = resolve
+    })
+    child.postMessage = (message) => {
+      if (
+        message.kind === 'provider-call' &&
+        message.method === 'getPlaybackUrl' &&
+        message.args[0].streamUrl.includes('late-result')
+      ) {
+        child.messages.push(message)
+        held.push(message)
+        if (held.length === 3) announce()
+        return
+      }
+      postMessage(message)
+    }
+    const outcomes = Array.from({ length: 3 }, (_, index) =>
+      f.publish(f.envelope(`late-result-${index}`)).then(
+        () => ({ rejected: false, code: null }),
+        (error) => ({ rejected: true, code: parseAppError(error).code })
+      )
+    )
+    await dispatched
+    await f.manager.callProvider('qq', method, [])
+    for (const outcome of await Promise.all(outcomes)) {
+      assert.equal(outcome.rejected, true)
+      assert.equal(outcome.code, 'provider.playbackUnavailable')
+    }
+    assert.equal(f.isCurrent(), false)
+    for (const message of held) {
+      child.emit('message', {
+        kind: 'provider-result',
+        requestId: message.requestId,
+        ok: true,
+        value: message.args[0]
+      })
+      assert.equal(f.isCurrent(message.args[0].streamUrl), false)
+    }
+    const current = f.envelope('current-session')
+    await f.publish(current)
+    assert.equal(
+      f.isCurrent(current.streamUrl),
+      true,
+      'cancellation must not poison the new session circuit'
+    )
+  })
+}
+
+test('a stop awaiting auth cleanup cannot publish a new playback source', async (t) => {
+  const f = await providerPlaybackFixture(t, 'stop-dispatch')
+  let finishCleanup
+  f.manager.qqAuth.clear = () =>
+    new Promise((resolve) => {
+      finishCleanup = resolve
+    })
+  const stopping = f.manager.stopPlugin(f.descriptor.id)
+  const child = f.children[0]
+  const before = child.messages.filter((message) => message.kind === 'provider-call').length
+  const next = f.envelope('after-stop')
+  let rejected = false
+  try {
+    await f.publish(next)
+  } catch {
+    rejected = true
+  }
+  const callsAfter = child.messages.filter((message) => message.kind === 'provider-call').length
+  const oldAuthorityRetained = f.isCurrent()
+  const newAuthorityPublished = f.isCurrent(next.streamUrl)
+  const hostRetainedDuringCleanup = f.manager.running.has(f.descriptor.id)
+  const stopPending = f.manager.stopOperations.has(f.descriptor.id)
+  finishCleanup()
+  await stopping
+  f.manager.qqAuth.clear = async () => {}
+  assert.equal(rejected, true)
+  assert.equal(hostRetainedDuringCleanup, true, 'host remains while cleanup is pending')
+  assert.equal(stopPending, true)
+  assert.equal(callsAfter, before)
+  assert.equal(oldAuthorityRetained, false)
+  assert.equal(newAuthorityPublished, false)
+})
 
 test('only the host enables AutoMix preparation for the bundled provider', async (t) => {
   let enabled = true

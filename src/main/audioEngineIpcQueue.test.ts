@@ -5,7 +5,12 @@ import { normalizeCueRange } from '../shared/cue.ts'
 import { stripTypeScriptTypes } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { resolveAuthorizationBatch } from './security/authorizationBatch.ts'
-import { bindPlaybackSourceMetadata } from './audio/providerPlaybackIdentity.ts'
+import {
+  bindPlaybackSourceMetadata,
+  providerPlaybackIdentities,
+  ProviderPlaybackIdentityRegistry
+} from './audio/providerPlaybackIdentity.ts'
+import { normalizeFiniteNumber } from './security/ipcValidation.ts'
 
 function readPreloadSources(): string {
   const root = new URL('../preload/', import.meta.url)
@@ -39,6 +44,49 @@ const deviceHotplugSource = readFileSync(
   'utf8'
 )
 const windowSource = readFileSync(new URL('./app/window.ts', import.meta.url), 'utf8')
+
+test('plugin queue events preserve ordinary source metadata without mutating native queue', () => {
+  const start = source.indexOf("runtime.audioEngineManager.on('queue-change'")
+  const declaration = source.slice(
+    start,
+    source.indexOf('\n  runtime.audioEngineManager.on(', start + 1)
+  )
+  let callback!: (queue: unknown[]) => void
+  let received: unknown
+  runInNewContext(stripTypeScriptTypes(declaration), {
+    runtime: {
+      audioEngineManager: {
+        on: (_event: string, value: typeof callback) => {
+          callback = value
+        }
+      },
+      pluginManager: {
+        broadcastEvent: (_event: string, payload: unknown) => {
+          received = payload
+        }
+      }
+    }
+  })
+  const item = {
+    id: 'public-song',
+    source: 'public.flac',
+    sourceBytes: 123456,
+    rendererSource: 'twilight-media://public'
+  }
+  callback([item])
+  assert.deepEqual(JSON.parse(JSON.stringify(received)), {
+    queue: [
+      {
+        id: 'public-song',
+        source: 'public.flac',
+        sourceBytes: 123456,
+        rendererSource: 'twilight-media://public'
+      }
+    ]
+  })
+  assert.equal(item.sourceBytes, 123456)
+  assert.notEqual((received as { queue: unknown[] }).queue[0], item)
+})
 
 test('audioEngine loadQueue IPC accepts renderer queue items with source field', () => {
   const start = source.indexOf('function toQueueItem')
@@ -76,13 +124,15 @@ test('queue normalization drops untrusted renderer source aliases and byte count
   runInNewContext(
     stripTypeScriptTypes(`${textDeclaration}\n${declaration}\nresult = toQueueItem({
     id: 'qq:fixture', source: 'twilight-media://audio/fixture',
-    rendererSource: 'twilight-media://audio/forged', sourceBytes: 123
+    rendererSource: 'twilight-media://audio/forged', sourceBytes: 123,
+    unknownField: 'untrusted'
   })`),
     context
   )
   assert.equal(context.result?.source, 'twilight-media://audio/fixture')
   assert.equal(Object.hasOwn(context.result!, 'rendererSource'), false)
   assert.equal(Object.hasOwn(context.result!, 'sourceBytes'), false)
+  assert.equal(Object.hasOwn(context.result!, 'unknownField'), false)
 })
 
 test('audio engine cold start passes persisted software volume into the manager', () => {
@@ -123,6 +173,7 @@ test('audioEngine play IPC forwards validated paused options and preserves the o
       return value
     },
     audioDiagnosticRecorder: null,
+    providerPlaybackIdentities,
     outputTest: { stop: async () => {} },
     ensureAudioEngineRuntime: async () => ({
       play: async (...args: unknown[]) => {
@@ -157,6 +208,97 @@ test('audioEngine play IPC forwards validated paused options and preserves the o
   assert.match(preloadDeclaration, /options\?: AudioEnginePlayOptions/)
 })
 
+function registerSeekIpcHandler(
+  seek: (position: number) => Promise<void>
+): (event: unknown, position: number) => Promise<void> {
+  const start = source.indexOf('ipcMain.handle(IPC.audioEngine.seek,')
+  assert.ok(start >= 0)
+  const declaration = source.slice(start, source.indexOf('\n  ipcMain.handle(', start + 1))
+  let handler!: (event: unknown, position: number) => Promise<void>
+  runInNewContext(stripTypeScriptTypes(declaration), {
+    IPC: { audioEngine: { seek: 'audio:seek' } },
+    ipcMain: {
+      handle: (channel: string, callback: typeof handler) => {
+        assert.equal(channel, 'audio:seek')
+        handler = callback
+      }
+    },
+    assertTrustedIpcSender: () => {},
+    normalizeFiniteNumber,
+    ensureAudioEngineRuntime: async () => ({ seek })
+  })
+  return handler
+}
+
+test('audioEngine seek IPC waits for the controller acknowledgement and position readback', async () => {
+  let acknowledge!: () => void
+  let confirmPosition!: () => void
+  let entered!: () => void
+  const started = new Promise<void>((resolve) => {
+    entered = resolve
+  })
+  const acknowledgement = new Promise<void>((resolve) => {
+    acknowledge = resolve
+  })
+  const readback = new Promise<void>((resolve) => {
+    confirmPosition = resolve
+  })
+  let position = 209
+  const requested: number[] = []
+  const handler = registerSeekIpcHandler(async (target) => {
+    requested.push(target)
+    entered()
+    await acknowledgement
+    await readback
+    position = target
+  })
+  let completed = false
+  let positionWhenResolved = Number.NaN
+  const pending = handler({}, 45).then(() => {
+    completed = true
+    positionWhenResolved = position
+  })
+  try {
+    await started
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(completed, false, 'IPC must not resolve while native Seek is in flight')
+    acknowledge()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(completed, false, 'IPC must wait for controller position confirmation too')
+    confirmPosition()
+    await pending
+    assert.deepEqual(requested, [45])
+    assert.equal(positionWhenResolved, 45)
+  } finally {
+    acknowledge()
+    confirmPosition()
+    await pending
+  }
+})
+
+test('audioEngine seek IPC propagates a rejected controller position confirmation', async () => {
+  let rejectSeek!: (error: Error) => void
+  let entered!: () => void
+  const started = new Promise<void>((resolve) => {
+    entered = resolve
+  })
+  const completion = new Promise<void>((_resolve, reject) => {
+    rejectSeek = reject
+  })
+  // Observe the synthetic promise even when the old handler discards it. The
+  // regression concerns IPC rejection, rather than an unhandled test rejection.
+  void completion.catch(() => {})
+  const handler = registerSeekIpcHandler(() => {
+    entered()
+    return completion
+  })
+  const pending = handler({}, 45)
+  await started
+  const failure = new Error('native seek position was not confirmed')
+  rejectSeek(failure)
+  await assert.rejects(pending, (error) => error === failure)
+})
+
 test('audioEngine IPC normalizes untrusted renderer parameters', () => {
   assert.match(source, /const MAX_AUDIO_QUEUE_ITEMS = MAX_NATIVE_QUEUE_ITEMS/)
   assert.match(
@@ -165,7 +307,6 @@ test('audioEngine IPC normalizes untrusted renderer parameters', () => {
   )
   assert.match(source, /queue\.length !== items\.length/)
   assert.match(source, /await resolveAuthorizationBatch\(/)
-  assert.match(source, /bindPlaybackSourceMetadata\(item, sources\.get\(item\.source\)!\)/)
   assert.match(source, /normalizeIpcString\(source, 'audio source'/)
   assert.match(source, /await resolveAuthorizedPlaybackSource\(/)
   assert.match(source, /normalizeFiniteNumber\(time, 'seek time', 0, 0, Number\.MAX_SAFE_INTEGER\)/)
@@ -212,6 +353,7 @@ test('loadQueue authorizes duplicate sources once, retains CUE entries, and awai
     normalizeInteger: (index: number) => index,
     resolveAuthorizationBatch,
     bindPlaybackSourceMetadata,
+    providerPlaybackIdentities,
     resolveAuthorizedPlaybackSource: async () => {
       resolutions++
       return 'canonical.flac'
@@ -245,6 +387,88 @@ test('loadQueue authorizes duplicate sources once, retains CUE entries, and awai
   finish()
   await pending
   assert.deepEqual(diagnostics, ['queue-loaded'])
+})
+
+test('queue authorization is checked again after awaited runtime startup', async () => {
+  const start = source.indexOf('ipcMain.handle(IPC.audioEngine.loadQueue')
+  const declaration = source.slice(start, source.indexOf('\n  ipcMain.handle(', start + 1))
+  for (const mutation of ['revoke', 'replace', 'expire']) {
+    const identities = new ProviderPlaybackIdentityRegistry()
+    const stream = 'http://127.0.0.1:1234/audio/public-' + mutation
+    const plugin = 'com.twilightecho.provider.qqmusic'
+    identities.record(
+      'qq',
+      'song',
+      'flac',
+      {
+        streamUrl: stream,
+        providerSource: {
+          actualQuality: 'flac',
+          expiresAt: Date.now() + 60000
+        }
+      },
+      plugin
+    )
+    let handler!: (event: unknown, items: unknown[], index: number) => Promise<unknown>
+    let ready!: () => void, announce!: () => void
+    const runtime = new Promise<void>((resolve) => {
+      ready = resolve
+    })
+    const entered = new Promise<void>((resolve) => {
+      announce = resolve
+    })
+    let committed = 0
+    runInNewContext(stripTypeScriptTypes(declaration), {
+      IPC: { audioEngine: { loadQueue: 'queue' } },
+      ipcMain: {
+        handle: (_channel: string, callback: typeof handler) => {
+          handler = callback
+        }
+      },
+      assertTrustedIpcSender: () => {},
+      MAX_AUDIO_QUEUE_ITEMS: 5000,
+      normalizeIpcArray: (items: unknown[]) => items,
+      toQueueItem: () => {},
+      normalizeInteger: (value: number) => value,
+      resolveAuthorizationBatch,
+      bindPlaybackSourceMetadata: (
+        item: Parameters<typeof bindPlaybackSourceMetadata>[0],
+        value: string
+      ) => bindPlaybackSourceMetadata(item, value, identities),
+      providerPlaybackIdentities: identities,
+      resolveAuthorizedPlaybackSource: async () => stream,
+      ensureAudioEngineRuntime: async () => {
+        announce()
+        await runtime
+        return {
+          loadQueue: async () => {
+            committed++
+          }
+        }
+      },
+      audioDiagnosticRecorder: null
+    })
+    const pending = handler({}, [{ id: 'song', source: 'twilight-media://audio/public' }], 0)
+    await entered
+    if (mutation === 'revoke') identities.revokePlugin(plugin)
+    else
+      identities.record(
+        'qq',
+        'song',
+        'flac',
+        {
+          streamUrl: stream,
+          providerSource: {
+            actualQuality: '128',
+            expiresAt: mutation === 'expire' ? 1 : Date.now() + 60000
+          }
+        },
+        plugin
+      )
+    ready()
+    await assert.rejects(pending, /resolution_changed|expired/, mutation)
+    assert.equal(committed, 0, mutation)
+  }
 })
 
 test('the native queue ceiling is one shared constant on both sides of the IPC', () => {
@@ -297,6 +521,7 @@ test('queue cursor IPC freshly authorizes its source before forwarding the main-
       return 'canonical.flac'
     },
     outputTest: { stop: async () => calls.push('stop-test') },
+    providerPlaybackIdentities,
     ensureAudioEngineRuntime: async () => ({
       selectQueueItem: async (selection: unknown) => {
         calls.push('select')

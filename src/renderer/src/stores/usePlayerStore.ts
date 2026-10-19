@@ -284,13 +284,18 @@ function resolveAudioEngineErrorText(error: string): string {
  * reclassified a recovered-with-fallback warning as a hard error. Callers know
  * which case they are in, so they say so.
  */
-function setAudioEngineError(error: string | null, kind: AppNoticeKind = 'error'): void {
+function setAudioEngineError(
+  error: string | null,
+  kind: AppNoticeKind = 'error',
+  notify = true
+): void {
   const message = typeof error === 'string' ? resolveAudioEngineErrorText(error) : ''
   audioEngineError.value = message || error
   if (!message) {
     lastAudioEngineNotice = ''
     return
   }
+  if (!notify) return
   if (message === lastAudioEngineNotice) return
   lastAudioEngineNotice = message
   pushNotice({ kind, message })
@@ -2646,7 +2651,7 @@ function setupAudioEngineListeners(): void {
           flushLatestCurrentTime()
           break
         case 'eof-reached':
-          handleNativePlaybackEnded()
+          if (data === true) handleNativePlaybackEnded()
           break
       }
       if (name === 'time-pos' || name === 'duration') {
@@ -2989,6 +2994,8 @@ interface PlaybackLoadOptions {
   target?: string
   autoplay?: boolean
   allowSourceRecovery?: boolean
+  /** A caller that presents this rejecting load's error keeps the only toast. */
+  notifyError?: boolean
   isCurrent?: () => boolean
 }
 
@@ -3210,6 +3217,18 @@ async function loadAndPlay(
     if (nativePlaybackActive) {
       setAudioEngineError('')
       stopRendererAudio(true)
+      // Start-file and polling snapshots can predate this completed Play.
+      // Refresh current-stream facts while this load still owns the source.
+      try {
+        const info = await window.api.audioEngine.getPlaybackInfo()
+        if (!isOwnedLoad()) {
+          releaseLoadIfOwned()
+          return
+        }
+        applyNativePlaybackInfo(info, { applyTrackWhenInactive: true })
+      } catch {
+        // Playback already succeeded; normal native events can refresh facts.
+      }
     } else if (useNativePlayback) {
       nativeQueueDelegated = false
       clearNativePlaybackInfoIntentForLoad(loadToken)
@@ -3227,7 +3246,9 @@ async function loadAndPlay(
             ? translate(currentLocale(), 'error.audio.native_unavailable_detail', {
                 reason: nativeFallbackReason
               })
-            : translate(currentLocale(), 'error.audio.native_unavailable')
+            : translate(currentLocale(), 'error.audio.native_unavailable'),
+          'error',
+          options?.notifyError !== false
         )
         isPlaying.value = false
         releaseLoadIfOwned()
@@ -3307,7 +3328,11 @@ async function loadAndPlay(
       return
     }
     console.error('[audio-engine] Playback failed:', err)
-    setAudioEngineError(err instanceof Error ? err.message : String(err))
+    setAudioEngineError(
+      err instanceof Error ? err.message : String(err),
+      'error',
+      options?.notifyError !== false
+    )
     autoAdvanceInFlight = false
     isLoading.value = false
     isPlaying.value = false
@@ -3348,6 +3373,7 @@ const { changeQuality: changePlaybackQuality } = createPlaybackQualityController
       target,
       autoplay: playing,
       allowSourceRecovery: false,
+      notifyError: false,
       isCurrent: () =>
         currentTrack.value?.queueEntryId === track.queueEntryId &&
         queueIndex.value === index &&
@@ -3555,14 +3581,54 @@ function seekPlayback(time: number): void {
     beginPlaybackPositionTransition(position)
     return
   }
-  beginPlaybackPositionTransition(position)
   if (castTargetName.value) {
+    beginPlaybackPositionTransition(position)
     void window.api.remote?.controlCast?.({ seek: position }).catch(() => {})
     return
   }
   if (nativePlaybackActive || nativeQueueDelegated) {
-    window.api.audioEngine.seek(position).catch(() => {})
+    const loadToken = activeLoadToken
+    const queueRevision = nativeQueueRevisionFence.current
+    const index = queueIndex.value
+    const source = getTrackAudioSource(track)
+    // A new clock epoch supersedes older seeks, but keeps the observed
+    // position until the main process confirms a real native seek.
+    beginPlaybackPositionTransition(getLatestPlaybackTime())
+    publishPlaybackClockTransport(isPlaying.value ? 'playing' : 'paused')
+    const epoch = playbackClockSnapshot.value.epoch
+    const ownsSeek = (): boolean =>
+      activeLoadToken === loadToken &&
+      nativeQueueRevisionFence.isCurrent(queueRevision) &&
+      playbackClockSnapshot.value.epoch === epoch &&
+      queueIndex.value === index &&
+      currentTrack.value?.id === track.id &&
+      currentTrack.value?.queueEntryId === track.queueEntryId &&
+      getTrackAudioSource(currentTrack.value) === source &&
+      (nativePlaybackActive || nativeQueueDelegated)
+    void (async () => {
+      try {
+        await window.api.audioEngine.seek(position)
+        if (!ownsSeek()) return
+        const info = await window.api.audioEngine.getPlaybackInfo()
+        if (!ownsSeek()) return
+        if (
+          info.nativePlaybackActive !== true ||
+          findTrackIndexFromPlaybackInfo(info) !== index ||
+          !Number.isFinite(info.position) ||
+          !applyNativePlaybackInfo(info, { applyTrackWhenInactive: true })
+        )
+          throw new Error('native seek readback does not belong to the current playback')
+        // ACK is authoritative, including a backward seek after the ordinary
+        // presentation guard expired while network I/O was still pending.
+        beginPlaybackPositionTransition(info.position)
+        publishPlaybackClockTransport(info.state === 'playing' ? 'playing' : 'paused')
+        setAudioEngineError('')
+      } catch (error) {
+        if (ownsSeek()) setAudioEngineError(error instanceof Error ? error.message : String(error))
+      }
+    })()
   } else if (playbackAudio) {
+    beginPlaybackPositionTransition(position)
     playbackAudio.currentTime = rendererAudioAbsolutePositionForTrack(position, track)
   }
 }

@@ -1,4 +1,4 @@
-// Reconstructed from QQMusicCommon.dll 22.71, not a file-format detector.
+// Windows 22.71 data transformation; file-format validation is handled separately.
 // DecryptData -> EncryptData -> FUN_10008d51 uses the same in-place transform.
 export const WINDOWS_DATA_TRANSFORM_PROVENANCE = Object.freeze({
   artifact: 'QQMusicCommon.dll',

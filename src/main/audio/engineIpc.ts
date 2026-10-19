@@ -329,10 +329,11 @@ function normalizeQueueText(value: unknown, fallback?: string): string | undefin
 }
 
 async function resolveAuthorizedPlaybackSource(source: string): Promise<string> {
-  if (source.startsWith('twilight-media:')) {
-    return remoteMediaGrants.resolve(source, 'audio').source
-  }
-  return await resolveAuthorizedAudioSource(source)
+  const authorized = source.startsWith('twilight-media:')
+    ? remoteMediaGrants.resolve(source, 'audio').source
+    : await resolveAuthorizedAudioSource(source)
+  providerPlaybackIdentities.assertCurrent(authorized)
+  return authorized
 }
 
 function normalizeDspAssetKind(value: unknown): DspAssetKind {
@@ -732,6 +733,11 @@ async function initializeAudioEngineRuntime(): Promise<void> {
     )
       mixEngine.invalidateAutoMixSource()
   })
+  providerPlaybackIdentities.on('revoked', (sources: string[]) => {
+    void mixEngine.revokeProviderSources(sources).catch((error) => {
+      console.error('[AudioEngine] Failed to stop revoked provider source', error)
+    })
+  })
   if (TWILIGHT_AUTOMIX_AVAILABLE)
     await mixEngine.setAutoMixMode(effectiveAutoMixMode(runtime.appSettings.autoMixMode))
   runtime.vst3Catalog = new Vst3CatalogService(join(app.getPath('userData'), 'dsp-vst3'), {
@@ -764,7 +770,9 @@ async function initializeAudioEngineRuntime(): Promise<void> {
   })
 
   runtime.audioEngineManager.on('queue-change', (queue) => {
-    void runtime.pluginManager?.broadcastEvent('player:queue-change', { queue })
+    void runtime.pluginManager?.broadcastEvent('player:queue-change', {
+      queue: queue.map((item) => ({ ...item }))
+    })
   })
 
   runtime.audioEngineManager.on('device-profiles-changed', () => {
@@ -972,6 +980,9 @@ function registerAudioEngineIpcHandlers(): void {
       const authorizedQueue = queue.map((item) =>
         bindPlaybackSourceMetadata(item, sources.get(item.source)!)
       )
+      const sourceRevisions = authorizedQueue.map((item) =>
+        providerPlaybackIdentities.revision(item.source)
+      )
       const normalizedStartIndex = normalizeInteger(
         startIndex,
         'queue start index',
@@ -980,6 +991,13 @@ function registerAudioEngineIpcHandlers(): void {
         Math.max(0, authorizedQueue.length - 1)
       )
       const engine = await ensureAudioEngineRuntime()
+      // Runtime initialization may yield to logout, disable or a newer
+      // resolution. A previously authorized source is no continuing authority.
+      for (const [index, item] of authorizedQueue.entries()) {
+        providerPlaybackIdentities.assertCurrent(item.source)
+        if (providerPlaybackIdentities.revision(item.source) !== sourceRevisions[index])
+          throw new Error('provider_source_resolution_changed')
+      }
       await engine.loadQueue(authorizedQueue, normalizedStartIndex)
       audioDiagnosticRecorder?.record('queue-loaded', {
         items: authorizedQueue.length,
@@ -1012,9 +1030,9 @@ function registerAudioEngineIpcHandlers(): void {
       normalizeIpcString(selection.source, 'audio source', MAX_AUDIO_SOURCE_LENGTH)
     )
     await outputTest.stop()
-    return await (
-      await ensureAudioEngineRuntime()
-    ).selectQueueItem({ queueToken, index, id, source })
+    const engine = await ensureAudioEngineRuntime()
+    providerPlaybackIdentities.assertCurrent(source)
+    return await engine.selectQueueItem({ queueToken, index, id, source })
   })
 
   ipcMain.handle(
@@ -1038,9 +1056,9 @@ function registerAudioEngineIpcHandlers(): void {
       })
       try {
         await outputTest.stop()
-        const result = await (
-          await ensureAudioEngineRuntime()
-        ).play(authorizedSource, normalizedStartTime, playOptions)
+        const engine = await ensureAudioEngineRuntime()
+        providerPlaybackIdentities.assertCurrent(authorizedSource)
+        const result = await engine.play(authorizedSource, normalizedStartTime, playOptions)
         audioDiagnosticRecorder?.record(
           'play-result',
           result,
@@ -1071,9 +1089,9 @@ function registerAudioEngineIpcHandlers(): void {
 
   ipcMain.handle(IPC.audioEngine.seek, async (_event, time: number) => {
     assertTrustedIpcSender(_event, 'audio engine IPC')
-    ;(await ensureAudioEngineRuntime()).seek(
-      normalizeFiniteNumber(time, 'seek time', 0, 0, Number.MAX_SAFE_INTEGER)
-    )
+    await (
+      await ensureAudioEngineRuntime()
+    ).seek(normalizeFiniteNumber(time, 'seek time', 0, 0, Number.MAX_SAFE_INTEGER))
   })
 
   ipcMain.handle(IPC.audioEngine.setVolume, async (_event, volume: number) => {

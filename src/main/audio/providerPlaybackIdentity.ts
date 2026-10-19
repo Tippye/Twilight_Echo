@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import type { AudioEngineQueueItem } from '../../shared/audioEngineTypes.ts'
 
 export interface ProviderPlaybackIdentity {
+  pluginId?: string
   providerId: string
   trackId: string
   source: string
@@ -30,13 +31,20 @@ export class ProviderPlaybackIdentityRegistry extends EventEmitter {
     string,
     { identity: ProviderPlaybackIdentity; revision: number; digest: string }
   >()
-  private readonly sources = new Map<string, { key: string; revision: number }>()
-  record(providerId: string, trackId: string, requestedQuality: string, result: unknown): void {
+  private readonly sources = new Map<string, { key: string; revision: number; pluginId?: string }>()
+  record(
+    providerId: string,
+    trackId: string,
+    requestedQuality: string,
+    result: unknown,
+    pluginId?: string
+  ): void {
     const envelope = object(result)
     const source = text(envelope.streamUrl ?? result)
     if (!source || !trackId) return
     const meta = object(envelope.providerSource)
     const identity: ProviderPlaybackIdentity = {
+      ...(pluginId ? { pluginId } : {}),
       providerId,
       trackId,
       source,
@@ -56,14 +64,38 @@ export class ProviderPlaybackIdentityRegistry extends EventEmitter {
     const revision = ++this.sequence
     this.tracks.delete(key)
     this.tracks.set(key, { identity, revision, digest })
-    this.sources.set(source, { key, revision })
+    this.sources.set(source, { key, revision, ...(pluginId ? { pluginId } : {}) })
     // Preserve revoked aliases until bounded eviction; these must not become
     // eligible simply because the queue still contains an older cached path.
     while (this.tracks.size > 1024) this.tracks.delete(this.tracks.keys().next().value!)
-    while (this.sources.size > 4096) this.sources.delete(this.sources.keys().next().value!)
+    const retiredSources: string[] = []
+    while (this.sources.size > 4096) {
+      const retired = this.sources.keys().next().value!
+      retiredSources.push(retired)
+      this.sources.delete(retired)
+    }
+    // An existing native queue may still hold the execution specification of
+    // an evicted alias. Retire it through the same queue lifecycle before the
+    // registry can forget which plugin could later revoke that source.
+    if (retiredSources.length) this.emit('revoked', retiredSources)
     this.emit('changed', [
       ...new Set([old?.identity.source, source].filter((s): s is string => !!s))
     ])
+  }
+  revokePlugin(pluginId: string): void {
+    // A newer quality resolution may already have replaced tracks[key] while
+    // an older authorized alias is still playing. Revoke every owned alias.
+    const sources = [...this.sources]
+      .filter(([, alias]) => alias.pluginId === pluginId)
+      .map(([source]) => source)
+    for (const [key, record] of this.tracks) {
+      if (record.identity.pluginId !== pluginId) continue
+      this.tracks.delete(key)
+    }
+    if (sources.length) {
+      this.emit('changed', sources)
+      this.emit('revoked', sources)
+    }
   }
   revision(source: string): string {
     const alias = this.sources.get(source)
