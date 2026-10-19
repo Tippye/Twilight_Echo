@@ -2550,7 +2550,10 @@ test('playback end auto-advance stops at queue end without changing manual next 
   // engine reports no upcoming track, so this cannot race its auto-advance.
   assert.doesNotMatch(handleNativePlaybackEnded, /if \(isNativeQueueDelegated\(\)\) return/)
   assert.match(handleNativePlaybackEnded, /handlePlaybackEnded\(\)/)
-  assert.match(setupAudioEngineListeners, /case 'eof-reached':\s*handleNativePlaybackEnded\(\)/)
+  assert.match(
+    setupAudioEngineListeners,
+    /case 'eof-reached':\s*if \(data === true\) handleNativePlaybackEnded\(\)/
+  )
   assert.match(
     setupAudioEngineListeners,
     /if \(\(nativePlaybackActive \|\| nativeQueueDelegated\) && reason === 'eof'\) \{\s*handleNativePlaybackEnded\(\)/

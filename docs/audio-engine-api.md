@@ -18,6 +18,8 @@ HTTP 音源的打开、探测和完整首次定位（包括精确定位的 prero
 
 Renderer 的 session clock 在 seek admission 保留当前观察位置，并进入既有 epoch；实际 ACK 和当前音源 readback 确认后，再权威更新位置及该 epoch，不能让普通防回退平滑规则拒绝已确认的后退定位。load、queue、source、entry 或 epoch 变化后，旧 ACK/readback 不能覆盖新状态。成功 native Play 可进行一次当前 owner 的 readback 刷新实际格式；可选刷新失败不把成功的 Play 改判失败，source 匹配要求保持不变。
 
+`eof-reached` 只有布尔值 `true` 表示播完；`false` 用于清除状态，缺失值或其他值不触发切歌。显式 Stop 的原生响应尚未完成时，不从其中间 `stopped` 快照推断自然 EOF；迟到旧响应不能覆盖更新的播放操作。
+
 自然 EOF 后的 `stopped` 与手动停止不同。当前音源真正播完且其来源/队列归属仍有效时，`TAE_Seek` 在本次慢操作中重新打开、定位并准备为 `paused`，成功 ACK 后的实际位置必须反映目标；后续 Pause 只切换这个已准备的流，不把本次 EOF 恢复的 HTTP open/probe 推迟到继续播放。新建未播放的引擎、手动 Stop 或队列替换后失效的旧 EOF，不具备此恢复资格；其 Stopped Seek 返回 `TAE_RESULT_NOT_INITIALIZED`（2），不再返回位置未改变的假成功。恢复尝试失败时照实返回原错误，且不保留 EOF 恢复资格，后续 Stopped Seek 同样返回 NOT_INITIALIZED。网络/处理/后端错误不能通过消费 EOF 掩盖；更换队列或迟到旧事件不能恢复已失效的来源。
 
 服务端 `Pause` 的调用期限按同一次 admission 决策分类，所选类别同时控制 caller deadline 和原生在途归属。默认普通期限为1.5秒；只有新鲜、权威的 native `stopped`，或 `paused` 且 `outputReleased=false`、`exclusive=false`、`accessMode=shared`，并且没有已知慢原生前驱时，才沿用此期限。未知、Playing、独占、已释放输出或排在慢请求后的 Pause 使用既有20秒慢期限及超时后的单次20秒完成宽限，其他命令的期限不因此放宽。Playing 的旧共享快照不能证明仍可走快路径，因为 native clock 自动换曲可在没有新 IPC 的情况下进入不同输出路线。

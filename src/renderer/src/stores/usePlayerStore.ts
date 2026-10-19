@@ -2646,7 +2646,7 @@ function setupAudioEngineListeners(): void {
           flushLatestCurrentTime()
           break
         case 'eof-reached':
-          handleNativePlaybackEnded()
+          if (data === true) handleNativePlaybackEnded()
           break
       }
       if (name === 'time-pos' || name === 'duration') {
