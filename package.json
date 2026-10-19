@@ -10,6 +10,8 @@
   "scripts": {
     "test:automix": "node --experimental-strip-types --test src/shared/twilightAutoMix.test.ts src/main/audio/twilightAutoMixCoordinator.test.ts src/main/audio/twilightAutoMixCache.test.ts src/main/audio/autoMixStemService.test.ts src/main/audio/autoMixStemCapabilities.test.ts src/main/audio/autoMixStemInstaller.test.ts src/main/app/autoMixStemSettings.test.ts src/renderer/src/components/settings-page/PlaybackSettingsSection.test.ts scripts/automix-native-device-soak.test.cjs",
     "test:ncm-toplists": "node --experimental-strip-types --test --import ./scripts/register-renderer-aliases.mjs src/renderer/src/components/local-dashboard/useNcmToplists.test.ts src/renderer/src/components/local-dashboard/NcmToplists.behavior.test.ts resources/plugins/ncm-provider/index.test.mjs src/main/plugins/providerRouting.test.ts",
+    "build:qqmusic-plugin": "node integrations/qqmusic/scripts/pack-plugin.cjs qqmusic-provider",
+    "prepare:qqmusic-release": "node scripts/prepare-qqmusic-release.cjs",
     "build:plugin-api": "tsc -p packages/plugin-api/tsconfig.json && tsc -p packages/plugin-api/tsconfig.typecheck.json",
     "generate:plugin-theme-contract": "node --experimental-strip-types scripts/generate-plugin-theme-contract.ts",
     "evidence:themes": "node scripts/theme-visual-regression.cjs",
