@@ -219,7 +219,14 @@ test('mode2 Range uses exact uint64 offsets and original native oracle bytes, wi
   const keys = []
   const total = 18446744073709551615n
   const logical = total - 3n
+  const ranges = []
   const proxy = await harness(t, { fetch: (_url, options) => {
+    ranges.push(options.headers.Range)
+    if (ranges.length > 1) {
+      const selected = requested(options)
+      assert.equal(selected.start, start / BigInt(blockBytes) * BigInt(blockBytes))
+      return partial(Buffer.alloc(Number(selected.end - selected.start + 1n)), selected, total)
+    }
     assert.equal(options.headers.Range, `bytes=${start}-${start + 7n}`)
     return bytesResponse(encrypted, 206, { 'Content-Range': `bytes ${start}-${start + 7n}/${total}`, 'Content-Length': '8' })
   } })
@@ -233,7 +240,8 @@ test('mode2 Range uses exact uint64 offsets and original native oracle bytes, wi
   assert.equal(result.status, 206)
   assert.equal(result.headers['content-range'], `bytes ${start}-${start + 7n}/${logical}`)
   assert.deepEqual(result.body, expected)
-  assert.equal(keys.length, 2)
+  await lease.release()
+  assert.equal(keys.length, 3, 'independent prefill decoder key is also wiped')
   assert.ok(keys.every((key) => key.every((byte) => byte === 0)))
 })
 
@@ -666,7 +674,7 @@ test('large ignored Range uses exactly one whole upstream stream and clips logic
   assert.equal(calls, 1)
 })
 
-test('HEAD and ranges below two MiB retain the single upstream path', async (t) => {
+test('HEAD has no upstream and small partial reads complete before optional large-media prefill', async (t) => {
   const bytes = Buffer.alloc(blockBytes * 6, 17)
   const ranges = []
   const proxy = await harness(t, { fetch: (_url, options) => {
@@ -678,7 +686,7 @@ test('HEAD and ranges below two MiB retain the single upstream path', async (t) 
   assert.equal(ranges.length, 0)
   const end = blockBytes * 4 - 2
   assert.equal((await rawRequest(lease.url, { headers: { Range: `bytes=0-${end}` } })).body.length, end + 1)
-  assert.deepEqual(ranges, [`bytes=0-${end}`])
+  assert.deepEqual(ranges, [`bytes=0-${end}`, `bytes=0-${blockBytes - 1}`])
 })
 
 test('parallel plain, mode1 and both mode2 sizes preserve exact uint64 offsets and dispose owned decoders', async (t) => {
@@ -721,7 +729,7 @@ test('parallel plain, mode1 and both mode2 sizes preserve exact uint64 offsets a
     assert.equal(result.headers['content-range'], `bytes ${start}-${start + BigInt(count) - 1n}/${total - 17n}`)
     assert.deepEqual(result.body, expected)
     await lease.release()
-    assert.equal(owners, 6)
+    assert.equal(owners, 7, 'one extra independently disposed owner verifies optional ciphertext prefill')
     assert.ok(keys.every(value => value.every(byte => byte === 0)))
     if (kind === 'mode1') {
       assert.equal(disposed, owners)
@@ -1627,7 +1635,152 @@ test('large lease rejection and small Range still precede the early partial path
   assert.equal((await within(small.ready, 1000, 'small Range resumes after valid upstream')).statusCode, 206)
   now = lease.expiresAt
   assert.equal((await rawRequest(lease.url, { headers: { Range: 'bytes=1-' } })).status, 410)
-  assert.equal(resolves, 2)
-  assert.equal(calls, 1)
+  assert.equal(resolves, 3, 'initial, requested Range and independent optional prefill')
+  assert.equal(calls, 2)
   assert.equal((await rawRequest(lease.url, { headers: { Range: 'bytes=1-' } })).status, 404)
+})
+
+test('memo contiguous prefixes preserve original headers, mode1 owners and exact continuation including whole200', async (t) => {
+  const length = 8 * blockBytes + 173, footer = 11
+  const expected = Buffer.from(Array.from({ length: length + footer }, (_, i) => i % 251))
+  const key = Buffer.from(JSON.parse(readFileSync(new URL('./test/fixtures/windows-ekey-native-v1.json', import.meta.url)))
+    .vectors.find(value => value.key_length === 512).internal_key_hex, 'hex')
+  for (const kind of ['plain', 'mode1', 'mode2']) for (const whole of [false, true]) {
+    const calls = [], owners = [], transforms = []
+    let useWhole = false
+    const proxy = await harness(t, { fetch: (_url, options) => {
+      const selected = requested(options), first = useWhole ? 0n : selected.start
+      const last = useWhole ? BigInt(length + footer - 1) : selected.end
+      const data = Buffer.from(expected.subarray(Number(first), Number(last + 1n)))
+      if (kind === 'mode2') { const cipher = new WindowsMediaStream(key); cipher.transform(data, String(first)); cipher.dispose() }
+      if (kind === 'mode1') for (let i = 0; i < data.length; i++) data[i] ^= Number((first + BigInt(i)) & 255n)
+      calls.push({ start: selected.start, end: selected.end, whole: useWhole })
+      return useWhole ? bytesResponse(data, 200, { 'Content-Length': String(data.length) })
+        : partial(data, selected, length + footer)
+    } })
+    const lease = await proxy.open({ resolve: () => {
+      const owner = { disposed: 0 }; owners.push(owner)
+      const decoder = { kind, length: String(length), tailBytes: String(footer) }
+      if (kind === 'mode2') decoder.key = Buffer.from(key)
+      if (kind === 'mode1') Object.assign(decoder, { transform(data, offset) {
+        assert.equal(owner.disposed, 0)
+        transforms.push({ owner, offset: BigInt(offset) })
+        for (let i = 0; i < data.length; i++) data[i] ^= Number((BigInt(offset) + BigInt(i)) & 255n)
+        return data
+      }, dispose() { owner.disposed++ } })
+      return largeSource(length + footer, { decoder })
+    } })
+    for (const start of [7, blockBytes + 7]) {
+      assert.deepEqual((await rawRequest(lease.url, { headers: { Range: `bytes=${start}-${start}` } })).body,
+        expected.subarray(start, start + 1))
+      await new Promise(resolve => setTimeout(resolve, 15))
+    }
+    assert.equal(calls.length, 4)
+    useWhole = whole
+    const start = blockBytes - 100, end = 2 * blockBytes + 131071, before = calls.length
+    const result = await rawRequest(lease.url, { headers: { Range: `bytes=${start}-${end}` } })
+    assert.equal(result.headers['content-range'], `bytes ${start}-${end}/${length}`)
+    assert.equal(result.headers['content-length'], String(end - start + 1))
+    assert.deepEqual(result.body, expected.subarray(start, end + 1))
+    assert.deepEqual(calls[before], { start: BigInt(2 * blockBytes), end: BigInt(end), whole })
+    if (whole) assert.equal(calls.length, before + 1, '200 continuation is consumed once with no prefill/refetch')
+    if (kind === 'mode1') {
+      const current = transforms.filter(value => value.offset >= BigInt(start) && value.offset <= BigInt(end))
+      assert.ok(current.some(value => value.offset === BigInt(start)))
+      assert.ok(current.some(value => value.offset === BigInt(blockBytes)))
+      assert.ok(current.some(value => value.offset === BigInt(2 * blockBytes)))
+    }
+    await lease.release()
+    if (kind === 'mode1') assert.ok(owners.every(owner => owner.disposed === 1))
+  }
+  key.fill(0)
+})
+
+test('memo is lease-isolated across preload, HEAD, refresh and expiry while globally bounded', async (t) => {
+  const length = 10 * blockBytes, calls = [], expired = 1200
+  let now = 1000, nextBExpiry = expired
+  const proxy = await harness(t, { now: () => now, fetch: (url, options) => {
+    calls.push({ owner: new URL(url).pathname, selected: requested(options) })
+    return streamedRange(length, options)
+  } })
+  const make = (owner) => proxy.open({ resolve: () => largeSource(length, {
+    sourceId: owner, url: `${origin}/${owner}`, expiresAt: owner === 'a' ? future : nextBExpiry
+  }) })
+  const a = await make('a'), b = await make('b')
+  const read = (lease, first) => rawRequest(lease.url, { headers: { Range: `bytes=${first}-${first}` } })
+  await read(a, blockBytes + 7); await new Promise(resolve => setTimeout(resolve, 15))
+  await read(b, blockBytes + 7); await new Promise(resolve => setTimeout(resolve, 15))
+  const before = calls.length
+  assert.equal((await read(a, blockBytes + 8)).body.length, 1)
+  assert.equal(calls.length, before, 'preload lease must not clear current lease memo')
+  await rawRequest(b.url, { method: 'HEAD' })
+  await read(a, blockBytes + 9); assert.equal(calls.length, before, 'HEAD retires only its own lease')
+  await read(b, blockBytes + 9); await new Promise(resolve => setTimeout(resolve, 15))
+  now = 1300; nextBExpiry = 4000
+  const expiryBefore = calls.length
+  await read(b, blockBytes + 10)
+  assert.ok(calls.length > expiryBefore, 'fresh source expiry cannot extend an old ciphertext retention')
+  const aBefore = calls.length
+  await read(a, blockBytes + 11); assert.equal(calls.length, aBefore)
+  await b.release()
+  await read(a, blockBytes + 12); assert.equal(calls.length, aBefore)
+  // Five distinct ready windows may occupy at most the four-entry owner; the
+  // oldest window must be fetched again rather than retained without a credit.
+  for (const block of [2, 3, 4, 5]) { await read(a, block * blockBytes + 7); await new Promise(resolve => setTimeout(resolve, 10)) }
+  const evicted = calls.length
+  await read(a, blockBytes + 13); assert.ok(calls.length > evicted)
+  await a.release()
+})
+
+test('optional prefill never delays original bytes and its safe warnings do not fail the admitting response', async (t) => {
+  const length = 8 * blockBytes
+  for (const invalid of ['pending', 'short', 'extra', 'encoding', 'range', '200', '503']) {
+    const gate = deferred(), events = [], calls = []
+    const proxy = await harness(t, { requestTimeoutMs: 100, onFailure: event => { events.push(event); throw Error('observer isolated') },
+      fetch: async (_url, options) => {
+        const selected = requested(options); calls.push(selected)
+        if (selected.end - selected.start + 1n === BigInt(blockBytes)) {
+          if (invalid === 'pending') await gate.promise
+          if (invalid === '503') return new Response(null, { status: 503 })
+          const bytes = Buffer.alloc(blockBytes + (invalid === 'short' ? -1 : invalid === 'extra' ? 1 : 0), 1)
+          return bytesResponse(bytes, invalid === '200' ? 200 : 206, {
+            'Content-Range': invalid === 'range' ? 'bytes 1-2/3' : `bytes ${selected.start}-${selected.end}/${length}`,
+            'Content-Length': String(blockBytes), ...(invalid === 'encoding' ? { 'Content-Encoding': 'gzip' } : {})
+          })
+        }
+        return streamedRange(length, options)
+      } })
+    const lease = await proxy.open({ resolve: () => largeSource(length) })
+    const response = await within(rawRequest(lease.url, { headers: { Range: 'bytes=7-7' } }), 80, 'optional prefill blocked primary byte')
+    assert.equal(response.status, 206); assert.deepEqual(response.body, Buffer.from([1]))
+    if (invalid === 'pending') { assert.equal(events.length, 0); gate.resolve() }
+    await new Promise(resolve => setTimeout(resolve, 15))
+    if (invalid !== 'pending') {
+      assert.ok(events.length > 0)
+      assert.ok(events.every(event => ['upstream', 'future'].includes(event.phase)))
+      const before = calls.length
+      assert.equal((await rawRequest(lease.url, { headers: { Range: 'bytes=8-8' } })).status, 206)
+      assert.ok(calls.length > before, 'invalid or partial ciphertext was not published')
+    }
+    await lease.release()
+  }
+})
+
+test('lease cancellation at original206 admission cannot start lease-owned optional work', async (t) => {
+  const length = 8 * blockBytes, parent = new AbortController()
+  let calls = 0, canceled = 0
+  const proxy = await harness(t, { fetch: (_url, options) => {
+    calls++
+    const response = streamedRange(length, options), get = response.headers.get.bind(response.headers)
+    response.headers.get = name => { if (name === 'content-range') parent.abort(); return get(name) }
+    const cancel = response.body.cancel.bind(response.body)
+    response.body.cancel = (...args) => { canceled++; return cancel(...args) }
+    return response
+  } })
+  const lease = await proxy.open({ resolve: () => largeSource(length), signal: parent.signal })
+  await rawRequest(lease.url, { headers: { Range: 'bytes=7-7' } }).catch(() => {})
+  await lease.release()
+  assert.equal(calls, 1, 'revoked admitting lease must not launch a prefill')
+  assert.ok(canceled <= 1)
+  assert.equal((await rawRequest(lease.url)).status, 404)
 })
