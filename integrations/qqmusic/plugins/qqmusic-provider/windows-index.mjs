@@ -49,7 +49,8 @@ export async function activate(context) {
   const state = { context, settings: serializeWindowsSettings(context.settings), client: null,
     closed: false, epoch: 0, device: null, qr: null, songs: new Map(), discovery: null, favorites: null,
     playbackEpoch: 0, playbacks: new Map(), proxy: new WindowsAudioProxy({
-      allowedOrigins: WINDOWS_MEDIA_ALLOWED_ORIGINS, leaseTtlMs: 6 * 60 * 60 * 1000 }) }
+      allowedOrigins: WINDOWS_MEDIA_ALLOWED_ORIGINS, leaseTtlMs: 6 * 60 * 60 * 1000,
+      onFailure: event => context.logger?.warn?.(`QQ audio proxy failure: ${JSON.stringify(event)}`) }) }
   state.client = new WindowsMusicClient({ settings: state.settings, getDevice: () => getDevice(state) })
   state.favorites = createFavorites(state)
   state.discovery = createWindowsDiscoveryMethods({ client: state.client,

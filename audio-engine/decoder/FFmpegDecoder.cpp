@@ -360,11 +360,18 @@ struct FFmpegDecoder::Impl {
     return 1;
   }
 
-  bool ioError(std::string* error, const char* operation) const {
+  bool ioError(std::string* error, const char* operation, int ffmpegError) const {
     if (cancelled(error)) return false;
-    if (error) *error = ioTimedOut ? "network_io_timeout" :
-        (httpSource ? std::string("network_") + operation + "_failed" :
-                      std::string("audio_") + operation + "_failed");
+    if (error) {
+      if (ioTimedOut) {
+        *error = "network_io_timeout";
+      } else {
+        *error = (httpSource ? std::string("network_") : std::string("audio_")) + operation + "_failed";
+        // Preserve the stable failure class while retaining the numeric cause.
+        // Do not append FFmpeg prose, which may contain a source URL or path.
+        if (ffmpegError < 0) *error += " [averror=" + std::to_string(ffmpegError) + "]";
+      }
+    }
     return false;
   }
 
@@ -752,7 +759,7 @@ struct FFmpegDecoder::Impl {
           (storedIoError < 0 && storedIoError != AVERROR_EOF)))) {
         av_packet_unref(packet);
         readFailureWasCancelled = cancelled(nullptr);
-        ioError(&readFailure, "read");
+        ioError(&readFailure, "read", storedIoError < 0 && storedIoError != AVERROR_EOF ? storedIoError : ret);
         if (error) *error = readFailure;
         return false;
       }
@@ -926,14 +933,14 @@ bool FFmpegDecoder::open(const std::string& source, std::string* error) {
   int ret = avformat_open_input(&impl_->formatContext, source.c_str(), inputFormat, &openOptions);
   av_dict_free(&openOptions);
   if (ret < 0 || Impl::interruptIo(impl_.get())) {
-    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "open");
+    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "open", ret);
     if (error) *error = "打开音频失败，错误码：" + std::to_string(ret);
     return false;
   }
 
   ret = avformat_find_stream_info(impl_->formatContext, nullptr);
   if (ret < 0 || Impl::interruptIo(impl_.get())) {
-    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "probe");
+    if (looksHttp || impl_->cancelled(nullptr)) return impl_->ioError(error, "probe", ret);
     if (error) *error = "解析音频信息失败，错误码：" + std::to_string(ret);
     return false;
   }
@@ -1145,7 +1152,7 @@ bool FFmpegDecoder::seek(double seconds, std::string* error, SeekPurpose purpose
   const int64_t timestamp = static_cast<int64_t>(seconds / av_q2d(stream->time_base));
   const int ret = av_seek_frame(impl_->formatContext, impl_->audioStreamIndex, timestamp, AVSEEK_FLAG_BACKWARD);
   if (ret < 0 || Impl::interruptIo(impl_.get())) {
-    if (impl_->httpSource || impl_->cancelled(nullptr)) return impl_->ioError(error, "seek");
+    if (impl_->httpSource || impl_->cancelled(nullptr)) return impl_->ioError(error, "seek", ret);
     if (error) *error = "音频跳转失败，错误码：" + std::to_string(ret);
     return false;
   }

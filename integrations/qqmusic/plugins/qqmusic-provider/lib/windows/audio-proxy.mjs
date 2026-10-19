@@ -16,17 +16,30 @@ const TRANSIENT_NETWORK_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'EPIPE', 
   'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'])
 const OWNED_HEADERS = new Set(['host', 'range', 'accept-encoding', 'content-length',
   'connection', 'transfer-encoding', 'proxy-authorization'])
+// Diagnostics never inspect or stringify an untrusted exception. This weak map
+// contains only proxy-owned codes and boundary labels, never source metadata.
+const diagnosticErrors = new WeakMap()
 
-function failure(code = 'SOURCE') {
+function diagnostic(error, phase, code = 'UNKNOWN', httpStatus) {
+  if (error && (typeof error === 'object' || typeof error === 'function') && !diagnosticErrors.has(error)) {
+    diagnosticErrors.set(error, { phase, code,
+      ...(Number.isInteger(httpStatus) && httpStatus >= 100 && httpStatus <= 599 ? { httpStatus } : {}) })
+  }
+  return error
+}
+
+function failure(code = 'SOURCE', phase, httpStatus) {
   const error = new Error('QQ 音乐音频代理请求失败')
   error.name = 'WindowsAudioProxyError'
   error.code = code
+  diagnostic(error, phase, code, httpStatus)
   return error
 }
 
 function aborted() {
   const error = new Error('QQ 音乐音频请求已取消')
   error.name = 'AbortError'
+  diagnostic(error, undefined, 'CANCELLED')
   return error
 }
 
@@ -105,8 +118,11 @@ function childController(parent) {
   return { controller, cleanup() { parent.removeEventListener('abort', cancel) } }
 }
 
-async function timedWait(promise, controller, timeoutMs, discard) {
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+async function timedWait(promise, controller, timeoutMs, discard, onTimeout) {
+  const timer = setTimeout(() => {
+    if (!controller.signal.aborted) onTimeout?.()
+    controller.abort()
+  }, timeoutMs)
   timer.unref?.()
   try { return await wait(promise, controller.signal, discard) }
   finally { clearTimeout(timer) }
@@ -207,6 +223,7 @@ export class WindowsAudioProxy {
   #now
   #ttl
   #timeout
+  #onFailure
   #server
   #listening
   #closing = false
@@ -218,7 +235,7 @@ export class WindowsAudioProxy {
   #memorySlot = rangeSlots(32)
 
   constructor({ allowedOrigins, fetch = globalThis.fetch, now = Date.now,
-    leaseTtlMs = 600000, requestTimeoutMs = 15000 } = {}) {
+    leaseTtlMs = 600000, requestTimeoutMs = 15000, onFailure } = {}) {
     if (!Array.isArray(allowedOrigins) || !allowedOrigins.length || typeof fetch !== 'function' ||
       typeof now !== 'function' || !Number.isSafeInteger(leaseTtlMs) || leaseTtlMs <= 0 ||
       leaseTtlMs > 0x7fffffff || !Number.isSafeInteger(requestTimeoutMs) || requestTimeoutMs <= 0 ||
@@ -233,6 +250,23 @@ export class WindowsAudioProxy {
     this.#now = now
     this.#ttl = leaseTtlMs
     this.#timeout = requestTimeoutMs
+    this.#onFailure = typeof onFailure === 'function' ? onFailure : null
+  }
+
+  #report(error, phase) {
+    const detail = diagnosticErrors.get(error)
+    if (detail?.code === 'CANCELLED') return
+    this.#emit({ ...detail, phase: detail?.phase ?? phase, code: detail?.code ?? 'UNKNOWN' })
+  }
+
+  #emit(event) {
+    // Observability is optional and cannot alter bytes, retries or cancellation.
+    try { Promise.resolve(this.#onFailure?.(Object.freeze(event))).catch(() => {}) } catch {}
+  }
+
+  #timed(promise, controller, phase, discard) {
+    return timedWait(promise, controller, this.#timeout, discard,
+      () => this.#emit({ phase, code: 'TIMEOUT' })).catch(error => { throw diagnostic(error, phase) })
   }
 
   #url(value, base) {
@@ -313,7 +347,9 @@ export class WindowsAudioProxy {
     const { signal } = controller
     const pending = Promise.resolve().then(() => lease.resolve({ signal, refresh }))
       .then((input) => this.#adopt(input))
-    const source = await timedWait(pending, controller, this.#timeout, (late) => this.#dispose(late))
+    let source
+    try { source = await this.#timed(pending, controller, 'resolve', (late) => this.#dispose(late)) }
+    catch (error) { throw diagnostic(error, 'resolve') }
     if (signal.aborted) { await this.#dispose(source); throw aborted() }
     if (lease.identity !== undefined && this.#identity(source) !== lease.identity) {
       await this.#dispose(source)
@@ -345,7 +381,8 @@ export class WindowsAudioProxy {
     if (!this.#listening) {
       const server = createServer({ maxHeaderSize: 8192 }, (request, response) => {
         response.on('error', () => {})
-        this.#handle(request, response).catch(() => {
+        this.#handle(request, response).catch((error) => {
+          this.#report(error, 'serve')
           if (response.headersSent) response.destroy()
           else { response.statusCode = 502; response.end('QQ audio stream failed') }
         })
@@ -492,12 +529,12 @@ export class WindowsAudioProxy {
     for (let redirects = 0; ; redirects += 1) {
       let response
       try {
-        response = await timedWait(this.#fetch(this.#url(url), {
+        response = await this.#timed(this.#fetch(this.#url(url), {
           method: 'GET', redirect: 'manual', headers, signal
-        }), controller, this.#timeout, cancelBody)
+        }), controller, 'upstream', cancelBody)
       } catch (error) {
         if (recovery && transientNetwork(error)) recovery.network = true
-        throw error
+        throw diagnostic(error, 'upstream')
       }
       if (!REDIRECTS.has(response.status)) return response
       try {
@@ -540,21 +577,21 @@ export class WindowsAudioProxy {
   }
 
   async #endOfRange(reader, controller) {
-    const part = await timedWait(reader.read(), controller, this.#timeout)
+    const part = await this.#timed(reader.read(), controller, 'read')
     if (!part.done) throw failure('UPSTREAM_LENGTH')
   }
 
   #position(upstream, source, selected, allowWhole = true) {
     const encoding = upstream.headers.get('content-encoding')
-    if (encoding && encoding !== 'identity') throw failure('ENCODING')
+    if (encoding && encoding !== 'identity') throw failure('ENCODING', 'upstream', upstream.status)
     if (upstream.status === 206) {
       const expected = `bytes ${selected.start}-${selected.end}/${source.upstreamLength}`
-      if (upstream.headers.get('content-range') !== expected) throw failure('UPSTREAM_RANGE')
+      if (upstream.headers.get('content-range') !== expected) throw failure('UPSTREAM_RANGE', 'upstream', upstream.status)
       const length = upstream.headers.get('content-length')
-      if (length !== null && uint64(length) !== selected.end - selected.start + 1n) throw failure('UPSTREAM_LENGTH')
+      if (length !== null && uint64(length) !== selected.end - selected.start + 1n) throw failure('UPSTREAM_LENGTH', 'upstream', upstream.status)
     } else if (upstream.status === 200 && allowWhole) {
       if (uint64(upstream.headers.get('content-length')) !== source.upstreamLength) throw failure('UPSTREAM_LENGTH')
-    } else throw failure('UPSTREAM_STATUS')
+    } else throw failure('UPSTREAM_STATUS', 'upstream', upstream.status)
     if (!upstream.body?.getReader) throw failure('BODY')
     return upstream.status === 206 ? selected.start : 0n
   }
@@ -590,7 +627,10 @@ export class WindowsAudioProxy {
             if (attempt > 0) {
               const remaining = deadline - performance.now()
               if (remaining <= 0) throw failure('UPSTREAM_TIMEOUT')
-              timer = setTimeout(() => child.controller.abort(), remaining)
+              timer = setTimeout(() => {
+                if (!child.controller.signal.aborted) this.#emit({ phase: 'future', code: 'TIMEOUT' })
+                child.controller.abort()
+              }, remaining)
               timer.unref?.()
             }
             source = await this.#resolve(lease, false, child.controller)
@@ -598,7 +638,7 @@ export class WindowsAudioProxy {
             if (TRANSIENT_HTTP_CODES.has(upstream.status)) {
               recovery.http = true
               delay = retryDelay(upstream)
-              throw failure('UPSTREAM_STATUS')
+              throw failure('UPSTREAM_STATUS', 'upstream', upstream.status)
             }
             this.#position(upstream, source, selected, false)
             // Each attempt independently verifies session/content identity and
@@ -607,8 +647,8 @@ export class WindowsAudioProxy {
             source = null
             reader = upstream.body.getReader()
             const read = async () => {
-              try { return await timedWait(reader.read(), child.controller, this.#timeout) }
-              catch (error) { recovery.network = transientNetwork(error); throw error }
+              try { return await this.#timed(reader.read(), child.controller, 'read') }
+              catch (error) { recovery.network = transientNetwork(error); throw diagnostic(error, 'read') }
             }
             block.bytes = Buffer.alloc(Number(selected.end - selected.start + 1n))
             let filled = 0
@@ -642,7 +682,7 @@ export class WindowsAudioProxy {
           }
         }
       } finally { releaseTransport?.() }
-    })().catch((error) => { controller.abort(); throw error })
+    })().catch((error) => { this.#report(error, 'future'); controller.abort(); throw error })
     block.done.catch(() => {}) // A later block may fail before ordered consumption.
     return block
   }
@@ -676,7 +716,7 @@ export class WindowsAudioProxy {
       pump()
       let position = selected.start
       while (position <= firstEnd) {
-        const part = await timedWait(reader.read(), controller, this.#timeout)
+        const part = await this.#timed(reader.read(), controller, 'read')
         if (part.done || !(part.value instanceof Uint8Array)) throw failure('TRUNCATED')
         if (BigInt(part.value.length) > firstEnd - position + 1n) throw failure('UPSTREAM_LENGTH')
         await this.#write(response, source, cipher, part.value, position, controller.signal)
@@ -752,7 +792,7 @@ export class WindowsAudioProxy {
       // stream once. Never issue four requests for the whole upstream file.
       let delivered = 0n
       while (delivered < count) {
-        const part = await timedWait(reader.read(), controller, this.#timeout)
+        const part = await this.#timed(reader.read(), controller, 'read')
         if (part.done || !(part.value instanceof Uint8Array)) throw failure('TRUNCATED')
         const begin = position
         position += BigInt(part.value.length)

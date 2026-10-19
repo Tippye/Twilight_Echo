@@ -112,6 +112,22 @@ function fallbackHarness({ sizes = {}, outcome = () => 'success', onAttempt } = 
   return { ...h, get provider() { return h.provider }, attempts, mediaRequests, plain, writes, apiRequests, get details() { return details } }
 }
 
+test('the registered Windows provider writes only safe proxy failure records to its normal logger', { skip: process.platform !== 'win32' }, async () => {
+  const original = globalThis.fetch, messages = [], h = fallbackHarness()
+  let fail = false
+  h.context.logger = { warn: message => messages.push(message) }
+  globalThis.fetch = (url, options) => fail && !options.body
+    ? Promise.resolve(new Response(null, { status: 416 })) : h.fetch(url, options)
+  try {
+    await activate(h.context)
+    const result = await h.provider.getPlaybackUrl({ id: 'qq:0039MnYb0qxYhV:97773' }, { quality: 'flac' }, {})
+    fail = true
+    assert.equal((await original(result.streamUrl)).status, 502)
+    assert.deepEqual(messages, ['QQ audio proxy failure: {"phase":"upstream","code":"UPSTREAM_STATUS","httpStatus":416}'])
+    assert.equal(/https?:|vkey|PUBLIC|sourceId|fingerprint|session|access_token/.test(messages.join('')), false)
+  } finally { await deactivate(); globalThis.fetch = original }
+})
+
 test('retired composite selections use the same recording in ordinary128 without any effect or VIP RPC', { skip: process.platform !== 'win32' }, async () => {
   const original = globalThis.fetch
   for (const retired of ['excellent', 'excellentSpatial']) {

@@ -1080,7 +1080,7 @@ function formatDecodedStage(info: NonNullable<typeof playbackInfo.value>): strin
 
 const outputChainText = computed(() => {
   if (outputInfo.value?.outputReleased) return '音频设备已释放，继续播放时重新获取'
-  const info = playbackInfo.value
+  const info = currentSourceInfo.value
   if (!info) return ''
   const source =
     isDsdSource(info) || isSacdIsoSource(info)

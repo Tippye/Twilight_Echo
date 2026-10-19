@@ -23,6 +23,12 @@ import {
   NCM_STREAM_URL_MAX_AGE_MS
 } from '../utils/nativeQueuePreparation.ts'
 import { NativeQueueLoader } from '../utils/nativeQueueLoader.ts'
+import { findNativeQueueTrackIndex } from '../utils/nativeQueueTrackIndex.ts'
+import { evaluateNativePlaybackInfoIntent } from '../utils/nativePlaybackInfoIntent.ts'
+import {
+  matchesPlaybackAudioSource,
+  resolvePlaybackAudioMetadata
+} from '../components/audioVisualizerFormatting.ts'
 import { patchPlaybackQueueTrack } from '../utils/playbackQueueVirtualization.ts'
 import { getTrackSource, isLikelyLocalFilePath } from '../utils/playerTrackUtils.ts'
 import { shouldReuseResolvedStreamUrl } from '../utils/playbackRouting.ts'
@@ -3034,4 +3040,147 @@ test('native seek refuses readback from a different committed queue source', asy
   assert.equal(h.clock.snapshot().position, 159)
   assert.equal(h.applied.length, 0)
   assert.equal(h.errors.length, 1)
+})
+
+test('a non-first QQ singleton applies current audio facts during Play without waiting for Pause', async () => {
+  const track = (id: string, streamUrl: string | null): Track =>
+    ({
+      id,
+      source: 'qq',
+      title: id,
+      artist: 'Fixture',
+      album: '',
+      filePath: id,
+      fileName: `${id}.mp3`,
+      streamUrl,
+      format: 'mp3',
+      size: 0,
+      duration: 252,
+      queueEntryId: `entry:${id}`,
+      cover: null,
+      lyrics: ''
+    }) as Track
+  const queue = [
+    track('qq:unresolved', null),
+    track('qq:selected', 'twilight-media://audio/current')
+  ]
+  const loader = new NativeQueueLoader()
+  await loader.prepareAndLoad(
+    { queue, currentTrack: queue[1], currentTarget: queue[1].streamUrl!, currentIndex: 1 },
+    { isAudioFileAuthorized: async () => false },
+    { loadQueue: async () => ({ queueToken: 'current-version' }) }
+  )
+  const previous = {
+    source: 'http://127.0.0.1:2/previous',
+    rendererSource: 'twilight-media://audio/previous',
+    codec: 'flac',
+    sourceSampleRate: 48000,
+    sourceBitDepth: 24,
+    sourceChannels: 2,
+    bitrate: 1000000,
+    nativePlaybackActive: true,
+    queueIndex: 0,
+    state: 'playing',
+    position: 1
+  }
+  const incoming = {
+    ...previous,
+    source: 'http://127.0.0.1:2/current',
+    rendererSource: queue[1].streamUrl!,
+    queueToken: 'current-version',
+    sourceSampleRate: 96000,
+    bitrate: 2700000,
+    sourceBytes: 88129955,
+    duration: 252,
+    position: 2
+  }
+  const context = {
+    queue: { value: queue },
+    currentTrack: { value: { ...queue[1] } },
+    queueIndex: { value: 1 },
+    playMode: { value: 'sequential' },
+    nativeQueueLoader: loader,
+    nativeSourceToTrackId: new Map(),
+    nativeQueueDelegated: false,
+    nativeQueueSyncRequest: null,
+    nativePlaybackActive: true,
+    playbackInfo: { value: previous },
+    restoredPlaybackPending: false,
+    isLoading: { value: false },
+    nativePlaybackInfoIntent: {
+      loadToken: 1,
+      trackId: queue[1].id,
+      queueIndex: 1,
+      source: queue[1].streamUrl!,
+      expiresAt: 2500,
+      confirmedAt: null
+    },
+    intentionalTrackGuard: { trackId: queue[1].id, source: queue[1].streamUrl!, until: 3000 },
+    getNowMs: () => 100,
+    NATIVE_PLAYBACK_INFO_POST_CONFIRMATION_GRACE_MS: 500,
+    evaluateNativePlaybackInfoIntent,
+    findNativeQueueTrackIndex,
+    markNativePlaybackInfoIntentConfirmed: () => {},
+    clearNativePlaybackInfoIntent: () => {},
+    normalizeNativePlaybackInfo: (info: typeof previous) => ({ ...info }),
+    playbackToggleIntent: null,
+    loadedTrackId: queue[1].id,
+    mergeTrackTransientData: (value: Track) => value,
+    toPlaybackQueueSnapshot: (value: Track) => ({ ...value }),
+    lastActiveTrack: null,
+    duration: { value: 252 },
+    cueDuration: () => 252,
+    getLatestPlaybackTime: () => 2,
+    applyPlaybackPositionSample: () => {},
+    applyNativePlayingState: () => {},
+    applyNativeStreamBufferingFromInfo: () => {},
+    playbackHistoryController: { recordPlaybackStart: () => {} },
+    nativeHistoryRestartPending: false,
+    sourceRecoveryDisabledLoadToken: null,
+    activeLoadToken: 1,
+    autoAdvanceInFlight: false,
+    advancingFromEndedTrackId: '',
+    restoredPlaybackPosition: 0,
+    scheduleCrossfadeIfNeeded: () => {}
+  }
+  const source = readFileSync(new URL('./usePlayerStore.ts', import.meta.url), 'utf8')
+  const code = ts.transpileModule(
+    ['findTrackIndexFromPlaybackInfo', 'shouldIgnoreNativePlaybackInfo', 'applyNativePlaybackInfo']
+      .map((name) => {
+        const args =
+          name === 'applyNativePlaybackInfo'
+            ? 'info, options = {}'
+            : name === 'shouldIgnoreNativePlaybackInfo'
+              ? 'info, infoIndex'
+              : 'info'
+        return `function ${name}(${args}) {${extractInternalFunctionBody(source, name)}}`
+      })
+      .join('\n'),
+    { compilerOptions: { target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+  vm.createContext(context)
+  vm.runInContext(code, context)
+  const apply = vm.runInContext('applyNativePlaybackInfo', context) as (
+    info: typeof incoming
+  ) => boolean
+  assert.equal(
+    apply({ ...incoming, queueToken: 'stale', source: 'http://127.0.0.1:2/foreign' }),
+    false
+  )
+  assert.equal(context.playbackInfo.value.source, previous.source)
+  assert.equal(apply(incoming), true)
+  assert.equal(context.queueIndex.value, 1)
+  assert.equal(
+    matchesPlaybackAudioSource(context.currentTrack.value, context.playbackInfo.value),
+    true
+  )
+  const facts = resolvePlaybackAudioMetadata(context.currentTrack.value, context.playbackInfo.value)
+  assert.deepEqual(facts, {
+    format: 'FLAC',
+    sampleRate: 96000,
+    bitDepth: 24,
+    channels: 2,
+    bitrate: 2700000,
+    size: 88129955
+  })
 })

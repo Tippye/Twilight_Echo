@@ -66,6 +66,89 @@ function deferred() {
   const promise = new Promise((done) => { resolve = done })
   return { promise, resolve }
 }
+
+test('terminal proxy diagnostics contain only owned codes, stages and HTTP numbers', async (t) => {
+  for (const [status, headers, code] of [[416, {}, 'UPSTREAM_STATUS'],
+    [206, { 'Content-Range': 'bytes 1-16/29', 'Content-Length': '16' }, 'UPSTREAM_RANGE']]) {
+    const events = []
+    const proxy = await harness(t, { onFailure: event => events.push(event),
+      fetch: async () => bytesResponse(plain, status, headers) })
+    const lease = await proxy.open({ resolve: () => source() })
+    assert.equal((await rawRequest(lease.url)).status, 502)
+    assert.deepEqual(events, [{ phase: 'upstream', code, httpStatus: status }])
+    assert.equal(Object.isFrozen(events[0]), true)
+  }
+})
+
+test('proxy diagnostics never inspect unknown error properties or serialize their private values', async (t) => {
+  const events = []
+  let reads = 0
+  const error = Object.defineProperties({}, Object.fromEntries(['name', 'message', 'code', 'cause', 'stack'].map(key =>
+    [key, { get() { reads++; throw Error('PRIVATE_ACCOUNT_URL_KEY') } }])))
+  const proxy = await harness(t, { onFailure: event => events.push(event), fetch: async () => { throw error } })
+  const lease = await proxy.open({ resolve: () => source() })
+  assert.equal((await rawRequest(lease.url)).status, 502)
+  assert.deepEqual(events, [{ phase: 'upstream', code: 'UNKNOWN' }])
+  assert.equal(reads, 0)
+  assert.equal(JSON.stringify(events).includes('PRIVATE'), false)
+})
+
+test('diagnostic observers cannot change failures, successful bytes or recovered future retries', async (t) => {
+  for (const observer of [() => { throw Error('PRIVATE') }, () => Promise.reject(Error('PRIVATE'))]) {
+    const proxy = await harness(t, { onFailure: observer, fetch: async () => new Response(null, { status: 416 }) })
+    const lease = await proxy.open({ resolve: () => source() })
+    assert.equal((await rawRequest(lease.url)).status, 502)
+  }
+  const length = 4 * 1024 * 1024, events = [], attempts = new Map()
+  const proxy = await harness(t, { onFailure: event => events.push(event), fetch: async (_url, options) => {
+    const first = Number(/^bytes=(\d+)-/.exec(options.headers.Range)[1])
+    attempts.set(first, (attempts.get(first) ?? 0) + 1)
+    if (first === 512 * 1024 && attempts.get(first) === 1) return new Response(null, { status: 503 })
+    return streamedRange(length, options)
+  } })
+  const lease = await proxy.open({ resolve: () => source({ upstreamLength: String(length),
+    decoder: { kind: 'plain', length: String(length), tailBytes: '0' } }) })
+  assert.equal((await rawRequest(lease.url)).body.length, length)
+  assert.equal(attempts.get(512 * 1024), 2)
+  assert.deepEqual(events, [])
+})
+
+test('proxy timeouts are observable but ordinary client cancellation is quiet', async (t) => {
+  const events = []
+  const proxy = await harness(t, { requestTimeoutMs: 25, onFailure: event => events.push(event),
+    fetch: () => new Promise(() => {}) })
+  const lease = await proxy.open({ resolve: () => source() })
+  assert.equal((await rawRequest(lease.url)).status, 502)
+  assert.deepEqual(events, [{ phase: 'upstream', code: 'TIMEOUT' }])
+  events.length = 0
+  const active = deferred()
+  const quiet = await harness(t, { onFailure: event => events.push(event),
+    fetch: () => { active.resolve(); return new Promise(() => {}) } })
+  const cancelLease = await quiet.open({ resolve: () => source() })
+  const canceled = rawRequest(cancelLease.url).catch(() => {})
+  await active.promise
+  await cancelLease.release()
+  await canceled
+  assert.deepEqual(events, [])
+})
+
+test('only terminal future failures are reported and failed reads retain their boundary', async (t) => {
+  const events = [], length = 4 * 1024 * 1024
+  const proxy = await harness(t, { onFailure: event => events.push(event), fetch: async (_url, options) =>
+    options.headers.Range.startsWith('bytes=524288-') ? new Response(null, { status: 503 })
+      : streamedRange(length, options) })
+  const lease = await proxy.open({ resolve: () => source({ upstreamLength: String(length),
+    decoder: { kind: 'plain', length: String(length), tailBytes: '0' } }) })
+  await assert.rejects(rawRequest(lease.url))
+  assert.deepEqual(events, [{ phase: 'upstream', code: 'UPSTREAM_STATUS', httpStatus: 503 }])
+  events.length = 0
+  const badRead = await harness(t, { onFailure: event => events.push(event), fetch: async () =>
+    new Response(new ReadableStream({ start(controller) { controller.error(Error('PRIVATE_BODY_ERROR')) } }),
+      { status: 206, headers: { 'Content-Range': 'bytes 0-15/29', 'Content-Length': '16' } }) })
+  const readLease = await badRead.open({ resolve: () => source() })
+  await assert.rejects(rawRequest(readLease.url))
+  assert.deepEqual(events, [{ phase: 'read', code: 'UNKNOWN' }])
+})
 async function within(promise, milliseconds, message) {
   let timer
   try {

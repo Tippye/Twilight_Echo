@@ -1,7 +1,7 @@
 {
   "id": "com.twilightecho.provider.qqmusic",
   "name": "QQ 音乐 Windows 音源",
-  "version": "0.4.0-rc.9",
+  "version": "0.4.0-rc.10",
   "description": "Windows QQ 音乐音源：官方扫码、资料库、喜欢状态同步、歌手专辑、推荐歌单与歌词，支持 MP3、FLAC、Hi-Res、杜比、5.1、臻品母带与臻品全景声的实际媒体音源。",
   "author": "Px-asen",
   "license": "Apache-2.0",
@@ -11,7 +11,7 @@
   ],
   "main": "windows-index.mjs",
   "engines": {
-    "twilightEcho": ">=1.3.1-qq.10"
+    "twilightEcho": ">=1.3.1-qq.11"
   },
   "apiVersion": 3,
   "permissions": [

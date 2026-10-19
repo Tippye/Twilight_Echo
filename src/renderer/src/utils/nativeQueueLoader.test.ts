@@ -228,3 +228,104 @@ test('partial native queues map versioned indices to duplicate logical occurrenc
   loader.clear()
   assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'window' }, queue), -1)
 })
+
+test('a QQ singleton retains its non-first logical index and entry authority', async () => {
+  const loader = new NativeQueueLoader()
+  const queue = tracks(3).map((track, index) => ({
+    ...track,
+    id: `qq:${index}`,
+    source: 'qq' as const,
+    filePath: `qq:${index}`,
+    queueEntryId: `entry:${index}`,
+    streamUrl: index === 1 ? 'twilight-media://audio/current' : null
+  }))
+  const prepared = await loader.prepareAndLoad(
+    {
+      queue,
+      currentTrack: queue[1],
+      currentTarget: queue[1].streamUrl!,
+      currentIndex: 1,
+      playMode: 'listLoop'
+    },
+    { isAudioFileAuthorized: async () => false },
+    { loadQueue: async () => ({ queueToken: 'qq-singleton' }) }
+  )
+  assert.equal(prepared?.items.length, 1)
+  assert.equal(prepared?.delegated, false)
+  assert.deepEqual(prepared?.queueIndices, [1])
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'qq-singleton' }, queue), 1)
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'old-token' }, queue), -1)
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0 }, queue), -1)
+  assert.equal(loader.playMode('listLoop'), 'sequential')
+  assert.equal(loader.playMode('repeat'), 'repeat')
+  queue[1] = { ...queue[1], queueEntryId: 'replacement-entry' }
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'qq-singleton' }, queue), -1)
+})
+
+test('local singleton degradation binds the selected duplicate occurrence, not the first id', async () => {
+  const loader = new NativeQueueLoader()
+  const queue = tracks(3).map((track, index) => ({
+    ...track,
+    id: 'local:same',
+    queueEntryId: `entry:${index}`
+  }))
+  const prepared = await loader.prepareAndLoad(
+    { queue, currentTrack: queue[2], currentTarget: queue[2].filePath, currentIndex: 2 },
+    {
+      isAudioFileAuthorized: async (path) => path === queue[2].filePath,
+      areAudioFilesAuthorized: async (paths) => paths.map((path) => path === queue[2].filePath)
+    },
+    { loadQueue: async () => ({ queueToken: 'local-singleton' }) }
+  )
+  assert.deepEqual(prepared?.queueIndices, [2])
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'local-singleton' }, queue), 2)
+  assert.equal(loader.findLogicalIndex({ queueIndex: 1, queueToken: 'local-singleton' }, queue), -1)
+})
+
+test('a current track outside the logical queue does not acquire a fabricated index', async () => {
+  const loader = new NativeQueueLoader()
+  const queue = tracks(2)
+  const current = { ...tracks(1)[0], id: 'local:outside', filePath: 'D:/Music/outside.flac' }
+  const prepared = await loader.prepareAndLoad(
+    { queue, currentTrack: current, currentTarget: current.filePath, currentIndex: 1 },
+    { isAudioFileAuthorized: async () => true },
+    { loadQueue: async () => ({ queueToken: 'outside' }) }
+  )
+  assert.deepEqual(prepared?.queueIndices, [-1])
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'outside' }, queue), -1)
+})
+
+test('a stale selected index uses exact occurrence identity and never guesses duplicate ids', async () => {
+  const queue = tracks(3).map((track, index) => ({
+    ...track,
+    id: index === 0 ? 'qq:unresolved' : 'qq:same',
+    source: 'qq' as const,
+    filePath: index === 0 ? 'qq:unresolved' : 'qq:same',
+    queueEntryId: `entry:${index}`,
+    streamUrl: index === 0 ? null : 'twilight-media://audio/shared'
+  }))
+  for (const [current, expected] of [
+    [queue[2], 2],
+    [{ ...queue[2], queueEntryId: undefined }, -1],
+    [{ ...queue[2], queueEntryId: 'outside-entry' }, -1]
+  ] as const) {
+    const loader = new NativeQueueLoader()
+    const prepared = await loader.prepareAndLoad(
+      { queue, currentTrack: current, currentTarget: current.streamUrl!, currentIndex: 99 },
+      { isAudioFileAuthorized: async () => false },
+      { loadQueue: async () => ({ queueToken: 'occurrences' }) }
+    )
+    assert.deepEqual(prepared?.queueIndices, [expected])
+    assert.equal(
+      loader.findLogicalIndex({ queueIndex: 0, queueToken: 'occurrences' }, queue),
+      expected
+    )
+  }
+  const loader = new NativeQueueLoader()
+  await loader.prepareAndLoad(
+    { queue, currentTrack: queue[2], currentTarget: queue[2].streamUrl!, currentIndex: 1 },
+    { isAudioFileAuthorized: async () => false },
+    { loadQueue: async () => ({ queueToken: 'stale-index' }) }
+  )
+  assert.equal(loader.findLogicalIndex({ queueIndex: 0, queueToken: 'stale-index' }, queue), 2)
+})
