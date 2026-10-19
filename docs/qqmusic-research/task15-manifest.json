@@ -1,0 +1,1382 @@
+{
+  "schema": 1,
+  "archiveDate": "2026-10-19",
+  "status": "ready-for-final-review; qq15-bounded-GUI-functional-confidence-B; Git-push-and-final-delivery-pending",
+  "coreProductSourceCommit": "e0268bfd6ab136d3684394e15391cc73a2fea670",
+  "coreRetirementCommit": "86cd0b13469d82b2ff0fcc9d9dc84c4222da16dd",
+  "providerSourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+  "hostVersion": "1.3.1-qq.15",
+  "providerVersion": "0.4.0-rc.12",
+  "normalPackage": {
+    "bytes": 276654,
+    "sha256": "b2d0ac8858eac9afdd4bfbc7550b125d62d2d6da16205c1de8360ea848e4cd4b",
+    "members": 34,
+    "reachableJavaScriptModules": 32,
+    "minimumHost": ">=1.3.1-qq.13"
+  },
+  "normalization": "UTF-8 text raw and explicit LF SHA-256; read-only Git filter hash-object SHA-1 verified. Provider mirror uses committed LF; TEP/archive binary bytes are never normalized.",
+  "privacy": "Curated public/numeric facts only. No raw account/profile/URL/lease, QQ DLL/model, media/cache, screenshots or build binaries. Source receipt names and raw hashes do not imply raw materials are archived.",
+  "researchFiles": [
+    {
+      "path": "docs/qqmusic-research/task15/final-release-summary.json",
+      "bytes": 105150,
+      "rawSha256": "15b72926919feb94c3a809ebd5074a48da29ce41f57d4017bc418978a6028ac1",
+      "lfSha256": "15b72926919feb94c3a809ebd5074a48da29ce41f57d4017bc418978a6028ac1",
+      "gitFilteredBlobSha1": "9a580ee7e0c172e6b04de7cceb375a6ed1f3f21f"
+    },
+    {
+      "path": "docs/qqmusic-research/task15/README.md",
+      "bytes": 7164,
+      "rawSha256": "148894a9141bf64972211ecba813253614ac2dea6e36751040046eba879e029a",
+      "lfSha256": "148894a9141bf64972211ecba813253614ac2dea6e36751040046eba879e029a",
+      "gitFilteredBlobSha1": "7b4fd94046a7d10641caacf5f7082bc2683e1a63"
+    },
+    {
+      "path": "docs/qqmusic-research/task15/retirement-and-verification.json",
+      "bytes": 94395,
+      "rawSha256": "a7a8cb1299b64e53d9bf8f5134cb91979990a506f8322c8ef71b34943856cce5",
+      "lfSha256": "a7a8cb1299b64e53d9bf8f5134cb91979990a506f8322c8ef71b34943856cce5",
+      "gitFilteredBlobSha1": "60da57940310ecd93d68ebdfc1f9389c3bb6e023"
+    },
+    {
+      "path": "docs/qqmusic-research/task15/skill-validation.json",
+      "bytes": 16664,
+      "rawSha256": "296f8b2a61b46550d5916dfe8a13f3186dbe5527ff0ba61ec1b5f47d234f4ff7",
+      "lfSha256": "296f8b2a61b46550d5916dfe8a13f3186dbe5527ff0ba61ec1b5f47d234f4ff7",
+      "gitFilteredBlobSha1": "1aa35d2dea0a204f2de768d92b79fbe26574b1d4"
+    }
+  ],
+  "relatedCurrentEntries": [
+    {
+      "path": "docs/qqmusic-research/README.md",
+      "bytes": 2554,
+      "rawSha256": "b2cb2d4c17c42892b33d8af8017be3bc7db04bcab9f042075f83b8fc512426c8",
+      "lfSha256": "b2cb2d4c17c42892b33d8af8017be3bc7db04bcab9f042075f83b8fc512426c8",
+      "gitFilteredBlobSha1": "926618cf3b250f18d6d9ec206a59fcf7bdaf9cf2"
+    },
+    {
+      "path": "integrations/qqmusic/README.md",
+      "bytes": 3128,
+      "rawSha256": "1315b95d5ce3dc97e74ce829d892edbf3328c02ae3022449a549695cade655de",
+      "lfSha256": "1315b95d5ce3dc97e74ce829d892edbf3328c02ae3022449a549695cade655de",
+      "gitFilteredBlobSha1": "2955bb203ef6ca43811da3e45933c20f264af960"
+    },
+    {
+      "path": "docs/release-notes/1.3.1-qq.15.md",
+      "bytes": 3907,
+      "rawSha256": "5cd188f20bc3b8dd5e3c79493204cfd8538f477a8ebbf5862410e7424524815d",
+      "lfSha256": "5cd188f20bc3b8dd5e3c79493204cfd8538f477a8ebbf5862410e7424524815d",
+      "gitFilteredBlobSha1": "d052b516af877d71176210c27bfbfe8bb75b7b2e"
+    }
+  ],
+  "providerMirrorFiles": [
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/README.md",
+      "bytes": 8665,
+      "rawSha256": "da149836ebcf379dcec71dff7552dd34457c9f282f11390a148de86355db545f",
+      "lfSha256": "da149836ebcf379dcec71dff7552dd34457c9f282f11390a148de86355db545f",
+      "gitFilteredBlobSha1": "ee330556d2ebcfc85b97c90c24295452a2eb5a8e",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/README.md",
+      "providerRawSha256": "0fc5057f732450aac643c537f1f9d83addde6cd29e02ae96808e0821b0c18ded",
+      "providerCommittedSha256": "da149836ebcf379dcec71dff7552dd34457c9f282f11390a148de86355db545f",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/THIRD_PARTY_NOTICES.md",
+      "bytes": 3054,
+      "rawSha256": "b421dc13e82ce8fbbcd0adc2986c6a3c95dbffb257ed363a2f9a0d562963c931",
+      "lfSha256": "b421dc13e82ce8fbbcd0adc2986c6a3c95dbffb257ed363a2f9a0d562963c931",
+      "gitFilteredBlobSha1": "c720276393ac08d4c87dbdabf2f9bccba2f705be",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/THIRD_PARTY_NOTICES.md",
+      "providerRawSha256": "c2bd1f24c38c4e83d25cecfb3a857d7bd8f41ed762878ad86ec771abe0726525",
+      "providerCommittedSha256": "b421dc13e82ce8fbbcd0adc2986c6a3c95dbffb257ed363a2f9a0d562963c931",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/index.mjs",
+      "bytes": 84969,
+      "rawSha256": "4a370494f6f44d27922269ea219f011dd437a46f9ac9132a12470ca5b0abaffe",
+      "lfSha256": "4a370494f6f44d27922269ea219f011dd437a46f9ac9132a12470ca5b0abaffe",
+      "gitFilteredBlobSha1": "c5fe5afd3db575a0d8a4c9ddc5c7cf43f4ce12eb",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/index.mjs",
+      "providerRawSha256": "60b6cd82808ad6bd45bed2bf633c419972783f0d38ddf69edffd8e3d6dd75669",
+      "providerCommittedSha256": "4a370494f6f44d27922269ea219f011dd437a46f9ac9132a12470ca5b0abaffe",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/index.test.mjs",
+      "bytes": 46793,
+      "rawSha256": "2cb592bb8b3a5af28aaf484b49f1bd79dda78cf562b4d5cc3b11b29aaf8de61e",
+      "lfSha256": "2cb592bb8b3a5af28aaf484b49f1bd79dda78cf562b4d5cc3b11b29aaf8de61e",
+      "gitFilteredBlobSha1": "3c1c3dbd4a2d878fbdc753175c1fda8b2f5232fa",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/index.test.mjs",
+      "providerRawSha256": "c11c27c392d0da1cbba894940ac53b3c77b246cc9e6676106b204fa6e1084b7f",
+      "providerCommittedSha256": "2cb592bb8b3a5af28aaf484b49f1bd79dda78cf562b4d5cc3b11b29aaf8de61e",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/album-call.mjs",
+      "bytes": 7976,
+      "rawSha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "lfSha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "gitFilteredBlobSha1": "e62d90f482f2fd333705df7014214168e562a1c8",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/album-call.mjs",
+      "providerRawSha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "providerCommittedSha256": "c1662b34b758d4c3e8fb3a0d9792f8db47cea0b42ad4b948472b3e04bfbc0ee5",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/artist-call.mjs",
+      "bytes": 12972,
+      "rawSha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "lfSha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "gitFilteredBlobSha1": "4d3c58dd7cd8592cdad227d614212fdb90faf855",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/artist-call.mjs",
+      "providerRawSha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "providerCommittedSha256": "317dccbdcb6fe96b17504825b40dcfd26925ac4ad338cdb90e1a3527edc2afee",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+      "bytes": 40970,
+      "rawSha256": "44edb3776f205eb28c322381ec1920d92f61515967f7788b8c207242a8362390",
+      "lfSha256": "44edb3776f205eb28c322381ec1920d92f61515967f7788b8c207242a8362390",
+      "gitFilteredBlobSha1": "22c9c6bc90cd77fc6417bb28f2f1b0e8ee5be97b",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/audio-proxy.mjs",
+      "providerRawSha256": "44edb3776f205eb28c322381ec1920d92f61515967f7788b8c207242a8362390",
+      "providerCommittedSha256": "44edb3776f205eb28c322381ec1920d92f61515967f7788b8c207242a8362390",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/client.mjs",
+      "bytes": 18404,
+      "rawSha256": "cfc0f7e6f5a6fbca83a9643fdd4f12bf2dea3017938e0f393b29b6261c76c316",
+      "lfSha256": "cfc0f7e6f5a6fbca83a9643fdd4f12bf2dea3017938e0f393b29b6261c76c316",
+      "gitFilteredBlobSha1": "ba09911be0b0b9390ae17e18e4aa1a0cd40249fa",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/client.mjs",
+      "providerRawSha256": "cfc0f7e6f5a6fbca83a9643fdd4f12bf2dea3017938e0f393b29b6261c76c316",
+      "providerCommittedSha256": "cfc0f7e6f5a6fbca83a9643fdd4f12bf2dea3017938e0f393b29b6261c76c316",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/comm.mjs",
+      "bytes": 3463,
+      "rawSha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "lfSha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "gitFilteredBlobSha1": "03c508229ce32e50903cbe147236d5cf4707bfe5",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/comm.mjs",
+      "providerRawSha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "providerCommittedSha256": "7bcf53dba5bb6fd3b636ce1f65fe8949e0f8de7029e1f7b6d6eb1931482c822b",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/container.mjs",
+      "bytes": 4407,
+      "rawSha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "lfSha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "gitFilteredBlobSha1": "6e8a02028eec5aaaa132c4b84c7214587831c7b8",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/container.mjs",
+      "providerRawSha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "providerCommittedSha256": "a04ff1e56039c998472ff1016e784be2dffa0c712512880487f76dc69c37ed54",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform-vectors.json",
+      "bytes": 17609,
+      "rawSha256": "2f778c9147f6742e6dfe700e57c4cba539542040798dbbf95865b391ec4d3cd1",
+      "lfSha256": "2f778c9147f6742e6dfe700e57c4cba539542040798dbbf95865b391ec4d3cd1",
+      "gitFilteredBlobSha1": "95d52c78a7fdc96f2294d9fd0b7cb5ee390e22e9",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/data-transform-vectors.json",
+      "providerRawSha256": "b1cd30aa7de40b26c0c389835e40fd16164910a45ebe7844c932a156326e4549",
+      "providerCommittedSha256": "2f778c9147f6742e6dfe700e57c4cba539542040798dbbf95865b391ec4d3cd1",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform.mjs",
+      "bytes": 2430,
+      "rawSha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
+      "lfSha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
+      "gitFilteredBlobSha1": "09f040a7c636477678f96047f9f5e764390c8c9d",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/data-transform.mjs",
+      "providerRawSha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
+      "providerCommittedSha256": "78f093f91a000c70b00e0c2d467c67e5ac5c6d2d157ca2a51840e6649810482d",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/data-transform.test.mjs",
+      "bytes": 2871,
+      "rawSha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
+      "lfSha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
+      "gitFilteredBlobSha1": "d825bdb77af10cc0b39c72bda97993fe66e0e8ea",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/data-transform.test.mjs",
+      "providerRawSha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
+      "providerCommittedSha256": "266924bb2e723b27348d34d2b9d14a36a8dc2d793e814c40d6524b5dbe66b29c",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/discovery-call.mjs",
+      "bytes": 19351,
+      "rawSha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "lfSha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "gitFilteredBlobSha1": "9ba7ea45da3811b7258815bcca7da69fb7238cb7",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/discovery-call.mjs",
+      "providerRawSha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "providerCommittedSha256": "4563b04c4ecb16c2307a93ede259657d70f72351960be9fdf30822237d73dc1c",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/ekey.mjs",
+      "bytes": 2574,
+      "rawSha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "lfSha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "gitFilteredBlobSha1": "2c9ea2b2023ab652e9fdb5f0353dc7cc8a666ba8",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/ekey.mjs",
+      "providerRawSha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "providerCommittedSha256": "7e5dfcefae43efe6526732270e4bc2868fab99cf64af30bee64378b0b32ca47d",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/favorite-call.mjs",
+      "bytes": 5936,
+      "rawSha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+      "lfSha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+      "gitFilteredBlobSha1": "f46361802abbc6ebfa62d998f3db6cb125a01024",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/favorite-call.mjs",
+      "providerRawSha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+      "providerCommittedSha256": "468823e33831ec7bdce1b2b786878a0706bee4705cf5e74bb4063d4c77257a8f",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/favorite-state.mjs",
+      "bytes": 6002,
+      "rawSha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+      "lfSha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+      "gitFilteredBlobSha1": "6fb4deb6358297f5591b0abf2cc84b73197ae79c",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/favorite-state.mjs",
+      "providerRawSha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+      "providerCommittedSha256": "3d5ee82fc06f535e893447f6436a39beff6152da6769328c6083e028e20430b7",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/file-transform.mjs",
+      "bytes": 2082,
+      "rawSha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
+      "lfSha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
+      "gitFilteredBlobSha1": "a819d0e9bad010b8c87c20afb6917e0900d277b7",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/file-transform.mjs",
+      "providerRawSha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
+      "providerCommittedSha256": "60c61055e44ded7aaed4b4307cc7b39c05f2f64e064aa2ca22b649f076415d36",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/filename.mjs",
+      "bytes": 4288,
+      "rawSha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+      "lfSha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+      "gitFilteredBlobSha1": "aeeb6ddd1b7d74446f9bb19ae15f1f3de035cde0",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/filename.mjs",
+      "providerRawSha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+      "providerCommittedSha256": "74eacb50971a073084f3d0a4e615adf48749ec101aa0da4e899ecfaff02e1223",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/home-call.mjs",
+      "bytes": 15864,
+      "rawSha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "lfSha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "gitFilteredBlobSha1": "98a817e0cd5feada6ed8c1ac72e5cc372acab287",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/home-call.mjs",
+      "providerRawSha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "providerCommittedSha256": "085054060c35e730e8484cb8c536ea7772473354fee552f1449c9a48b317fa8c",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/json-integer.mjs",
+      "bytes": 602,
+      "rawSha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "lfSha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "gitFilteredBlobSha1": "a076cdd57154f7ba1fabcb87e178d25324b9b9b0",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/json-integer.mjs",
+      "providerRawSha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "providerCommittedSha256": "9016fb64f9f581f4387db4e28b99028394ec7f731a496bdcb3aca3d56da25d4c",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/login-request.mjs",
+      "bytes": 3818,
+      "rawSha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "lfSha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "gitFilteredBlobSha1": "fab7d41340484df804c6ec8cbf35c66162194ccf",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/login-request.mjs",
+      "providerRawSha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "providerCommittedSha256": "57b7e7e883d20df5797de362ff6e9cf65ecad4861676e07b4e166535c552a7cd",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/lyric-call.mjs",
+      "bytes": 3876,
+      "rawSha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "lfSha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "gitFilteredBlobSha1": "3cbc8991a57633e2d5abb6d96ed35b668bde0e7f",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/lyric-call.mjs",
+      "providerRawSha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "providerCommittedSha256": "79a2770943ff0428cf7bea547a97c8335e8bc168f4f1e6c1a9b238fb8197be1d",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/media-source.mjs",
+      "bytes": 20089,
+      "rawSha256": "ff43fd570fc07628ec89564cd7245af6fd0197474db6f46c3d4b07b5697f8d1b",
+      "lfSha256": "ff43fd570fc07628ec89564cd7245af6fd0197474db6f46c3d4b07b5697f8d1b",
+      "gitFilteredBlobSha1": "c25f3d833fe4c951ceccfdca01e7beffae8a429b",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/media-source.mjs",
+      "providerRawSha256": "ff43fd570fc07628ec89564cd7245af6fd0197474db6f46c3d4b07b5697f8d1b",
+      "providerCommittedSha256": "ff43fd570fc07628ec89564cd7245af6fd0197474db6f46c3d4b07b5697f8d1b",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/media-stream.mjs",
+      "bytes": 6405,
+      "rawSha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+      "lfSha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+      "gitFilteredBlobSha1": "91adc9e85b762468d008841f122e790ffce88c2a",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/media-stream.mjs",
+      "providerRawSha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+      "providerCommittedSha256": "6a6d42abdadf802f859b7956c3e1d2690a3456e68109ccb6851cd68dcd77cba0",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-binding.mjs",
+      "bytes": 4485,
+      "rawSha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "lfSha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "gitFilteredBlobSha1": "1dc1bf975a69953418d6e420893e9541cdb5b0d2",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/playlist-binding.mjs",
+      "providerRawSha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "providerCommittedSha256": "a04e4f2c9c21c9753d1b11c3806c6bc00bccf29358bed14d6402f49d4e783cc2",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-call.mjs",
+      "bytes": 3895,
+      "rawSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "lfSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "gitFilteredBlobSha1": "c3da37fefe6661677b76ae6ae217ac907009548d",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/playlist-call.mjs",
+      "providerRawSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "providerCommittedSha256": "4ebaed89194f4e62cf3e1beb9412a6233021451b9191605980eacc5bb9bf8cbf",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/playlist-data.mjs",
+      "bytes": 10732,
+      "rawSha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "lfSha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "gitFilteredBlobSha1": "795c5a644e58c37183422e4dea976478f1b6b97c",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/playlist-data.mjs",
+      "providerRawSha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "providerCommittedSha256": "9d393c1b531454bf6b50123ab32a9448fbab6010d29019bbce159fc6e17d87cb",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/quality.mjs",
+      "bytes": 5455,
+      "rawSha256": "0d7de4e5d0c123f7925d955aa00b33d7b95b52cd7e61dc175bd6133202bdd6c7",
+      "lfSha256": "0d7de4e5d0c123f7925d955aa00b33d7b95b52cd7e61dc175bd6133202bdd6c7",
+      "gitFilteredBlobSha1": "5f596950af735f35e6d59e63852f50b4117dccad",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/quality.mjs",
+      "providerRawSha256": "0d7de4e5d0c123f7925d955aa00b33d7b95b52cd7e61dc175bd6133202bdd6c7",
+      "providerCommittedSha256": "0d7de4e5d0c123f7925d955aa00b33d7b95b52cd7e61dc175bd6133202bdd6c7",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/response.mjs",
+      "bytes": 3268,
+      "rawSha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "lfSha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "gitFilteredBlobSha1": "179235e0d6afb1b683b5def91e848d51c63fb583",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/response.mjs",
+      "providerRawSha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "providerCommittedSha256": "fbb04c41fbae331c071205d403753eb14ef236504a44ce58dfd4db81bdfd388b",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/search-call.mjs",
+      "bytes": 1523,
+      "rawSha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "lfSha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "gitFilteredBlobSha1": "6af5a502937bcf111c62d3c26e277200b222b85e",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/search-call.mjs",
+      "providerRawSha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "providerCommittedSha256": "10867ad7d4a1d566c71cd8ed8d25c5d14c8fae7e280864b1805566d1cfb16c95",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/search-catalog.mjs",
+      "bytes": 8025,
+      "rawSha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "lfSha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "gitFilteredBlobSha1": "5cc2adbdf55d648504660fdcc7a5d4074aad3b14",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/search-catalog.mjs",
+      "providerRawSha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "providerCommittedSha256": "e44189d8d2109626e1bf611f10d859dd2697eac935ba46a4b64ce521bbafd5e2",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/settings.mjs",
+      "bytes": 3784,
+      "rawSha256": "b5a1fd91ec8093622fdbb4e71a5d72ecc583e7a048dafbad60ac5145dfd030d7",
+      "lfSha256": "b5a1fd91ec8093622fdbb4e71a5d72ecc583e7a048dafbad60ac5145dfd030d7",
+      "gitFilteredBlobSha1": "3f456af4b4c67de941bfaf2c4394035b982cd0dd",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/settings.mjs",
+      "providerRawSha256": "b5a1fd91ec8093622fdbb4e71a5d72ecc583e7a048dafbad60ac5145dfd030d7",
+      "providerCommittedSha256": "b5a1fd91ec8093622fdbb4e71a5d72ecc583e7a048dafbad60ac5145dfd030d7",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/signature.mjs",
+      "bytes": 1676,
+      "rawSha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "lfSha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "gitFilteredBlobSha1": "e7719605aef27a6abf9b555c040521a1d22585c4",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/signature.mjs",
+      "providerRawSha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "providerCommittedSha256": "77dbcc9d5949150aa8ed4b9f4e37a0d8b71021b8915800dd525e496db970d8d0",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/song-detail-call.mjs",
+      "bytes": 1523,
+      "rawSha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "lfSha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "gitFilteredBlobSha1": "4e58a8cf6d590ddd36879186195848becd606a63",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/song-detail-call.mjs",
+      "providerRawSha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "providerCommittedSha256": "d2e8b49712a55e2a591acd5aa0861e8a2e9978294eb182c5b2f659a41ca82f1a",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/tea.mjs",
+      "bytes": 4535,
+      "rawSha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "lfSha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "gitFilteredBlobSha1": "a4aef83256ea7fb1437cf56c8a97bd340bc11e1c",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/tea.mjs",
+      "providerRawSha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "providerCommittedSha256": "cc1c32388b3420f98f6354f753d66431ed7e10916141d16c3296a520a8b5c4dd",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/tracks.mjs",
+      "bytes": 6956,
+      "rawSha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+      "lfSha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+      "gitFilteredBlobSha1": "913ac9a600b6d8b2e58afe7fac1549b4bc55d80e",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/tracks.mjs",
+      "providerRawSha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+      "providerCommittedSha256": "333ddcbe4bd35cd2856de20677d2762ba29e0215db0ae02b7bf5a07b6ee825a1",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/vkey-request.mjs",
+      "bytes": 4008,
+      "rawSha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "lfSha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "gitFilteredBlobSha1": "9f213191a5f44a748666b1e1ee75ed6b5f295dee",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/vkey-request.mjs",
+      "providerRawSha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "providerCommittedSha256": "0740b63dfef45577ff13ca69bdf8b2841c3c247f81f3a539ed37a5dbe6346969",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/vkey-request.test.mjs",
+      "bytes": 4647,
+      "rawSha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
+      "lfSha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
+      "gitFilteredBlobSha1": "c8cd9ae147ee11bc45a35cc8efaad25e13595b50",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/vkey-request.test.mjs",
+      "providerRawSha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
+      "providerCommittedSha256": "f362b82e095666101683a44e3b84a4f4146c28de31e4f7d759bd2b1e540a184f",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/lib/windows/wire.mjs",
+      "bytes": 680,
+      "rawSha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "lfSha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "gitFilteredBlobSha1": "df27b2285258e938c6f89a228bdfbab9ef0e6093",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/lib/windows/wire.mjs",
+      "providerRawSha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "providerCommittedSha256": "bbd097b963d12f2dcb99c6dba33c57f129654a4a30b864bb5daeafdcb27d0ef3",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/plugin.json",
+      "bytes": 1849,
+      "rawSha256": "f5ba9c6d06c63feff0bea6ede79cc22ed8b758073625e17aaf52b337a54c58f6",
+      "lfSha256": "f5ba9c6d06c63feff0bea6ede79cc22ed8b758073625e17aaf52b337a54c58f6",
+      "gitFilteredBlobSha1": "3a1bede3a63d0a11bbf287f829d2a8cccd696708",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/plugin.json",
+      "providerRawSha256": "125c9c707282bc53669809039757461a0c71761898b5facefdf732783075640c",
+      "providerCommittedSha256": "f5ba9c6d06c63feff0bea6ede79cc22ed8b758073625e17aaf52b337a54c58f6",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-ekey-native-v1.json",
+      "bytes": 10831,
+      "rawSha256": "329d49990a3f8e8808cfb24bf0f7934c6613da576557bda2556191cf9e6cfc4c",
+      "lfSha256": "329d49990a3f8e8808cfb24bf0f7934c6613da576557bda2556191cf9e6cfc4c",
+      "gitFilteredBlobSha1": "638432337759dfec6811b34913f2e287e8001bf3",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/test/fixtures/windows-ekey-native-v1.json",
+      "providerRawSha256": "6bd984365bcd17c92b4237b598da625c2293317c5374bafc9167d9a4ef5ec360",
+      "providerCommittedSha256": "329d49990a3f8e8808cfb24bf0f7934c6613da576557bda2556191cf9e6cfc4c",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-file-transform-native-v1.json",
+      "bytes": 138562,
+      "rawSha256": "a1009a5f3f1da6a793049faa5c50e17dbab27e5ade113ad145a24e8d06d267fa",
+      "lfSha256": "a1009a5f3f1da6a793049faa5c50e17dbab27e5ade113ad145a24e8d06d267fa",
+      "gitFilteredBlobSha1": "af8fdc046ce93b1c6b4be64ad06bc2d5d68455c4",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/test/fixtures/windows-file-transform-native-v1.json",
+      "providerRawSha256": "5b891c2f41880056093969cfeebe6314d295a7e1e985497da1b81b28bae27710",
+      "providerCommittedSha256": "a1009a5f3f1da6a793049faa5c50e17dbab27e5ade113ad145a24e8d06d267fa",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v1.json",
+      "bytes": 17514,
+      "rawSha256": "da3fb8b75b74139200d9f322be2907bf07a543e5d6bc65efec988cf7c062c6f3",
+      "lfSha256": "da3fb8b75b74139200d9f322be2907bf07a543e5d6bc65efec988cf7c062c6f3",
+      "gitFilteredBlobSha1": "cfe727eee66ace59f9a0163f6895c90c39f883a2",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v1.json",
+      "providerRawSha256": "38fe2eed518ac7e3790ae13de8f13ae5851d467e159fdafeb7f9d5c373665637",
+      "providerCommittedSha256": "da3fb8b75b74139200d9f322be2907bf07a543e5d6bc65efec988cf7c062c6f3",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v2.json",
+      "bytes": 10346,
+      "rawSha256": "d9bffeac611c9f8168bf32392e5e3637e3f1a2994771b14611ab0e930280ff62",
+      "lfSha256": "d9bffeac611c9f8168bf32392e5e3637e3f1a2994771b14611ab0e930280ff62",
+      "gitFilteredBlobSha1": "62e8c792a8b9c78a7e0933f7bbcc8697c7b1d28e",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/test/fixtures/windows-media-stream-native-v2.json",
+      "providerRawSha256": "31034aafb62b287394006b5f3675a6e5656ea00b9f32703d45a2f3be8757e2f9",
+      "providerCommittedSha256": "d9bffeac611c9f8168bf32392e5e3637e3f1a2994771b14611ab0e930280ff62",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-public-search-songs.json",
+      "bytes": 5544,
+      "rawSha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
+      "lfSha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
+      "gitFilteredBlobSha1": "81575861bbe3bddfcb73d0bd35853519f1e30f45",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/test/fixtures/windows-public-search-songs.json",
+      "providerRawSha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
+      "providerCommittedSha256": "0228abf66ca7d5dc494588f59d9c18771949ede792fe7207ffe8ddcdb7cfed65",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/test/fixtures/windows-signature-native-v2.json",
+      "bytes": 12750,
+      "rawSha256": "508da1d473b912f4dca627a4862b45f153c9b4f5e727a90087efb014eda55b60",
+      "lfSha256": "508da1d473b912f4dca627a4862b45f153c9b4f5e727a90087efb014eda55b60",
+      "gitFilteredBlobSha1": "69b8d2bff5a73c6f5c74cb046a0e155b26b35ee4",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/test/fixtures/windows-signature-native-v2.json",
+      "providerRawSha256": "9672f940af9340687aeb5cb2c63d07241ab3b8b8c7eff48641290b45b9076f29",
+      "providerCommittedSha256": "508da1d473b912f4dca627a4862b45f153c9b4f5e727a90087efb014eda55b60",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-album-call.test.mjs",
+      "bytes": 14303,
+      "rawSha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
+      "lfSha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
+      "gitFilteredBlobSha1": "92636890db55e0d54b319ecb8726d4d7308b8a1b",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-album-call.test.mjs",
+      "providerRawSha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
+      "providerCommittedSha256": "16dc4894ba29732ecfe7e50d67ece78c2dbcbf4833b366ba1ae361e8a44eaab2",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-artist-call.test.mjs",
+      "bytes": 18476,
+      "rawSha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
+      "lfSha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
+      "gitFilteredBlobSha1": "46bdc177c68462ca4121368b1a943ccbb6d69b8a",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-artist-call.test.mjs",
+      "providerRawSha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
+      "providerCommittedSha256": "bde2cfe45ca1fd8507ba029fdc4a818983e6d389bf99a8910d4d117c24b34a06",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+      "bytes": 95590,
+      "rawSha256": "a1fa04327b0f5d6552a2af0df951589c4b27cdf6f1ce1c2d73e398def0ab74f3",
+      "lfSha256": "a1fa04327b0f5d6552a2af0df951589c4b27cdf6f1ce1c2d73e398def0ab74f3",
+      "gitFilteredBlobSha1": "63d21e3ec1817645fc71b78f300d683d6ed7b9fb",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-audio-proxy.test.mjs",
+      "providerRawSha256": "a1fa04327b0f5d6552a2af0df951589c4b27cdf6f1ce1c2d73e398def0ab74f3",
+      "providerCommittedSha256": "a1fa04327b0f5d6552a2af0df951589c4b27cdf6f1ce1c2d73e398def0ab74f3",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-client.test.mjs",
+      "bytes": 16365,
+      "rawSha256": "71625134749b5b4fe90904a2d80b3ee25fcc4e83929257dd5960932deafafcab",
+      "lfSha256": "71625134749b5b4fe90904a2d80b3ee25fcc4e83929257dd5960932deafafcab",
+      "gitFilteredBlobSha1": "a2decdd7e5e6b3378e245a99aaed4b6b2f81c644",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-client.test.mjs",
+      "providerRawSha256": "71625134749b5b4fe90904a2d80b3ee25fcc4e83929257dd5960932deafafcab",
+      "providerCommittedSha256": "71625134749b5b4fe90904a2d80b3ee25fcc4e83929257dd5960932deafafcab",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-container.test.mjs",
+      "bytes": 3583,
+      "rawSha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
+      "lfSha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
+      "gitFilteredBlobSha1": "6fcd2d3a9b8fd53470989d892bb630d3a9983a72",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-container.test.mjs",
+      "providerRawSha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
+      "providerCommittedSha256": "48f96866079d0d77055478b21fcc8dd1d94f9b377cb1d24889e1ea9d2ea3f477",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-discovery-call.test.mjs",
+      "bytes": 24203,
+      "rawSha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
+      "lfSha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
+      "gitFilteredBlobSha1": "236b04c349483c3701722e7ef5bb1f1a9efe3b3f",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-discovery-call.test.mjs",
+      "providerRawSha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
+      "providerCommittedSha256": "97eb6f673a2bce272910b863ae1c3ad931750fd67d0b7b10bea8159ca731706d",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-ekey.test.mjs",
+      "bytes": 1714,
+      "rawSha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
+      "lfSha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
+      "gitFilteredBlobSha1": "92711a5af4d9036d7a15675f53f154da4de82fa8",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-ekey.test.mjs",
+      "providerRawSha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
+      "providerCommittedSha256": "cd321cad50a80dbd84e8468f65c46f5cb386522a527a482d210f3bb1db726308",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-call.test.mjs",
+      "bytes": 6058,
+      "rawSha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
+      "lfSha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
+      "gitFilteredBlobSha1": "ee79c85eef086252d1f4a3a1acfd065c40f0dd2b",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-favorite-call.test.mjs",
+      "providerRawSha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
+      "providerCommittedSha256": "251ffd08e846ddce051bf0af5a66b2018b377f03dbe0f25ef3b4bd0f8ac447d0",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-integration.test.mjs",
+      "bytes": 10262,
+      "rawSha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
+      "lfSha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
+      "gitFilteredBlobSha1": "20369881df7cbd616855723bb34d6f0f7252a8d3",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-favorite-integration.test.mjs",
+      "providerRawSha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
+      "providerCommittedSha256": "a3b966872a3e3c94d39c85c3613297960d92414779d5562205c86e7fef17b600",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-favorite-state.test.mjs",
+      "bytes": 11033,
+      "rawSha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
+      "lfSha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
+      "gitFilteredBlobSha1": "6b89b1217be9f25cb2b0add3ed1835fafad5a67f",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-favorite-state.test.mjs",
+      "providerRawSha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
+      "providerCommittedSha256": "c78f9d5a5570e537a7d3de7c4033d35c925890d5060e24d19b4ae2a6262a0ee0",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-file-transform.test.mjs",
+      "bytes": 3369,
+      "rawSha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
+      "lfSha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
+      "gitFilteredBlobSha1": "b94ee147b59476ff1e245845f1a46a04e1f508f5",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-file-transform.test.mjs",
+      "providerRawSha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
+      "providerCommittedSha256": "97c19417687a61eb551de99a695ad8fcd0d0335e7196af198b2f442f75b22ca7",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-filename.test.mjs",
+      "bytes": 6512,
+      "rawSha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
+      "lfSha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
+      "gitFilteredBlobSha1": "b4d6777aaabc6ae44470a5d021083881363523f5",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-filename.test.mjs",
+      "providerRawSha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
+      "providerCommittedSha256": "7d28f72a72d4cf1166271e1c3838f82b55a3447b82c7e688710c15099c39e6ac",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-home-call.test.mjs",
+      "bytes": 23833,
+      "rawSha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
+      "lfSha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
+      "gitFilteredBlobSha1": "0186c13b8eb20541a0e9aebd2ef72934ebdfe326",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-home-call.test.mjs",
+      "providerRawSha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
+      "providerCommittedSha256": "5737286589d90e5fb5a992dc57a7b0226bbb3dae8a305025498f88c61cce31cf",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-index.mjs",
+      "bytes": 29768,
+      "rawSha256": "cb19265d932a8003cac03251f1ee74a13fce878a90dc466a139ff5c7b1b8fd14",
+      "lfSha256": "cb19265d932a8003cac03251f1ee74a13fce878a90dc466a139ff5c7b1b8fd14",
+      "gitFilteredBlobSha1": "22848e38182b0d8d246244af3d47c1e2301d3485",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-index.mjs",
+      "providerRawSha256": "cb19265d932a8003cac03251f1ee74a13fce878a90dc466a139ff5c7b1b8fd14",
+      "providerCommittedSha256": "cb19265d932a8003cac03251f1ee74a13fce878a90dc466a139ff5c7b1b8fd14",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-index.test.mjs",
+      "bytes": 52359,
+      "rawSha256": "620a51227ad39883c54f1ac018ed437bcd386f1eec230413a0bcff7cd400d82b",
+      "lfSha256": "620a51227ad39883c54f1ac018ed437bcd386f1eec230413a0bcff7cd400d82b",
+      "gitFilteredBlobSha1": "a504275f6a0e0e82ca9a032f4352b2514bba27f0",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-index.test.mjs",
+      "providerRawSha256": "620a51227ad39883c54f1ac018ed437bcd386f1eec230413a0bcff7cd400d82b",
+      "providerCommittedSha256": "620a51227ad39883c54f1ac018ed437bcd386f1eec230413a0bcff7cd400d82b",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-login-request.test.mjs",
+      "bytes": 5123,
+      "rawSha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
+      "lfSha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
+      "gitFilteredBlobSha1": "56750a138e8a4a7bb36af8f796878695ee34b208",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-login-request.test.mjs",
+      "providerRawSha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
+      "providerCommittedSha256": "6d5ce3c689861d7c902bea9e9a0a249731c017bc4d7c23bc57882ea6d7f79d7e",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-lyric-call.test.mjs",
+      "bytes": 4517,
+      "rawSha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
+      "lfSha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
+      "gitFilteredBlobSha1": "b5ed94c5a42ed289fd8d67fdab210dfad3b77bcb",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-lyric-call.test.mjs",
+      "providerRawSha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
+      "providerCommittedSha256": "49be07022b20f2caaf2280800438cdffaab5e2fd09cac3de89c1fe64358db8f7",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-media-source.test.mjs",
+      "bytes": 37731,
+      "rawSha256": "fe5d51f6a84a7aa699aa43e07effb68a00cfeb3abb58937179b8d6efb371b4dc",
+      "lfSha256": "fe5d51f6a84a7aa699aa43e07effb68a00cfeb3abb58937179b8d6efb371b4dc",
+      "gitFilteredBlobSha1": "ec04224a633959d3ba88db98b1eb062dd4a5dc6c",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-media-source.test.mjs",
+      "providerRawSha256": "fe5d51f6a84a7aa699aa43e07effb68a00cfeb3abb58937179b8d6efb371b4dc",
+      "providerCommittedSha256": "fe5d51f6a84a7aa699aa43e07effb68a00cfeb3abb58937179b8d6efb371b4dc",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-media-stream.test.mjs",
+      "bytes": 4608,
+      "rawSha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
+      "lfSha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
+      "gitFilteredBlobSha1": "6e58ce675d90f964464b3a8a366060a88f777c31",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-media-stream.test.mjs",
+      "providerRawSha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
+      "providerCommittedSha256": "c10b87f6954725341890f3419e0eba5da8b1497a0d4fedb1fcc77d73e9389f31",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-binding.test.mjs",
+      "bytes": 6435,
+      "rawSha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
+      "lfSha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
+      "gitFilteredBlobSha1": "fdc48402a36daf068c9b8788766081f0c71a33f1",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-playlist-binding.test.mjs",
+      "providerRawSha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
+      "providerCommittedSha256": "cc0f03a194eb0a35c63127726ca2e51f6d06fd394e0aa9e758259d9f3ecaf733",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-call.test.mjs",
+      "bytes": 5930,
+      "rawSha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+      "lfSha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+      "gitFilteredBlobSha1": "013d0efd798f490472e84b946b308ec97137730f",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-playlist-call.test.mjs",
+      "providerRawSha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+      "providerCommittedSha256": "81cf08fa1ee9eb8d15f36ce2ad481a07b6f5c757ea0df9e3ed364ebf6c831003",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-playlist-data.test.mjs",
+      "bytes": 24795,
+      "rawSha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
+      "lfSha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
+      "gitFilteredBlobSha1": "4f84ee444db0bac882350c1cda2cd05c4d23b78e",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-playlist-data.test.mjs",
+      "providerRawSha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
+      "providerCommittedSha256": "f24723d8f1cf514386fafa9231799e707eec2d6ffaaa1aa8c88135c3904eac61",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-response.test.mjs",
+      "bytes": 3156,
+      "rawSha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
+      "lfSha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
+      "gitFilteredBlobSha1": "dd17348b7143850ac5e0da3f8f5f1126c26d62a0",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-response.test.mjs",
+      "providerRawSha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
+      "providerCommittedSha256": "9fa26f6ea5d971ed5c8aedda7f6a9305c7b9341bb5dc8bdf4741e677572874e1",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-search-call.test.mjs",
+      "bytes": 2279,
+      "rawSha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
+      "lfSha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
+      "gitFilteredBlobSha1": "fd8dca3ae5d4e7b5ce461ab72c1ca7996956e6b8",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-search-call.test.mjs",
+      "providerRawSha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
+      "providerCommittedSha256": "7e7a8f083f600645f51e43963744a11c0106f828fad693ae666fe0e6744844a9",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-search-catalog.test.mjs",
+      "bytes": 10172,
+      "rawSha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
+      "lfSha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
+      "gitFilteredBlobSha1": "074c3755112f36b21ed9d7f14ee31af8cae8d335",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-search-catalog.test.mjs",
+      "providerRawSha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
+      "providerCommittedSha256": "bf806c0a5007447373ea2c521294dfebe0e47245d341eea592cf3457441dcaa4",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-settings.test.mjs",
+      "bytes": 17144,
+      "rawSha256": "ec6fd78fd15a0e0e67e843d1abbaeb19712b8aac3b558aa132e9deb75540625f",
+      "lfSha256": "ec6fd78fd15a0e0e67e843d1abbaeb19712b8aac3b558aa132e9deb75540625f",
+      "gitFilteredBlobSha1": "91d239548947f47c168f2f3fb852a159005361bd",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-settings.test.mjs",
+      "providerRawSha256": "ec6fd78fd15a0e0e67e843d1abbaeb19712b8aac3b558aa132e9deb75540625f",
+      "providerCommittedSha256": "ec6fd78fd15a0e0e67e843d1abbaeb19712b8aac3b558aa132e9deb75540625f",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-signature.test.mjs",
+      "bytes": 2864,
+      "rawSha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
+      "lfSha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
+      "gitFilteredBlobSha1": "dc96146dfb6ebb493aac563b4b61f00119e16896",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-signature.test.mjs",
+      "providerRawSha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
+      "providerCommittedSha256": "1e5cb6668df34931da7fe5a728484cc303d65e116f993322887a4396d03b626a",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-song-detail-call.test.mjs",
+      "bytes": 2584,
+      "rawSha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
+      "lfSha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
+      "gitFilteredBlobSha1": "39794b463916b7fecf46cc01f8e5a427ec0196aa",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-song-detail-call.test.mjs",
+      "providerRawSha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
+      "providerCommittedSha256": "8023e776460cab6e1116e816fa53540075e98a9742a1f79f5ccc480bcc5e8e2e",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-tea-decrypt.test.mjs",
+      "bytes": 1820,
+      "rawSha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
+      "lfSha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
+      "gitFilteredBlobSha1": "9e6d7a53230de4889d22af3006da7bd3f3aa1ef3",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-tea-decrypt.test.mjs",
+      "providerRawSha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
+      "providerCommittedSha256": "6e6901732107b1d93e2413edd024b005bf46493c968f0f47faef359a19d1cb14",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-tracks.test.mjs",
+      "bytes": 12336,
+      "rawSha256": "a2a450ccc3318739c5a62a4a8ccd754adaf27982a6342071eb79f788b6ed28b4",
+      "lfSha256": "a2a450ccc3318739c5a62a4a8ccd754adaf27982a6342071eb79f788b6ed28b4",
+      "gitFilteredBlobSha1": "2532d209fbd97c88082bfff7d4ba34e7cb79d9dd",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-tracks.test.mjs",
+      "providerRawSha256": "a2a450ccc3318739c5a62a4a8ccd754adaf27982a6342071eb79f788b6ed28b4",
+      "providerCommittedSha256": "a2a450ccc3318739c5a62a4a8ccd754adaf27982a6342071eb79f788b6ed28b4",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-wire.test.mjs",
+      "bytes": 3998,
+      "rawSha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
+      "lfSha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
+      "gitFilteredBlobSha1": "f636fffe9310474da9c9bb9e65d6585d22d03570",
+      "sourceRepository": "Twilight-Echo-plugins",
+      "sourceCommit": "7d261d81ef36713df135a2de8a29db7bb4f57df4",
+      "sourcePath": "plugins/qqmusic-provider/windows-wire.test.mjs",
+      "providerRawSha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
+      "providerCommittedSha256": "9572185d26cb80402df302d416ea7f9586cdde5a389f4a448e6478693520475d",
+      "origin": "Exact frozen provider committed LF; runtime ZIP preserves separately audited raw provider bytes"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-probe-index.mjs",
+      "bytes": 41371,
+      "rawSha256": "01ce6631b17595adf064c6307acc97681c6ef6aceb605e6945542bf3946a749c",
+      "lfSha256": "01ce6631b17595adf064c6307acc97681c6ef6aceb605e6945542bf3946a749c",
+      "gitFilteredBlobSha1": "1e62bd5d9f692d6a915c36a492e886dbdc46b48b",
+      "sourceRepository": "Twilight_Echo",
+      "sourceCommit": "bd3e4b4a708a16a717d46e9dd2f6e99ba8cd1039",
+      "sourcePath": "integrations/qqmusic/plugins/qqmusic-provider/windows-probe-index.mjs",
+      "origin": "Inherited ordinary protocol/media diagnostic; no local-processing code; excluded normal TEP/ASAR"
+    },
+    {
+      "path": "integrations/qqmusic/plugins/qqmusic-provider/windows-quality-probe-helper.mjs",
+      "bytes": 6728,
+      "rawSha256": "d2d2e37a36da92904c38b73f33b845553e30ec711ca72c1945aad3ed523b6f77",
+      "lfSha256": "d2d2e37a36da92904c38b73f33b845553e30ec711ca72c1945aad3ed523b6f77",
+      "gitFilteredBlobSha1": "6a0707a1746c5eaf162e39f0c755b3d604ce30c7",
+      "sourceRepository": "Twilight_Echo",
+      "sourceCommit": "bd3e4b4a708a16a717d46e9dd2f6e99ba8cd1039",
+      "sourcePath": "integrations/qqmusic/plugins/qqmusic-provider/windows-quality-probe-helper.mjs",
+      "origin": "Inherited ordinary protocol/media diagnostic; no local-processing code; excluded normal TEP/ASAR"
+    }
+  ],
+  "historicalBytes": {
+    "unchangedFiles": 83,
+    "task13AndTask14ArchivedBytesUnchanged": true,
+    "baselineReceipt": "qq-task15-docs-historical-byte-baseline.json",
+    "baselineReceiptRawSha256": "e629ebeed38b787071de53cdaf9a8fcb18397323cd7b429c5fdff96cb3fcd80b",
+    "oldManifestsRetainedForTheirOriginalSources": true
+  },
+  "links": {
+    "missingLocalReferenceFiles": 0,
+    "relativeLinksChecked": 31,
+    "scope": "Four current Markdown entries;83 historical files unchanged."
+  },
+  "pending": [
+    "Final8-document review and coordinator commit/push",
+    "Copy exact final release note and checksum list; prepared9 binary/Skill copies are separate"
+  ],
+  "providerMirrorStatus": "Frozen provider7d261 rc12 still78 committed provider texts plus2 inherited Core diagnostics=80; all existing raw/LF pins read back unchanged, and committed path counts recomputed. Artifact audit independently verified Git/provider text.",
+  "nativeSourceCommit": "79780db61f256875415e9cd588653b4ba8579d0e",
+  "currentArtifactSourceCounts": {
+    "activeRawSourcePins": 44,
+    "supersededRawSourcePins": 4,
+    "protectedProductionPins": 9,
+    "nativeBuildSourcePins": 331,
+    "coreBuildInputs": 1987,
+    "providerBuildInputs": 86
+  },
+  "currentEvidence": [
+    {
+      "name": "qq-task15-qq15-full-native-build-receipt.json",
+      "bytes": 60768,
+      "rawSha256": "9bfe0c7ebaeae408be0f8437892ce8dab371569e8a719fb803ff7d4b6b0d822e",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-full-native-ctest-receipt.json",
+      "bytes": 1625,
+      "rawSha256": "942fe2496662070cac3c2faa3793d28fb11f0690367cf1441a708ab5c7108a0e",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-native-stage-receipt.json",
+      "bytes": 6590,
+      "rawSha256": "0395c57f99aa198210ad20dd4ed091eb02ff23d502d87654388be61e050d6144",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-prepackage-native-readonly-review.json",
+      "bytes": 5093,
+      "rawSha256": "4ac81a9ce6341583bf51c4655a219919689a553d9c280a17182a7d23987473fc",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-native-ctest-readonly-review.json",
+      "bytes": 3839,
+      "rawSha256": "ac770e57c2734f4f3cd03c225a9b24100ed844299131b8269c15d921dafd579c",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-production-build-receipt.json",
+      "bytes": 473791,
+      "rawSha256": "2bce370e8b9b3ff9204c584e586b165f0cfccf8bbf7c7248cb13dc72db6ae6fc",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-canonical-package-receipt.json",
+      "bytes": 6519,
+      "rawSha256": "31e1481747d3244d80195fc34ea7a4a6922bf0e585d42a59c22cc3a701c670ed",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-artifact-independent-audit.json",
+      "bytes": 113506,
+      "rawSha256": "05f86fc815138fa3a34570d6cdd69c7356a23145379efcbcc0d3c9bed3dda20e",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-artifact-report-meta-review.json",
+      "bytes": 4086,
+      "rawSha256": "5d8e445f52115df597a2a250d2a83b27091e1f7861269640f8ceb5774432f4f3",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-hifi-unknown-source-receipt-v2.json",
+      "bytes": 8825,
+      "rawSha256": "e71eb2354c04186c777ccc92bc1674deae5ef08ecb37d203f7699a046153ac4b",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-hifi-unknown-independent-review.json",
+      "bytes": 8759,
+      "rawSha256": "a721bc68d6b0def467e0fa94e686b9a5c0ff351fb9d7e69bf7a6ddbca34222e2",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-flac-index-native-final-receipt-v2.json",
+      "bytes": 12042,
+      "rawSha256": "2aa88cbf406665ce6c8bfc24740e9dc7103761595364246b23aeb20ab024fb86",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-flac-index-independent-review-v2.json",
+      "bytes": 13029,
+      "rawSha256": "7dc7180ac0e8750b3956676c67e748b648aa857d20bf7cc617e4d0a6cffd87cd",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-flac-index-probe-score-static-inventory.json",
+      "bytes": 1838,
+      "rawSha256": "4738dc065c1a75b171f18513c9758036d64c324e51ba3ee7f2f826fd9753b8e6",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq14-artifact-independent-audit.json",
+      "bytes": 114313,
+      "rawSha256": "4cc524e29492d8e937a5dfedb736cc106d23923752c088a5c0ae6030c041535f",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq14-full-native-build-receipt.json",
+      "bytes": 57341,
+      "rawSha256": "85a9820be622a531cd91cb6045744f49e1e09268c21743a1d0638fcd8232b99e",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-skill-current-validation.json",
+      "bytes": 4264,
+      "rawSha256": "d0a086d1730627454138688195c916e355c024616750aa1e2d15428ecb372614",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-skill-forward-informed-review.json",
+      "bytes": 2956,
+      "rawSha256": "5bb494795bf49583e32b636caee019d5f00467b0ffb921a89385c89e7c274b8d",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-skill-quick-validate.txt",
+      "bytes": 17,
+      "rawSha256": "6cf9e7f0d34ccd36dbd28f270cd28dd04277b2e1516bd4333ce7bb501d7b18d4",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-ui-observations.json",
+      "bytes": 10155,
+      "rawSha256": "4b7f3e230ef6efa7842776e10dd5ba2f96fb38c84ee479acb2c05fab70370858",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-ui-native-log-summary.first-session-closed.json",
+      "bytes": 53624,
+      "rawSha256": "d5729acd96cdad11440a831f3af8f3b5769950ef4fa4a696cbcd71fa9ce4905d",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-ui-proxy-summary.first-session-closed.json",
+      "bytes": 2094,
+      "rawSha256": "742919fa970a757e03582155c348433f580f50e74d4c62e8a870ff8a472a4cc5",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-ui-native-log-summary.restart-session-closed.json",
+      "bytes": 7821,
+      "rawSha256": "a85834dd8571407091a97f4269f8978c69be9be410c76945c1af05e850da67dc",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-ui-proxy-summary.restart-session-closed.json",
+      "bytes": 1780,
+      "rawSha256": "b4430a95048b263def0167fb2c31c6203b96461ec962069738b2f8d3753497d7",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-normal-launch.json",
+      "bytes": 413,
+      "rawSha256": "3f1a71fd9b8aa7b5f05c71d81038a7c22d096fd34867879256d866e971833d7d",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-normal-restart.json",
+      "bytes": 278,
+      "rawSha256": "348e9658d8ca6d2ac533aa887147b8f6dc4a0e2c4443f55770e1bd38f924312c",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-skill-current-validation-v2.json",
+      "bytes": 4468,
+      "rawSha256": "c5929de9326cdc16754e62d3c7360c8028b43c809c16b5ff22b2bf0c29632ba2",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-skill-quick-validate-v2.txt",
+      "bytes": 17,
+      "rawSha256": "6cf9e7f0d34ccd36dbd28f270cd28dd04277b2e1516bd4333ce7bb501d7b18d4",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-delivery-copy-preparation.json",
+      "bytes": 2131,
+      "rawSha256": "adb7202db55ed6eaac96f2749c6b6980736551195d416b58de861f784ab93804",
+      "rawMaterialArchived": false
+    },
+    {
+      "name": "qq-task15-qq15-ui-safe-log-comparison.json",
+      "bytes": 5829,
+      "rawSha256": "4e5722a4bd70f0a450548d30873ce6d431ab296ae8ddde36e9dad5c3ab391d6b",
+      "rawMaterialArchived": false
+    }
+  ],
+  "currentSkillValidation": {
+    "receipt": {
+      "name": "qq-task15-qq15-skill-current-validation-v2.json",
+      "bytes": 4468,
+      "rawSha256": "c5929de9326cdc16754e62d3c7360c8028b43c809c16b5ff22b2bf0c29632ba2",
+      "rawMaterialArchived": false
+    },
+    "forwardReview": {
+      "name": "qq-task15-skill-forward-informed-review.json",
+      "bytes": 2956,
+      "rawSha256": "5bb494795bf49583e32b636caee019d5f00467b0ffb921a89385c89e7c274b8d",
+      "rawMaterialArchived": false
+    },
+    "files": 7,
+    "localReferences": 18,
+    "validatorExitCode": 0,
+    "agentsYamlRawSha256Unchanged": "50527690b395e10879b9fe74339ef66ed5ce830932505071c26a0422ba17b255",
+    "historicalInformedCases": 4,
+    "currentForwardInformedCases": 3,
+    "blindCasesClaimed": 0,
+    "nativeIndependenceClaimed": false,
+    "softwareGuiAndCold": "bounded normal GUI and functional session restart, confidenceB; not media cold",
+    "gitReexecutionForThisFollowup": true
+  },
+  "boundedGui": {
+    "confidence": "B",
+    "receipt": {
+      "name": "qq-task15-qq15-ui-observations.json",
+      "bytes": 10155,
+      "rawSha256": "4b7f3e230ef6efa7842776e10dd5ba2f96fb38c84ee479acb2c05fab70370858",
+      "rawMaterialArchived": false
+    },
+    "firstSessionMain": {
+      "name": "qq-task15-qq15-ui-native-log-summary.first-session-closed.json",
+      "bytes": 53624,
+      "rawSha256": "d5729acd96cdad11440a831f3af8f3b5769950ef4fa4a696cbcd71fa9ce4905d",
+      "rawMaterialArchived": false
+    },
+    "firstSessionProxy": {
+      "name": "qq-task15-qq15-ui-proxy-summary.first-session-closed.json",
+      "bytes": 2094,
+      "rawSha256": "742919fa970a757e03582155c348433f580f50e74d4c62e8a870ff8a472a4cc5",
+      "rawMaterialArchived": false
+    },
+    "restartMain": {
+      "name": "qq-task15-qq15-ui-native-log-summary.restart-session-closed.json",
+      "bytes": 7821,
+      "rawSha256": "a85834dd8571407091a97f4269f8978c69be9be410c76945c1af05e850da67dc",
+      "rawMaterialArchived": false
+    },
+    "restartProxy": {
+      "name": "qq-task15-qq15-ui-proxy-summary.restart-session-closed.json",
+      "bytes": 1780,
+      "rawSha256": "b4430a95048b263def0167fb2c31c6203b96461ec962069738b2f8d3753497d7",
+      "rawMaterialArchived": false
+    },
+    "strictMediaColdOrAllNetworkOrP2pClaimed": false,
+    "safeRecordComparison": {
+      "name": "qq-task15-qq15-ui-safe-log-comparison.json",
+      "bytes": 5829,
+      "rawSha256": "4e5722a4bd70f0a450548d30873ce6d431ab296ae8ddde36e9dad5c3ab391d6b",
+      "rawMaterialArchived": false
+    }
+  }
+}
