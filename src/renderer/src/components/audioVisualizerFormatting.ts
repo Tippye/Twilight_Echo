@@ -57,6 +57,7 @@ interface VisualizerTrackMetadata {
 }
 
 interface VisualizerPlaybackMetadata {
+  nativePlaybackActive?: boolean
   source: string
   rendererSource?: string
   sourceBytes?: number
@@ -77,11 +78,12 @@ function formatCodec(codec: string, fileName: string): string {
   // Only codec tokens may become display text; transport identities are never formats.
   const normalized = /^[a-z0-9_+-]{1,32}$/.test(candidate) ? candidate : ''
   if (normalized.startsWith('mp3')) return 'MP3'
+  if (/^(?:dsd_(?:lsbf|msbf)(?:_planar)?|dst)$/.test(normalized)) return 'DSD'
   if (normalized.startsWith('pcm_')) {
     const extension = fileName.match(/\.(wav|wave|aif|aiff)$/i)?.[1]?.toUpperCase()
     return extension === 'WAVE' ? 'WAV' : (extension ?? 'PCM')
   }
-  if (normalized && normalized !== '未知') return normalized.toUpperCase()
+  if (normalized && normalized !== 'unknown') return normalized.toUpperCase()
   return (
     fileName.match(/\.(flac|mp3|m4a|aac|ogg|opus|wav|aiff|ape|wv|dsf|dff)$/i)?.[1]?.toUpperCase() ??
     ''
@@ -93,6 +95,7 @@ export function matchesPlaybackAudioSource(
   playbackInfo?: VisualizerPlaybackMetadata | null
 ): boolean {
   return (
+    playbackInfo?.nativePlaybackActive !== false &&
     !!playbackInfo?.source &&
     [playbackInfo.rendererSource, playbackInfo.source].some(
       (source) => !!source && (source === track.streamUrl || source === track.filePath)
@@ -114,26 +117,37 @@ export function resolvePlaybackAudioMetadata(
 } {
   const sourceMatches = matchesPlaybackAudioSource(track, playbackInfo)
   const source = sourceMatches ? playbackInfo : null
+  const local = getTrackSource(track) === 'local'
   const codec = source?.codec.trim().toLowerCase() ?? ''
   const losslessCodec = /^(flac|alac|ape|wavpack|tta|dsd|dst|pcm_)/.test(codec)
   const sampleRate = source
     ? positiveNumber(source.sourceSampleRate)
-    : positiveNumber(track.sampleRate)
+    : local
+      ? positiveNumber(track.sampleRate)
+      : undefined
   const bitDepth = source
     ? losslessCodec
       ? positiveNumber(source.sourceBitDepth)
       : undefined
-    : positiveNumber(track.bitDepth)
-  const bitrate = source ? positiveNumber(source.bitrate) : positiveNumber(track.bitrate)
+    : local
+      ? positiveNumber(track.bitDepth)
+      : undefined
+  const bitrate = source
+    ? positiveNumber(source.bitrate)
+    : local
+      ? positiveNumber(track.bitrate)
+      : undefined
   const channels = positiveNumber(source?.sourceChannels)
   const format = source
-    ? formatCodec(source.codec, track.fileName)
-    : formatCodec(track.format ?? '', track.fileName)
+    ? formatCodec(source.codec, local ? track.fileName : '')
+    : local
+      ? formatCodec(track.format ?? '', track.fileName)
+      : ''
   const sourceBytes = source?.sourceBytes
   const size =
     sourceBytes !== undefined && Number.isSafeInteger(sourceBytes) && sourceBytes > 0
       ? sourceBytes
-      : getTrackSource(track) === 'local'
+      : local
         ? positiveNumber(track.size)
         : undefined
 

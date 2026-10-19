@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { getTrackSource } from '@renderer/utils/trackSourceIdentity.ts'
 import {
   resolvePlaybackAudioMetadata,
   resolveVisualizerAudioMetadata
@@ -432,9 +433,15 @@ const sourceQuality = computed(() => {
 
   let badge = 'Standard'
   let tone: StatusTone = 'muted'
-  if (/\b(dsf|dff|dsd|sacd)\b/i.test(`${format} ${track.fileName || ''}`)) {
+  if (
+    /\b(dsf|dff|dsd|sacd)\b/i.test(
+      `${format} ${getTrackSource(track) === 'local' ? track.fileName || '' : ''}`
+    )
+  ) {
     badge = 'DSD'
     tone = 'success'
+  } else if (!display.format) {
+    badge = 'Unknown'
   } else if (sampleRate >= 88200 || bitDepth >= 24) {
     badge = 'Hi-Res'
     tone = 'success'
