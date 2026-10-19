@@ -63,10 +63,10 @@
     },
     {
       "path": "docs/release-notes/1.3.1-qq.15.md",
-      "bytes": 3907,
-      "rawSha256": "5cd188f20bc3b8dd5e3c79493204cfd8538f477a8ebbf5862410e7424524815d",
-      "lfSha256": "5cd188f20bc3b8dd5e3c79493204cfd8538f477a8ebbf5862410e7424524815d",
-      "gitFilteredBlobSha1": "d052b516af877d71176210c27bfbfe8bb75b7b2e"
+      "bytes": 893,
+      "rawSha256": "b1c8a671cb5ab0cbddc3e898f1525dba9ad3a11f955d352fe273269ae0db10b8",
+      "lfSha256": "b1c8a671cb5ab0cbddc3e898f1525dba9ad3a11f955d352fe273269ae0db10b8",
+      "gitFilteredBlobSha1": "6034cf0e9286320365b328dea037f76bd22dbdfe"
     }
   ],
   "providerMirrorFiles": [
