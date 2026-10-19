@@ -3,7 +3,10 @@ import test from 'node:test'
 import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
+import { setTimeout as delay } from 'node:timers/promises'
+import { deflateRawSync } from 'node:zlib'
 import { tmpdir } from 'node:os'
 import {
   AutoMixStemInstaller,
@@ -17,7 +20,15 @@ const crc32 = require('buffer-crc32')
 const MODEL = 'models/955717e8-8726e21a.th'
 const model = Buffer.from('small model fixture')
 const checkpoint = createHash('sha256').update(model).digest('hex')
-type File = { name: string; data: Buffer; mode?: number; size?: number; corruptCrc?: boolean }
+type File = {
+  name: string
+  data: Buffer
+  mode?: number
+  size?: number
+  corruptCrc?: boolean
+  method?: number
+  compressed?: Buffer
+}
 function pack(prefix = 'automix-enhancement/'): File[] {
   const metadata = Buffer.from(
     JSON.stringify({ modelVersion: STEM_MODEL_VERSION, checkpointSha256: checkpoint })
@@ -37,27 +48,32 @@ async function archive(path: string, files: File[]): Promise<void> {
   let offset = 0
   for (const file of files) {
     const name = Buffer.from(file.name)
+    const payload = file.compressed ?? file.data
     const crc = file.corruptCrc ? 0 : crc32.unsigned(file.data)
     const header = Buffer.alloc(30)
     header.writeUInt32LE(0x04034b50)
     header.writeUInt16LE(20, 4)
+    header.writeUInt16LE(0x800 | (file.method === 14 ? 2 : 0), 6)
+    header.writeUInt16LE(file.method ?? 0, 8)
     header.writeUInt32LE(crc, 14)
-    header.writeUInt32LE(file.data.length, 18)
+    header.writeUInt32LE(payload.length, 18)
     header.writeUInt32LE(file.size ?? file.data.length, 22)
     header.writeUInt16LE(name.length, 26)
-    local.push(header, name, file.data)
+    local.push(header, name, payload)
     const index = Buffer.alloc(46)
     index.writeUInt32LE(0x02014b50)
     index.writeUInt16LE(0x0314, 4)
     index.writeUInt16LE(20, 6)
+    index.writeUInt16LE(0x800 | (file.method === 14 ? 2 : 0), 8)
+    index.writeUInt16LE(file.method ?? 0, 10)
     index.writeUInt32LE(crc, 16)
-    index.writeUInt32LE(file.data.length, 20)
+    index.writeUInt32LE(payload.length, 20)
     index.writeUInt32LE(file.size ?? file.data.length, 24)
     index.writeUInt16LE(name.length, 28)
     index.writeUInt32LE(((file.mode ?? 0x81a4) << 16) >>> 0, 38)
     index.writeUInt32LE(offset, 42)
     central.push(index, name)
-    offset += header.length + name.length + file.data.length
+    offset += header.length + name.length + payload.length
   }
   const directory = Buffer.concat(central),
     end = Buffer.alloc(22)
@@ -68,6 +84,137 @@ async function archive(path: string, files: File[]): Promise<void> {
   end.writeUInt32LE(offset, 16)
   await writeFile(path, Buffer.concat([...local, directory, end]))
 }
+
+// Independently encoded by Python's standard ZIP_LZMA writer (24,000 bytes).
+const lzmaData = Buffer.from('Audio inference fixture\n'.repeat(1000))
+const lzmaPayload = Buffer.from(
+  'CQQFAF0AAIAAACCdSIa5aXTNhCAXFKneWLVRa/Z+k2MvvCV5VrhQhlILYAz6OhLUoeVHaEjZJqf6L7S6t3Pe2+x6FUK57LeEkgz0Hv9ZRHy+rasEFJ09drtwMat+uT5r///sU+AA',
+  'base64'
+)
+const workerDirectory = resolve('resources/automix-stems')
+const nativeLzma = { skip: process.platform !== 'win32' }
+
+test(
+  'mixed Store/Deflate/LZMA ZIPs preserve every decoded byte and Unicode paths',
+  nativeLzma,
+  async () => {
+    assert.ok(
+      existsSync(join(workerDirectory, '7za.exe')),
+      'Run node scripts/prepare-automix-stem-zip-decoder.cjs'
+    )
+    await fixture(
+      async ({ zip, installer, root }) => {
+        await archive(zip, [
+          ...pack(),
+          {
+            name: 'automix-enhancement/runtime/deflated.bin',
+            data: lzmaData,
+            method: 8,
+            compressed: deflateRawSync(lzmaData)
+          },
+          {
+            name: 'automix-enhancement/runtime/声音 space.bin',
+            data: lzmaData,
+            method: 14,
+            compressed: lzmaPayload
+          }
+        ])
+        assert.equal((await installer.install()).phase, 'ready')
+        assert.deepEqual(
+          await readFile(join(managedStemPackDirectories(root)[0], 'runtime/声音 space.bin')),
+          lzmaData
+        )
+        assert.deepEqual(
+          await readFile(join(managedStemPackDirectories(root)[0], 'runtime/deflated.bin')),
+          lzmaData
+        )
+      },
+      { workerDirectory: () => workerDirectory }
+    )
+  }
+)
+
+test(
+  'LZMA corruption, truncation and excessive dictionaries preserve the active installation',
+  nativeLzma,
+  async () => {
+    await fixture(
+      async ({ zip, installer, root, probes }) => {
+        assert.equal((await installer.install()).phase, 'ready')
+        const registry = await readFile(join(root, 'active.json'), 'utf8')
+        const excessive = Buffer.from(lzmaPayload)
+        excessive.writeUInt32LE(256 * 1024 ** 2, 5)
+        const corrupt = Buffer.from(lzmaPayload)
+        corrupt.fill(0xff, 15, 30)
+        for (const payload of [
+          Buffer.from([9, 4]),
+          lzmaPayload.subarray(0, 45),
+          excessive,
+          corrupt
+        ]) {
+          await archive(zip, [
+            ...pack(),
+            {
+              name: 'automix-enhancement/runtime/compressed.bin',
+              data: lzmaData,
+              method: 14,
+              compressed: payload
+            }
+          ])
+          assert.equal((await installer.install()).reason, 'integrity')
+          assert.equal(await readFile(join(root, 'active.json'), 'utf8'), registry)
+          assert.ok((await readdir(root)).every((name) => !name.startsWith('.install-')))
+        }
+        assert.equal(probes(), 1)
+      },
+      { workerDirectory: () => workerDirectory }
+    )
+  }
+)
+
+test(
+  'cancelling LZMA extraction stops decoding and removes partial files',
+  nativeLzma,
+  async () => {
+    await fixture(
+      async ({ zip, installer, root }) => {
+        const extra = Array.from({ length: 30 }, (_, index) => ({
+          name: `automix-enhancement/runtime/material-${index}.bin`,
+          data: lzmaData,
+          method: 14,
+          compressed: lzmaPayload
+        }))
+        await archive(zip, [...pack(), ...extra])
+        const pending = installer.install()
+        const deadline = Date.now() + 10_000
+        while (installer.getStatus().completedBytes < lzmaData.length && Date.now() < deadline)
+          await delay(1)
+        assert.equal(installer.getStatus().phase, 'extracting')
+        installer.cancel()
+        assert.equal((await pending).phase, 'cancelled')
+        assert.deepEqual(await readdir(root), [])
+      },
+      { workerDirectory: () => workerDirectory }
+    )
+  }
+)
+
+test('missing LZMA decoder never activates or probes package code', nativeLzma, async () => {
+  await fixture(async ({ zip, installer, root, probes }) => {
+    await archive(zip, [
+      ...pack(),
+      {
+        name: 'automix-enhancement/runtime/compressed.bin',
+        data: lzmaData,
+        method: 14,
+        compressed: lzmaPayload
+      }
+    ])
+    assert.equal((await installer.install()).reason, 'integrity')
+    assert.deepEqual(await readdir(root), [])
+    assert.equal(probes(), 0)
+  })
+})
 async function fixture(
   run: (value: {
     root: string

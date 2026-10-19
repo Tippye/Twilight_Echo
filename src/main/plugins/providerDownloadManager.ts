@@ -1,4 +1,5 @@
 import { prepareDownloadedMetadata, saveDownloadedLyrics } from './downloadMetadata.ts'
+import { writeDiagnostic } from '../diagnostics/logger.ts'
 import {
   normalizeDownloadPreferences,
   downloadTrackName,
@@ -393,6 +394,7 @@ export class ProviderDownloadManager {
 
   private patch(taskId: string, patch: Partial<ProviderDownloadTaskSnapshot>): void {
     const task = this.requireTask(taskId)
+    if (patch.status && patch.status !== task.status) writeDiagnostic('download', 'task.state', { taskId, previous: task.status, status: patch.status, fileSize: patch.fileSize ?? task.fileSize, error: patch.error }, patch.status === 'failed' ? 'error' : 'info', { operationId: taskId })
     Object.assign(task, patch, { updatedAt: this.now().toISOString() })
     if (patch.status && TERMINAL_STATUSES.has(patch.status)) this.pruneTerminalTasks()
     this.emitChanged()

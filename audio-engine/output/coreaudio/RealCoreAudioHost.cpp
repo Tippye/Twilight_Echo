@@ -206,41 +206,45 @@ bool RealCoreAudioHost::deviceOutputStreamFormat(
 }
 
 bool RealCoreAudioHost::hogModeOwnerPid(CoreAudioDeviceID deviceId, int32_t* ownerPid, std::string* error) {
-  AudioObjectPropertyAddress address{
-      kAudioDevicePropertyHogMode,
-      kAudioDevicePropertyScopeOutput,
-      kAudioObjectPropertyElementMain};
+  const auto address = coreaudio::hogModeAddress();
+  if (!coreaudio::supportsHogMode(deviceId)) {
+    if (error) *error = "设备不支持 Hog Mode 独占";
+    return false;
+  }
   pid_t currentOwner = -1;
   UInt32 size = sizeof(currentOwner);
   const OSStatus status = AudioObjectGetPropertyData(deviceId, &address, 0, nullptr, &size, &currentOwner);
-  if (ownerPid) *ownerPid = status == noErr ? static_cast<int32_t>(currentOwner) : -1;
-  if (status != noErr && status != kAudioHardwareUnknownPropertyError) {
-    return coreaudio::ok(status, error, "无法读取 CoreAudio Hog Mode 现有拥有者");
-  }
+  if (!coreaudio::ok(status, error, "无法读取 CoreAudio Hog Mode 现有拥有者")) return false;
+  if (ownerPid) *ownerPid = static_cast<int32_t>(currentOwner);
   if (error) error->clear();
   return true;
 }
 
 bool RealCoreAudioHost::acquireHogMode(CoreAudioDeviceID deviceId, int32_t* existingOwnerPid, std::string* error) {
-  if (existingOwnerPid) *existingOwnerPid = -1;
-  AudioObjectPropertyAddress address{
-      kAudioDevicePropertyHogMode,
-      kAudioDevicePropertyScopeOutput,
-      kAudioObjectPropertyElementMain};
-  pid_t currentOwner = -1;
-  UInt32 size = sizeof(currentOwner);
-  OSStatus status = AudioObjectGetPropertyData(deviceId, &address, 0, nullptr, &size, &currentOwner);
-  if (existingOwnerPid) *existingOwnerPid = status == noErr ? static_cast<int32_t>(currentOwner) : -1;
-  if (status != noErr && status != kAudioHardwareUnknownPropertyError) {
-    return coreaudio::ok(status, error, "无法读取 CoreAudio Hog Mode 现有拥有者");
-  }
-  pid_t pid = getpid();
-  status = AudioObjectSetPropertyData(deviceId, &address, 0, nullptr, sizeof(pid), &pid);
-  if (status == kAudioHardwareUnknownPropertyError) {
-    if (error) *error = "设备不支持 Hog Mode";
+  int32_t owner = -1;
+  if (!hogModeOwnerPid(deviceId, &owner, error)) return false;
+  if (existingOwnerPid) *existingOwnerPid = owner;
+  // Do not toggle an existing owner, including another output in this process.
+  if (owner != -1) {
+    if (error) *error = "CoreAudio 设备已被独占，PID " + std::to_string(owner);
     return false;
   }
-  return coreaudio::ok(status, error, "无法获取 CoreAudio Hog Mode");
+  const auto address = coreaudio::hogModeAddress();
+  pid_t value = -1;
+  const OSStatus status = AudioObjectSetPropertyData(deviceId, &address, 0, nullptr, sizeof(value), &value);
+  if (!coreaudio::ok(status, error, "无法获取 CoreAudio Hog Mode")) return false;
+  for (int attempt = 0; attempt < 25; ++attempt) {
+    if (!hogModeOwnerPid(deviceId, &owner, error)) break;
+    if (owner == getpid()) {
+      if (error) error->clear();
+      return true;
+    }
+    if (owner != -1) break;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  coreaudio::releaseHogMode(deviceId);
+  if (error) *error = "CoreAudio Hog Mode 未取得设备所有权";
+  return false;
 }
 
 void RealCoreAudioHost::releaseHogMode(CoreAudioDeviceID deviceId) {

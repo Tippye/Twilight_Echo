@@ -143,10 +143,9 @@ export function usePlaybarAutoHide(options: PlaybarAutoHideOptions): PlaybarAuto
       focusInside.value = false
       if (active) {
         startListening()
-        // Start hidden so enabling the setting reads as "the bar tucked away",
-        // not "the bar is stuck open until I move the mouse".
-        clearHideTimer()
-        revealed.value = false
+        // Show the controls on load, then apply the normal idle hide delay.
+        reveal()
+        scheduleHide()
         return
       }
       stopListening()

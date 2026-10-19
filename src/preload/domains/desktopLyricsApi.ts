@@ -6,6 +6,7 @@ import type {
   DesktopLyricsSettingsV3,
   DesktopLyricsTransportAction
 } from '../../shared/desktopLyrics.ts'
+import type { ExperienceWindowOptions } from '../../shared/experienceWindow.ts'
 
 const enabledCallbacks = new Set<(enabled: boolean) => void>()
 const resyncCallbacks = new Set<() => void>()
@@ -47,8 +48,8 @@ export function bindDesktopLyricsIpcEvents(): void {
 }
 
 export const desktopLyricsHostApi = {
-  setEnabled: (enabled: boolean): Promise<boolean> =>
-    ipcRenderer.invoke('desktopLyrics:setEnabled', enabled),
+  setEnabled: (enabled: boolean, options?: ExperienceWindowOptions): Promise<boolean> =>
+    ipcRenderer.invoke('desktopLyrics:setEnabled', enabled, options),
   publishSession: (session: DesktopLyricsSession): void => {
     ipcRenderer.send('desktopLyrics:publishSession', session)
   },

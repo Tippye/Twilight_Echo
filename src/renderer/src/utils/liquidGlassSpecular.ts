@@ -320,17 +320,18 @@ export function getSpecularMapUrl(
   const canvas = document.createElement('canvas')
   canvas.width = raster.width
   canvas.height = raster.height
-  const context = canvas.getContext('2d')
-  if (!context) return ''
-
-  const imageData = context.createImageData(raster.width, raster.height)
-  imageData.data.set(raster.pixels)
-  context.putImageData(imageData, 0, 0)
-
-  const url = canvas.toDataURL()
-  cache.set(key, url)
-  if (cache.size > MAX_CACHED_MAPS) cache.delete(cache.keys().next().value!)
-  return url
+  try {
+    const context = canvas.getContext('2d')
+    if (!context) return ''
+    context.putImageData(new ImageData(raster.pixels, raster.width, raster.height), 0, 0)
+    const url = canvas.toDataURL()
+    cache.set(key, url)
+    if (cache.size > MAX_CACHED_MAPS) cache.delete(cache.keys().next().value!)
+    return url
+  } finally {
+    canvas.width = 0
+    canvas.height = 0
+  }
 }
 
 /** Test hook — the cache is process-lifetime otherwise. */

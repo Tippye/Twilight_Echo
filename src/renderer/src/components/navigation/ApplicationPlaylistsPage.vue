@@ -19,21 +19,23 @@ const emit = defineEmits<{
 
 <template>
   <section class="application-playlists-page">
-    <div class="playlist-tabs" aria-label="歌单分类">
-      <button
-        type="button"
-        :aria-pressed="category === 'playlists'"
-        @click="emit('selectView', 'playlists', null)"
-      >
-        应用歌单
-      </button>
-      <button
-        type="button"
-        :aria-pressed="category === 'aggregate'"
-        @click="emit('selectView', 'aggregate', null)"
-      >
-        聚合歌单
-      </button>
+    <div class="playlist-tabs">
+      <div class="playlist-segmented" role="group" aria-label="歌单分类">
+        <button
+          type="button"
+          :aria-pressed="category === 'playlists'"
+          @click="emit('selectView', 'playlists', null)"
+        >
+          应用歌单
+        </button>
+        <button
+          type="button"
+          :aria-pressed="category === 'aggregate'"
+          @click="emit('selectView', 'aggregate', null)"
+        >
+          聚合歌单
+        </button>
+      </div>
     </div>
     <div class="playlist-content">
       <AggregatePlaylistPage
@@ -68,22 +70,41 @@ const emit = defineEmits<{
 .playlist-tabs {
   display: flex;
   flex-shrink: 0;
-  gap: 8px;
-  padding: 52px clamp(24px, 4vw, 60px) 0;
-  flex-wrap: wrap;
+  padding: 52px min(4.4vw, 48px) 0;
+}
+.playlist-segmented {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--te-card-border);
+  border-radius: 12px;
+  background: var(--te-subtle-bg);
+  max-width: 100%;
 }
 .playlist-tabs button {
-  border: 1px solid var(--te-card-border);
-  border-radius: 10px;
-  background: var(--te-card-bg);
-  color: var(--te-neutral-900);
-  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--te-neutral-500);
+  padding: 7px 16px;
+  line-height: 1.4;
+  white-space: nowrap;
   font: inherit;
+  font-weight: 600;
+  transition:
+    background 0.18s,
+    color 0.18s;
   cursor: pointer;
 }
+.playlist-tabs button:hover {
+  background: var(--te-hover-bg);
+  color: var(--te-neutral-900);
+}
 .playlist-tabs button[aria-pressed='true'] {
-  background: var(--te-navigation-active);
-  color: var(--te-navigation-active-text);
+  background: var(--te-card-bg);
+  color: var(--te-primary-500);
+  border-color: var(--te-card-border);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--te-neutral-900) 8%, transparent);
 }
 .playlist-tabs button:focus-visible {
   outline: 2px solid var(--te-navigation-indicator);
@@ -97,6 +118,15 @@ const emit = defineEmits<{
 .playlist-content :deep(.aggregate-page) {
   height: 100% !important;
   padding-top: 24px;
+}
+:global(html[data-theme='pureWhite'] .application-playlists-page) {
+  background: var(--te-card-bg);
+}
+.playlist-content :deep(.song-list) {
+  background: transparent;
+}
+.playlist-content :deep(.aggregate-page) {
+  padding-inline: min(4.4vw, 48px);
 }
 :global(html[data-te-shell-layout='custom'] .application-playlists-page) {
   height: 100%;

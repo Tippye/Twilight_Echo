@@ -110,6 +110,29 @@ void testTruncatesOversizedFields() {
   assert(json.find(std::string(513, 'x')) == std::string::npos);
 }
 
+void testNativeSanitizationAndEmptyOutputEvidence() {
+  using twilight::audio::sanitizeNativeDiagnosticJson;
+  const auto safe = sanitizeNativeDiagnosticJson("{\"password\":\"keep-secret\",\"nested\":{\"cookie\":[\"cookie-secret\"]},\"source\":\"https://user:pass@example.test/song?token=hidden\",\"count\":42,\"stage\":\"reading\"}");
+  assert(safe.find("keep-secret") == std::string::npos);
+  assert(safe.find("cookie-secret") == std::string::npos);
+  assert(safe.find("example.test") == std::string::npos);
+  assert(safe.find("\"count\":42") != std::string::npos);
+  assert(safe.find("\"stage\":\"reading\"") != std::string::npos);
+  assert(sanitizeNativeDiagnosticJson("{\"streamToken\":17,\"authToken\":\"secret\"}").find("\"streamToken\":17") != std::string::npos);
+  twilight::audio::EmptyOutputDetector detector;
+  assert(!detector.sample(true, true, false, false, 1, 10, 100));
+  assert(!detector.sample(true, true, false, false, 1, 20, 100));
+  assert(!detector.sample(true, true, false, false, 1, 30, 100));
+  assert(detector.sample(true, true, false, false, 1, 40, 100));
+  assert(!detector.sample(true, true, false, false, 1, 50, 100)); // One marker per episode.
+  assert(!detector.sample(false, true, false, false, 1, 60, 100)); // Lock busy / DSD.
+  assert(!detector.sample(true, false, false, false, 1, 70, 100)); // Pause.
+  assert(!detector.sample(true, true, true, false, 1, 80, 100)); // EOF.
+  assert(!detector.sample(true, true, false, true, 1, 90, 100)); // Stop.
+  assert(!detector.sample(true, true, false, false, 2, 100, 100)); // Seek / new stream.
+  assert(!detector.sample(true, true, false, false, 2, 110, 200)); // Consumption resumes.
+}
+
 }  // namespace
 
 int main() {
@@ -120,6 +143,7 @@ int main() {
   testMaxEntriesCapsNewest();
   testEscapesMessageForJson();
   testTruncatesOversizedFields();
+  testNativeSanitizationAndEmptyOutputEvidence();
   std::printf("diagnostic_log_tests passed\n");
   return 0;
 }

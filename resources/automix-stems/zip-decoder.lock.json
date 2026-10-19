@@ -1,0 +1,9 @@
+{
+  "version": "26.04",
+  "bootstrapUrl": "https://github.com/ip7z/7zip/releases/download/26.04/7zr.exe",
+  "bootstrapSha256": "256feca8e274e5da655e2a284fabafd9f554365eb164862089dacd4e8276d282",
+  "archiveUrl": "https://github.com/ip7z/7zip/releases/download/26.04/7z2604-extra.7z",
+  "archiveSha256": "dc4b11d3399db18b063630137145f5585d8f7ac847bf3639bd1185d7d1f7cee0",
+  "decoderSha256": "15d4c788c148e3677e2fc1c4a01f191fb6669eba4f6acf8a465f0f1a6f1e1260",
+  "sourceUrl": "https://github.com/ip7z/7zip/releases/download/26.04/7z2604-src.tar.xz"
+}

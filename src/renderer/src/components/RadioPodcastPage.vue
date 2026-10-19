@@ -601,7 +601,8 @@ function formatDuration(seconds: number): string {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 52px clamp(24px, 5vw, 72px) 132px;
+  padding: 52px clamp(24px, 5vw, 72px)
+    max(132px, calc(var(--te-playbar-bottom-clearance, 0px) + 12px));
   color: var(--te-settings-text, #0f172a);
   scrollbar-width: thin;
   scrollbar-color: var(--te-scrollbar-thumb) transparent;

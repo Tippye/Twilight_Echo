@@ -97,14 +97,7 @@ export function useSideMenuClearance(options: SideMenuClearanceOptions) {
       playerBarRect.height > 0 &&
       playerBarRect.top < window.innerHeight &&
       playerBarRect.bottom > sideMenuRect.top
-        ? Math.max(
-            0,
-            Math.round(
-              (isWindowLayout ? window.innerHeight : sideMenuRect.bottom) -
-                playerBarRect.top +
-                SIDE_MENU_OVERLAP_GAP
-            )
-          )
+        ? Math.max(0, Math.round(sideMenuRect.bottom - playerBarRect.top + SIDE_MENU_OVERLAP_GAP))
         : 0
     // Keep the sidebar surface behind the player; lift only its footer. Its
     // height and footer clearance then stay stable throughout horizontal slides.

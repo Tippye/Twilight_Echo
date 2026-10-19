@@ -9,12 +9,9 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { compileStyle } from '@vue/compiler-sfc'
 import {
-  LIQUID_GLASS_CARD_FILTER_ID,
-  LIQUID_GLASS_CARD_SELECTOR,
-  LIQUID_GLASS_EXPANDED_CARD_FILTER_ID,
-  LIQUID_GLASS_EXPANDED_SURFACE_SELECTOR,
-  LIQUID_GLASS_HOME_CARD_FILTER_ID,
-  LIQUID_GLASS_PLAYBAR_FILTER_ID
+  LIQUID_GLASS_PLAYBAR_FILTER_ID,
+  functionalLiquidGlassSettings,
+  DEFAULT_LIQUID_GLASS
 } from '../../../shared/liquidGlass.ts'
 
 const baseStyle = readFileSync(new URL('../assets/base.css', import.meta.url), 'utf8')
@@ -36,57 +33,32 @@ const settingsPage = readFileSync(new URL('./SettingsPage.vue', import.meta.url)
 const sideMenu = readFileSync(new URL('./SideMenu.vue', import.meta.url), 'utf8')
 const titleBar = readFileSync(new URL('./TitleBar.vue', import.meta.url), 'utf8')
 
-test('shared glass is scoped to chrome and dashboard clear glass is hero-only', () => {
-  assert.equal(LIQUID_GLASS_CARD_SELECTOR, '.home .feature-card')
-  assert.doesNotMatch(
-    baseStyle,
-    /html\[data-te-surface-material='liquidGlass'\]\s*\n\s*:is\(\s*\n\s*\.artist-card/
-  )
-  assert.match(
-    dashboardStyle,
-    /html\[data-te-home-liquid-glass='on'\]\s+\.home\s+\.feature-card\s*\{/
-  )
-  assert.doesNotMatch(dashboardStyle, /:is\(\s*\.feature-card,\s*\.signal-card/)
+test('legacy content glass settings resolve to functional chrome without mutating saved profiles', () => {
+  const saved = {
+    ...DEFAULT_LIQUID_GLASS,
+    coverage: 'expanded' as const,
+    homeCards: { ...DEFAULT_LIQUID_GLASS.homeCards, enabled: true }
+  }
+  const runtime = functionalLiquidGlassSettings(saved)
+  assert.equal(runtime.coverage, 'functional')
+  assert.equal(runtime.homeCards.enabled, false)
+  assert.equal(saved.coverage, 'expanded')
+  assert.equal(saved.homeCards.enabled, true)
+  assert.equal(runtime.homeCards.light, saved.homeCards.light)
+  assert.match(themeStore, /liquidGlass = functionalLiquidGlassSettings/)
 })
 
-test('expensive hero observers and pointer tracking stay inactive outside the clear scope', () => {
-  assert.match(defs, /props\.active &&\s*props\.homeCardsActive &&/)
-  assert.match(defs, /!props\.homeCardsActive && !props\.expandedActive/)
-  assert.match(defs, /new IntersectionObserver/)
-  assert.match(defs, /rootMargin: '128px 0px'/)
-  assert.match(
+test('content surfaces no longer register optical filters or geometry/pointer observers', () => {
+  assert.doesNotMatch(
     defs,
-    /props\.expandedActive && surface\.matches\(LIQUID_GLASS_EXPANDED_SURFACE_SELECTOR\)/
+    /cardMapUrl|cardSpecularUrl|IntersectionObserver|pointermove|homeCardsActive|expandedActive/
   )
-})
-
-test('expanded coverage is opt-in and excludes dense rows and nested surfaces', () => {
-  assert.equal(
-    LIQUID_GLASS_EXPANDED_SURFACE_SELECTOR,
-    '.artist-card,.album-card,.playlist-card,.glass-card,.signal-card,.chart-card,.profile-card,.recent-card,.ranking-card'
-  )
-  assert.match(app, /effectiveLiquidGlass\.value\.coverage === 'expanded'/)
-  assert.match(
-    app,
-    /:expanded-active="\s*effectiveSurfaceMaterial !== 'transparent' && effectiveLiquidGlass\.coverage === 'expanded'\s*"/
-  )
-  assert.match(baseStyle, /data-te-liquid-glass-coverage='expanded'/)
-  assert.doesNotMatch(
-    baseStyle,
-    /filter: url\(#te-lg-expanded-card\)/,
-    'co-locating an feImage chain with backdrop-filter breaks the backdrop pass in Chromium'
-  )
-  assert.match(baseStyle, /prefers-reduced-transparency: reduce/)
-  assert.match(baseStyle, /prefers-contrast: more/)
-  assert.match(baseStyle, /forced-colors: active/)
-  assert.match(baseStyle, /te-liquid-glass-budget/)
-  assert.match(baseStyle, /data-window-transparent='on'\]\[data-platform='win32'/)
-  assert.doesNotMatch(baseStyle, /data-te-legacy-content-glass/)
-  assert.doesNotMatch(baseStyle, /data-te-liquid-glass-coverage='expanded'[^\n]*.*track-row/)
-  assert.doesNotMatch(baseStyle, /data-te-liquid-glass-coverage='expanded'[\s\S]*?\.feature-card/)
-  assert.match(liquidGlassSettings, /setLiquidGlassCoverage/)
-  assert.match(liquidGlassSettings, /coverage === 'functional'/)
-  assert.match(liquidGlassSettings, /coverage === 'expanded'/)
+  assert.doesNotMatch(dashboardStyle, /data-te-home-liquid-glass|--home-lg-filter/)
+  assert.doesNotMatch(baseStyle, /data-te-liquid-glass-coverage='expanded'/)
+  assert.doesNotMatch(liquidGlassSettings, /扩展实验|首页媒体焦点液态玻璃|setLiquidGlassCoverage/)
+  assert.match(liquidGlassSettings, /内容卡片使用普通材质/)
+  assert.match(app, /:active="playbarRefractionActive"/)
+  assert.match(defs, /document.querySelector\('\.app-shell-player'\)/)
 })
 
 test('every theme runtime return path emits all chrome material targets', () => {
@@ -110,7 +82,6 @@ test('app shell uses regular material for navigation and samples only its active
   assert.match(app, /useLiquidGlassEnvironment/)
   assert.match(app, /liquidGlassBackgroundPage = computed<AppBackgroundPage>/)
   assert.match(app, /:liquid-material="liquidGlassChromeActive"/)
-  assert.match(app, /:liquid-material="liquidGlassChromeActive"/)
 })
 
 test('chrome surfaces retain isolated blur layers and press-origin feedback', () => {
@@ -119,7 +90,10 @@ test('chrome surfaces retain isolated blur layers and press-origin feedback', ()
   assert.match(titleBar, /circle at var\(--te-lg-press-x, 50%\) var\(--te-lg-press-y, 50%\)/)
   assert.match(sideMenu, /side-menu-liquid/)
   assert.match(sideMenu, /function setPressOrigin\(event: PointerEvent\)/)
-  assert.match(sideMenu, /backdrop-filter: blur\(20px\) saturate\(128%\)/)
+  assert.match(
+    sideMenu,
+    /backdrop-filter: blur\(var\(--te-chrome-frosted-blur, 24px\)\)\s*saturate\(var\(--te-chrome-frosted-saturation, 124%\)\)/
+  )
   assert.match(settingsPage, /function setNavigationPressOrigin\(event: PointerEvent\)/)
   assert.match(settingsStyle, /circle at var\(--te-lg-press-x, 50%\) var\(--te-lg-press-y, 50%\)/)
   assert.match(playerBar, /function setGlassPressOrigin\(event: PointerEvent\)/)
@@ -135,83 +109,28 @@ test('all chrome recipes consume bounded context variables and preserve reduced-
   }
   assert.match(settingsStyle, /data-te-liquid-glass-scrolled='on'/)
   assert.match(playerBarStyle, /body\.te-no-blur .player-bar-liquid .player-bar-warp/)
-  assert.match(baseStyle, /data-te-liquid-glass-source='solid'/)
-  assert.match(baseStyle, /--te-lg-context-material/)
+  assert.match(titleBar, /--te-lg-context-material/)
   assert.match(playerBarStyle, /data-te-liquid-glass-source='solid'/)
-  assert.match(sideMenu, /data-te-liquid-glass-source='solid'/)
+  assert.match(sideMenu, /background: var\(--te-lg-context-surface-solid/)
 })
 
-test('all SVG filters remain defined once and referenced from their intended surfaces', () => {
-  for (const id of [
-    LIQUID_GLASS_CARD_FILTER_ID,
-    LIQUID_GLASS_EXPANDED_CARD_FILTER_ID,
-    LIQUID_GLASS_HOME_CARD_FILTER_ID,
-    LIQUID_GLASS_PLAYBAR_FILTER_ID
-  ]) {
-    const constant =
-      id === LIQUID_GLASS_CARD_FILTER_ID
-        ? 'LIQUID_GLASS_CARD_FILTER_ID'
-        : id === LIQUID_GLASS_EXPANDED_CARD_FILTER_ID
-          ? 'LIQUID_GLASS_EXPANDED_CARD_FILTER_ID'
-          : id === LIQUID_GLASS_HOME_CARD_FILTER_ID
-            ? 'LIQUID_GLASS_HOME_CARD_FILTER_ID'
-            : 'LIQUID_GLASS_PLAYBAR_FILTER_ID'
-    assert.match(defs, new RegExp(`:id="${constant}"`))
-  }
-  assert.match(defs, /:id="LIQUID_GLASS_EXPANDED_CARD_FILTER_ID"[\s\S]*expandedChannelScales/)
-  // Card surfaces keep the glass to backdrop-filter + CSS sheen: an feImage-based
-  // `filter: url()` on the same layer makes Chromium abandon the backdrop pass and
-  // burns a full filter pass per card per frame.
-  assert.doesNotMatch(settingsStyle, /filter: url\(#te-lg-card\)/)
-  assert.match(dashboardStyle, /filter: var\(--home-lg-filter\)/)
-  assert.match(dashboardStyle, /--home-lg-filter: none/)
-  // The playbar warp layer paints only its own gradients, so `filter` would have
-  // nothing textured to bend. The chain has to sit in the *backdrop* list, where
-  // the compositor hands it the scrolling content behind the bar.
-  assert.match(playerBarStyle, /backdrop-filter:\s*url\(#te-lg-playbar\) blur\(/)
-  assert.match(playerBarStyle, /-webkit-backdrop-filter:\s*url\(#te-lg-playbar\) blur\(/)
-  const linuxFallback = playerBarStyle.match(
-    /html\[data-platform='linux'\] \.player-bar-liquid \.player-bar-warp\s*\{([^}]+)\}/
-  )?.[1]
-  assert.ok(linuxFallback, 'Linux owns a CSS-only fallback on the same warp layer')
-  assert.match(linuxFallback, /backdrop-filter:\s*blur\([^;]+saturate\(/)
-  assert.match(linuxFallback, /-webkit-backdrop-filter:\s*blur\([^;]+saturate\(/)
-  assert.doesNotMatch(linuxFallback, /url\(/)
-  assert.ok(
-    !/(^|[^-])filter: url\(#te-lg-playbar\)/m.test(playerBarStyle),
-    'playbar must not reference the chain from `filter`, where it is a visual no-op'
+test('the one optical filter remains on the playback backdrop rather than foreground content', () => {
+  assert.equal((defs.match(/<filter\b/g) ?? []).length, 1)
+  assert.match(defs, /:id="LIQUID_GLASS_PLAYBAR_FILTER_ID"/)
+  assert.match(
+    playerBarStyle,
+    new RegExp(`backdrop-filter:[^;]*url\\(#${LIQUID_GLASS_PLAYBAR_FILTER_ID}\\)`)
+  )
+  assert.doesNotMatch(playerBarStyle, /(?:^|[^-])filter: url\(#te-lg-playbar\)/m)
+  assert.doesNotMatch(
+    dashboardStyle + baseStyle + settingsStyle,
+    /url\(#te-lg-(?:card|home-card|expanded-card)\)/
   )
 })
 
-test('content filters place highlights after refraction; the playbar uses transmission only', () => {
-  // The highlight is a lerp toward white, so it has to sit on top of the resolved
-  // refraction rather than being displaced along with the source.
-  const chains = defs.match(/<filter[\s\S]*?<\/filter>/g) ?? []
-  assert.equal(chains.length, 4, 'all four shared chains must be present')
-
-  for (const chain of chains) {
-    if (chain.includes(':id="LIQUID_GLASS_PLAYBAR_FILTER_ID"')) {
-      assert.doesNotMatch(chain, /SPECULAR/, 'media controls do not add a specular reflection')
-      continue
-    }
-    const refracted = chain.indexOf('result="REFRACTED"')
-    const specular = chain.indexOf('result="SPECULAR_RAW"')
-    assert.ok(refracted >= 0, 'refraction must be a named result')
-    assert.ok(specular > refracted, 'the highlight must composite after refraction')
-    // The map is a full rectangle; unclipped it fills the rounded corners and the
-    // surface reads as square.
-    assert.match(
-      chain,
-      /<feComposite in="SPECULAR" in2="SourceGraphic" operator="in" result="SPECULAR_CLIPPED" \/>/
-    )
-    assert.match(chain, /<feBlend in="REFRACTED" in2="SPECULAR_CLIPPED" mode="screen" \/>/)
-    // Co-registration with the displacement map depends on identical subregion
-    // attributes, since both are resolved against the same primitive subregion.
-    // `none` rather than `slice`: the rasters are now baked at the surface's own
-    // measured size, so any aspect-preserving fit would re-introduce the crop that
-    // put the corner arc off the visible corner.
-    assert.match(chain, /result="SPECULAR_RAW"\s*\n\s*preserveAspectRatio="none"/)
-  }
+test('playback controls use transmission without specular composites', () => {
+  assert.doesNotMatch(defs, /SPECULAR|getSpecularMapUrl|feComposite/)
+  assert.match(defs, /getDisplacementMapUrl\(geometry, glassRasterDensity/)
 })
 
 test('no chain masks refraction against an feImage-derived alpha', () => {
@@ -229,7 +148,7 @@ test('no chain masks refraction against an feImage-derived alpha', () => {
   // `in2="SourceGraphic"` is a different case and is fine — verified by pixel
   // probe — which is why the specular clip is still allowed.
   const chains = defs.match(/<filter[\s\S]*?<\/filter>/g) ?? []
-  assert.equal(chains.length, 4)
+  assert.equal(chains.length, 1)
 
   for (const chain of chains) {
     assert.doesNotMatch(
@@ -246,34 +165,6 @@ test('no chain masks refraction against an feImage-derived alpha', () => {
       )
     }
   }
-})
-
-test('a zero-strength highlight drops out of the chain instead of compositing a no-op', () => {
-  for (const flag of ['cardSpecularActive', 'expandedSpecularActive', 'homeSpecularActive']) {
-    assert.match(defs, new RegExp(`<template v-if="${flag}">`))
-    // Both halves matter: zero strength, and an empty URL from a canvas-less context.
-    assert.match(defs, new RegExp(`const ${flag} = computed\\(`))
-  }
-  assert.match(defs, /resolveSpecularMapStrength/)
-  // The player has no highlight raster; content cards retain their measured map.
-  assert.doesNotMatch(defs, /getSpecularMapUrl\(playbar, undefined, density\)/)
-  assert.match(defs, /getSpecularMapUrl\(card, undefined, density\)/)
-})
-
-test('the expanded and dashboard chains scale the highlight by their own profile', () => {
-  const chains = defs.match(/<filter[\s\S]*?<\/filter>/g) ?? []
-  const byId = (constant: string): string => {
-    const chain = chains.find((candidate) => candidate.includes(`:id="${constant}"`))
-    assert.ok(chain, `${constant} chain must exist`)
-    return chain
-  }
-
-  assert.match(byId('LIQUID_GLASS_CARD_FILTER_ID'), /:slope="specularStrength"/)
-  // Broad content panes turn to white plastic long before compact chrome does.
-  assert.match(byId('LIQUID_GLASS_EXPANDED_CARD_FILTER_ID'), /:slope="expandedSpecularStrength"/)
-  assert.match(byId('LIQUID_GLASS_HOME_CARD_FILTER_ID'), /:slope="homeSpecularStrength"/)
-  // The playbar's short axis needs the wide-strip bake, not the square one.
-  assert.match(byId('LIQUID_GLASS_CARD_FILTER_ID'), /:href="cardSpecularUrl"/)
 })
 
 test('playbar pointer tracking remains element-local', () => {

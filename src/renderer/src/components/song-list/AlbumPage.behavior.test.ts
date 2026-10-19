@@ -91,6 +91,7 @@ import {createApp,h,ref,nextTick} from 'vue'
 import {createPinia} from 'pinia'
 import SongList from '@renderer/components/SongList.vue'
 import {useMusicStore} from '@renderer/stores/useMusicStore.ts'
+import {goBack} from '@renderer/app/useBackStack.ts'
 import '@renderer/assets/base.css'
 import '@renderer/assets/primeicons.css'
 const pause = ms => new Promise(r => setTimeout(r,ms))
@@ -124,7 +125,7 @@ window.albumTest=async()=>{
  expect(window.albumPlayer.plays.length===2&&window.albumPlayer.plays.every(p=>p.count===2),'album playback queue incorrect')
  expect(window.albumPlayer.mode==='shuffle','shuffle action lost')
  expect(document.querySelector('.track-table-wrapper'),'track table absent')
- document.querySelector('.detail-back-button').click();await pause(650)
+ expect(goBack(),'title bar back handler absent');await pause(650)
  const search=document.querySelector('.search-input');search.value='晨光';search.dispatchEvent(new Event('input',{bubbles:true}));await pause(800)
  expect(document.querySelectorAll('.local-album-card').length===1,'album search broke')
  document.querySelector('.search-clear').click();await pause(800)
@@ -138,7 +139,7 @@ window.albumTest=async()=>{
  const container=document.querySelector('.song-list');const top=container.scrollTop
  expect(top>1000,'A-Z did not jump into virtual grid')
  expect([...document.querySelectorAll('[data-collection-letter="M"]')].some(c=>c.getBoundingClientRect().bottom>container.getBoundingClientRect().top&&c.getBoundingClientRect().top<container.getBoundingClientRect().bottom),'A-Z missed the letter after font/density change')
- document.querySelector('.local-album-card').click();await pause(650);document.querySelector('.detail-back-button').click();await pause(650)
+ document.querySelector('.local-album-card').click();await pause(650);expect(goBack(),'title bar back handler absent');await pause(650)
  expect(Math.abs(container.scrollTop-top)<3,'return did not restore parent scroll')
  document.documentElement.style.removeProperty('--te-font-size-body');delete document.documentElement.dataset.teLibraryDensity;await pause(250)
  container.scrollTop=0;container.dispatchEvent(new Event('scroll'));await pause(100)
@@ -149,10 +150,12 @@ window.albumTest=async()=>{
  expect(document.querySelector('.album-detail-artist').textContent==='群星','compilation artist missing')
  expect(document.querySelector('.album-detail-release').textContent==='1998年','year precision lost')
  filter.value='album:id:album-3';await pause(650)
- expect(document.querySelector('.album-artwork-placeholder'),'missing art placeholder absent')
+ const missingArtwork=document.querySelector('.album-artwork img')
+ expect(missingArtwork?.complete&&missingArtwork.naturalWidth===768,'missing album artwork must display the packaged music cover')
  expect(document.querySelector('.album-detail-release').textContent==='发行时间未知','unknown date missing')
  filter.value='album:id:album-4';await pause(650)
- expect(document.querySelector('.album-artwork-placeholder'),'failed image placeholder absent')
+ const failedArtwork=document.querySelector('.album-artwork img')
+ expect(failedArtwork?.complete&&failedArtwork.naturalWidth===768,'failed album artwork must display the packaged music cover')
  filter.value=null;await pause(650)
  expect(errors.length===0,errors.join(';'))
  return 'ALBUM_UI_OK'

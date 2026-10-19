@@ -8,8 +8,10 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cassert>
 #include <cmath>
+#include <chrono>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -74,6 +76,66 @@ void assertDecoderReportsPcm(const std::string& name, int bitsPerSample) {
     assert(stream.decodedFormat.sampleFormat == AudioSampleFormat::Int32Interleaved);
   }
   decoder.close();
+}
+
+void assertDecoderCancellationCanBeResetBeforeSeek() {
+  const auto fixture = writePcmWavFixture({"twilight-cancel-reset.wav", 48000, 2, 16, 8192, false});
+  FFmpegDecoder decoder;
+  std::atomic<bool> cancelled{true};
+  decoder.setInterrupt([](void* context) -> int {
+    return static_cast<std::atomic<bool>*>(context)->load();
+  }, &cancelled);
+  std::string error;
+  assert(!decoder.open(fixture.string(), &error));
+  cancelled = false;
+  error.clear();
+  assert(decoder.open(fixture.string(), &error));
+  const auto format = decoder.outputFormat();
+  std::vector<uint8_t> samples(256 * audioFormatBytesPerFrame(format));
+  PcmBlock block{format, samples.data(), 256, samples.size()};
+  assert(decoder.readFrames(block, &error) > 0);
+  cancelled = true;
+  assert(decoder.readFrames(block, &error) == 0);
+  assert(error == "decode_cancelled");
+  cancelled = false;
+  error.clear();
+  assert(decoder.seek(0.0, &error));
+  assert(decoder.readFrames(block, &error) > 0);
+}
+
+void assertRemoteIoHasDeadline(const std::string& source, bool readStall) {
+  FFmpegDecoder decoder;
+  std::string error;
+  const auto started = std::chrono::steady_clock::now();
+  const bool opened = decoder.open(source, &error);
+  if (!readStall) {
+    assert(!opened);
+    assert(std::chrono::steady_clock::now() - started < std::chrono::seconds(18));
+    return;
+  }
+  assert(opened);
+  assert(std::chrono::steady_clock::now() - started < std::chrono::seconds(18));
+  const auto readStarted = std::chrono::steady_clock::now();
+  const auto format = decoder.outputFormat();
+  std::vector<uint8_t> bytes(2048 * audioFormatBytesPerFrame(format));
+  PcmBlock block{format, bytes.data(), 2048, bytes.size()};
+  size_t frames = 0;
+  while (error.empty()) {
+    const auto read = decoder.readFrames(block, &error);
+    frames += read;
+    if (read == 0) break;
+  }
+  assert(frames > 0);
+  assert(!error.empty());
+  // A timeout is a terminal read failure, not a normal end of the song. The
+  // next read must retain its reason rather than silently becoming EOF.
+  assert(!decoder.eof());
+  const auto failure = error;
+  error.clear();
+  assert(decoder.readFrames(block, &error) == 0);
+  assert(error == failure);
+  assert(!decoder.eof());
+  assert(std::chrono::steady_clock::now() - readStarted < std::chrono::seconds(18));
 }
 
 void assertDecoderTailZeroHelperPreservesCopiedFrames() {
@@ -578,8 +640,19 @@ int main(int argc,char** argv) {
   if(argc==4 && std::string(argv[1])=="--http-restart-read-probe") {
     return runFfmpegHttpProbe(argv[2], std::stoi(argv[3]), false, false, true, true);
   }
+  if (argc == 3 && std::string(argv[1]) == "--network-open-timeout-probe") {
+    assertRemoteIoHasDeadline(argv[2], false); return 0;
+  }
+  if (argc == 3 && std::string(argv[1]) == "--network-read-timeout-probe") {
+    assertRemoteIoHasDeadline(argv[2], true); return 0;
+  }
   if(argc==3 && std::string(argv[1])=="--precise-seek-probe") {
     assertPreciseSeekMatchesExternalPcm(argv[2]);return 0;
+  }
+#else
+  if (argc == 3 && std::string(argv[1]).rfind("--network-", 0) == 0) {
+    std::cerr << "Network stall probes require a real FFmpeg build\n";
+    return 1;
   }
 #endif
   assertSharedFilePreservesReadAndSeekAfterDeletion();
@@ -591,6 +664,7 @@ int main(int argc,char** argv) {
   assertDecoderReportsPcm("twilight-fixture-s16.wav", 16);
   assertDecoderReportsPcm("twilight-fixture-s24.wav", 24);
   assertDecoderReportsPcm("twilight-fixture-s32.wav", 32);
+  assertDecoderCancellationCanBeResetBeforeSeek();
   assertDecoderReportsDsdFallbackWhenSupported();
   assertDecoderSoxrTiersProbeAndFallBackGracefully();
   assertPreciseSeekMatchesContinuousPcm();

@@ -6,6 +6,7 @@ import AppNoticeHost from './AppNoticeHost.vue'
 import ImportDialog from './ImportDialog.vue'
 import { usePodcastStore } from '../stores/usePodcastStore'
 import { useAppNoticeStore } from '../stores/useAppNoticeStore'
+import { useSettingsStore } from '../stores/useSettingsStore'
 
 const expect = (condition, message) => {
   if (!condition) throw new Error(message)
@@ -216,6 +217,69 @@ window.runUxCoreTests = async () => {
     'completed folder batches were not saved after a later failure'
   )
   expect(imported.includes('imported:C:/A'), 'completed folder batches were lost')
+
+  // Shared settings are authoritative even when the saved library has old roots.
+  const settingsStore = useSettingsStore()
+  settingsStore.settings.value.libraryFolders = ['C:/A', 'C:/settings-only']
+  settingsStore.loaded.value = true
+  window.api.settings = {
+    update: async (patch) => ({
+      settings: { ...settingsStore.settings.value, ...patch },
+      defaults: {},
+      paths: {},
+      appVersion: 'test',
+      platform: 'win32',
+      windowTransparencySupported: false,
+      restartReasons: []
+    })
+  }
+  const removedFolders = []
+  window.auditMusic.removeFolder = (folder) => {
+    removedFolders.push(folder)
+    window.auditMusic.scannedFolders.value = window.auditMusic.scannedFolders.value.filter(
+      (root) => root !== folder
+    )
+  }
+  const restoredPaths = []
+  window.auditMusic.excludedTracks = ref([
+    { filePath: 'C:\\A\\removed.flac' },
+    { filePath: 'C:/A-sibling/unrelated.flac' },
+    { filePath: 'C:/B/still-excluded.flac' }
+  ])
+  window.auditMusic.restoreExcludedTracks = async (paths) => restoredPaths.push(...paths)
+  const scannedRoots = []
+  window.api.fs.scanMusicFiles = async (folder) => {
+    scannedRoots.push(folder)
+    return [{ id: 'reimported:' + folder }]
+  }
+  await mount(ImportDialog, () => ({ show: true, onClose: () => undefined }))
+  expect(
+    [...document.querySelectorAll('.folder-path')].map((row) => row.textContent).join('|') ===
+      'C:/A|C:/settings-only',
+    'import folder records did not follow settings'
+  )
+  expect(
+    [...document.querySelectorAll('.folder-item input')].every((input) => input.checked),
+    'settings-only root was not selected when opening import'
+  )
+  settingsStore.settings.value.libraryFolders = ['C:/A']
+  await settle()
+  findButton('扫描所选文件夹').click()
+  await new Promise((resolve) => setTimeout(resolve, 120))
+  await settle()
+  expect(scannedRoots.join('|') === 'C:/A', 'removed or hidden root was still scanned')
+  expect(
+    restoredPaths.join('|') === 'C:\\A\\removed.flac',
+    'reimport did not restore exclusions at directory boundaries'
+  )
+  document.querySelector('[aria-label="移除文件夹 C:/A"]').click()
+  await settle()
+  expect(
+    settingsStore.settings.value.libraryFolders.length === 0 &&
+      removedFolders.join('|') === 'C:/A' &&
+      !document.querySelector('.folder-item'),
+    'import folder removal did not update shared settings and saved roots'
+  )
   importMotion.remove()
 
   const offset = ref(0),

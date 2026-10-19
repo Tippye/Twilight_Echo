@@ -19,6 +19,7 @@ import {
   parsePlaylistDocument,
   reorderStableIds,
   type PlaylistFileFormat,
+  type PlaylistImportEntry,
   type PlaylistRelocationResult
 } from '../../utils/playlistLifecycle.ts'
 import {
@@ -223,39 +224,94 @@ export function createPlaylistController(options: {
     contents: string
   ): PlaylistImportApplyResult {
     const parsed = parsePlaylistDocument(contents, fileName)
-    const normalizedName = normalizePlaylistName(name)
+    return applyPlaylistEntries(name, parsed.entries, parsed.warnings)
+  }
+
+  /**
+   * The shared tail of every import path: match entries against the live
+   * library, create-or-extend the playlist, and queue persistence. Plugins reach
+   * it through `importPlaylistPaths` without going through playlist *text*.
+   */
+  function applyPlaylistEntries(
+    name: string,
+    entries: readonly PlaylistImportEntry[],
+    warnings: string[] = []
+  ): PlaylistImportApplyResult {
+    return applyPlaylistEntryBatch([{ name, entries, warnings }])[0]
+  }
+
+  function applyPlaylistEntryBatch(
+    batch: readonly {
+      name: string
+      entries: readonly PlaylistImportEntry[]
+      warnings?: string[]
+    }[]
+  ): PlaylistImportApplyResult[] {
+    if (batch.length === 0) return []
+    // Validate all names before mutating, and share the index and transaction
+    // snapshots across the whole batch rather than copying every growing prefix.
+    const normalizedNames = batch.map((item) => normalizePlaylistName(item.name))
     const byPath = new Map<string, Track>()
     for (const track of tracks.value)
       byPath.set(normalizePortableLibraryPath(track.filePath), track)
-    const imported: Track[] = []
-    let unresolvedEntries = 0
-    for (const entry of parsed.entries) {
-      const normalizedPath = normalizePortableLibraryPath(entry.path)
-      let matched = byPath.get(normalizedPath)
-      if (!matched && !/^[a-zA-Z]:\\/.test(normalizedPath) && !normalizedPath.startsWith('\\')) {
-        const suffix = `\\${normalizedPath}`
-        const candidates = tracks.value.filter((track) =>
-          normalizePortableLibraryPath(track.filePath).endsWith(suffix)
-        )
-        if (candidates.length === 1) matched = candidates[0]
-      }
-      if (matched) imported.push(matched)
-      else unresolvedEntries++
-    }
     const base = clonePlaylistSnapshot()
-    const existing = findLocalPlaylistByName(normalizedName)
-    const playlist = existing ?? ensurePlaylist(normalizedName)
-    const changed = appendTracksToPlaylist(playlist, imported)
-    if (changed || !existing) {
-      touchPlaylist(playlist)
-      queuePlaylistPersistence(base)
-    }
-    return {
-      playlistId: playlist.id,
-      importedCount: imported.length,
-      unresolvedEntries,
-      warnings: parsed.warnings
-    }
+    let batchChanged = false
+    const results = batch.map(({ entries, warnings = [] }, index) => {
+      const imported: Track[] = []
+      let unresolvedEntries = 0
+      for (const entry of entries) {
+        const normalizedPath = normalizePortableLibraryPath(entry.path)
+        let matched = byPath.get(normalizedPath)
+        if (!matched && !/^[a-zA-Z]:\\/.test(normalizedPath) && !normalizedPath.startsWith('\\')) {
+          const suffix = `\\${normalizedPath}`
+          const candidates = tracks.value.filter((track) =>
+            normalizePortableLibraryPath(track.filePath).endsWith(suffix)
+          )
+          if (candidates.length === 1) matched = candidates[0]
+        }
+        if (matched) imported.push(matched)
+        else unresolvedEntries++
+      }
+      const normalizedName = normalizedNames[index]
+      const existing = findLocalPlaylistByName(normalizedName)
+      const playlist = existing ?? ensurePlaylist(normalizedName)
+      const changed = appendTracksToPlaylist(playlist, imported)
+      if (changed || !existing) {
+        touchPlaylist(playlist)
+        batchChanged = true
+      }
+      return {
+        playlistId: playlist.id,
+        importedCount: imported.length,
+        unresolvedEntries,
+        warnings
+      }
+    })
+    if (batchChanged) queuePlaylistPersistence(base)
+    return results
+  }
+
+  /**
+   * Entry point for plugin-supplied playlists (see `shared/pluginPlaylistImport`).
+   * Paths are matched against the library exactly like a `#EXTINF` entry would
+   * be, so a plugin never has to know local track ids.
+   */
+  function importPlaylistPaths(name: string, paths: readonly string[]): PlaylistImportApplyResult {
+    return applyPlaylistEntries(
+      name,
+      paths.map((path) => ({ path }))
+    )
+  }
+
+  function importPlaylistPathBatch(
+    batch: readonly { name: string; paths: readonly string[] }[]
+  ): PlaylistImportApplyResult[] {
+    return applyPlaylistEntryBatch(
+      batch.map(({ name, paths }) => ({
+        name,
+        entries: paths.map((path) => ({ path }))
+      }))
+    )
   }
 
   function exportPlaylistDocumentForStore(
@@ -560,6 +616,8 @@ export function createPlaylistController(options: {
     reorderPlaylistTracks,
     movePlaylistTracks,
     importPlaylistDocument,
+    importPlaylistPaths,
+    importPlaylistPathBatch,
     exportPlaylistDocument: exportPlaylistDocumentForStore,
     repairPlaylistMissingTracks,
     deletePlaylist,

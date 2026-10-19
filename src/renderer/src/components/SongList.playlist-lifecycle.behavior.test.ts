@@ -319,6 +319,19 @@ const runPlaylistLifecycleRuntime = async () => {
   await setInputFile('#playlist-cover', goodCover)
   await waitFor(() => statusText().includes('歌单封面已更新'), 'valid cover feedback missing')
   expect(currentPlaylist.value.cover?.startsWith('data:image/png;base64,'), 'valid cover not applied')
+  const originalReadAsDataURL = FileReader.prototype.readAsDataURL
+  FileReader.prototype.readAsDataURL = () => { throw new Error('disk cover must not allocate Base64') }
+  window.api.data.cacheCover = async (bytes) => {
+    expect(bytes.byteLength === goodCover.size, 'disk cover received incomplete bytes')
+    return 'cover://memory-test.png'
+  }
+  try {
+    await setInputFile('#playlist-cover', goodCover)
+    await waitFor(() => currentPlaylist.value.cover === 'cover://memory-test.png', 'disk cover not applied')
+  } finally {
+    FileReader.prototype.readAsDataURL = originalReadAsDataURL
+    delete window.api.data.cacheCover
+  }
 
   await click(renameButton)
   const nameInput = document.querySelector('#playlist-action-value')

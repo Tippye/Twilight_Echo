@@ -22,6 +22,9 @@ export type AppNotice = {
 
 const notices = ref<AppNotice[]>([])
 const noticeHistory = ref<AppNotice[]>([])
+// Task state lives outside the notice store. Keep tombstones when history is
+// cleared so completed tasks do not immediately reappear in TaskCenter.
+const clearedTaskResultKeys = ref(new Set<string>())
 const centerOpen = ref(false)
 const activeTaskCount = ref(0)
 const pendingActions = ref(new Set<number>())
@@ -138,6 +141,7 @@ export function useAppNoticeStore() {
     timerState.clear()
     notices.value = []
     noticeHistory.value = []
+    clearedTaskResultKeys.value.clear()
   }
 
   function pushNotice(input: {
@@ -156,6 +160,10 @@ export function useAppNoticeStore() {
     if (!message) return 0
     const dedupeKey = input.dedupeKey?.trim() || undefined
     const kind = input.kind ?? 'info'
+    if (dedupeKey) clearedTaskResultKeys.value.delete(dedupeKey)
+    if (input.downloadTaskId) {
+      clearedTaskResultKeys.value.delete('download-result:' + input.downloadTaskId)
+    }
     const sticky = input.sticky ?? (kind === 'error' || kind === 'warning' || !!input.action)
     const presentation =
       input.presentation ?? (kind === 'error' || input.action ? 'toast' : 'center')
@@ -248,6 +256,7 @@ export function useAppNoticeStore() {
   return {
     notices,
     noticeHistory,
+    clearedTaskResultKeys,
     centerOpen,
     activeTaskCount,
     pendingActions,
@@ -260,6 +269,14 @@ export function useAppNoticeStore() {
         if (!selected || selected.has(notice.id)) notice.read = true
     },
     clearHistory: () => {
+      for (const notice of noticeHistory.value) {
+        if (notice.dedupeKey?.startsWith('task-result:')) {
+          clearedTaskResultKeys.value.add(notice.dedupeKey)
+        }
+        if (notice.downloadTaskId) {
+          clearedTaskResultKeys.value.add('download-result:' + notice.downloadTaskId)
+        }
+      }
       noticeHistory.value = []
     },
     setCenterOpen: (value: boolean) => {

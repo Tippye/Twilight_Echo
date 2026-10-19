@@ -13,7 +13,7 @@
 namespace twilight::audio::asio {
 
 inline int32_t floatToSignedInt(float sample, int bits) {
-  const double clamped = std::clamp(static_cast<double>(sample), -1.0, 1.0);
+  const double clamped = std::isfinite(sample) ? std::clamp(static_cast<double>(sample), -1.0, 1.0) : 0.0;
   if (bits == 16) {
     return static_cast<int32_t>(std::clamp(
         std::llround(clamped * 32768.0),
@@ -31,7 +31,7 @@ inline int32_t floatToSignedInt(float sample, int bits) {
 }
 
 inline int16_t floatToSignedInt16(float sample) {
-  const double clamped = std::clamp(static_cast<double>(sample), -1.0, 1.0);
+  const double clamped = std::isfinite(sample) ? std::clamp(static_cast<double>(sample), -1.0, 1.0) : 0.0;
   return static_cast<int16_t>(std::clamp(
       std::llround(clamped * 32768.0),
       static_cast<long long>(std::numeric_limits<int16_t>::min()),
@@ -39,12 +39,12 @@ inline int16_t floatToSignedInt16(float sample) {
 }
 
 inline int32_t floatToSignedInt24(float sample) {
-  const double clamped = std::clamp(static_cast<double>(sample), -1.0, 1.0);
+  const double clamped = std::isfinite(sample) ? std::clamp(static_cast<double>(sample), -1.0, 1.0) : 0.0;
   return static_cast<int32_t>(std::clamp(std::llround(clamped * 8388608.0), -8388608LL, 8388607LL));
 }
 
 inline int32_t floatToSignedInt32(float sample) {
-  const double clamped = std::clamp(static_cast<double>(sample), -1.0, 1.0);
+  const double clamped = std::isfinite(sample) ? std::clamp(static_cast<double>(sample), -1.0, 1.0) : 0.0;
   const long long value = std::clamp(
       std::llround(clamped * 2147483648.0),
       static_cast<long long>(std::numeric_limits<int32_t>::min()),
@@ -130,6 +130,12 @@ inline size_t bytesPerSample(const AsioChannelFormat& format) {
   return static_cast<size_t>(format.containerBits / 8);
 }
 
+// The engine keeps NER8 source frames packed in chronological LSB-first
+// order. Its ASIO wire container is one DSD bit (0 or 1) in each byte.
+inline size_t wireBytesForFrames(const AsioChannelFormat& format, size_t frames) {
+  return frames * (format.dsdPacking == AsioDsdPacking::Ner8 ? 8 : bytesPerSample(format));
+}
+
 inline int driverSampleRate(const AudioFormat& format) {
   return format.sampleRate > 0 ? format.sampleRate : 0;
 }
@@ -213,6 +219,7 @@ inline DsdRenderUnitDecision advanceDsdRenderUnitProbe(
       probe.byteFrameStreak = 0;
       break;
     case DsdCallbackUnit::Unknown:
+      probe.byteFrameStreak = probe.bitSampleStreak = 0;
       return DsdRenderUnitDecision::Keep;
   }
   if (probe.byteFrameStreak >= confirmCallbacks) {
@@ -238,8 +245,18 @@ inline uint8_t nativeDsdIdleByte(AudioSampleFormat format) {
   return format == AudioSampleFormat::DsdInt8Msb1 ? reverseBits(0x69) : 0x69;
 }
 
+inline void fillChannelIdle(uint8_t* output, const AsioChannelFormat& format, size_t frames) {
+  if (!output) return;
+  if (format.dsdPacking == AsioDsdPacking::Ner8) {
+    for (size_t frame = 0; frame < frames; ++frame)
+      for (size_t bit = 0; bit < 8; ++bit) output[frame * 8 + bit] = (0x69u >> bit) & 1u;
+  } else {
+    std::memset(output, isDsdSampleFormat(format.logicalFormat) ? nativeDsdIdleByte(format.logicalFormat) : 0,
+                wireBytesForFrames(format, frames));
+  }
+}
+
 inline bool isSupportedChannelFormat(const AsioChannelFormat& format) {
-  if (!format.littleEndian) return false;
   switch (format.logicalFormat) {
     case AudioSampleFormat::Int16Interleaved:
       return format.containerBits == 16 && format.validBits == 16 &&
@@ -251,10 +268,11 @@ inline bool isSupportedChannelFormat(const AsioChannelFormat& format) {
       return format.containerBits == 32 && format.validBits == 24 &&
              format.dsdPacking == AsioDsdPacking::None;
     case AudioSampleFormat::Int32Interleaved:
-      return format.containerBits == 32 && format.validBits == 32 &&
-             !format.validBitsAreMostSignificant && format.dsdPacking == AsioDsdPacking::None;
+      return format.containerBits == 32 &&
+             (format.validBits == 16 || format.validBits == 18 || format.validBits == 20 || format.validBits == 32) &&
+             format.dsdPacking == AsioDsdPacking::None;
     case AudioSampleFormat::Float32Interleaved:
-      return format.containerBits == 32 && format.validBits == 32 &&
+      return (format.containerBits == 32 || format.containerBits == 64) && format.validBits == format.containerBits &&
              !format.validBitsAreMostSignificant && format.dsdPacking == AsioDsdPacking::None;
     case AudioSampleFormat::DsdInt8Lsb1:
       return format.containerBits == 8 && format.validBits == 1 &&
@@ -377,12 +395,35 @@ inline void writePackedChannelFromFloatScratch(
     const AsioChannelFormat& format,
     uint8_t* output) {
   if (!output || !isSupportedChannelFormat(format)) return;
-  writePackedChannelFromFloatScratch(
-      input, frameCount, sourceChannels, outputChannel, routingMode, format.logicalFormat, output);
-  if (format.logicalFormat == AudioSampleFormat::Int24In32Interleaved &&
-      !format.validBitsAreMostSignificant) {
-    auto* samples = reinterpret_cast<uint32_t*>(output);
-    for (size_t frame = 0; frame < frameCount; ++frame) samples[frame] >>= 8;
+  const bool nativeLayout = format.littleEndian &&
+      format.containerBits == bytesPerSample(format.logicalFormat) * 8 &&
+      (format.logicalFormat != AudioSampleFormat::Int32Interleaved || format.validBits == 32) &&
+      (format.logicalFormat != AudioSampleFormat::Int24In32Interleaved || format.validBitsAreMostSignificant);
+  if (nativeLayout) {
+    writePackedChannelFromFloatScratch(input, frameCount, sourceChannels, outputChannel, routingMode,
+                                      format.logicalFormat, output);
+    return;
+  }
+  const auto* source = channelSourcePointer(input, sourceChannels, outputChannel, routingMode);
+  const size_t wireBytes = bytesPerSample(format);
+  for (size_t frame = 0; frame < frameCount; ++frame) {
+    const float sample = channelSampleAt(source, frame, sourceChannels);
+    uint64_t bits = 0;
+    if (format.logicalFormat == AudioSampleFormat::Float32Interleaved) {
+      if (wireBytes == 8) { const double value = sample; std::memcpy(&bits, &value, 8); }
+      else { uint32_t value = 0; std::memcpy(&value, &sample, 4); bits = value; }
+    } else {
+      const int depth = format.validBits;
+      const double finite = std::isfinite(sample) ? std::clamp(static_cast<double>(sample), -1.0, 1.0) : 0.0;
+      const int64_t peak = int64_t{1} << (depth - 1);
+      const int64_t value = std::clamp<int64_t>(std::llround(finite * peak), -peak, peak - 1);
+      bits = static_cast<uint32_t>(value);
+      if (format.validBitsAreMostSignificant) bits = static_cast<uint32_t>(bits << (format.containerBits - depth));
+    }
+    for (size_t byte = 0; byte < wireBytes; ++byte) {
+      const size_t shift = (format.littleEndian ? byte : wireBytes - 1 - byte) * 8;
+      output[frame * wireBytes + byte] = static_cast<uint8_t>(bits >> shift);
+    }
   }
 }
 
@@ -459,6 +500,9 @@ inline bool canCopyInterleavedTypedChannelToPlanar(
     int sourceChannels,
     int channel) {
   return isSupportedChannelFormat(format) &&
+         format.dsdPacking != AsioDsdPacking::Ner8 &&
+         format.littleEndian && format.containerBits == bytesPerSample(format.logicalFormat) * 8 &&
+         (format.logicalFormat != AudioSampleFormat::Int32Interleaved || format.validBits == 32) &&
          (format.logicalFormat != AudioSampleFormat::Int24In32Interleaved ||
           format.validBitsAreMostSignificant) &&
          canCopyInterleavedTypedChannelToPlanar(
@@ -472,19 +516,47 @@ inline void writeInterleavedTypedChannelToPlanar(
     int channel,
     const AsioChannelFormat& format,
     uint8_t* output) {
-  if (!output || !isSupportedChannelFormat(format)) return;
-  if (format.logicalFormat == AudioSampleFormat::Int24In32Interleaved &&
-      !format.validBitsAreMostSignificant) {
-    if (!input || sourceChannels <= 0 || channel < 0 || channel >= sourceChannels) return;
-    auto* destination = reinterpret_cast<uint32_t*>(output);
-    const auto* source = reinterpret_cast<const uint32_t*>(input);
+  if (!input || !output || !isSupportedChannelFormat(format) || sourceChannels <= 0 || channel < 0 || channel >= sourceChannels) return;
+  if (format.dsdPacking == AsioDsdPacking::Ner8) {
     for (size_t frame = 0; frame < frameCount; ++frame) {
-      destination[frame] = source[frame * static_cast<size_t>(sourceChannels) + channel] >> 8;
+      const uint8_t packed = input[frame * static_cast<size_t>(sourceChannels) + channel];
+      for (size_t bit = 0; bit < 8; ++bit) output[frame * 8 + bit] = (packed >> bit) & 1u;
     }
     return;
   }
-  writeInterleavedTypedChannelToPlanar(
-      input, frameCount, sourceChannels, channel, bytesPerSample(format), output);
+  const size_t sourceBytes = bytesPerSample(format.logicalFormat);
+  const size_t wireBytes = bytesPerSample(format);
+  const bool nativeLayout = format.littleEndian && sourceBytes == wireBytes &&
+      (format.logicalFormat != AudioSampleFormat::Int32Interleaved || format.validBits == 32) &&
+      (format.logicalFormat != AudioSampleFormat::Int24In32Interleaved || format.validBitsAreMostSignificant);
+  if (nativeLayout) {
+    writeInterleavedTypedChannelToPlanar(input, frameCount, sourceChannels, channel, sourceBytes, output);
+    return;
+  }
+  for (size_t frame = 0; frame < frameCount; ++frame) {
+    const auto* source = input + (frame * static_cast<size_t>(sourceChannels) + channel) * sourceBytes;
+    uint64_t bits = 0;
+    if (format.logicalFormat == AudioSampleFormat::Float32Interleaved && wireBytes == 8) {
+      float sample = 0; std::memcpy(&sample, source, 4);
+      const double widened = sample; std::memcpy(&bits, &widened, 8);
+    } else {
+      for (size_t byte = 0; byte < sourceBytes; ++byte) bits |= uint64_t{source[byte]} << (byte * 8);
+      if ((format.logicalFormat == AudioSampleFormat::Int24In32Interleaved && !format.validBitsAreMostSignificant) ||
+          (format.logicalFormat == AudioSampleFormat::Int32Interleaved && format.validBits < 32)) {
+        // Canonical engine int32 is full-scale, and int24-in-32 is left aligned.
+        // Arithmetic shifting retains the sign extension in a low-aligned wire
+        // container. Integer input never passes through float here.
+        const int32_t signedValue = static_cast<int32_t>(static_cast<uint32_t>(bits));
+        const int32_t quantized = signedValue >> (32 - format.validBits);
+        bits = static_cast<uint32_t>(quantized);
+        if (format.validBitsAreMostSignificant) bits = static_cast<uint32_t>(bits << (32 - format.validBits));
+      }
+    }
+    for (size_t byte = 0; byte < wireBytes; ++byte) {
+      const size_t shift = (format.littleEndian ? byte : wireBytes - 1 - byte) * 8;
+      output[frame * wireBytes + byte] = static_cast<uint8_t>(bits >> shift);
+    }
+  }
 }
 
 }  // namespace twilight::audio::asio

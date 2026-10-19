@@ -100,7 +100,7 @@ JS 插件填写 `main`，DSP 插件填写 `binary`，纯 theme 插件可用 `con
 | `player:control`   | 控制播放器（播放、暂停、跳转、队列等）         |
 | `player:observe`   | 观察播放器状态（事件订阅、读取状态）           |
 | `library:read`     | 读音乐库                                       |
-| `library:write`    | 写音乐库                                       |
+| `library:write`    | 写入用户歌单（目前仅 `twilight.library.importPlaylists`） |
 | `settings`         | 读写应用设置                                   |
 | `clipboard`        | 访问剪贴板                                     |
 | `ui:inject`        | 向 UI 注入扩展点（侧边栏页面、按钮、设置面板） |
@@ -141,6 +141,14 @@ JS 插件实现两个函数：
 | `twilight.providers` | 注册 provider 能力、查询已注册 provider                                                 |
 | `twilight.ui`        | 注册 UI 扩展点（侧边栏页面、播放栏按钮、设置面板、流媒体/本地侧栏入口）并显示提示 toast |
 | `twilight.themes`    | 主题资源声明                                                                            |
+| `twilight.library`   | 把曲目写进用户的本地歌单（`importPlaylists`，需 `library:write`；宿主较新时才有）      |
+
+`twilight.library.importPlaylists({ playlists: [{ name, paths }] })` 让插件把一批歌单
+写进 **音乐库 → 歌单**。曲目按**文件路径**匹配本地音乐库（与自带 m3u8 导入同一套逻辑），
+插件不需要知道本地曲目 ID。名称规范化后最多 80 个字符，超长名称会拒绝，不会截断后写入同名歌单。
+调用是**即发即忘**的：主进程在当前应用会话中排队，等主窗口的音乐库和歌单加载完成后再交给渲染进程执行——
+歌单状态归渲染进程所有，写入走它带版本号的持久化——结果由宿主用一条汇总 toast 告知。
+旧宿主没有这个命名空间，调用前请用 `typeof twilight.library?.importPlaylists` 判断。
 
 不要试图绕过网关直接拿宿主内部对象。API 主版本内只加不改不删（见 [spec §3](./twilight-echo-plugin-spec.md#3-api-版本与兼容性承诺)），所以绑在 `twilight` 上的调用是稳的。
 
@@ -193,6 +201,39 @@ await context.twilight.ui.notify({
 UI contribution 通过 command 返回字符串或可序列化对象，宿主只在受控页面中按纯文本/结构化数据展示。任意插件 HTML、`srcdoc` iframe 和 DOM 注入都不是受支持的扩展路径。旧版 `renderMode: 'html'` 输入只为 API v1 兼容而保留，宿主会忽略它并按 command 模式处理。
 
 不要试图在 UI 入口里直接操纵 DOM 或调 Electron renderer API。所有交互走 command 协议回宿主进程，再由宿主决定渲染什么。
+
+### 9.1 设置表单（settings-form）
+
+`settingsPanel` 的 command 可以返回一个结构化表单，宿主用自己的控件渲染（类型见 `TwilightSettingsForm`）：
+
+```ts
+return {
+  kind: 'settings-form',
+  submitCommand: 'my-plugin.settings.save',
+  resetCommand: 'my-plugin.settings.reset', // 可选：显示「恢复默认」
+  live: true, // 可选：修改后自动提交（防抖），不显示保存按钮
+  fields: [
+    { key: 'theme.color', label: '强调色', type: 'color', value: '#ff8fb6', group: '外观' },
+    { key: 'theme.size', label: '尺寸', type: 'range', min: 0, max: 100, unit: 'px', value: '40' },
+    { key: 'theme.glow', label: '发光', type: 'toggle', value: 'true', description: '可选说明' }
+  ]
+}
+```
+
+- 字段类型：`text` / `password` / `url` / `select` / `toggle` / `range` / `color`，最多 40 个；相邻且 `group` 相同的字段显示在同一标题下。
+- 提交时 `submitCommand` 收到 `Record<string, string>`：开关为 `'true'`/`'false'`，滑块为数字字符串，颜色为 `#rrggbb`。宿主会丢弃非法字段并钳制滑块范围，但插件仍需自行校验。
+- `submitCommand` / `resetCommand` 可返回 `{ message?, form? }`（`TwilightSettingsFormResult`），`form` 会替换当前表单值。实时模式下若用户在提交途中继续编辑，宿主不会用返回值覆盖新的输入，并会在上一次提交完成后补发一次。
+- contribution 设置 `autoLoad: true` 时，打开设置页会自动载入该表单。
+
+### 9.2 灵动岛（overlay）
+
+`twilight.overlay` 控制宿主拥有的灵动岛窗口（需要 `ui:inject`），同一时间只有一个插件可以占用：
+
+- `show()` / `hide()`：显示或隐藏。
+- `configure(config)`：应用 DIY 配置（`TwilightOverlayConfigInput`，外观、布局、组件、交互四组）。缺失或越界的值回退到宿主默认值；返回实际生效的完整配置，插件应持久化这个返回值。隐藏期间也可调用，配置会在下次 `show()` 时生效。
+
+参考实现见外部插件仓库的
+[`plugins/dynamic-island`](https://github.com/Px-asen/Twilight-Echo-plugins/tree/main/plugins/dynamic-island)。
 
 扩展点清单见 [spec §4.4](./twilight-echo-plugin-spec.md#44-扩展点清单首批)。
 
@@ -360,6 +401,8 @@ export async function deactivate() {}
 - 用户可以停用（隔离故障或隐藏在线音源），但**不可像第三方插件一样卸载**
 
 它是应用仓库里唯一的内置 provider 例外。第三方音源插件（如 Bilibili 收藏夹音频）走外部仓库分发，使用同一 Provider API，但不享受内置待遇。详见 [spec §4.5](./twilight-echo-plugin-spec.md#45-多音源数据模型)。
+
+Navidrome 音源插件 `com.twilightecho.provider.navidrome` 在独立插件仓库 `Twilight-Echo-plugins/plugins/navidrome-provider` 维护，通过插件市场或本地 `.tep` 安装并启用后使用。它通过 Subsonic API 提供服务器登录、搜索、播放、封面、同步歌词和歌单读取，密码存入宿主加密的插件设置。
 
 ## 16. 安全底线
 

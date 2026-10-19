@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <chrono>
+#include <thread>
 #include <cstring>
 #include <limits>
 #include <string>
@@ -219,9 +221,16 @@ inline std::vector<double> availableNominalSampleRates(AudioDeviceID id) {
 }
 
 inline bool supportsNominalSampleRate(AudioDeviceID id, double rate) {
-  const std::vector<double> rates = availableNominalSampleRates(id);
-  for (double candidate : rates) {
-    if (std::abs(candidate - rate) < 0.5) return true;
+  AudioObjectPropertyAddress address{
+      kAudioDevicePropertyAvailableNominalSampleRates,
+      kAudioObjectPropertyScopeGlobal,
+      kAudioObjectPropertyElementMain};
+  UInt32 size = 0;
+  if (AudioObjectGetPropertyDataSize(id, &address, 0, nullptr, &size) != noErr || size == 0) return false;
+  std::vector<AudioValueRange> ranges(size / sizeof(AudioValueRange));
+  if (ranges.empty() || AudioObjectGetPropertyData(id, &address, 0, nullptr, &size, ranges.data()) != noErr) return false;
+  for (const auto& range : ranges) {
+    if (rate >= range.mMinimum - 0.5 && rate <= range.mMaximum + 0.5) return true;
   }
   return false;
 }
@@ -233,31 +242,39 @@ inline bool setNominalSampleRate(AudioDeviceID id, double rate, std::string* err
       kAudioObjectPropertyElementMain};
   Float64 value = rate;
   const OSStatus status = AudioObjectSetPropertyData(id, &address, 0, nullptr, sizeof(value), &value);
-  return ok(status, error, "无法设置 CoreAudio 设备标称采样率");
+  if (!ok(status, error, "无法设置 CoreAudio 设备标称采样率")) return false;
+  // HAL changes are asynchronous; only publish a rate after the device confirms it.
+  for (int attempt = 0; attempt < 25; ++attempt) {
+    if (std::abs(nominalSampleRate(id) - rate) < 0.5) {
+      if (error) error->clear();
+      return true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  if (error) *error = "CoreAudio 设备采样率切换未生效";
+  return false;
 }
 
-inline bool acquireHogMode(AudioDeviceID id, std::string* error) {
-  AudioObjectPropertyAddress address{
-      kAudioDevicePropertyHogMode,
-      kAudioDevicePropertyScopeOutput,
-      kAudioObjectPropertyElementMain};
-  pid_t pid = getpid();
-  const OSStatus status = AudioObjectSetPropertyData(id, &address, 0, nullptr, sizeof(pid), &pid);
-  if (status == kAudioHardwareUnknownPropertyError) {
-    if (error) *error = "设备不支持 Hog Mode";
-    return false;
-  }
-  return ok(status, error, "无法获取 CoreAudio Hog Mode");
+inline AudioObjectPropertyAddress hogModeAddress() {
+  return {kAudioDevicePropertyHogMode, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
+}
+
+inline bool supportsHogMode(AudioDeviceID id) {
+  const auto address = hogModeAddress();
+  Boolean writable = false;
+  return id != kAudioObjectUnknown && AudioObjectHasProperty(id, &address) &&
+         AudioObjectIsPropertySettable(id, &address, &writable) == noErr && writable;
 }
 
 inline void releaseHogMode(AudioDeviceID id) {
   if (id == kAudioObjectUnknown) return;
-  AudioObjectPropertyAddress address{
-      kAudioDevicePropertyHogMode,
-      kAudioDevicePropertyScopeOutput,
-      kAudioObjectPropertyElementMain};
-  pid_t pid = -1;
-  AudioObjectSetPropertyData(id, &address, 0, nullptr, sizeof(pid), &pid);
+  const auto address = hogModeAddress();
+  pid_t owner = -1;
+  UInt32 size = sizeof(owner);
+  // Hog Mode is a toggle. Never write it unless this process still owns it.
+  if (AudioObjectGetPropertyData(id, &address, 0, nullptr, &size, &owner) == noErr && owner == getpid()) {
+    AudioObjectSetPropertyData(id, &address, 0, nullptr, sizeof(owner), &owner);
+  }
 }
 
 inline bool deviceOutputStreamFormat(AudioDeviceID id, AudioStreamBasicDescription* out, std::string* error) {

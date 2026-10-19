@@ -13,6 +13,11 @@ import {
   type DesktopLyricsTransportAction
 } from '../../shared/desktopLyrics.ts'
 import { resolveDesktopLyricsFontFamily } from '../../shared/desktopLyricsFont.ts'
+import {
+  normalizeExperienceWindowTheme,
+  type ExperienceWindowOptions,
+  type ExperienceWindowTheme
+} from '../../shared/experienceWindow.ts'
 import { runtime } from '../core/runtime'
 import { createSettingsSnapshot, writeAppSettings } from '../core/settings'
 import { assertTrustedIpcSender, shouldAcceptIpcEvent } from '../security/electronSecurity.ts'
@@ -26,8 +31,15 @@ let desktopLyricsHoverCheckTimer: ReturnType<typeof setInterval> | null = null
 let desktopLyricsPointerInside = false
 let appliedTaskbarPlacement = false
 let taskbarStackingTimer: ReturnType<typeof setInterval> | null = null
+let desktopLyricsExperienceTheme: ExperienceWindowTheme = 'default'
 
 const DESKTOP_LYRICS_HOVER_CHECK_INTERVAL_MS = 120
+
+function sendDesktopLyricsExperienceTheme(): void {
+  const win = runtime.desktopLyricsWindow
+  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return
+  win.webContents.send('experience:windowTheme', desktopLyricsExperienceTheme)
+}
 
 function isMainSender(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent): boolean {
   return Boolean(
@@ -131,6 +143,8 @@ function applyWindowSettings(): void {
   if (!win || win.isDestroyed()) return
   const settings = getEffectiveDesktopLyricsSettings()
   win.setFocusable(settings.placement !== 'taskbar')
+  // On Windows, setFocusable(true) adds the window back to the taskbar.
+  win.setSkipTaskbar(true)
   if (settings.placement === 'taskbar') {
     appliedTaskbarPlacement = true
     win.setBounds(currentTaskbarBounds())
@@ -490,20 +504,23 @@ function createDesktopLyricsWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     const rendererUrl = new URL(process.env['ELECTRON_RENDERER_URL'])
     rendererUrl.searchParams.set('window', 'desktop-lyrics')
+    rendererUrl.searchParams.set('experienceTheme', desktopLyricsExperienceTheme)
     void win.loadURL(rendererUrl.toString())
   } else {
     void win.loadFile(join(__dirname, '../renderer/index.html'), {
-      query: { window: 'desktop-lyrics' }
+      query: { window: 'desktop-lyrics', experienceTheme: desktopLyricsExperienceTheme }
     })
   }
 }
 
-export function showDesktopLyrics(): void {
+export function showDesktopLyrics(options?: ExperienceWindowOptions): void {
+  desktopLyricsExperienceTheme = normalizeExperienceWindowTheme(options?.theme)
   if (!runtime.desktopLyricsWindow || runtime.desktopLyricsWindow.isDestroyed()) {
     createDesktopLyricsWindow()
     return
   }
   runtime.desktopLyricsWindow.showInactive()
+  sendDesktopLyricsExperienceTheme()
   syncDesktopLyricsHoverTracking()
 }
 
@@ -524,13 +541,13 @@ export function destroyDesktopLyrics(): void {
   destroyingWindow = false
 }
 
-export function setDesktopLyricsEnabled(enabled: boolean): boolean {
+export function setDesktopLyricsEnabled(enabled: boolean, options?: ExperienceWindowOptions): boolean {
   if (enabled && !runtime.appSettings.desktopLyrics.enabled) {
     runtime.desktopLyricsCrashRestarts = 0
   }
   runtime.appSettings.desktopLyrics.enabled = enabled
   writeAppSettings(runtime.appSettings)
-  if (enabled) showDesktopLyrics()
+  if (enabled) showDesktopLyrics(options)
   else destroyDesktopLyrics()
   runtime.mainWindow?.webContents.send('desktopLyrics:enabledChanged', enabled)
   runtime.refreshTrayMenu?.(true)
@@ -561,11 +578,12 @@ export function setupDesktopLyricsIpc(): void {
     powerMonitor.on('resume', requestDesktopLyricsResync)
   }
 
-  ipcMain.handle('desktopLyrics:setEnabled', (event, enabled: unknown) => {
+  ipcMain.handle('desktopLyrics:setEnabled', (event, enabled: unknown, rawOptions: unknown) => {
     assertTrustedIpcSender(event, 'desktop lyrics IPC')
     if (!isMainSender(event)) throw new Error('desktop lyrics enable rejected from satellite')
     if (typeof enabled !== 'boolean') throw new Error('invalid desktop lyrics enabled state')
-    return setDesktopLyricsEnabled(enabled)
+    const options = rawOptions && typeof rawOptions === 'object' ? (rawOptions as ExperienceWindowOptions) : {}
+    return setDesktopLyricsEnabled(enabled, options)
   })
 
   ipcMain.handle('desktopLyrics:bootstrap', (event): DesktopLyricsBootstrap => {

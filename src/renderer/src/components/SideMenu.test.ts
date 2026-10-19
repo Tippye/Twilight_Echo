@@ -11,11 +11,9 @@ const streamingCss = readFileSync(
   'utf8'
 )
 
-test('local sidebar opening follows the streaming navigation timing', () => {
-  assert.match(
-    sideMenu,
-    /transform var\(--te-motion-panel\) var\(--te-ease-soft\),\s*box-shadow var\(--te-motion-panel\);/
-  )
+test('local sidebar opening uses one transform transition without material changes', () => {
+  assert.match(sideMenu, /transition:\s*transform var\(--te-motion-panel\) var\(--te-ease-soft\);/)
+  assert.doesNotMatch(sideMenu, /box-shadow var\(--te-motion-panel\)/)
   assert.doesNotMatch(sideMenu, /side-menu-item-in/)
   assert.match(app, /transition: padding-left var\(--te-motion-panel\) var\(--te-ease-soft\);/)
   assert.match(app, /opacity 0\.18s ease,\s*transform 0\.24s var\(--te-ease-out-strong\)/)

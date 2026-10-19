@@ -27,7 +27,16 @@ export function useSettingsStore() {
     updateSettings,
     loadSettings: noop,
     appVersion: ref('1.3.0'),
-    getShortcutStatuses: async () => [],
+    getShortcutStatuses: async () => [
+      {
+        accelerator: 'MediaPlayPause',
+        action: 'playPause',
+        label: '播放 / 暂停（媒体键）',
+        registered: false,
+        enabled: settings.value.shortcutEnabled.MediaPlayPause !== false,
+        error: null
+      }
+    ],
     windowTransparencySupported: ref(false)
   }
 }
@@ -191,6 +200,55 @@ window.runSettingsOrganizationTests = async () => {
     )
     return page.querySelector('.search-target-flash')
   }
+  await search('应用内快捷键')
+  const closeSwitch = page.querySelector('[aria-label="关闭窗口快捷键"]')
+  expect(closeSwitch.getAttribute('aria-checked') === 'true', 'close shortcut must default on')
+  closeSwitch.click()
+  await settle()
+  expect(
+    settings.value.shortcutEnabled.closeWindow === false,
+    'close shortcut preference did not persist'
+  )
+  expect(
+    closeSwitch.getAttribute('aria-checked') === 'false',
+    'close shortcut switch did not update'
+  )
+  await search('自定义组合键')
+  for (const label of ['播放 / 暂停全局快捷键', '播放 / 暂停媒体快捷键']) {
+    const toggle = page.querySelector('[aria-label="' + label + '"]')
+    expect(toggle, 'shortcut switch missing: ' + label)
+    toggle.click()
+    await settle()
+  }
+  expect(
+    settings.value.shortcutEnabled.playPause === false &&
+      settings.value.shortcutEnabled.MediaPlayPause === false &&
+      settings.value.shortcutEnabled.closeWindow === false,
+    'individual shortcut settings overwrote one another'
+  )
+  expect(
+    page.querySelector('[aria-label="下一首全局快捷键"]').getAttribute('aria-checked') === 'true',
+    'disabling play changed next-track shortcut'
+  )
+  closeSwitch.click()
+  await settle()
+  expect(
+    settings.value.shortcutEnabled.closeWindow === true &&
+      settings.value.shortcutEnabled.playPause === false,
+    're-enabling close affected another shortcut'
+  )
+  page.querySelector('[aria-label="全局快捷键"]').click()
+  await settle()
+  expect(
+    !page.querySelector('[data-setting-id="shortcut-status"]').classList.contains('failed'),
+    'disabled shortcuts reported as registration failures'
+  )
+  expect(
+    settings.value.shortcutEnabled.playPause === false,
+    'master switch reset individual preferences'
+  )
+  page.querySelector('[aria-label="全局快捷键"]').click()
+  await settle()
   for (const title of [
     '缓冲大小',
     'VST3 搜索目录',

@@ -27,9 +27,44 @@
 
 .mini-customizer.is-inline {
   position: relative;
+  grid-template-rows: 30px 44px minmax(0, 1fr) auto auto;
+  gap: 12px;
   width: 100%;
   max-height: 720px;
-  border-block: 1px solid var(--customizer-border);
+  box-sizing: border-box;
+  padding: 8px 12px 12px;
+  background: transparent;
+}
+
+/* Settings use spacing and soft groups; the satellite keeps its compact chrome. */
+.mini-customizer.is-inline .mini-customizer-header {
+  padding: 0 4px;
+  border: 0;
+  color: var(--customizer-muted);
+}
+
+.mini-customizer.is-inline .mini-customizer-tabs {
+  padding: 5px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--customizer-control);
+}
+
+.mini-customizer.is-inline .mini-customizer-tabs button {
+  border-radius: 8px;
+}
+
+.mini-customizer.is-inline .mini-customizer-tabs button.active {
+  background: var(--customizer-panel);
+}
+
+.mini-customizer.is-inline .customizer-section {
+  padding: 0 0 4px;
+}
+
+.mini-customizer.is-inline .mini-customizer-footer {
+  padding: 0 0 4px;
+  border: 0;
 }
 
 .mini-customizer-panel-enter-active {

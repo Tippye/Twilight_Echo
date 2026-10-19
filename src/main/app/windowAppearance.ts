@@ -17,13 +17,13 @@ export function getWindowBackgroundColor(
   return settings.appBackground.global.light
 }
 
-/** Keep the Windows frame on the same surface as the frameless caption. */
-export function syncWindowFrameColor(
+/** Let Windows draw a neutral frame around pages with independent backgrounds. */
+export function syncWindowFrameAppearance(
   win: Pick<BrowserWindow, 'setAccentColor'>,
-  settings: WindowAppearanceSettings,
-  systemDark: boolean,
   highContrast: boolean
 ): void {
   if (process.platform !== 'win32') return
-  win.setAccentColor(highContrast ? null : getWindowBackgroundColor(settings, systemDark))
+  // A global light background becomes a white outline around the dark playback
+  // page. Disable the forced accent while keeping native resizing and shadows.
+  win.setAccentColor(highContrast ? null : false)
 }

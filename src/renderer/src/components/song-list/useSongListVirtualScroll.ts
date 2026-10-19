@@ -9,7 +9,10 @@ import {
   type Ref
 } from 'vue'
 import type { Track } from '../../types/music'
-import { getSongListVirtualRange } from '@renderer/components/song-list/songListVirtualWindow.ts'
+import {
+  getSongListTrackScrollTopForIndex,
+  getSongListVirtualRange
+} from '@renderer/components/song-list/songListVirtualWindow.ts'
 
 type UseSongListVirtualScrollOptions = {
   displayTracks: ComputedRef<Track[]>
@@ -42,6 +45,7 @@ export function useSongListVirtualScroll({
   updateViewportHeight: () => void
   resetScrollAndMeasure: () => void
   restoreScrollAndMeasure: () => void
+  scrollToTrack: (index: number) => void
   scrollTop: Ref<number>
   viewportHeight: Ref<number>
 } {
@@ -121,6 +125,21 @@ export function useSongListVirtualScroll({
     })
   }
 
+  function scrollToTrack(index: number): void {
+    const container = containerRef.value
+    if (!container) return
+    updateViewportHeight()
+    const nextTop = getSongListTrackScrollTopForIndex({
+      index,
+      trackCount: displayTracks.value.length,
+      viewportHeight: container.clientHeight,
+      tableOffsetTop: tableOffsetTop.value,
+      rowHeight
+    })
+    container.scrollTop = nextTop
+    scrollTop.value = container.scrollTop
+  }
+
   if (viewKey) {
     watch(
       viewKey,
@@ -189,6 +208,7 @@ export function useSongListVirtualScroll({
     updateViewportHeight,
     resetScrollAndMeasure,
     restoreScrollAndMeasure,
+    scrollToTrack,
     scrollTop,
     viewportHeight
   }

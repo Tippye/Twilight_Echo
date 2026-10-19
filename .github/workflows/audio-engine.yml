@@ -138,10 +138,11 @@ jobs:
         run: cmake -S audio-engine -B audio-engine/build/default -DTAE_BUILD_NAPI=OFF
 
       - name: Build audio engine
-        run: cmake --build audio-engine/build/default --config Debug
+        # Performance gates need optimized code; native test targets keep assertions enabled.
+        run: cmake --build audio-engine/build/default --config Release
 
       - name: Test audio engine
-        run: ctest --test-dir audio-engine/build/default --output-on-failure --timeout 180 -C Debug
+        run: ctest --test-dir audio-engine/build/default --output-on-failure --timeout 180 -C Release
 
   required:
     name: Required Quality Gate

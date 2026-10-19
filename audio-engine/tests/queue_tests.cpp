@@ -265,6 +265,89 @@ void testIdenticalContentMovesCursorWithoutChangingPolicy() {
   assert(!queue.loadFromJson(invalid, 0, &error));
 }
 
+void testAppendBatchKeepsCurrentIndexAndReturnsFirstNativeIndex() {
+  QueueManager queue;
+  std::string error;
+  assert(queue.loadFromJson(kQueueJson, 1, &error));
+  const uint64_t revisionBefore = queue.queueRevision();
+  int appendedAt = -1;
+  assert(queue.appendFromJsonBatch(
+      "[{\"id\":\"d\",\"source\":\"d.flac\",\"duration\":4.5},"
+      "{\"id\":\"e\",\"source\":\"e.flac\",\"duration\":5.5}]",
+      &appendedAt,
+      &error));
+  assert(appendedAt == 3);
+  assert(queue.size() == 5);
+  assert(queue.currentIndex() == 1);
+  assert(queue.current()->source == "b.flac");
+  assert(queue.queueRevision() == revisionBefore + 1);
+  assert(queue.queueJson().find("\"source\":\"e.flac\"") != std::string::npos);
+  // Appended entries are reachable by the native cursor without reloading.
+  assert(queue.advanceAfterEnd());
+  assert(queue.currentIndex() == 2);
+  assert(queue.advanceAfterEnd());
+  assert(queue.currentIndex() == 3);
+  assert(queue.current()->source == "d.flac");
+}
+
+void testAppendBatchIsAtomicAndRejectsNonArrays() {
+  QueueManager queue;
+  std::string error;
+  assert(queue.loadFromJson(kQueueJson, 1, &error));
+  const uint64_t revisionBefore = queue.queueRevision();
+  int appendedAt = -1;
+  assert(!queue.appendFromJsonBatch("{\"source\":\"d.flac\"}", &appendedAt, &error));
+  assert(queue.size() == 3);
+  assert(queue.queueRevision() == revisionBefore);
+  // One invalid item rejects the whole batch: no half-applied queue mutation.
+  assert(!queue.appendFromJsonBatch(
+      "[{\"source\":\"d.flac\"},{\"source\":\"disc.flac\",\"cueRange\":null}]",
+      &appendedAt,
+      &error));
+  assert(queue.size() == 3);
+  assert(queue.queueRevision() == revisionBefore);
+  // An empty array is a valid no-op and still reports the append position.
+  assert(queue.appendFromJsonBatch("[]", &appendedAt, &error));
+  assert(appendedAt == 3);
+  assert(queue.size() == 3);
+  assert(queue.queueRevision() == revisionBefore);
+}
+
+void testUpdateItemSourceRefreshesOnlyFutureEntries() {
+  QueueManager queue;
+  std::string error;
+  assert(queue.loadFromJson(kQueueJson, 0, &error));
+  const uint64_t revisionBefore = queue.queueRevision();
+  assert(queue.updateItemSource(1, "https://cdn.test/b-fresh.flac?sig=1", &error));
+  assert(queue.queueRevision() == revisionBefore + 1);
+  assert(queue.currentIndex() == 0);
+  assert(queue.current()->source == "a.flac");
+  assert(queue.upcoming()->source == "https://cdn.test/b-fresh.flac?sig=1");
+  // Idempotent refresh must not churn the revision or the preload.
+  assert(queue.updateItemSource(1, "https://cdn.test/b-fresh.flac?sig=1", &error));
+  assert(queue.queueRevision() == revisionBefore + 1);
+  // The currently decoding item cannot be hot-swapped under the pipeline.
+  assert(!queue.updateItemSource(0, "https://cdn.test/a-fresh.flac", &error));
+  assert(error.find("当前播放") != std::string::npos);
+  assert(queue.queueRevision() == revisionBefore + 1);
+  assert(!queue.updateItemSource(9, "https://cdn.test/x.flac", &error));
+  assert(!queue.updateItemSource(2, "", &error));
+}
+
+void testPlayModeChangesDoNotBumpQueueRevision() {
+  QueueManager queue;
+  std::string error;
+  assert(queue.loadFromJson(kQueueJson, 0, &error));
+  const uint64_t revisionBefore = queue.queueRevision();
+  queue.setPlayMode(PlayMode::Shuffle);
+  queue.setPlayMode(PlayMode::ListLoop);
+  assert(queue.queueRevision() == revisionBefore);
+  // The queue content revision is what a restore handoff keys on; cursor and
+  // play-mode moves are ordinary transport state.
+  queue.setCurrentIndex(2);
+  assert(queue.queueRevision() == revisionBefore);
+}
+
 }  // namespace
 
 int main() {
@@ -283,5 +366,9 @@ int main() {
   testSingleFileCueRangesKeepDistinctQueueIdentity();
   testMalformedCueRangesFailClosedInsteadOfBecomingWholeFilePlayback();
   testCueFieldsInsideUserStringsCannotForgeNativeRanges();
+  testAppendBatchKeepsCurrentIndexAndReturnsFirstNativeIndex();
+  testAppendBatchIsAtomicAndRejectsNonArrays();
+  testUpdateItemSourceRefreshesOnlyFutureEntries();
+  testPlayModeChangesDoNotBumpQueueRevision();
   return 0;
 }

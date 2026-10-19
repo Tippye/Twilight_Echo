@@ -122,7 +122,7 @@ window.runPlaylistLifecycleRuntime = async () => {
   let finishLoading
   let mounts = 0
   const StreamingShell = {
-    props: ['active', 'initialTab', 'menuOpen', 'hasPlayer'],
+    props: ['active', 'initialTab', 'menuOpen', 'hasPlayer', 'metadataNavigationRequest'],
     setup() { mounts++; return { detail: ref('saved detail') } },
     render: compile(${JSON.stringify(pageTemplate)})
   }
@@ -130,7 +130,8 @@ window.runPlaylistLifecycleRuntime = async () => {
   const app = createApp({
     components: { StreamingPage },
     setup: () => ({ ...navigation, streamingPageTabs, hasPlayerBar: false, showLocalSidebar: false,
-      streamingRootNavigationRevisions: {}, streamingArtistRequest: null }),
+      streamingRootNavigationRevisions: {}, streamingMetadataRequest: null,
+      streamingMetadataTab: ref('home') }),
     render: compile(${JSON.stringify(shell)})
   })
   const visiblePages = () => [...document.querySelectorAll('.streaming-page')].filter(page => getComputedStyle(page).display !== 'none')

@@ -1,3 +1,4 @@
+import { diagnosticsApi } from './diagnostics.ts'
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
   MiniPlayerBootstrap,
@@ -5,10 +6,14 @@ import type {
   MiniPlayerSettings,
   MiniPlayerSettingsPatch,
   MiniPlayerStateSnapshot,
+  DynamicIslandBootstrap,
+  DynamicIslandLyricsPayload,
+  DynamicIslandPresentation,
   TrayNavigationTarget,
   TrayPlayerBootstrap,
   MotionPreference
 } from './types'
+import type { ExperienceWindowOptions, ExperienceWindowTheme } from '../shared/experienceWindow.ts'
 import { createSleepTimerEventBridge } from './sleepTimerEvents.ts'
 import { dataApi, miniPlayerCoverDataApi } from './domains/dataApi.ts'
 import { audioEngineApi, bindAudioEngineIpcEvents } from './domains/audioEngineApi.ts'
@@ -31,6 +36,12 @@ const miniPlayerSettingsCallbacks = new Set<(settings: MiniPlayerSettings) => vo
 const miniPlayerMotionPreferenceCallbacks = new Set<(preference: MotionPreference) => void>()
 const miniPlayerCommandCallbacks = new Set<(command: MiniPlayerCommand) => void>()
 const trayPlayerStateCallbacks = new Set<(state: MiniPlayerStateSnapshot) => void>()
+const dynamicIslandStateCallbacks = new Set<(state: MiniPlayerStateSnapshot) => void>()
+const dynamicIslandLyricsCallbacks = new Set<(payload: DynamicIslandLyricsPayload) => void>()
+const dynamicIslandExpandedCallbacks = new Set<(expanded: boolean) => void>()
+const dynamicIslandConfigCallbacks = new Set<(presentation: DynamicIslandPresentation) => void>()
+const experienceWindowThemeCallbacks = new Set<(theme: ExperienceWindowTheme) => void>()
+let latestExperienceWindowTheme: ExperienceWindowTheme | undefined
 const sleepTimerEvents = createSleepTimerEventBridge()
 
 bindSettingsIpcEvents()
@@ -59,6 +70,27 @@ ipcRenderer.on('miniPlayer:command', (_event, command: MiniPlayerCommand) => {
 
 ipcRenderer.on('trayPlayer:state', (_event, state: MiniPlayerStateSnapshot) => {
   for (const cb of trayPlayerStateCallbacks) cb(state)
+})
+
+ipcRenderer.on('dynamicIsland:state', (_event, state: MiniPlayerStateSnapshot) => {
+  for (const cb of dynamicIslandStateCallbacks) cb(state)
+})
+
+ipcRenderer.on('dynamicIsland:expanded', (_event, value: boolean) => {
+  for (const cb of dynamicIslandExpandedCallbacks) cb(value)
+})
+
+ipcRenderer.on('dynamicIsland:config', (_event, presentation: DynamicIslandPresentation) => {
+  for (const cb of dynamicIslandConfigCallbacks) cb(presentation)
+})
+
+ipcRenderer.on('dynamicIsland:lyrics', (_event, payload: DynamicIslandLyricsPayload) => {
+  for (const cb of dynamicIslandLyricsCallbacks) cb(payload)
+})
+
+ipcRenderer.on('experience:windowTheme', (_event, theme: ExperienceWindowTheme) => {
+  latestExperienceWindowTheme = theme
+  for (const cb of experienceWindowThemeCallbacks) cb(theme)
 })
 
 const miniPlayerWindowApi = {
@@ -98,13 +130,26 @@ const miniPlayerWindowApi = {
 
 const miniPlayerHostApi = {
   ...miniPlayerWindowApi,
-  open: (): Promise<MiniPlayerSettings> => ipcRenderer.invoke('miniPlayer:open'),
+  open: (options?: ExperienceWindowOptions): Promise<MiniPlayerSettings> =>
+    ipcRenderer.invoke('miniPlayer:open', options),
   publishState: (state: MiniPlayerStateSnapshot): void => {
     ipcRenderer.send('miniPlayer:publishState', state)
+  },
+  /** Island-only lyric channel; keeps lyric payloads out of the shared snapshot. */
+  publishLyrics: (payload: DynamicIslandLyricsPayload): void => {
+    ipcRenderer.send('miniPlayer:publishLyrics', payload)
   },
   onCommand: (cb: (command: MiniPlayerCommand) => void): (() => void) => {
     miniPlayerCommandCallbacks.add(cb)
     return () => miniPlayerCommandCallbacks.delete(cb)
+  }
+}
+
+const experienceWindowApi = {
+  onTheme: (cb: (theme: ExperienceWindowTheme) => void): (() => void) => {
+    experienceWindowThemeCallbacks.add(cb)
+    if (latestExperienceWindowTheme) cb(latestExperienceWindowTheme)
+    return () => experienceWindowThemeCallbacks.delete(cb)
   }
 }
 
@@ -127,7 +172,35 @@ const trayPlayerWindowApi = {
   }
 }
 
+const dynamicIslandWindowApi = {
+  getBootstrap: (): Promise<DynamicIslandBootstrap> =>
+    ipcRenderer.invoke('dynamicIsland:getBootstrap'),
+  command: (command: MiniPlayerCommand): void => {
+    ipcRenderer.send('dynamicIsland:command', command)
+  },
+  getVisualizationData: audioEngineApi.audioEngine.getVisualizationData,
+  setExpanded: (expanded: boolean): Promise<boolean> =>
+    ipcRenderer.invoke('dynamicIsland:setExpanded', expanded),
+  onState: (cb: (state: MiniPlayerStateSnapshot) => void): (() => void) => {
+    dynamicIslandStateCallbacks.add(cb)
+    return () => dynamicIslandStateCallbacks.delete(cb)
+  },
+  onExpanded: (cb: (expanded: boolean) => void): (() => void) => {
+    dynamicIslandExpandedCallbacks.add(cb)
+    return () => dynamicIslandExpandedCallbacks.delete(cb)
+  },
+  onConfig: (cb: (presentation: DynamicIslandPresentation) => void): (() => void) => {
+    dynamicIslandConfigCallbacks.add(cb)
+    return () => dynamicIslandConfigCallbacks.delete(cb)
+  },
+  onLyrics: (cb: (payload: DynamicIslandLyricsPayload) => void): (() => void) => {
+    dynamicIslandLyricsCallbacks.add(cb)
+    return () => dynamicIslandLyricsCallbacks.delete(cb)
+  }
+}
+
 const api = {
+  diagnostics: diagnosticsApi,
   sleepTimer: {
     configure: (state: import('../shared/sleepTimer.ts').SleepTimerState) =>
       ipcRenderer.invoke('sleepTimer:configure', state),
@@ -150,7 +223,13 @@ const api = {
   ...pluginsApi,
   desktopLyrics: desktopLyricsHostApi,
   miniPlayer: miniPlayerHostApi,
-  trayPlayer: trayPlayerWindowApi
+  trayPlayer: trayPlayerWindowApi,
+  window: {
+    ...systemApi.window,
+    showTrayPlayer: (options?: ExperienceWindowOptions) =>
+      ipcRenderer.invoke('window:showTrayPlayer', options)
+  },
+  experienceWindow: experienceWindowApi
 }
 
 if (process.contextIsolated) {
@@ -166,14 +245,46 @@ if (process.contextIsolated) {
 
 function exposedApiForDocument():
   | typeof api
-  | { desktopLyrics: typeof desktopLyricsWindowApi }
-  | { miniPlayer: typeof miniPlayerWindowApi; data: typeof miniPlayerCoverDataApi }
-  | { trayPlayer: typeof trayPlayerWindowApi } {
-  if (isDesktopLyricsDocument()) return { desktopLyrics: desktopLyricsWindowApi }
+  | {
+      diagnostics: typeof diagnosticsApi
+      desktopLyrics: typeof desktopLyricsWindowApi
+      experienceWindow: typeof experienceWindowApi
+    }
+  | {
+      diagnostics: typeof diagnosticsApi
+      miniPlayer: typeof miniPlayerWindowApi
+      data: typeof miniPlayerCoverDataApi
+      experienceWindow: typeof experienceWindowApi
+    }
+  | {
+      diagnostics: typeof diagnosticsApi
+      trayPlayer: typeof trayPlayerWindowApi
+      experienceWindow: typeof experienceWindowApi
+    }
+  | { dynamicIsland: typeof dynamicIslandWindowApi; data: typeof miniPlayerCoverDataApi } {
+  if (isDesktopLyricsDocument())
+    return {
+      diagnostics: diagnosticsApi,
+      desktopLyrics: desktopLyricsWindowApi,
+      experienceWindow: experienceWindowApi
+    }
   if (isMiniPlayerDocument()) {
-    return { miniPlayer: miniPlayerWindowApi, data: miniPlayerCoverDataApi }
+    return {
+      diagnostics: diagnosticsApi,
+      miniPlayer: miniPlayerWindowApi,
+      data: miniPlayerCoverDataApi,
+      experienceWindow: experienceWindowApi
+    }
   }
-  if (isTrayPlayerDocument()) return { trayPlayer: trayPlayerWindowApi }
+  if (isTrayPlayerDocument())
+    return {
+      diagnostics: diagnosticsApi,
+      trayPlayer: trayPlayerWindowApi,
+      experienceWindow: experienceWindowApi
+    }
+  if (isDynamicIslandDocument()) {
+    return { dynamicIsland: dynamicIslandWindowApi, data: miniPlayerCoverDataApi }
+  }
   return api
 }
 
@@ -196,6 +307,14 @@ function isMiniPlayerDocument(): boolean {
 function isTrayPlayerDocument(): boolean {
   try {
     return new URLSearchParams(window.location.search).get('window') === 'tray-player'
+  } catch {
+    return false
+  }
+}
+
+function isDynamicIslandDocument(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get('window') === 'dynamic-island'
   } catch {
     return false
   }

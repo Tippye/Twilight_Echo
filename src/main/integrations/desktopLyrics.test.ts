@@ -2,11 +2,85 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { stripTypeScriptTypes } from 'node:module'
 import test from 'node:test'
+import { runInNewContext } from 'node:vm'
 import { normalizeDesktopLyricsSettings } from '../../shared/desktopLyrics.ts'
 
 async function source(path: string): Promise<string> {
   return readFile(new URL(path, import.meta.url), 'utf8')
 }
+
+test('desktop lyrics stay out of the Windows taskbar across focus and interaction updates', async () => {
+  const main = await source('./desktopLyrics.ts')
+  const applySettings = main.slice(
+    main.indexOf('function applyWindowSettings'),
+    main.indexOf('function clearTaskbarStackingTimer')
+  )
+  const settings = normalizeDesktopLyricsSettings({ version: 3 })
+  let bounds = { x: 100, y: 100, width: settings.windowWidth, height: settings.windowHeight }
+  let skipTaskbar = true
+  let focusable = true
+  let ignoreMouseEvents = false
+  const win = {
+    isDestroyed: () => false,
+    setFocusable(value: boolean) {
+      focusable = value
+      // Electron's Windows implementation also calls SetSkipTaskbar(!focusable).
+      skipTaskbar = !value
+    },
+    setSkipTaskbar(value: boolean) {
+      skipTaskbar = value
+    },
+    setAlwaysOnTop: () => {},
+    setIgnoreMouseEvents(value: boolean) {
+      ignoreMouseEvents = value
+    },
+    getBounds: () => ({ ...bounds }),
+    setBounds(value: Partial<typeof bounds>) {
+      bounds = { ...bounds, ...value }
+    },
+    getPosition: () => [bounds.x, bounds.y],
+    setPosition(x: number, y: number) {
+      bounds = { ...bounds, x, y }
+    }
+  }
+  const context = {
+    runtime: { desktopLyricsWindow: win },
+    getEffectiveDesktopLyricsSettings: () => settings,
+    currentTaskbarBounds: () => ({ x: 100, y: 100, width: 320, height: 40 }),
+    windowPosition: () => ({ x: 100, y: 100 }),
+    clampToCurrentDisplay: (_win: unknown, x: number, y: number) => ({ x, y }),
+    desktopLyricsPausedHidden: false,
+    desktopLyricsInteractionActive: false,
+    appliedTaskbarPlacement: false,
+    taskbarStackingTimer: null,
+    clearDesktopLyricsHoverTracking: () => {},
+    clearTaskbarStackingTimer: () => {},
+    syncDesktopLyricsHoverTracking: () => {},
+    setInterval: () => ({ unref: () => {} }),
+    applyWindowSettings: () => {}
+  }
+  runInNewContext(stripTypeScriptTypes(applySettings), context)
+
+  for (const placement of ['desktop', 'taskbar', 'desktop'] as const) {
+    settings.placement = placement
+    for (const locked of [false, true]) {
+      settings.locked = locked
+      for (const interactionActive of [false, true]) {
+        context.desktopLyricsInteractionActive = interactionActive
+        for (const pausedHidden of [false, true]) {
+          context.desktopLyricsPausedHidden = pausedHidden
+          context.applyWindowSettings()
+          assert.equal(skipTaskbar, true, `${placement} lyrics must never gain a taskbar entry`)
+          assert.equal(focusable, placement !== 'taskbar')
+          assert.equal(
+            ignoreMouseEvents,
+            placement === 'taskbar' || pausedHidden || (locked && !interactionActive)
+          )
+        }
+      }
+    }
+  }
+})
 
 test('taskbar lyrics preserve translation preferences and fit both lines without changing saved settings', async () => {
   const main = await source('./desktopLyrics.ts')
@@ -59,7 +133,7 @@ test('desktop lyrics v3 isolates host and satellite IPC capabilities', async () 
   assert.match(entry, /desktopLyrics: desktopLyricsHostApi/)
   assert.match(
     entry,
-    /if \(isDesktopLyricsDocument\(\)\) return \{ desktopLyrics: desktopLyricsWindowApi \}/
+    /if \(isDesktopLyricsDocument\(\)\)\s+return \{\s*diagnostics: diagnosticsApi,\s*desktopLyrics: desktopLyricsWindowApi,\s*experienceWindow: experienceWindowApi\s*\}/
   )
   assert.doesNotMatch(preload, /desktopLyrics:toggle/)
 })

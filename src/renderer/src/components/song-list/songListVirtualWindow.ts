@@ -58,6 +58,42 @@ export function getSongListVirtualRange({
   }
 }
 
+export interface SongListTrackScrollTopInput {
+  index: number
+  trackCount: number
+  viewportHeight: number
+  tableOffsetTop: number
+  rowHeight: number
+}
+
+/**
+ * Center the requested track in the scroller while accounting for the table's
+ * current offset inside it. The offset is measured rather than guessed because
+ * album detail headers, search status and empty-state transitions all change the
+ * distance between the scroller top and the first row.
+ */
+export function getSongListTrackScrollTopForIndex({
+  index,
+  trackCount,
+  viewportHeight,
+  tableOffsetTop,
+  rowHeight
+}: SongListTrackScrollTopInput): number {
+  const safeTrackCount = Math.max(0, Math.floor(trackCount))
+  if (safeTrackCount === 0) return 0
+  const safeRowHeight = Math.max(1, rowHeight)
+  const safeViewportHeight = Math.max(0, viewportHeight)
+  const safeTableOffset = Math.max(0, tableOffsetTop)
+  const safeIndex = Math.min(safeTrackCount - 1, Math.max(0, Math.floor(index)))
+  const maxScrollTop = Math.max(
+    0,
+    safeTableOffset + safeTrackCount * safeRowHeight - safeViewportHeight
+  )
+  const centered =
+    safeTableOffset + safeIndex * safeRowHeight - (safeViewportHeight - safeRowHeight) / 2
+  return Math.min(maxScrollTop, Math.max(0, centered))
+}
+
 export function resolveGridLayoutMetrics(viewportWidth: number): GridLayoutMetrics {
   if (viewportWidth <= 640) {
     return { minColumnWidth: 128, columnGap: 10, rowGap: 12, padX: 16, padY: 18 }

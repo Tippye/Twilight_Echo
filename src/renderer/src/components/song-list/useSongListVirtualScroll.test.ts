@@ -69,3 +69,33 @@ test('table coordinates stay relative to the scroller when a themed wrapper beco
   assert.equal(range.start, 1)
   scope.stop()
 })
+
+test('scrollToTrack brings an off-screen row into the virtual window', () => {
+  const scope = effectScope()
+  const scroll = scope.run(() =>
+    useSongListVirtualScroll({
+      displayTracks: computed(
+        () => Array.from({ length: 4_000 }, (_, index) => ({ id: String(index) })) as never[]
+      ),
+      resetSources: [],
+      shouldResetOnSearch: computed(() => false),
+      debouncedSearchQuery: ref('')
+    })
+  )!
+  const container = {
+    clientHeight: 700,
+    clientTop: 0,
+    scrollTop: 0,
+    getBoundingClientRect: () => ({ top: 0 })
+  } as unknown as HTMLElement
+  scroll.containerRef.value = container
+  scroll.tbodyRef.value = {
+    getBoundingClientRect: () => ({ top: 280 })
+  } as unknown as HTMLElement
+  scroll.updateViewportHeight()
+  scroll.scrollToTrack(1_234)
+  assert.ok(container.scrollTop > 0)
+  assert.ok(scroll.visibleRange.value.start <= 1_234)
+  assert.ok(scroll.visibleRange.value.end > 1_234)
+  scope.stop()
+})

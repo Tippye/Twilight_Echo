@@ -122,3 +122,9 @@ $env:TWILIGHT_ENABLE_HTMLAUDIO_FALLBACK="1"
 - WASAPI 真实设备 smoke 可用 `pnpm run smoke:wasapi -- --device "M30" --buffer 256 --expect-bit-perfect --format-matrix` 跑多格式矩阵；矩阵只要求实际匹配格式 bit-perfect，不支持或被协商到其它格式的样本必须给出明确 non-perfect reason。
 - 真实设备 smoke 结果可用 `pnpm run smoke:audio-evidence -- --input <evidence-envelope.json>` 或 `--input-dir <dir>` 汇总到 `output/audio-smoke-evidence/audio-smoke-evidence.md` 与 `.json`；报告固定列出 WASAPI Exclusive、ASIO PCM、DoP DAC、Native DSD、SACD ISO、CoreAudio Hog、ALSA `hw:`，未覆盖项显示为 `not-run`，JSON 写入 `coverage` 摘要和未闭环 surface 的 `actionPlan`。`coverage.complete` 只接受带固定采集字段、存在本地 artifact 与匹配 SHA-256 的 `real-device` pass；mock 与未知来源只验证逻辑，绝不计入硬件覆盖。发布前可手动加 `--require-complete`，证据不完整时退出非 0；该检查不进入默认 CI。
 - macOS/Linux 后端需要对应平台工具链和真实设备 smoke 后才能声明发布级能力；CoreAudio / ALSA 后端逻辑已通过 ICoreAudioHost / IAlsaHost + Mock 在 Windows 单元测试覆盖，真实硬件 smoke 保持 opt-in（`TAE_RUN_REAL_AUDIO_BACKEND_TESTS=1`），不伪造结果。
+
+### macOS HAL 与独占输出
+
+macOS PCM 使用 HAL AudioUnit float32 客户端，链路中的实际格式按客户端格式上报；设备虚拟整数格式不作为回调缓冲区格式。多缓冲区按声道分组写入，短回调补静音。Hog Mode 使用 global scope，获取前检查占用与可写性，写入后确认拥有者 PID；关闭时仅释放本进程仍持有的设备，独占打开失败同样恢复原采样率。设备枚举按实际 Hog 属性报告独占能力，属性可写仍不代表当前设备可抢占。
+
+采样率切换等待 HAL 回读确认，并支持设备声明的连续采样率范围。Hog Mode 与 bit-perfect 分别报告：客户端与设备格式不一致时不能声明 output-perfect；当前 float32 AudioUnit 路径不提供 DoP 整数直通，DSD 使用现有 PCM 回退。外接 DAC 的独占竞争、拔插和听感需真实设备验证。

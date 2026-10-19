@@ -279,6 +279,13 @@ export const EN_US_MESSAGES: Record<string, string> = {
   'audio.reason.pcm_converted.fix':
     'Match the device format to the source, or use an exclusive mode that follows the source rate automatically.',
 
+  'audio.reason.pcm_wire_precision_reduced.label':
+    'ASIO output has fewer valid bits than its integer container',
+  'audio.reason.pcm_wire_precision_reduced.explain':
+    "The driver uses fewer valid PCM bits than the engine's 32-bit integer container. Low bits may be lost, so bit-perfect output cannot be confirmed.",
+  'audio.reason.pcm_wire_precision_reduced.fix':
+    'Choose an output channel or device format with enough valid bits; the available precision depends on the driver.',
+
   'audio.reason.integer_passthrough_unavailable.label':
     'Source and device formats differ, so PCM passthrough is unavailable',
   'audio.reason.integer_passthrough_unavailable.explain':
@@ -373,6 +380,12 @@ export const EN_US_MESSAGES: Record<string, string> = {
     'DoP needs a specific PCM carrier rate (176.4 kHz for DSD64, 352.8 kHz for DSD128). The rate the device opened does not match.',
   'audio.reason.dop_carrier_mismatch.fix':
     'Allow the matching carrier rate in the driver, or switch to native DSD.',
+
+  'audio.reason.dop_carrier_rejected.label': 'The ASIO output format cannot carry DoP',
+  'audio.reason.dop_carrier_rejected.explain':
+    'DoP requires every output channel to use the same integer format with at least 24 valid bits. The buffers created by the driver do not meet these requirements.',
+  'audio.reason.dop_carrier_rejected.fix':
+    'Choose uniform integer output channels with at least 24 valid bits, or switch to native DSD or PCM output.',
 
   'audio.reason.dop_passthrough_unproven.label': 'The DoP output path is unproven',
   'audio.reason.dop_passthrough_unproven.explain':

@@ -13,6 +13,11 @@ namespace twilight::audio::asio_windows {
 class AsioDriverSession final {
  public:
   AsioDriverSession(AsioDriverEntry entry, std::shared_ptr<AsioControlThread> controlThread);
+  // The factory transfers one reference to the session. Used by behavioral
+  // driver tests; normal activation remains COM on the control STA.
+  using DriverFactory = std::function<asio_abi::AsioDriver*()>;
+  AsioDriverSession(AsioDriverEntry entry, std::shared_ptr<AsioControlThread> controlThread,
+                    DriverFactory factory);
   ~AsioDriverSession();
 
   bool open(const AsioOpenConfig& config, AsioOpenResult* result, std::string* error);
@@ -38,6 +43,9 @@ class AsioDriverSession final {
   // The size the driver actually accepted; can differ from the open result
   // when createBuffers fell back to the driver's preferred size.
   long activeBufferSize() const;
+  int activeSampleRate() const;
+  long activeLatencyFrames() const;
+  std::string startupSummary() const;
 
  private:
   struct State;
@@ -46,6 +54,7 @@ class AsioDriverSession final {
   std::shared_ptr<AsioControlThread> controlThread_;
   std::shared_ptr<State> state_;
   std::string lastCloseError_;
+  DriverFactory driverFactory_;
 };
 
 }  // namespace twilight::audio::asio_windows

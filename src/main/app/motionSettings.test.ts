@@ -42,6 +42,7 @@ test('changing only motionPreference updates open lyrics and tray windows withou
       syncDesktopLyricsSettings: () => lyrics.push(runtime.appSettings.motionPreference)
     },
     '../integrations/shortcutsTray': { applyRuntimeSettings() {} },
+    './AfterglowModeService.ts': { reassertAfterglowShortcuts() {} },
     '../audio/state.ts': {},
     './windowAppearance.ts': {},
     '../cache/ncmCache': {},

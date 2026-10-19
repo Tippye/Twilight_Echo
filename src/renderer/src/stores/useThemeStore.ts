@@ -1,4 +1,6 @@
 import { applyExplicitThemePreferences } from '@renderer/extensions/themeProfilePriority'
+import { imageDataUrlToBlob } from '../utils/imageDataUrl.ts'
+import { backgroundDisplayUrl } from '../../../shared/backgroundDisplay.ts'
 import {
   backgroundCssVariables,
   backgroundEffect,
@@ -64,6 +66,7 @@ import {
 } from '../../../shared/appFont.ts'
 import {
   DEFAULT_LIQUID_GLASS,
+  functionalLiquidGlassSettings,
   LIQUID_GLASS_TUNING_CHANGED_EVENT,
   liquidGlassCssVariables,
   liquidGlassExpandedCssVariables,
@@ -178,7 +181,7 @@ function cacheSettingsAppearance(settings: SettingsAppearanceInput): void {
   appBackground = appearance.appBackground
   cardAppearance = appearance.cardAppearance ?? null
   surfaceMaterial = normalizeSurfaceMaterial(appearance.surfaceMaterial)
-  liquidGlass = appearance.liquidGlass ?? DEFAULT_LIQUID_GLASS
+  liquidGlass = functionalLiquidGlassSettings(appearance.liquidGlass ?? DEFAULT_LIQUID_GLASS)
   effectiveSurfaceMaterial.value = surfaceMaterial
   effectiveLiquidGlass.value = liquidGlass
   document.documentElement.dataset.density = settings.uiDensity
@@ -211,14 +214,6 @@ function resolveSharedGlassProfileIsDark(tone: ThemeTone): boolean {
   )
 }
 
-function resolveHomeGlassProfileIsDark(tone: ThemeTone): boolean {
-  if (tone === 'dark' || liquidGlass.homeCards.overLight) return true
-  return (
-    liquidGlass.adaptiveTone &&
-    document.documentElement.dataset.teHomeLiquidGlassAdaptiveTone === 'dark'
-  )
-}
-
 function applyLiquidGlassRuntimeVariables(tone: ThemeTone): void {
   const root = document.documentElement
   for (const name of LIQUID_GLASS_RUNTIME_VARIABLES) root.style.removeProperty(name)
@@ -231,20 +226,6 @@ function applyLiquidGlassRuntimeVariables(tone: ThemeTone): void {
   if (usesSharedLiquidGlassProfile()) {
     const theme = resolveSharedGlassProfileIsDark(tone) ? liquidGlass.dark : liquidGlass.light
     for (const [name, value] of Object.entries(liquidGlassCssVariables(theme))) {
-      root.style.setProperty(name, value, 'important')
-    }
-  }
-  if (liquidGlass.homeCards.enabled) {
-    const theme = resolveHomeGlassProfileIsDark(tone)
-      ? liquidGlass.homeCards.dark
-      : liquidGlass.homeCards.light
-    for (const [name, value] of Object.entries(liquidGlassHomeCardCssVariables(theme))) {
-      root.style.setProperty(name, value, 'important')
-    }
-  }
-  if (liquidGlass.coverage === 'expanded') {
-    const theme = resolveSharedGlassProfileIsDark(tone) ? liquidGlass.dark : liquidGlass.light
-    for (const [name, value] of Object.entries(liquidGlassExpandedCssVariables(theme))) {
       root.style.setProperty(name, value, 'important')
     }
   }
@@ -266,8 +247,7 @@ function usesSharedLiquidGlassProfile(): boolean {
     surfaceMaterial === 'liquidGlass' ||
     liquidGlass.navigationEnabled ||
     liquidGlass.playbarEnabled ||
-    liquidGlass.settingsNavigationEnabled ||
-    liquidGlass.coverage === 'expanded'
+    liquidGlass.settingsNavigationEnabled
   )
 }
 
@@ -560,7 +540,16 @@ async function buildThemeRuntimeState(syncPluginExtensions: boolean): Promise<Th
   }
   const themedVariables = { ...variables }
   applyAppBackgroundVariables(tone, variables)
-  applySettingsAccentColor(tone, variables)
+
+  // 插件明确声明主色时保留插件配色，否则沿用设置中的强调色。
+  const pluginDefinesAccent =
+    selectedPluginTheme?.structured?.variants[tone]?.tokens?.['color.primary.500'] != null ||
+    selectedPluginTheme?.variables?.['--te-primary-500'] != null
+
+  if (!pluginDefinesAccent) {
+    applySettingsAccentColor(tone, variables)
+  }
+
   Object.assign(variables, appFontCssVariables(uiFontFamily))
   Object.assign(variables, appFontRenderingCssVariables(uiFontRendering))
   applyExplicitThemePreferences(selectedProfile, tone, themedVariables, variables)
@@ -638,17 +627,6 @@ function applyLiquidGlassVariables(tone: ThemeTone, variables: Record<string, st
     const theme = tone === 'dark' || liquidGlass.overLight ? liquidGlass.dark : liquidGlass.light
     Object.assign(variables, liquidGlassCssVariables(theme))
   }
-  if (liquidGlass.homeCards.enabled) {
-    const theme =
-      tone === 'dark' || liquidGlass.homeCards.overLight
-        ? liquidGlass.homeCards.dark
-        : liquidGlass.homeCards.light
-    Object.assign(variables, liquidGlassHomeCardCssVariables(theme))
-  }
-  if (liquidGlass.coverage === 'expanded') {
-    const theme = tone === 'dark' || liquidGlass.overLight ? liquidGlass.dark : liquidGlass.light
-    Object.assign(variables, liquidGlassExpandedCssVariables(theme))
-  }
 }
 
 function applyAppBackgroundVariables(tone: ThemeTone, variables: Record<string, string>): void {
@@ -704,7 +682,7 @@ function appearanceDataAttributes(tone: ThemeTone): Record<string, string> {
 
 function toBackgroundImageValue(background: AppBackgroundColorPair): string {
   if (background.kind !== 'image' || !background.image) return 'none'
-  return `url("${escapeCssUrl(background.image)}")`
+  return `url("${escapeCssUrl(backgroundDisplayUrl(background.image))}")`
 }
 
 function resolveRuntimeTone(profile: ThemeProfileV2 | null, modes: ThemeModes): ThemeTone {
@@ -844,7 +822,7 @@ export async function setThemeAdaptiveMedia(input: {
   let nextObjectUrl = ''
   try {
     if (/^data:image\//i.test(coverUrl)) {
-      const blob = await (await fetch(coverUrl)).blob()
+      const blob = imageDataUrlToBlob(coverUrl)
       nextObjectUrl = URL.createObjectURL(blob)
       nextCoverUrl = nextObjectUrl
     } else if (/^(?:blob:|twilight-media:|cover:|background:)/i.test(coverUrl)) {
@@ -978,7 +956,15 @@ function decodeThemeResources(urls: string[]): void {
     uncached.map(async (url) => {
       const image = new Image()
       image.src = url
-      await image.decode()
+      try {
+        await image.decode()
+      } finally {
+        // Theme resource decoding is a warm-up step; the stylesheet owns the
+        // URL afterwards, so do not keep a decoded bitmap on this temporary Image.
+        image.onload = null
+        image.onerror = null
+        image.src = ''
+      }
     })
   ).then(() => {
     recordThemePerformance('resource-decode', startedAt)

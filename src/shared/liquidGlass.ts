@@ -44,7 +44,7 @@ export const LIQUID_GLASS_PLAYBAR_SELECTOR = '.player-bar-liquid'
 /** Selector used by the pointer tracker and visibility observer. */
 export const LIQUID_GLASS_CARD_SELECTOR = LIQUID_GLASS_HOME_CARD_SELECTOR
 
-/** Explicit content surfaces used only by the opt-in expanded coverage mode. */
+/** Legacy content selectors retained for saved theme/plugin compatibility. */
 export const LIQUID_GLASS_EXPANDED_SURFACE_SELECTOR = [
   '.artist-card',
   '.album-card',
@@ -75,7 +75,7 @@ export interface LiquidGlassTheme {
 }
 
 export interface LiquidGlassSettings {
-  /** Functional chrome by default; expanded also applies a bounded card profile. */
+  /** Legacy expanded value remains readable; runtime coverage is functional. */
   coverage: LiquidGlassCoverage
   /** Highlight gradient angle follows the pointer (rAF-throttled). */
   followPointer: boolean
@@ -95,7 +95,7 @@ export interface LiquidGlassSettings {
   playbarEnabled: boolean
   /** Enables the settings navigation independently while reusing the global profile. */
   settingsNavigationEnabled: boolean
-  /** Optional liquid-glass profile applied only to the local dashboard cards. */
+  /** Legacy content profile retained in storage; runtime content uses standard materials. */
   homeCards: LiquidGlassHomeCardsSettings
 }
 
@@ -105,6 +105,15 @@ export interface LiquidGlassHomeCardsSettings {
   overLight: boolean
   light: LiquidGlassTheme
   dark: LiquidGlassTheme
+}
+
+/** Stored legacy card profiles remain readable; optical glass only belongs to chrome. */
+export function functionalLiquidGlassSettings(settings: LiquidGlassSettings): LiquidGlassSettings {
+  return {
+    ...settings,
+    coverage: 'functional',
+    homeCards: { ...settings.homeCards, enabled: false }
+  }
 }
 
 interface Bound {

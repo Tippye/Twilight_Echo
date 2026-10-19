@@ -14,6 +14,7 @@ import { registerCoverIpc } from './coverIpc.ts'
 import { registerLyricsIpc } from './lyricsIpc.ts'
 import { registerPersistenceIpc } from './persistenceIpc.ts'
 import { registerSleepTimerIpc } from './sleepTimerIpc.ts'
+import { registerAfterglowModeIpc } from './afterglowModeIpc.ts'
 
 export function setupDataIpc(): void {
   registerPersonalBackupIpc(ipcMain)
@@ -29,4 +30,5 @@ export function setupDataIpc(): void {
   registerLyricsIpc(ipcMain)
   registerPersistenceIpc(ipcMain)
   registerSleepTimerIpc(ipcMain, sleepTimerService, assertTrustedIpcSender)
+  registerAfterglowModeIpc(ipcMain)
 }

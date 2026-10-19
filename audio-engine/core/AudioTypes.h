@@ -64,6 +64,7 @@ struct OutputConfig {
   bool continuityFirst = false;
   int continuitySampleRate = 48000;
   uint32_t preferredBufferSize = 0;
+  uint32_t asioOutputChannelStart = 0;
   ChannelRoutingMode routingMode = ChannelRoutingMode::Auto;
   bool wasapiExclusivePushMode = false;
   bool releaseExclusiveOnPause = false;
@@ -166,6 +167,27 @@ struct OutputInfo {
   };
 
   struct Diagnostics {
+    // Live pipeline samples, independent of the clock's PlaybackInfo cache.
+    bool decodeHealthAvailable = false;
+    std::string decodeUnavailableReason;
+    uint64_t decodeStreamToken = 0;
+    bool decodeRunning = false;
+    bool decodeEof = false;
+    bool decodeStopRequested = false;
+    uint64_t decodeBufferedFrames = 0;
+    uint64_t decodeProducedFrames = 0;
+    uint64_t decodeLastProgressAgeMs = 0;
+    std::string decodeStage;
+    int liveRenderState = 0;
+    uint64_t liveRenderedFrames = 0;
+    uint64_t liveRenderCallbackCount = 0;
+    uint64_t sourceConsumedFrames = 0;
+    uint64_t outputProducedFrames = 0;
+    uint64_t zeroFilledFrames = 0;
+    uint64_t emptyOutputCount = 0;
+    uint64_t inactiveOutputCount = 0;
+    uint64_t eofOutputCount = 0;
+    uint64_t preloadStreamToken = 0;
     uint64_t sessionUnderrunCount = 0;
     uint64_t sessionBufferDropCount = 0;
     uint64_t sessionRecoveryCount = 0;
@@ -179,6 +201,9 @@ struct OutputInfo {
     // do not invalidate the stream, so rebuilding it would turn a momentary
     // glitch into a guaranteed dropout.
     uint64_t driverXrunCount = 0;
+    uint64_t asioHelperCallbackCount = 0;
+    uint64_t asioHelperUnderrunCount = 0;
+    uint64_t asioHelperBufferDropCount = 0;
     uint64_t dsdIdleFrameCount = 0;
     uint64_t dsdShortReadCount = 0;
     std::string dsdTransport;
@@ -194,6 +219,8 @@ struct OutputInfo {
     bool typedRawPath = false;
     bool processingBypassed = false;
     std::string nativeDsdNegotiation;
+    std::string asioStartupSummary;
+    bool wireLittleEndian = true;
     std::string dopRuntimeEvidence;
     std::string quirkRegistryState;
     std::string quirkFingerprint;
@@ -354,6 +381,7 @@ bool sampleFormatsSameIntegerPayload(AudioSampleFormat left, AudioSampleFormat r
  * are not interchangeable even though their payloads are.
  */
 bool pcmFormatsSemanticallyMatch(const AudioFormat& left, const AudioFormat& right);
+bool pcmFormatsPreserveSource(const AudioFormat& source, const AudioFormat& output);
 /** Keep the legacy resampled flag and the additive conversion fact in sync. */
 void synchronizeOutputConversionInfo(OutputInfo& info);
 bool isDsdSampleFormat(AudioSampleFormat format);

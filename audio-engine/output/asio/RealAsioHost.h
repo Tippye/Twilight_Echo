@@ -27,6 +27,9 @@ class RealAsioHost final : public IAsioHost {
   AsioChannelFormat outputChannelFormat(long channel) const override;
   bool outputReady() override;
   long activeBufferSize() const override;
+  int activeSampleRate() const override;
+  long activeLatencyFrames() const override;
+  std::string startupSummary() const override;
   std::string lastCloseError() const override;
 
  private:

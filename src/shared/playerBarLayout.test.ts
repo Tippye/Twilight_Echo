@@ -13,12 +13,10 @@ import {
 } from './playerBarLayout.ts'
 
 /**
- * The whole point of the defaults is that a profile which never opens the layout
- * editor renders exactly what it rendered before layouts existed. Spelling the
- * arrangements out here means a reordering shows up as a failing diff rather
- * than as a silently rearranged playbar.
+ * Defaults and migration must keep playback reachable without replacing a
+ * user's custom arrangement.
  */
-test('the default arrangements reproduce each shape as it shipped', () => {
+test('ordinary desktop pages retain artwork, transport and utility regions', () => {
   assert.deepEqual(DEFAULT_PLAYER_BAR_LAYOUT, {
     standard: {
       left: ['cover', 'trackInfo'],
@@ -39,6 +37,73 @@ test('the default arrangements reproduce each shape as it shipped', () => {
       right: ['time', 'hifi', 'volume', 'desktopLyrics', 'queue', 'exitPlayingPage']
     }
   })
+})
+
+test('resolving desktop layouts preserves saved settings and custom arrangements', () => {
+  const layout = normalizePlayerBarLayout(undefined)
+  const saved = structuredClone(layout)
+  assert.deepEqual(resolvePlayerBarRegions(layout, 'standard'), DEFAULT_PLAYER_BAR_LAYOUT.standard)
+  assert.deepEqual(layout, saved, 'resolving controls cannot rewrite saved settings')
+  const custom = {
+    ...layout.standard,
+    center: ['playMode', 'transport'],
+    right: ['queue', 'volume']
+  }
+  assert.deepEqual(normalizePlayerBarLayout({ standard: custom }).standard, custom)
+  assert.deepEqual(
+    resolvePlayerBarRegions({ ...layout, standard: custom } as never, 'standard'),
+    custom
+  )
+})
+
+test('both PR 123 defaults recover the restored arrangement without changing custom layouts', () => {
+  for (const previous of [
+    {
+      left: ['cover', 'trackInfo'],
+      center: ['playMode', 'transport', 'volume'],
+      right: ['favorite', 'queue', 'miniPlayer', 'desktopLyrics', 'hifi']
+    },
+    {
+      left: ['trackInfo', 'favorite', 'miniPlayer'],
+      center: ['playMode', 'transport', 'volume'],
+      right: ['hifi', 'desktopLyrics', 'queue']
+    }
+  ]) {
+    const saved = structuredClone(previous)
+    assert.deepEqual(
+      normalizePlayerBarLayout({ standard: previous }).standard,
+      DEFAULT_PLAYER_BAR_LAYOUT.standard
+    )
+    assert.deepEqual(
+      resolvePlayerBarRegions({ standard: previous } as never, 'standard'),
+      DEFAULT_PLAYER_BAR_LAYOUT.standard
+    )
+    assert.deepEqual(previous, saved)
+    const custom = { ...previous, right: [...previous.right].reverse() }
+    assert.deepEqual(normalizePlayerBarLayout({ standard: custom }).standard, custom)
+    assert.deepEqual(resolvePlayerBarRegions({ standard: custom } as never, 'standard'), custom)
+  }
+})
+
+test('restored ordinary defaults preserve nearby custom layouts', () => {
+  const legacy = {
+    left: ['cover', 'trackInfo'],
+    center: ['transport'],
+    right: ['favorite', 'playMode', 'volume', 'queue', 'miniPlayer', 'desktopLyrics', 'hifi']
+  }
+  const saved = structuredClone(legacy)
+  assert.deepEqual(
+    normalizePlayerBarLayout({ standard: legacy }).standard,
+    DEFAULT_PLAYER_BAR_LAYOUT.standard
+  )
+  assert.deepEqual(
+    resolvePlayerBarRegions({ standard: legacy } as never, 'standard'),
+    DEFAULT_PLAYER_BAR_LAYOUT.standard
+  )
+  assert.deepEqual(legacy, saved)
+  const custom = { ...legacy, right: [...legacy.right].reverse() }
+  assert.deepEqual(normalizePlayerBarLayout({ standard: custom }).standard, custom)
+  assert.deepEqual(resolvePlayerBarRegions({ standard: custom } as never, 'standard'), custom)
 })
 
 test('every shape has a default arrangement and every control has a home', () => {

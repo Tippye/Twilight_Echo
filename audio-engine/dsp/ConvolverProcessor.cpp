@@ -49,7 +49,8 @@ std::string impulseIdentity(const std::string& path) {
   if (error) return {};
   const auto name = file.u8string();
   return std::string(reinterpret_cast<const char*>(name.data()), name.size()) + ':' +
-      std::to_string(size) + ':' + std::to_string(modified.time_since_epoch().count());
+      std::to_string(size) + ':' +
+      std::to_string(static_cast<long long>(modified.time_since_epoch().count()));
 }
 
 constexpr uint16_t kWavePcm = 0x0001;

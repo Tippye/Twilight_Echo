@@ -39,6 +39,11 @@ export interface NativeAudioBinding {
   SetOutputBackend: (backend: string) => void
   SetOutputConfig?: (json: string) => void
   LoadQueue?: (queueJson: string, startIndex: number) => void
+  /** Hot append: returns void; the host mirror owns the first appended index. */
+  AppendQueueItems?: (itemsJson: string) => void
+  /** Refresh a non-current queued item's source (expiring provider URL). */
+  UpdateQueueItemSource?: (index: number, source: string) => void
+  GetQueueState?: () => string | import('../../shared/audioEngineTypes.ts').AudioEngineQueueState
   SelectQueueIndex?: (index: number) => void
   Next?: () => void
   Previous?: () => void
@@ -88,6 +93,8 @@ export interface NativeAudioBinding {
 
 export interface AudioEngineServiceNativeBinding extends NativeAudioBinding {
   getMetadataAsync: (source: string) => Promise<string | NativeAudioMetadata>
+  /** Full native capability JSON; the sync accessor is a synthetic subset. */
+  getEngineCapabilitiesAsync?: () => Promise<string>
   applyDspState: (revision: number, payload: DspStatePayload) => Promise<DspGraphStatus>
   applyDspGraph: (json: string) => Promise<DspGraphStatus>
   getDspGraphStatusAsync: () => Promise<DspGraphStatus>
@@ -97,7 +104,7 @@ export interface AudioEngineServiceNativeBinding extends NativeAudioBinding {
   restartAfterFatal?: () => boolean
   readonly fatalStartupError?: string
   on: (
-    event: 'crash' | 'error-log' | 'log' | 'ready',
+    event: 'crash' | 'error-log' | 'log' | 'ready' | 'rpc-timeout',
     listener: (...args: any[]) => void
   ) => unknown
 }

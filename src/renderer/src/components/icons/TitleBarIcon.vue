@@ -1,28 +1,30 @@
 <script setup lang="ts">
-import { titleBarIconPaths } from './titleBarIconPaths'
+import ThemeIcon from '../ThemeIcon.vue'
 
-defineProps<{ name: keyof typeof titleBarIconPaths }>()
+const iconSlots = {
+  navigation: 'navigation.menu',
+  search: 'navigation.search',
+  settings: 'navigation.settings',
+  puzzle_piece: 'navigation.plugin',
+  arrow_left: 'navigation.back',
+  person: 'navigation.person',
+  bell: 'navigation.notification',
+  bell_off: 'navigation.quiet'
+} as const
+
+defineProps<{ name: keyof typeof iconSlots }>()
 </script>
 
 <template>
-  <svg
-    class="title-bar-icon"
-    viewBox="0 0 16 16"
-    width="16"
-    height="16"
-    fill="currentColor"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <path v-for="(path, index) in titleBarIconPaths[name]" :key="index" :d="path" />
-  </svg>
+  <ThemeIcon class="title-bar-icon" :icon-slot="iconSlots[name]" />
 </template>
 
 <style scoped>
 .title-bar-icon {
-  display: block;
+  display: inline-grid;
   flex: 0 0 auto;
   width: var(--te-titlebar-icon-size, 16px);
   height: var(--te-titlebar-icon-size, 16px);
+  font-size: var(--te-titlebar-icon-size, 16px);
 }
 </style>

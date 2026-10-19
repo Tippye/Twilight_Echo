@@ -1695,6 +1695,64 @@ test('deferred exclusion restore rebases concurrent metadata and add even when s
   store.clearTracks()
 })
 
+test('clearing exclusion records leaves tracks intact and permits a later deliberate import', async () => {
+  const store = setupStore()
+  const [existing, removed] = generateMockTracks(2)
+  const initial = {
+    version: 2 as const,
+    revision: 12,
+    tracks: [existing],
+    folders: ['C:/Music'],
+    exclusions: [createExclusion(removed)]
+  }
+  let scans = 0
+  const clearRequests: string[][] = []
+  const windowRecord = (globalThis as Record<string, unknown>).window as {
+    api: {
+      data: { loadMusicLibrary: () => Promise<unknown> }
+      library: {
+        clearExclusions: (request: {
+          filePaths: string[]
+          library: { revision: number; tracks: MockTrack[]; folders: string[] }
+        }) => Promise<unknown>
+        scanStartup: () => Promise<unknown>
+      }
+    }
+  }
+  windowRecord.api.data.loadMusicLibrary = async () => initial
+  windowRecord.api.library.scanStartup = async () => {
+    scans++
+    return createEmptyScanUpdate('startup')
+  }
+  windowRecord.api.library.clearExclusions = async (request) => {
+    assert.equal(request.library.revision, 12)
+    clearRequests.push(request.filePaths)
+    return {
+      library: { ...initial, revision: 13, exclusions: [] },
+      clearedFilePaths: [removed.filePath]
+    }
+  }
+
+  await store.loadLibrary()
+  await store.whenLibrarySettled()
+  assert.equal(await store.clearExcludedTracks([removed.filePath, removed.filePath]), 1)
+  assert.deepEqual(clearRequests, [[removed.filePath]])
+  assert.equal(scans, 0, 'clearing records must not restore removed tracks immediately')
+  assert.equal(store.excludedTracks.value.length, 0)
+  assert.deepEqual(
+    store.tracks.value.map((track) => track.id),
+    [existing.id]
+  )
+
+  await store.addTracks([removed], { deferRebuild: true })
+  assert.deepEqual(
+    store.tracks.value.map((track) => track.id),
+    [existing.id, removed.id]
+  )
+  await store.saveLibrary()
+  store.clearTracks()
+})
+
 test('a scan result collected before exclusion commit cannot re-add the removed track', async () => {
   const store = setupStore()
   const track = generateMockTracks(1)[0]

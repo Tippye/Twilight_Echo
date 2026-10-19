@@ -214,3 +214,10 @@ outputs/
 
 # Local telemetry mock server runtime database (SQLite + WAL)
 /data/
+
+# Sponsor payment QR codes packaged with the settings sponsor dialog
+resources/sponsor/alipay.jpg
+resources/sponsor/wechat.png
+!resources/sponsor/
+!resources/sponsor/alipay.jpg
+!resources/sponsor/wechat.png

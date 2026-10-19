@@ -398,15 +398,6 @@ function rowNumber(index: number): number {
     <!-- ── 详情视图 ───────────────────────────────────────────────────── -->
     <template v-else>
       <header class="aggregate-header aggregate-detail-header">
-        <button
-          type="button"
-          class="detail-back-button"
-          data-te-back-button="pill"
-          @click="backToGrid"
-        >
-          <i class="pi pi-arrow-left" aria-hidden="true"></i>
-          <span>返回</span>
-        </button>
         <div class="aggregate-heading">
           <h2 class="aggregate-title">
             <i v-if="activePlaylist.pinnedAt" class="pi pi-thumbtack aggregate-pin-mark"></i>
@@ -495,7 +486,6 @@ function rowNumber(index: number): number {
               </td>
               <td class="col-cover">
                 <CoverImg
-                  v-if="track.coverSmall || track.cover"
                   :cover="track.coverSmall || track.cover"
                   :cover-source="track.coverSmallSource || track.coverSource"
                   :identity="track.id"
@@ -503,9 +493,6 @@ function rowNumber(index: number): number {
                   alt=""
                   loading="lazy"
                 />
-                <div v-else class="aggregate-row-cover aggregate-row-cover-placeholder">
-                  <ThemeIcon icon-slot="navigation.songs" />
-                </div>
               </td>
               <td class="col-info">
                 <span class="aggregate-row-title">{{ track.title }}</span>

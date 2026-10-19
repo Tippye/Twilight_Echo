@@ -67,6 +67,9 @@ const QueueWorkspaceDialog = defineAsyncComponent(
 const PluginExtensionPage = defineAsyncComponent(
   () => import('./components/PluginExtensionPage.vue')
 )
+const ExperienceView = defineAsyncComponent(
+  () => import('./components/experience/ExperienceView.vue')
+)
 const OnboardingWizard = defineAsyncComponent(
   () => import('./components/onboarding/OnboardingWizard.vue')
 )
@@ -78,16 +81,20 @@ import { usePlayerStore } from './stores/usePlayerStore'
 import { useSettingsStore } from './stores/useSettingsStore'
 import { useThemeStore, applyActiveTheme, bootstrapThemeRuntime } from './stores/useThemeStore'
 import { getStartupSnapshot } from './app/startupSnapshot'
-import { useExtensionRegistry } from './extensions/registry'
+import { isAfterglowRendererRestore } from '../../shared/afterglowMode.ts'
+import { startPluginPlaylistImports, useExtensionRegistry } from './extensions/registry'
+import { applyStartupExperience } from './app/startupExperience'
 import { syncPluginProviders, useMediaProviders } from './providers'
 import { useAppNavigation } from './app/useAppNavigation'
 import { createNavigationSessionPersistence } from './app/useNavigationSessionPersistence'
 import { useCommandPalette } from '@renderer/app/useCommandPalette.ts'
 import { useBackStack } from './app/useBackStack'
+import { createHistoryCommandRouter } from './app/historyNavigation.ts'
 import { hasDismissLayer } from '@renderer/app/useDismissLayer'
 import { createPlaybackSessionPersistence } from './app/usePlaybackSessionPersistence'
 import { useSideMenuClearance } from './app/useSideMenuClearance'
 import { useMiniPlayerSync } from './app/useMiniPlayerSync'
+import { useDynamicIslandLyrics } from './app/useDynamicIslandLyrics.ts'
 import { useDesktopLyricsPublisher } from './app/useDesktopLyricsPublisher.ts'
 import { useFavoriteButton } from './components/player-bar/useFavoriteButton'
 import { useMotionPreference } from './app/useMotionPreference'
@@ -97,9 +104,8 @@ import { useAppNoticeStore } from './stores/useAppNoticeStore'
 import { getTrackSource } from './utils/logicalTrackModel'
 import { scheduleIdleTask, type IdleTaskHandle } from './app/scheduleIdleTask'
 import {
-  getPrimaryStreamingArtistId,
   getPrimaryStreamingArtistName,
-  type StreamingArtistNavigationRequest
+  type StreamingMetadataNavigationRequest
 } from './utils/streamingArtistResolution'
 const AppNoticeHost = defineAsyncComponent(() => import('./components/AppNoticeHost.vue'))
 import LiquidGlassDefs from './components/LiquidGlassDefs.vue'
@@ -109,6 +115,8 @@ import {
   soundFieldPlaybackKey,
   usesSoundFieldSidebar
 } from '@renderer/components/local-dashboard/soundFieldPlayback'
+
+import type { TrackArtistRef } from './types/music'
 
 type TitleSurface = 'default' | 'settings' | 'streaming'
 let idleLoginCheck: IdleTaskHandle | null = null
@@ -167,6 +175,18 @@ const {
   closeMissingPluginPage,
   openSettingsPage
 } = navigation
+// Keep the wallpaper inside its overlay through the leave transition. An idle
+// overlay must hide its embedded painter, which would otherwise cover home.
+const settingsOverlayLeaves = ref(0)
+const settingsOverlayVisible = computed(
+  () => showSettingsPage.value || showPluginPage.value || settingsOverlayLeaves.value > 0
+)
+function retainSettingsOverlay(): void {
+  settingsOverlayLeaves.value += 1
+}
+function releaseSettingsOverlay(): void {
+  settingsOverlayLeaves.value = Math.max(0, settingsOverlayLeaves.value - 1)
+}
 const { pushNotice } = useAppNoticeStore()
 let stopAppUpdateNotifications: (() => void) | null = null
 let updateNotificationsDisposed = false
@@ -199,20 +219,30 @@ backStack.useBackHandler(showPluginPage, hidePluginPage)
 backStack.useBackHandler(showEqualizerPage, closeEqualizerPage)
 backStack.useBackHandler(showDspRackPage, closeDspRackPage)
 backStack.useBackHandler(showLoginPage, closeLoginPage)
+// Mouse side buttons: Windows/Linux deliver them as app commands forwarded by
+// the main process; some builds also dispatch the XBUTTON as a DOM mouseup.
+// Both paths share one router so a single press only moves one step. Back
+// resolves this same layered stack as the title-bar button; forward replays the
+// page trail the user backed out of.
+const routeHistoryCommand = createHistoryCommandRouter({
+  back: () => backStack.goBack(),
+  forward: () => navigation.goForwardPage()
+})
 const toggleMenu = navigation.createToggleMenuHandler()
 const toggleSettingsPage = navigation.createToggleSettingsHandler()
 const togglePluginPage = navigation.createTogglePluginHandler()
 
 const coverOrigin = ref({ x: 48, y: window.innerHeight - 36, w: 48, h: 48 })
-const streamingArtistRequest = ref<StreamingArtistNavigationRequest | null>(null)
-let streamingArtistRequestKey = 0
+const streamingMetadataRequest = ref<StreamingMetadataNavigationRequest | null>(null)
+let streamingMetadataRequestKey = 0
+const streamingMetadataTab = ref<StreamingPageTab>('home')
 // Keep StreamingPage mounted so contextual navigation preserves its detail.
 // Explicit sidebar selection returns the selected tab to its root instead.
 const streamingPageTabs = shallowRef<StreamingPageTab[]>([])
 const streamingRootNavigationRevisions = ref<Partial<Record<StreamingPageTab, number>>>({})
 
 function selectSidebarPage(target: NavigationPageTarget): void {
-  streamingArtistRequest.value = null
+  streamingMetadataRequest.value = null
   if (target.kind === 'streaming') {
     const revisions = streamingRootNavigationRevisions.value
     revisions[target.tab] = (revisions[target.tab] ?? 0) + 1
@@ -258,7 +288,7 @@ function handleTitleBack(): void {
 }
 
 function onGlobalBackKeydown(event: KeyboardEvent): void {
-  if (isPlaybackSpace(event)) {
+  if (settings.value.shortcutEnabled?.playbackSpace !== false && isPlaybackSpace(event)) {
     event.preventDefault()
     togglePlay()
     return
@@ -405,6 +435,8 @@ const {
   setPlayMode,
   restorePlaybackSession,
   createPlaybackSession,
+  adoptAfterglowRestore,
+  getNativeQueueIndices,
   rehydrateCurrentTrackFromLibrary,
   queueWorkspace,
   queueSessions,
@@ -414,44 +446,82 @@ const {
   visualizerActive
 } = usePlayerStore()
 useDesktopLyricsPublisher()
+useDynamicIslandLyrics()
 const { setAdaptiveMedia, effectiveSurfaceMaterial, effectiveLiquidGlass } = useThemeStore()
 const mediaProviders = useMediaProviders()
 const navigationProviders = useProviderStore()
 const commandPalette = useCommandPalette(navigation, () => navigationPages.value)
 
-function handlePlayerBarArtistClick(): void {
+function handlePlayerBarArtistClick(artist: TrackArtistRef): void {
   const track = currentTrack.value
-  const trackArtist = track?.artist.trim() ?? ''
-  if (!track || !trackArtist) return
+  const artistName = artist.name.trim()
+  if (!track || !artistName) return
 
   const source = getTrackSource(track)
   if (source === 'local') {
-    streamingArtistRequest.value = null
-    returnToLocalMode()
-    onSelectView('artists', `artist:${trackArtist}`)
+    streamingMetadataRequest.value = null
+    onSelectView('artists', `artist:${artistName}`)
     return
   }
 
-  const artistName = getPrimaryStreamingArtistName(trackArtist)
-  if (!artistName) return
-  // 同名歌手只能靠 provider 歌手 id 区分；曲目没带 id 时才让流媒体页按名字搜。
-  const artistId = getPrimaryStreamingArtistId(trackArtist, track.artists)
-  streamingArtistRequest.value = {
-    key: ++streamingArtistRequestKey,
+  streamingMetadataRequest.value = {
+    kind: 'artist',
+    key: ++streamingMetadataRequestKey,
     providerId: source,
     artistName,
-    ...(artistId !== undefined ? { artistId } : {})
+    ...(artist.id != null ? { artistId: artist.id } : {})
   }
-  enterStreamingMode()
+  streamingMetadataTab.value = pageTarget.value.kind === 'streaming' ? streamingTab.value : 'home'
+  enterStreamingMode(streamingMetadataTab.value)
+}
+
+function handlePlayingAlbumClick(): void {
+  const track = currentTrack.value
+  if (!track?.album.trim()) return
+
+  const source = getTrackSource(track)
+  if (source === 'local') {
+    streamingMetadataRequest.value = null
+    const album = musicStore.albums.value.find((item) =>
+      item.tracks.some((albumTrack) => albumTrack.id === track.id)
+    )
+    if (!album) {
+      pushNotice({ kind: 'info', message: '本地曲库中未找到这首歌曲的专辑' })
+      return
+    }
+    onSelectView('albums', `album:${album.id}`)
+    return
+  }
+
+  const albumId = track.albumId?.trim()
+  if (!albumId) {
+    pushNotice({ kind: 'info', message: '这首歌曲没有可用的专辑详情标识' })
+    return
+  }
+
+  streamingMetadataRequest.value = {
+    kind: 'album',
+    key: ++streamingMetadataRequestKey,
+    providerId: source,
+    albumId,
+    albumName: track.album,
+    artist: track.albumArtist || track.artist,
+    cover: track.cover,
+    coverSource: track.coverSource
+  }
+  streamingMetadataTab.value = pageTarget.value.kind === 'streaming' ? streamingTab.value : 'home'
+  enterStreamingMode(streamingMetadataTab.value)
 }
 
 // The analytics dashboard only knows an aggregated artist string, so it hands
 // streaming-owned artists here; the provider falls back to a name search.
 function handleAnalyticsArtistOpen(request: { name: string; providerId: string }): void {
+  streamingMetadataTab.value = 'home'
   const artistName = getPrimaryStreamingArtistName(request.name)
   if (!artistName) return
-  streamingArtistRequest.value = {
-    key: ++streamingArtistRequestKey,
+  streamingMetadataRequest.value = {
+    kind: 'artist',
+    key: ++streamingMetadataRequestKey,
     providerId: request.providerId,
     artistName
   }
@@ -565,8 +635,7 @@ const hasPlayerBar = computed(
     !showDspRackPage.value &&
     !showPluginPage.value &&
     !activePluginPage.value &&
-    !visualizerActive.value &&
-    !!currentTrack.value
+    !visualizerActive.value
 )
 /* Shape and visibility resolution live in shared/playerBar.ts so main and renderer
    agree and the truth table stays unit-testable; App.vue only forwards the result.
@@ -654,10 +723,12 @@ watch(
 
 let removePlaybackSessionSaveListener: (() => void) | null = null
 let removeAppNavigationListener: (() => void) | null = null
+let removeHistoryCommandListener: (() => void) | null = null
 let removeLibraryChangedListener: (() => void) | null = null
 let removeCoversMissingListener: (() => void) | null = null
 let removeLibraryScanProgressListener: (() => void) | null = null
 let removeLibraryScanStatusListener: (() => void) | null = null
+let removePluginPlaylistImports: (() => void) | null = null
 let quitFlushHandler: (() => void) | null = null
 let pageHideFlushHandler: (() => void) | null = null
 const startupDataErrorScopes = new Set<string>()
@@ -714,6 +785,8 @@ onMounted(async () => {
     applyExternalNavigation(target)
     void window.api.app.consumePendingNavigation()
   })
+  removeHistoryCommandListener = window.api.app.onHistoryCommand(routeHistoryCommand.run)
+  window.addEventListener('mouseup', routeHistoryCommand.handleMouseUp, true)
   const pendingNavigation =
     startupSnapshot?.pendingNavigation ?? (await window.api.app.consumePendingNavigation())
   if (pendingNavigation) applyExternalNavigation(pendingNavigation)
@@ -734,17 +807,76 @@ onMounted(async () => {
     }
   }
   navigationPersistence.start()
+  const startupNavigation = navigation.session.value
 
   // Restore the session before loading the potentially large music library.
   // The main-process data handlers use synchronous file reads, so issuing the
   // library request first can delay the home page's current-track state.
-  const playbackSessionSetupPromise = playbackSessionPersistence
-    .restoreSavedPlaybackSession(loadedSettings.playbackResumeMode)
+  //
+  // Afterglow restore is different: the native engine kept playing while this
+  // renderer did not exist, so we adopt its live state instead of replaying the
+  // persisted session (which would also reload the native queue).
+  const afterglowRestoreRequested = isAfterglowRendererRestore(window.location.search)
+  const afterglowRestoreState = afterglowRestoreRequested
+    ? await window.api.app.afterglow.getRestoreState().catch(() => null)
+    : null
+  const playbackSessionSetupPromise = (
+    afterglowRestoreState
+      ? (() => {
+          adoptAfterglowRestore(afterglowRestoreState)
+          return playbackSessionPersistence.adoptLivePlaybackSession()
+        })()
+      : playbackSessionPersistence.restoreSavedPlaybackSession(loadedSettings.playbackResumeMode)
+  )
     .catch((error) => {
       reportStartupDataError('playback session', error)
     })
     .finally(() => {
-      removePlaybackSessionSaveListener = window.api.app.onSavePlaybackSession(async () => {
+      removePlaybackSessionSaveListener = window.api.app.onSavePlaybackSession(async (options) => {
+        if (options?.includeQueue) {
+          // Afterglow's handoff is memory-only. Publish the snapshot first so
+          // a failed disk save can never keep the renderer alive; the normal
+          // persistence flush then runs best-effort for resume/close data.
+          const track = currentTrack.value
+          if (!track) throw new Error('当前没有可交接的曲目')
+          // Pinia state is reactive; nested proxies/functions are not
+          // structured-cloneable. IPC rejects them as "An object could not be
+          // cloned", which used to surface as "保存播放状态失败". Hand over a
+          // plain JSON snapshot instead.
+          const toPlainSnapshot = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
+          const nativeQueueIndices = getNativeQueueIndices()
+          const published = await window.api.app.afterglow.publishRendererSnapshot({
+            queue: toPlainSnapshot(queue.value),
+            queueIndex: queueIndex.value,
+            track: toPlainSnapshot(track),
+            position: currentTime.value,
+            playMode: playMode.value,
+            volume: volume.value,
+            playbackRate: playbackRate.value,
+            // Online queues are loaded as a current+next window; tell main
+            // which logical index each native entry came from.
+            ...(nativeQueueIndices && nativeQueueIndices.length > 0
+              ? { nativeQueueIndices: [...nativeQueueIndices] }
+              : {})
+          })
+          if (!published) throw new Error('主进程拒绝了播放队列快照')
+          const bestEffort = async (label: string, action: () => Promise<unknown>) => {
+            try {
+              await action()
+            } catch (error) {
+              console.warn(`[afterglow] ${label} failed (non-fatal):`, error)
+            }
+          }
+          await bestEffort('playback session save', () =>
+            playbackSessionPersistence.savePlaybackSessionWithQueue()
+          )
+          await bestEffort('playlist flush', flushPlaylistsForExit)
+          await bestEffort('volume flush', flushSoftwareVolumePersist)
+          await bestEffort('listening stats flush', flushListeningStatsForExit)
+          await bestEffort('queue workspace flush', () => queueWorkspace.flush())
+          navigationPersistence.flush()
+          return
+        }
         navigationPersistence.flush()
         // This callback is awaited by the main-process close coordinator. It
         // closes the 250ms playlist debounce window before renderer teardown.
@@ -755,19 +887,50 @@ onMounted(async () => {
         await queueWorkspace.flush()
       })
       playbackSessionPersistence.startAutosaveWatchers()
+      if (afterglowRestoreRequested) {
+        void window.api.app.afterglow.rendererAdoptComplete().catch(() => {})
+      }
     })
   // Run independent startup operations in parallel so none blocks the others.
-  const libraryPromise = loadLibrary().catch((error) =>
+  const libraryLoad = loadLibrary()
+  const playlistsLoad = loadPlaylists()
+  const libraryPromise = libraryLoad.catch((error) =>
     reportStartupDataError('music library', error)
   )
-  const playlistsPromise = loadPlaylists().catch((error) =>
+  const playlistsPromise = playlistsLoad.catch((error) =>
     reportStartupDataError('playlists', error)
   )
+  void startPluginPlaylistImports(Promise.all([libraryLoad, playlistsLoad]))
+    .then((unsubscribe) => {
+      removePluginPlaylistImports = unsubscribe
+    })
+    .catch((error) => {
+      console.warn(
+        '[plugins] Playlist imports remain queued because library startup failed:',
+        error
+      )
+    })
   const extensionsPromise = syncExtensions().then(() => {
+    const canEnterExperience =
+      !needsOnboarding && !pendingNavigation && navigation.session.value === startupNavigation
+    // Full interfaces are restored only by the explicit startup preference, never by page memory.
     navigationPersistence.resolvePluginPages([
-      ...availablePluginPages.value,
+      ...availablePluginPages.value.filter((page) => !page.experience),
       ...localSidebarItems.value
     ])
+    if (
+      canEnterExperience &&
+      applyStartupExperience(
+        navigation,
+        loadedSettings.startupExperience,
+        availablePluginPages.value
+      ) === 'unavailable'
+    ) {
+      pushNotice({
+        kind: 'warning',
+        message: '所选完整界面未启用或已移除，已使用 Twilight Echo 默认界面。'
+      })
+    }
   })
   if (loadedSettings.autoCheckLogin) {
     idleLoginCheck = scheduleIdleTask(() => {
@@ -888,12 +1051,17 @@ onBeforeUnmount(() => {
   removePlaybackSessionSaveListener = null
   removeAppNavigationListener?.()
   removeAppNavigationListener = null
+  removeHistoryCommandListener?.()
+  removeHistoryCommandListener = null
+  window.removeEventListener('mouseup', routeHistoryCommand.handleMouseUp, true)
   removeLibraryChangedListener?.()
   removeLibraryChangedListener = null
   removeLibraryScanProgressListener?.()
   removeLibraryScanProgressListener = null
   removeLibraryScanStatusListener?.()
   removeLibraryScanStatusListener = null
+  removePluginPlaylistImports?.()
+  removePluginPlaylistImports = null
   removeCoversMissingListener?.()
   removeCoversMissingListener = null
   if (quitFlushHandler) window.removeEventListener('beforeunload', quitFlushHandler)
@@ -929,10 +1097,19 @@ const liquidGlassActive = computed(
   () =>
     effectiveSurfaceMaterial.value !== 'transparent' &&
     (liquidGlassChromeActive.value ||
-      effectiveLiquidGlass.value.homeCards.enabled ||
       effectiveLiquidGlass.value.playbarEnabled ||
-      effectiveLiquidGlass.value.settingsNavigationEnabled ||
-      effectiveLiquidGlass.value.coverage === 'expanded')
+      effectiveLiquidGlass.value.settingsNavigationEnabled)
+)
+const playbarRefractionActive = computed(
+  () =>
+    liquidGlassActive.value &&
+    settings.value.blurEffect &&
+    hasPlayerBar.value &&
+    !!currentTrack.value &&
+    !showPlayingPage.value &&
+    playerBarPresentation.value.mode === 'standard' &&
+    !playerBarPresentation.value.hidden &&
+    (effectiveSurfaceMaterial.value === 'liquidGlass' || effectiveLiquidGlass.value.playbarEnabled)
 )
 const liquidGlassBackgroundPage = computed<AppBackgroundPage>(() => {
   if (showPlayingPage.value) return 'player'
@@ -953,25 +1130,20 @@ onBeforeUnmount(() => onWorkshopDecorationsUnmount?.())
 </script>
 
 <template>
-  <AppBackgroundLayer :page="showStreamingSurface ? 'streaming' : 'local'" />
+  <AppBackgroundLayer
+    :page="showStreamingSurface ? 'streaming' : 'local'"
+    :ambient="localViewVisible && activeCategory === 'dashboard'"
+  />
   <div
     class="app-shell"
+    :class="{ 'is-immersive': showPlayingPage }"
     :inert="appearanceFullWindowPreview"
     :style="{
       '--te-side-menu-bottom': `${sideMenuBottomOffset}px`,
       '--te-side-menu-tools-clearance': `${sideMenuToolsClearance}px`
     }"
   >
-    <LiquidGlassDefs
-      :active="liquidGlassActive"
-      :follow-pointer="effectiveLiquidGlass.followPointer"
-      :home-cards-active="
-        effectiveSurfaceMaterial !== 'transparent' && effectiveLiquidGlass.homeCards.enabled
-      "
-      :expanded-active="
-        effectiveSurfaceMaterial !== 'transparent' && effectiveLiquidGlass.coverage === 'expanded'
-      "
-    />
+    <LiquidGlassDefs :active="playbarRefractionActive" />
     <div class="app-shell-title">
       <TitleBar
         :close-only="showOnboarding"
@@ -1068,6 +1240,8 @@ onBeforeUnmount(() => onWorkshopDecorationsUnmount?.())
             v-if="showPlayingPage"
             :style="{ transformOrigin: coverTransformOrigin }"
             @customize-appearance="openThemeStudioPage('player')"
+            @open-artist="handlePlayerBarArtistClick"
+            @open-album="handlePlayingAlbumClick"
           />
         </Transition>
         <StreamingPage
@@ -1078,9 +1252,9 @@ onBeforeUnmount(() => onWorkshopDecorationsUnmount?.())
           :has-player="hasPlayerBar"
           :initial-tab="tab"
           :root-navigation-revision="streamingRootNavigationRevisions[tab] ?? 0"
-          :artist-navigation-request="
-            showStreamingSurface && tab === 'home' && streamingTab === tab
-              ? streamingArtistRequest
+          :metadata-navigation-request="
+            showStreamingSurface && tab === streamingMetadataTab && streamingTab === tab
+              ? streamingMetadataRequest
               : null
           "
           @navigate-tab="enterStreamingMode($event)"
@@ -1130,7 +1304,7 @@ onBeforeUnmount(() => onWorkshopDecorationsUnmount?.())
             "
           />
           <PluginExtensionPage
-            v-else-if="activePluginPage"
+            v-else-if="activePluginPage && !activePluginPage.experience"
             :key="activePageId"
             :page="activePluginPage"
           />
@@ -1158,11 +1332,16 @@ onBeforeUnmount(() => onWorkshopDecorationsUnmount?.())
   </div>
   <div
     class="settings-overlay-root"
-    v-show="!appearanceFullWindowPreview"
-    :class="{ 'settings-overlay-root--active': showSettingsPage || showPluginPage }"
+    v-show="settingsOverlayVisible && !appearanceFullWindowPreview"
+    :class="{ 'settings-overlay-root--active': settingsOverlayVisible }"
   >
     <AppBackgroundLayer page="settings" embedded />
-    <Transition name="settings-page">
+    <Transition
+      name="settings-page"
+      @before-leave="retainSettingsOverlay"
+      @after-leave="releaseSettingsOverlay"
+      @leave-cancelled="releaseSettingsOverlay"
+    >
       <SettingsPage
         v-if="showSettingsPage"
         :initial-section="settingsInitialSection"
@@ -1175,7 +1354,12 @@ onBeforeUnmount(() => onWorkshopDecorationsUnmount?.())
         @reopen-onboarding="handleReopenOnboarding"
       />
     </Transition>
-    <Transition name="settings-page">
+    <Transition
+      name="settings-page"
+      @before-leave="retainSettingsOverlay"
+      @after-leave="releaseSettingsOverlay"
+      @leave-cancelled="releaseSettingsOverlay"
+    >
       <PluginPage
         v-if="showPluginPage"
         @open-theme-workshop="
@@ -1190,6 +1374,12 @@ onBeforeUnmount(() => onWorkshopDecorationsUnmount?.())
       />
     </Transition>
   </div>
+  <ExperienceView
+    v-if="activePluginPage?.experience"
+    :key="activePluginPage.pluginId + ':' + activePluginPage.experience.version"
+    :experience="activePluginPage.experience"
+    @exit="navigation.closePluginPage()"
+  />
   <CommandPalette
     v-if="commandPalette.isOpen.value"
     :actions="commandPalette.actions.value"

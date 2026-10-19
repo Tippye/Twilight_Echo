@@ -73,7 +73,7 @@ function contentSecurityPolicyForUrl(url: string): string {
     "base-uri 'none'",
     "object-src 'none'",
     // Allow the bundled audio visualizer surface and other same-origin app frames.
-    "frame-src 'self'",
+    "frame-src 'self' plugin-ui:",
     "frame-ancestors 'none'",
     "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
@@ -98,7 +98,7 @@ function withoutHeader(
 }
 
 function isAppDocumentUrl(url: string): boolean {
-  return isDevRendererUrl(url) || /\/renderer\/index\.html(?:[#?].*)?$/i.test(url)
+  return isDevRendererUrl(url) || (url.startsWith('file://') && /\/renderer\/index\.html(?:[#?].*)?$/i.test(url))
 }
 
 function isAudioVisualizerDocumentUrl(url: string): boolean {
@@ -134,7 +134,7 @@ export function assertTrustedIpcSender(
 
 export function isTrustedIpcSender(event: IpcMainEvent | IpcMainInvokeEvent): boolean {
   const frameUrl = event.senderFrame?.url
-  if (frameUrl && isTrustedIpcSenderUrl(frameUrl)) return true
+  if (frameUrl) return isTrustedIpcSenderUrl(frameUrl)
   const contentsUrl = event.sender.getURL()
   return Boolean(contentsUrl && isTrustedIpcSenderUrl(contentsUrl))
 }

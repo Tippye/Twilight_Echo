@@ -66,7 +66,7 @@ test('tray player window is isolated and forwards validated commands to the play
   assert.match(trayPlayerSource, /mainWindow\.webContents\.send\('miniPlayer:command', command\)/)
   assert.match(
     preloadSource,
-    /if \(isTrayPlayerDocument\(\)\) return \{ trayPlayer: trayPlayerWindowApi \}/
+    /if \(isTrayPlayerDocument\(\)\)\s+return \{\s*diagnostics: diagnosticsApi,\s*trayPlayer: trayPlayerWindowApi,\s*experienceWindow: experienceWindowApi\s*\}/
   )
 })
 

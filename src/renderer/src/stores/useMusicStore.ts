@@ -13,6 +13,7 @@ import type { Track } from '../types/music'
 import { equalBpmAnalysis } from '../utils/bpmAnalysisEquality.ts'
 import type {
   LocalLibraryExclusion,
+  LocalLibraryClearExclusionsResult,
   LocalLibraryRemoveResult,
   LocalLibraryRemovalMode,
   LocalMusicLibraryDocument
@@ -36,7 +37,10 @@ import {
   type MetadataMatchConfidence
 } from '../utils/musicMetadataMatching.ts'
 import { useSettingsStore } from './useSettingsStore.ts'
-import { notifyLocalTracksUnavailable } from '../utils/localTrackRemovalPolicy.ts'
+import {
+  notifyLocalTracksUnavailable,
+  prepareLocalTracksForRemoval
+} from '../utils/localTrackRemovalPolicy.ts'
 import { type PlaylistPersistenceStatus } from './playlistPersistence.ts'
 import {
   isLocalLibraryTrack,
@@ -549,6 +553,12 @@ export function useMusicStore() {
     try {
       return await enqueueLibraryWrite(async () => {
         const requestGeneration = libraryMutationGeneration
+        if (mode === 'trash') {
+          await prepareLocalTracksForRemoval(
+            selectedTracks.map((track) => track.id),
+            selectedTracks.map((track) => track.filePath)
+          )
+        }
         let result: LocalLibraryRemoveResult
         try {
           result = await window.api.library.removeTracks({
@@ -625,6 +635,40 @@ export function useMusicStore() {
         await startStartupLibraryScan()
       }
       return result.restoredFilePaths.length
+    } finally {
+      libraryRemovalOperations--
+      armScheduledLibrarySave()
+    }
+  }
+
+  async function clearExcludedTracks(filePaths: string[]): Promise<number> {
+    const uniquePaths = Array.from(new Set(filePaths.filter(Boolean)))
+    if (uniquePaths.length === 0) return 0
+    cancelScheduledLibrarySave()
+    libraryRemovalOperations++
+    try {
+      const result = await enqueueLibraryWrite(async () => {
+        const requestGeneration = libraryMutationGeneration
+        const cleared: LocalLibraryClearExclusionsResult = await window.api.library.clearExclusions(
+          {
+            filePaths: uniquePaths,
+            library: librarySnapshot()
+          }
+        )
+        const changedDuringClear = libraryMutationGeneration !== requestGeneration
+        applySavedLibraryMetadata(cleared.library)
+        if (cleared.clearedFilePaths.length > 0) {
+          resolvePendingLibrarySavesThrough(requestGeneration)
+        }
+        const pendingSnapshotWasNotCommitted =
+          cleared.clearedFilePaths.length === 0 &&
+          pendingSaveResolvers.some((pending) => pending.generation <= requestGeneration)
+        if (changedDuringClear || pendingSnapshotWasNotCommitted) {
+          await persistCurrentLibraryUntilStable()
+        }
+        return cleared
+      })
+      return result.clearedFilePaths.length
     } finally {
       libraryRemovalOperations--
       armScheduledLibrarySave()
@@ -1077,6 +1121,7 @@ export function useMusicStore() {
     removeTrack,
     removeLocalTracks,
     restoreExcludedTracks,
+    clearExcludedTracks,
     applyLocalTagWrite,
     clearTrackMetadataMatch,
     applyTrackMetadataMatch,

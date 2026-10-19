@@ -5,6 +5,9 @@
 #include <deque>
 #include <mutex>
 #include <string>
+#include <vector>
+#include <fstream>
+#include <filesystem>
 
 namespace twilight::audio {
 
@@ -33,6 +36,7 @@ class DiagnosticLog {
     std::string event;
     std::string message;
     std::string detailsJson;
+    std::string operationId, requestId;
   };
 
   static DiagnosticLog& instance();
@@ -47,6 +51,8 @@ class DiagnosticLog {
 
   // The sequence the next appended entry will receive.
   uint64_t nextSequence() const;
+  bool trySnapshot(uint64_t sinceSequence, std::vector<Entry>& entries) const;
+  static void setContext(const std::string& json);
 
   void clearForTests();
 
@@ -59,3 +65,31 @@ class DiagnosticLog {
 };
 
 }  // namespace twilight::audio
+
+namespace twilight::audio {
+// Used exclusively by the diagnostic thread; never by a render callback.
+class DiagnosticJournal {
+ public:
+  DiagnosticJournal();
+  void write(const std::string& event, const std::string& details, DiagLevel level = DiagLevel::Info,
+             uint64_t originalSequence = 0, uint64_t epochMs = 0, const std::string& operationId = {}, const std::string& requestId = {});
+  void drain();
+ private:
+  std::filesystem::path directory_, file_;
+  std::string instance_, session_;
+  uint64_t sequence_ = 0, ringSequence_ = 0, bytes_ = 0;
+  uint64_t startMs_ = 0;
+  unsigned part_ = 0;
+  bool reportedFailure_ = false;
+};
+// Conservative token sanitizer: retain numeric counters and known enums,
+// fingerprint other strings, and redact authentication fields recursively.
+std::string sanitizeNativeDiagnosticJson(const std::string& json);
+struct EmptyOutputDetector {
+  uint64_t token = 0, callbacks = 0, consumed = 0;
+  unsigned consecutive = 0;
+  bool marked = false;
+  bool sample(bool available, bool playing, bool eof, bool stopped, uint64_t nextToken,
+              uint64_t nextCallbacks, uint64_t nextConsumed);
+};
+}

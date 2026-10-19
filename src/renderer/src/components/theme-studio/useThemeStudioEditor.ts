@@ -20,6 +20,7 @@ import {
   normalizeThemeModes,
   normalizeThemeTokenOverrides,
   normalizeThemeTokenValue,
+  resolveThemeModes,
   resolveThemeProfileModes,
   resolveThemeProfileTokens,
   resolveThemeProfileWindowDefaults,
@@ -384,9 +385,18 @@ export function useThemeStudioEditor(options: ThemeStudioEditorOptions) {
   const fontAssets = computed(
     () => draft.value?.assets?.filter((asset) => asset.type === 'font') ?? []
   )
-  const activeModes = computed(() =>
-    resolveThemeProfileModes(draft.value ?? selectedBuiltInPreset.value)
-  )
+  const activeModes = computed(() => {
+    if (draft.value || selectedBuiltInPreset.value) {
+      return resolveThemeProfileModes(draft.value ?? selectedBuiltInPreset.value)
+    }
+
+    const structured = selectedPluginTheme.value?.structured
+    return resolveThemeModes(
+      structured?.schemaVersion === 2 || structured?.schemaVersion === 3
+        ? structured.modes
+        : undefined
+    )
+  })
   const resolvedWindowDefaults = computed<Required<ThemeWindowDefaults>>(() => {
     const resolved = resolveThemeProfileWindowDefaults(draft.value ?? selectedBuiltInPreset.value)
     return {

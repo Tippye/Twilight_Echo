@@ -304,7 +304,7 @@ test('phase three icon, navigation, and library modes use static host-owned pres
   assert.match(themeIcon, /data-theme-icon-slot/)
   assert.match(sideMenu, /:icon-slot="entry\.icon"/)
   assert.match(sideMenu, /:icon-slot="entry\.page\.icon"/)
-  assert.doesNotMatch(sideMenu, /:icon-slot="page\.icon"/)
+  assert.match(sideMenu, /:icon-slot="page\.icon"/)
   assert.match(sideMenu, /data-te-navigation-style='rail'/)
   assert.match(sideMenu, /--te-menu-width: 72px !important/)
   assert.match(obsidianGlassLayout, /data-te-navigation-style='rail'/)
@@ -319,7 +319,7 @@ test('phase three icon, navigation, and library modes use static host-owned pres
     paperLightLayout,
     /\.side-menu \.menu-item\.active::before\s*\{[\s\S]*box-shadow: 0 0 18px/
   )
-  assert.match(studioStyle, /inset: var\(--te-titlebar-height, 32px\) 0 0/)
+  assert.match(studioStyle, /\.theme-studio-page\s*\{[\s\S]*?inset: 0;/)
   assert.match(sideMenu, /data-te-navigation-icon-scale='lg'/)
   assert.match(studioSurfaces, /updateIconFamily/)
   assert.match(studio, /updateNavigationMode\('style'/)
@@ -379,8 +379,8 @@ test('phase four player layouts, controls, equalizer modes, and visibility stay 
   assert.match(playingMusic, /data-te-player-layout='split'/)
   assert.match(playingMusic, /data-te-player-layout='minimal'/)
   assert.match(playingMusic, /data-te-visible-player-artwork='false'/)
-  assert.doesNotMatch(playerBar, /data-te-player-(controls|progress|layout|title-align)/)
-  assert.doesNotMatch(playerBar, /data-te-visible-(player|previous-button|next-button)/)
+  assert.doesNotMatch(playerBarComponent, /data-te-player-(controls|progress|layout|title-align)/)
+  assert.doesNotMatch(playerBarComponent, /data-te-visible-(player|previous-button|next-button)/)
   assert.match(themeStore, /sharedPlayerBarStylesheet\(tone, selectedProfile\)/)
   assert.doesNotMatch(
     baseStyle,

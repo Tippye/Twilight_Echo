@@ -11,7 +11,9 @@ test('streaming lists reuse the queue virtual window instead of a growing prefix
   assert.match(source, /getPlaybackQueueWindow/)
   assert.match(source, /visibleStart/)
   assert.doesNotMatch(source, /visibleCount\.value \+ step/)
-  assert.match(detail, /trackIndex\(index\)/)
+  // Detail rows now include video disclosures and pagers; playable rows carry
+  // their original queue index rather than deriving it from the visual offset.
+  assert.match(detail, /onPlayRow\(row\.track, row\.index, \$event\)/)
   assert.match(detail, /:ref="listRef"/)
   assert.match(social, /trackIndex\(index\)/)
   assert.match(social, /:ref="listRef"/)

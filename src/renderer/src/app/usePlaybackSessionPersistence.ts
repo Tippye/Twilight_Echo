@@ -116,6 +116,42 @@ export function createPlaybackSessionPersistence(options: PlaybackSessionPersist
     await savePlaybackSessionSnapshot()
   }
 
+  /**
+   * Afterglow entry flush: the main process needs the full queue snapshot so it
+   * can rebuild the UI (and the tray metadata) while no renderer exists.
+   */
+  async function savePlaybackSessionWithQueue(): Promise<void> {
+    clearPlaybackSessionAutosave()
+    if (!playbackSessionWritesEnabled) return
+    const mode = getPlaybackResumeMode()
+    if (mode === 'off') return
+    const queueRef = options.queue?.value ?? null
+    const session = options.createPlaybackSession(mode)
+    if (!session || !queueRef || queueRef.length === 0) return
+    const write = sessionWriter.save(options.dataApi, {
+      ...session,
+      queue: queueRef.map(cloneTrackForPlaybackQueue)
+    })
+    await write.completion
+  }
+
+  /**
+   * Afterglow restore: the engine kept playing, so no session is restored from
+   * disk. Only the persisted revision is synced so later autosaves do not fight
+   * the main-process writer that owned the file while the renderer was gone.
+   */
+  async function adoptLivePlaybackSession(): Promise<void> {
+    playbackSessionWritesEnabled = false
+    clearPlaybackSessionAutosave()
+    try {
+      await refreshAuthoritativeSession()
+    } finally {
+      sessionWriter.setSavedQueueRef(options.queue?.value ?? null)
+      playbackSessionWritesEnabled = true
+    }
+    startAutosaveWatchers()
+  }
+
   async function savePlaybackSessionSnapshot(): Promise<void> {
     if (!playbackSessionWritesEnabled) return
 
@@ -246,7 +282,9 @@ export function createPlaybackSessionPersistence(options: PlaybackSessionPersist
 
   return {
     restoreSavedPlaybackSession,
+    adoptLivePlaybackSession,
     savePlaybackSessionForQuit,
+    savePlaybackSessionWithQueue,
     savePlaybackSessionSnapshot,
     clearPlaybackSessionAutosave,
     schedulePlaybackSessionAutosave,

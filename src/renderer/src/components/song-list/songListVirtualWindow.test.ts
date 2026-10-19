@@ -4,6 +4,7 @@ import {
   estimateGridColumns,
   getSongListVirtualRange,
   getSongListGridScrollTopForIndex,
+  getSongListTrackScrollTopForIndex,
   getSongListGridVirtualRange,
   GRID_OVERSCAN_ROWS,
   maxMountedGridCards
@@ -74,6 +75,30 @@ test('A-Z jump scroll top lands the target index inside the window', () => {
     rowStride
   })
   assert.ok(index >= range.start && index < range.end)
+})
+
+test('track locate centers the active row inside the virtual table window', () => {
+  const input = {
+    trackCount: 4_000,
+    viewportHeight: 700,
+    tableOffsetTop: 280,
+    rowHeight: 68
+  }
+  const index = 1_234
+  const scrollTop = getSongListTrackScrollTopForIndex({ ...input, index })
+  const range = getSongListVirtualRange({ ...input, scrollTop })
+  assert.ok(index >= range.start && index < range.end)
+  assert.equal(
+    scrollTop,
+    input.tableOffsetTop + index * input.rowHeight - (input.viewportHeight - input.rowHeight) / 2
+  )
+
+  assert.equal(getSongListTrackScrollTopForIndex({ ...input, index: 0 }), 0)
+  assert.equal(
+    getSongListTrackScrollTopForIndex({ ...input, index: input.trackCount - 1 }),
+    input.tableOffsetTop + input.trackCount * input.rowHeight - input.viewportHeight
+  )
+  assert.equal(getSongListTrackScrollTopForIndex({ ...input, index: 2, trackCount: 0 }), 0)
 })
 
 test('grid column estimate follows the CSS auto-fill breakpoints', () => {

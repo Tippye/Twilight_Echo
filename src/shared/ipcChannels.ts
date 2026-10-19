@@ -1,4 +1,16 @@
 export const IPC = {
+  // Page history commands forwarded from Windows/Linux mouse side buttons.
+  app: {
+    historyCommand: 'app:history-command'
+  },
+  diagnostics: {
+    status: 'diagnostics:getStatus',
+    marker: 'diagnostics:markProblem',
+    directory: 'diagnostics:openDirectory',
+    export: 'diagnostics:exportBundle',
+    clear: 'diagnostics:clearHistory',
+    record: 'diagnostics:record'
+  },
   audioEngine: {
     testOutput: 'audioEngine:testOutput',
     stopOutputTest: 'audioEngine:stopOutputTest',
@@ -90,6 +102,7 @@ export const IPC = {
   library: {
     cancelScan: 'library:cancelScan',
     changed: 'library:changed',
+    clearExclusions: 'library:clearExclusions',
     coversMissing: 'library:covers-missing',
     detectDuplicates: 'library:detectDuplicates',
     getScanStatus: 'library:getScanStatus',

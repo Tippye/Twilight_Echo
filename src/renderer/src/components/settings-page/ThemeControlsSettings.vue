@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import SettingsGroup from './SettingsGroup.vue'
+import ExperienceSettings from './ExperienceSettings.vue'
 import { useSettingsStore } from '../../stores/useSettingsStore'
 import { useThemeStore } from '../../stores/useThemeStore'
 import { useExtensionRegistry } from '../../extensions/registry'
@@ -106,6 +107,8 @@ async function setPluginTheme(event: Event): Promise<void> {
       </option>
     </select>
   </div>
+  <hr />
+  <ExperienceSettings />
   <hr />
   <div data-setting-id="motion" id="setting-motion" class="setting-item">
     <div class="setting-copy">

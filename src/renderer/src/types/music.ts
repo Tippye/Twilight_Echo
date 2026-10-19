@@ -25,6 +25,14 @@ export interface Track {
    */
   queueEntryId?: string
   title: string
+  /** An independently playable part of a provider video. */
+  mediaPart?: {
+    groupId: string
+    groupTitle: string
+    title: string
+    index: number
+    count: number
+  }
   artist: string
   /** 结构化歌手身份（流媒体 provider 提供）；本地扫描曲目没有这个概念。 */
   artists?: TrackArtistRef[]

@@ -1,3 +1,6 @@
+import { initializeUtilityDiagnostics } from '../diagnostics/utility.ts'
+import { observeDiagnosticOperation } from '../diagnostics/observation.ts'
+import { writeDiagnostic } from '../diagnostics/logger.ts'
 import { createHash, randomUUID } from 'crypto'
 import { type Dirent } from 'fs'
 import { mkdir, readFile, readdir, stat, writeFile } from 'fs/promises'
@@ -16,6 +19,7 @@ import { SUPPORTED_EXTENSIONS } from './libraryFiles.ts'
 import { deriveCueTracks } from './cueLibrary.ts'
 import { readMp4AlacFormat } from './mp4AlacFormat.ts'
 import { createLocalLibraryScanPlan } from './scanPlanner.ts'
+import { chooseWaveText, readWaveMetadata, repairMojibakeText } from './wavMetadata.ts'
 import { readLocalReleaseDate } from '../../shared/releaseDate.ts'
 
 type ParentPort = {
@@ -58,6 +62,7 @@ if (!parentPort) {
 }
 
 const servicePort = parentPort
+initializeUtilityDiagnostics('twilight-library-scan')
 const activeScans = new Map<string, ScanControl>()
 const coverHandlesByDirectory = new Map<string, Promise<string | null>>()
 const MAX_COVER_BYTES = 20 * 1024 * 1024
@@ -73,7 +78,13 @@ const MAX_COVER_DIRECTORY_CACHE_ENTRIES = 2_048
 servicePort.postMessage({ kind: 'ready' })
 servicePort.on('message', (message) => {
   if (message.kind === 'scan') {
-    void handleScan(message.requestId, message.request)
+    void observeDiagnosticOperation(
+      'library.scan',
+      'scan',
+      () => handleScan(message.requestId, message.request),
+      [message.request],
+      { requestId: message.requestId, ...(message as any).diagnosticContext }
+    )
     return
   }
   const control = activeScans.get(message.requestId)
@@ -104,6 +115,7 @@ async function handleScan(
     const value = await runScan(requestId, request, control)
     servicePort.postMessage({ kind: 'response', requestId, ok: true, value })
   } catch (error) {
+    writeDiagnostic('library.scan', 'scan.failed', { error }, 'error')
     servicePort.postMessage({
       kind: 'response',
       requestId,
@@ -211,12 +223,19 @@ async function runScan(
           }
           try {
             const metadata = await parseAudioMetadata(filePath, true)
+            const waveMetadata = await readWaveMetadata(filePath).catch(() => null)
             return {
               filePath,
               dateOnly,
               tracks: [],
               metadataRead: true,
-              dateUpdate: { filePath, releaseDate: readLocalReleaseDate(metadata.common) }
+              dateUpdate: {
+                filePath,
+                releaseDate: readLocalReleaseDate({
+                  ...metadata.common,
+                  year: waveMetadata?.year ?? metadata.common.year
+                })
+              }
             }
           } catch {
             return { filePath, dateOnly, tracks: [], metadataRead: false, dateUpdate: undefined }
@@ -603,6 +622,11 @@ async function parseTrack(
     lyrics: null
   }
 
+  // RIFF INFO/BEXT text is frequently stored as legacy GBK/Shift-JIS or UTF-16 without
+  // an encoding marker. Read it independently of music-metadata so a lossy parser result
+  // cannot overwrite the original bytes' best decoding.
+  const waveMetadata = await readWaveMetadata(filePath).catch(() => null)
+
   try {
     const metadata = await parseAudioMetadata(filePath)
     const picture = metadata.common.picture?.[0]
@@ -626,24 +650,39 @@ async function parseTrack(
     const audioFingerprint = extractAcousticFingerprint(metadata.native)
     const alacFormat = metadata.format.codec === 'ALAC' ? await readMp4AlacFormat(filePath) : null
     const bpm = normalizeBpm(metadata.common.bpm)
-    const trackNumber = normalizeTrackIndex(metadata.common.track)
     const discNumber = normalizeTrackIndex(metadata.common.disk)
+    const title = chooseWaveText(metadata.common.title, waveMetadata?.title) ?? fallback.title
+    const artist =
+      chooseWaveText(metadata.common.artist, waveMetadata?.artist) ??
+      (typeof metadata.common.albumartist === 'string'
+        ? repairMojibakeText(metadata.common.albumartist)
+        : undefined) ??
+      fallback.artist
+    const album = chooseWaveText(metadata.common.album, waveMetadata?.album) ?? 'Unknown Album'
+    const genre = chooseWaveText(extractGenre(metadata.common.genre), waveMetadata?.genre)
+    const trackNumber = waveMetadata?.trackNumber ?? normalizeTrackIndex(metadata.common.track)
+    const releaseDate = readLocalReleaseDate({
+      ...metadata.common,
+      year: waveMetadata?.year ?? metadata.common.year
+    })
     const track: Record<string, unknown> = {
       ...baseTrack,
-      title: metadata.common.title || fallback.title,
-      artist: metadata.common.artist || metadata.common.albumartist || fallback.artist,
-      album: metadata.common.album || 'Unknown Album',
-      releaseDate: readLocalReleaseDate(metadata.common),
+      title,
+      artist,
+      album,
+      releaseDate,
       // Only persist a real ALBUMARTIST tag. Inventing it from track artist
       // fragmented multi-artist albums in the local library album grid.
-      ...(metadata.common.albumartist ? { albumArtist: metadata.common.albumartist } : {}),
-      genre: extractGenre(metadata.common.genre),
-      duration: Math.round(metadata.format.duration || 0),
+      ...(typeof metadata.common.albumartist === 'string'
+        ? { albumArtist: repairMojibakeText(metadata.common.albumartist) }
+        : {}),
+      genre,
+      duration: Math.round(metadata.format.duration || waveMetadata?.duration || 0),
       cover: embeddedCover ?? baseTrack.cover,
-      format: alacFormat ? 'ALAC' : metadata.format.container,
-      sampleRate: alacFormat?.sampleRate ?? metadata.format.sampleRate,
-      bitrate: metadata.format.bitrate,
-      bitDepth: alacFormat?.bitDepth ?? metadata.format.bitsPerSample,
+      format: alacFormat ? 'ALAC' : metadata.format.container ?? waveMetadata?.codec,
+      sampleRate: alacFormat?.sampleRate ?? metadata.format.sampleRate ?? waveMetadata?.sampleRate,
+      bitrate: metadata.format.bitrate ?? waveMetadata?.bitrate,
+      bitDepth: alacFormat?.bitDepth ?? metadata.format.bitsPerSample ?? waveMetadata?.bitDepth,
       ...replayGainTags
     }
     if (bpm !== undefined) track.bpm = bpm
@@ -661,6 +700,23 @@ async function parseTrack(
     if (cueTracks) return { tracks: cueTracks, metadataRead: true }
     return { tracks: [track], metadataRead: true }
   } catch {
+    if (waveMetadata) {
+      const track: Record<string, unknown> = {
+        ...baseTrack,
+        title: waveMetadata.title ?? fallback.title,
+        artist: waveMetadata.artist ?? fallback.artist,
+        album: waveMetadata.album ?? 'Unknown Album',
+        genre: waveMetadata.genre,
+        releaseDate: readLocalReleaseDate({ year: waveMetadata.year }),
+        duration: Math.round(waveMetadata.duration ?? 0),
+        format: waveMetadata.codec ?? 'WAV',
+        sampleRate: waveMetadata.sampleRate,
+        bitrate: waveMetadata.bitrate,
+        bitDepth: waveMetadata.bitDepth,
+        ...(waveMetadata.trackNumber !== undefined ? { trackNumber: waveMetadata.trackNumber } : {})
+      }
+      return { tracks: [track], metadataRead: true }
+    }
     return { tracks: [baseTrack], metadataRead: false }
   }
 }

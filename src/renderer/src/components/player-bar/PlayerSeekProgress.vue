@@ -105,6 +105,9 @@ function onBlur(): void {
 <template>
   <div
     class="progress-area"
+    :style="{
+      '--te-progress-time-characters': live ? 4 : Math.max(4, formatTime(duration).length)
+    }"
     :class="{ 'is-scrubbing': preview !== null, 'is-keyboard-focus': keyboardFocus }"
   >
     <span class="time-label">{{ live ? 'LIVE' : formatTime(position) }}</span>

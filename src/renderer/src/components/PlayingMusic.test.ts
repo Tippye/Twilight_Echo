@@ -379,28 +379,25 @@ test('player bar artist is a keyboard-accessible navigation button', () => {
   const style = readFileSync(new URL('./player-bar/PlayerBar.css', import.meta.url), 'utf8')
   const app = readFileSync(new URL('../App.vue', import.meta.url), 'utf8')
 
-  assert.match(playerBar, /openArtist: \[\]/)
+  assert.match(playerBar, /openArtist: \[artist: TrackArtistRef\]/)
   assert.match(
     playerBar,
-    /<button[\s\S]*?class="player-artist"[\s\S]*?@click\.stop="onArtistClick"/
+    /<button[\s\S]*?class="player-artist"[\s\S]*?@click\.stop="onArtistClick\(artist\)"/
   )
-  assert.match(playerBar, /emit\('openArtist'\)/)
+  assert.match(playerBar, /emit\('openArtist', artist\)/)
   assert.match(style, /\.player-artist:not\(:disabled\):focus-visible/)
   assert.match(app, /@open-artist="handlePlayerBarArtistClick"/)
-  assert.match(app, /onSelectView\('artists', `artist:\$\{trackArtist\}`\)/)
+  assert.match(app, /onSelectView\('artists', `artist:\$\{artistName\}`\)/)
   assert.match(
     app,
-    /:artist-navigation-request="[\s\S]*?tab === 'home'[\s\S]*?streamingArtistRequest\s*:\s*null/
+    /:metadata-navigation-request="[\s\S]*?tab === streamingMetadataTab[\s\S]*?streamingMetadataRequest\s*:\s*null/
   )
 })
 
 test('player bar artist navigation carries the provider artist id', () => {
   const app = readFileSync(new URL('../App.vue', import.meta.url), 'utf8')
 
-  // 同名歌手只能靠 provider 歌手 id 区分。展示串与曲目 artists 对不上时
-  // getPrimaryStreamingArtistId 返回 undefined，请求才退回按名字搜索。
-  assert.match(app, /getPrimaryStreamingArtistId\(trackArtist, track\.artists\)/)
-  assert.match(app, /\.\.\.\(artistId !== undefined \? \{ artistId \} : \{\}\)/)
+  assert.match(app, /\.\.\.\(artist\.id != null \? \{ artistId: artist\.id \} : \{\}\)/)
 })
 
 test('player bar remounts the progress control for every queue entry', () => {

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AppBackgroundPage } from '../../../shared/appSettings.ts'
-const props = defineProps<{ page: AppBackgroundPage | 'app'; embedded?: boolean }>()
+const props = defineProps<{
+  page: AppBackgroundPage | 'app'
+  embedded?: boolean
+  ambient?: boolean
+}>()
 const style = computed(() =>
   Object.fromEntries(
     [
@@ -26,4 +30,5 @@ const style = computed(() =>
     <div class="app-background-image" />
     <div class="app-background-dim" />
   </div>
+  <div v-if="ambient" class="app-background-ambient" aria-hidden="true" />
 </template>

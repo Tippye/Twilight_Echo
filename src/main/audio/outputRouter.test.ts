@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
-import test from 'node:test'
+import test, { type TestContext } from 'node:test'
 import { AudioEngineManager } from '../audioEngineManager.ts'
 import { createDefaultPlaybackInfo, getAudioOutputOptions } from './audioEngineHelpers.ts'
-import type { AudioEngineConfig, NativeAudioBinding, OutputConfig } from './audioEngineTypes.ts'
+import type {
+  AudioDeviceOption,
+  AudioEngineConfig,
+  NativeAudioBinding,
+  OutputConfig
+} from './audioEngineTypes.ts'
 
 function createHarness(config: AudioEngineConfig) {
   let info = createDefaultPlaybackInfo('wasapi', 'auto', config.exclusiveMode, {
@@ -119,6 +124,121 @@ test('released pause accepts pending route edits without requiring a newly opene
   assert.equal(pending.outputInfo.actualBackend, 'wasapi-exclusive')
   assert.equal(pending.outputBackend, 'wasapi')
   assert.equal(harness.effective().releaseExclusiveOnPause, false)
+})
+
+const previousAsioDevice = 'asio:{11111111-1111-1111-1111-111111111111}'
+const targetAsioDevice = 'asio:{895E25BB-F2E2-4E94-BE88-9D1DCD1C6793}'
+
+function createReleasedAsioHarness(
+  context: TestContext,
+  service: boolean,
+  ignoreDeviceChange = false
+) {
+  const platform = Object.getOwnPropertyDescriptor(process, 'platform')!
+  Object.defineProperty(process, 'platform', { ...platform, value: 'win32' })
+  context.after(() => Object.defineProperty(process, 'platform', platform))
+  const devices: AudioDeviceOption[] = [previousAsioDevice, targetAsioDevice].map((id) => ({
+    id,
+    label: 'FiiO ASIO Driver',
+    name: 'FiiO ASIO Driver',
+    backend: 'asio',
+    isDefault: false
+  }))
+  const info = createDefaultPlaybackInfo('asio', previousAsioDevice, true, {
+    preferredBufferSize: 0,
+    routingMode: 'auto'
+  })
+  Object.assign(info, { state: 'paused', source: 'track.flac', position: 33, volume: 0.45 })
+  Object.assign(info.outputInfo, {
+    deviceName: 'FiiO ASIO Driver',
+    actualDeviceName: 'FiiO ASIO Driver',
+    actualDeviceId: service ? previousAsioDevice : '',
+    outputReleased: true,
+    exclusive: false,
+    accessMode: 'released'
+  })
+  let revision = 0
+  let playbackCalls = 0
+  const native = {
+    GetPlaybackInfo: () => JSON.stringify(info),
+    SetOutputBackend: (backend: string) => {
+      info.outputBackend = backend
+      info.outputInfo.backend = backend
+    },
+    SetOutputDevice: (device: string) => {
+      if (!ignoreDeviceChange) info.outputDevice = device
+    },
+    SetOutputConfig: () => {},
+    SetVolume: (volume: number) => {
+      info.volume = volume
+    },
+    Play: () => playbackCalls++,
+    Pause: () => playbackCalls++,
+    Stop: () => playbackCalls++,
+    ApplyDspState: (next: number) => {
+      revision = next
+    },
+    GetDspGraphStatus: () => JSON.stringify({ revision, nodes: [], compileState: 'ready' }),
+    GetLastError: () => ''
+  } as unknown as NativeAudioBinding
+  if (service) {
+    native.callAsync = async (method, args) =>
+      (native[method as keyof NativeAudioBinding] as (...args: unknown[]) => unknown)(...args)
+  }
+  const manager = new AudioEngineManager(
+    { audioOutput: 'asio', audioDevice: previousAsioDevice, exclusiveMode: true, volume: 0.45 },
+    {
+      nativeBinding: native,
+      deviceOptionsProvider: () => devices,
+      scheduler: {
+        now: () => 1000,
+        setInterval: () => ({}) as NodeJS.Timeout,
+        clearInterval: () => {},
+        setImmediate: (callback) => callback()
+      }
+    }
+  )
+  return { manager, playbackCalls: () => playbackCalls }
+}
+
+for (const service of [false, true]) {
+  test(`released ASIO device switch preserves the requested id with duplicate friendly names (${service ? 'service' : 'direct'})`, async (context) => {
+    const harness = createReleasedAsioHarness(context, service)
+    await harness.manager.setExclusiveAutoRelease(true)
+
+    const route = await harness.manager.setAudioDevice(targetAsioDevice)
+    const info = await harness.manager.getPlaybackInfo()
+
+    assert.equal(route.device, targetAsioDevice)
+    assert.equal(info.outputDevice, targetAsioDevice)
+    assert.equal(info.outputInfo.deviceName, 'FiiO ASIO Driver')
+    assert.equal(info.outputInfo.actualDeviceName, 'FiiO ASIO Driver')
+    // Released output retains the old runtime facts until the user resumes.
+    assert.equal(info.outputInfo.actualDeviceId, service ? previousAsioDevice : '')
+    assert.equal(info.outputInfo.outputReleased, true)
+    assert.equal(info.state, 'paused')
+    assert.equal(info.source, 'track.flac')
+    assert.equal(info.position, 33)
+    assert.equal(info.volume, 0.45)
+    assert.equal(harness.playbackCalls(), 0)
+  })
+}
+
+test('released ASIO switch still rejects an unacknowledged device id and rolls back', async (context) => {
+  const harness = createReleasedAsioHarness(context, true, true)
+  await harness.manager.setExclusiveAutoRelease(true)
+
+  await assert.rejects(harness.manager.setAudioDevice(targetAsioDevice), /did not preserve/)
+
+  const route = await harness.manager.getAudioOutputState()
+  const info = await harness.manager.getPlaybackInfo()
+  assert.equal(route.device, previousAsioDevice)
+  assert.equal(info.outputDevice, previousAsioDevice)
+  assert.equal(info.state, 'paused')
+  assert.equal(info.source, 'track.flac')
+  assert.equal(info.position, 33)
+  assert.equal(info.volume, 0.45)
+  assert.equal(harness.playbackCalls(), 0)
 })
 
 test('failed service resume is returned once without a second toggle through the synchronous binding', async () => {

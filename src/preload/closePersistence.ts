@@ -1,12 +1,20 @@
-import type { RendererClosePersistenceOutcome } from '../shared/closePersistence.ts'
+import type {
+  PlaybackSessionSaveOptions,
+  RendererClosePersistenceOutcome
+} from '../shared/closePersistence.ts'
 
-export type ClosePersistenceCallback = () => Promise<void> | void
+export type ClosePersistenceCallback = (
+  options?: PlaybackSessionSaveOptions
+) => Promise<void> | void
 
 export async function collectClosePersistenceOutcome(
-  callbacks: Iterable<ClosePersistenceCallback>
+  callbacks: Iterable<ClosePersistenceCallback>,
+  options: PlaybackSessionSaveOptions = {}
 ): Promise<RendererClosePersistenceOutcome> {
   try {
-    await Promise.all([...callbacks].map((callback) => Promise.resolve().then(callback)))
+    await Promise.all(
+      [...callbacks].map((callback) => Promise.resolve().then(() => callback(options)))
+    )
     return { status: 'saved' }
   } catch (error) {
     return {

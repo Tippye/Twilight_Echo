@@ -15,6 +15,7 @@ function readDataIpcSources(): string {
     '../ipc/coverIpc.ts',
     '../ipc/lyricsIpc.ts',
     '../ipc/persistenceIpc.ts',
+    '../persistence/playbackSessionStore.ts',
     '../ipc/persistenceReporting.ts'
   ]
     .map((rel) => readFileSync(new URL(rel, import.meta.url), 'utf8'))

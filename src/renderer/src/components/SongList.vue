@@ -52,6 +52,7 @@ import {
   collectionLetterAtScroll,
   firstCollectionIndexForLetter,
   LibraryCollectionViewPreferences,
+  resolveLibraryArtistTracks,
   type LibraryCollectionSort,
   type LibraryCollectionViewState
 } from '../utils/libraryCollectionView.ts'
@@ -123,6 +124,7 @@ const {
   removeTrack,
   removeLocalTracks,
   restoreExcludedTracks,
+  clearExcludedTracks,
   applyLocalTagWrite,
   startFullLibraryScan,
   isScanning,
@@ -229,7 +231,7 @@ const baseDisplayTracks = computed(() => {
   if (props.filter) {
     if (props.filter.startsWith('artist:')) {
       const name = props.filter.slice(7)
-      return artists.value.find((artist) => artist.name === name)?.tracks ?? []
+      return resolveLibraryArtistTracks(tracks.value, name)
     }
     if (props.filter.startsWith('album:')) {
       const id = props.filter.slice(6)
@@ -574,7 +576,7 @@ const unifiedSearchStatusText = computed(() => {
   return `找到 ${resultCount} 首，已合并本地库和 ${providerCount} 个在线音源`
 })
 
-const showDetailBackButton = computed(() => {
+const isDetailView = computed(() => {
   // Top-level views (including recent / all songs) are reached from the side
   // menu; a back action that only clears the filter is a no-op there.
   return !!props.filter
@@ -584,7 +586,7 @@ function handleDetailBack(): void {
   if (props.returnFromDetail) props.returnFromDetail()
   else emit('selectView', props.category, null)
 }
-useBackHandler(showDetailBackButton, handleDetailBack)
+useBackHandler(isDetailView, handleDetailBack)
 
 const showGrid = computed(() => {
   if (props.category === 'allSongs' || props.category === 'recent') return false
@@ -599,6 +601,14 @@ const showTable = computed(() => {
 const isCollectionGrid = computed(
   () => showGrid.value && (props.category === 'artists' || props.category === 'albums')
 )
+
+const currentTrackIndex = computed(() => {
+  const trackId = currentTrack.value?.id
+  if (!trackId || !showTable.value) return -1
+  return displayTracks.value.findIndex((track) => track.id === trackId)
+})
+
+const canLocateCurrentTrack = computed(() => currentTrackIndex.value >= 0)
 const collectionViewPreferences = new LibraryCollectionViewPreferences()
 const collectionViewState = ref<LibraryCollectionViewState>(
   collectionViewPreferences.read(props.category)
@@ -994,6 +1004,7 @@ const {
   onScroll,
   updateViewportHeight,
   restoreScrollAndMeasure,
+  scrollToTrack,
   scrollTop,
   viewportHeight
 } = useSongListVirtualScroll({
@@ -1204,6 +1215,29 @@ async function handleRestoreExclusions(filePaths: string[]): Promise<void> {
     if (excludedTracks.value.length === 0) showExcludedTracksDialog.value = false
   } catch (error) {
     repairMessage.value = error instanceof Error ? error.message : '恢复排除项失败'
+  } finally {
+    exclusionRestorePending.value = false
+  }
+}
+
+async function handleClearExclusions(): Promise<void> {
+  if (exclusionRestorePending.value || excludedTracks.value.length === 0) return
+  if (
+    !window.confirm(
+      `确定清除这 ${excludedTracks.value.length} 条已移除记录吗？文件不会被删除；清除后可重新扫描并重新加入音乐库。`
+    )
+  ) {
+    return
+  }
+  exclusionRestorePending.value = true
+  try {
+    const clearedCount = await clearExcludedTracks(
+      excludedTracks.value.map((item) => item.filePath)
+    )
+    repairMessage.value = `已清除 ${clearedCount} 条移除记录`
+    if (excludedTracks.value.length === 0) showExcludedTracksDialog.value = false
+  } catch (error) {
+    repairMessage.value = error instanceof Error ? error.message : '清除移除记录失败'
   } finally {
     exclusionRestorePending.value = false
   }
@@ -1498,15 +1532,27 @@ function finishViewSwitchAndRestoreScroll(): void {
   finishViewSwitch()
   restoreScrollAndMeasure()
 }
+
+function locateCurrentTrack(): void {
+  const index = currentTrackIndex.value
+  if (index < 0) return
+  scrollToTrack(index)
+}
 </script>
 
 <template>
   <div
     ref="containerRef"
     class="song-list"
-    :class="{ 'has-player': props.hasPlayer, 'is-switching': isSwitching }"
+    :class="{
+      'has-player': props.hasPlayer,
+      'is-switching': isSwitching,
+      'playlist-library': category === 'playlists' && showGrid
+    }"
     :style="{ height: '100vh' }"
+    :data-te-locate-current="canLocateCurrentTrack ? 'true' : undefined"
     @scroll="onSongListScroll"
+    @te-locate-current="locateCurrentTrack"
   >
     <Teleport to="body">
       <NativeDialogTransition>
@@ -1565,7 +1611,11 @@ function finishViewSwitchAndRestoreScroll(): void {
                   v-model="searchQuery"
                   type="text"
                   class="search-input"
-                  placeholder="搜索歌曲、歌手、专辑或文件夹"
+                  :placeholder="
+                    category === 'playlists' && showGrid
+                      ? '搜索歌单'
+                      : '搜索歌曲、歌手、专辑或文件夹'
+                  "
                   @focus="searchInputFocused = true"
                   @blur="searchInputFocused = false"
                 />
@@ -1737,7 +1787,7 @@ function finishViewSwitchAndRestoreScroll(): void {
                   >
                     <i
                       :class="playlist.isDefault ? 'pi pi-heart' : 'pi pi-list'"
-                      style="font-size: calc(var(--te-font-size-body, 14px) * 32 / 14); color: #ccc"
+                      class="playlist-placeholder-icon"
                     ></i>
                   </div>
                   <div class="playlist-name">{{ playlist.name }}</div>
@@ -1745,18 +1795,22 @@ function finishViewSwitchAndRestoreScroll(): void {
                   <div v-if="playlistSourceSummaryLabel(playlist)" class="playlist-source-summary">
                     {{ playlistSourceSummaryLabel(playlist) }}
                   </div>
-                  <div
+                  <button
                     v-if="!playlist.isDefault"
+                    type="button"
                     class="playlist-delete-btn"
                     data-te-interactive
                     title="删除歌单"
-                    @click="handleDeletePlaylist(playlist.id || '', $event)"
+                    :aria-label="`删除歌单 ${playlist.name}`"
+                    @pointerdown.stop
+                    @keydown.stop
+                    @click.stop="handleDeletePlaylist(playlist.id || '', $event)"
                   >
                     <i
                       class="pi pi-trash"
                       style="font-size: calc(var(--te-font-size-body, 14px) * 12 / 14)"
                     ></i>
-                  </div>
+                  </button>
                 </div>
               </template>
               <template v-if="category === 'folders'">
@@ -1811,18 +1865,8 @@ function finishViewSwitchAndRestoreScroll(): void {
         </template>
         <template v-else>
           <div class="song-list-header" :class="{ 'album-detail-toolbar': !!currentAlbum }">
-            <div class="header-left">
-              <button
-                v-if="showDetailBackButton"
-                type="button"
-                class="detail-back-button"
-                data-te-back-button="pill"
-                @click="handleDetailBack"
-              >
-                <i class="pi pi-arrow-left" aria-hidden="true"></i>
-                <span>返回</span>
-              </button>
-              <div v-if="!currentAlbum" class="title-group">
+            <div v-if="!currentAlbum" class="header-left">
+              <div class="title-group">
                 <div class="title-line">
                   <h2 class="song-list-title">{{ viewTitle }}</h2>
                   <span v-if="viewStatsText" class="view-stats">{{ viewStatsText }}</span>
@@ -1831,6 +1875,28 @@ function finishViewSwitchAndRestoreScroll(): void {
                 <span v-else-if="libraryRepairStatusText" class="library-repair-status">
                   {{ libraryRepairStatusText }}
                 </span>
+                <div class="library-play-actions" aria-label="播放控制">
+                  <button
+                    type="button"
+                    class="btn-play-all"
+                    title="播放全部"
+                    :disabled="displayTracks.length === 0"
+                    @click="playAllTracks"
+                  >
+                    <PlaybackIcon name="play" />
+                    <span>播放全部</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-shuffle-all"
+                    title="随机播放"
+                    :disabled="displayTracks.length === 0"
+                    @click="shufflePlayTracks"
+                  >
+                    <i class="ph ph-shuffle"></i>
+                    <span>随机播放</span>
+                  </button>
+                </div>
               </div>
             </div>
             <div class="header-right">
@@ -2184,28 +2250,6 @@ function finishViewSwitchAndRestoreScroll(): void {
             @play="playAllTracks"
             @shuffle="shufflePlayTracks"
           />
-          <div v-if="!currentAlbum" class="library-play-actions" aria-label="播放控制">
-            <button
-              type="button"
-              class="btn-play-all"
-              title="播放全部"
-              :disabled="displayTracks.length === 0"
-              @click="playAllTracks"
-            >
-              <PlaybackIcon name="play" />
-              <span>播放全部</span>
-            </button>
-            <button
-              type="button"
-              class="btn-shuffle-all"
-              title="随机播放"
-              :disabled="displayTracks.length === 0"
-              @click="shufflePlayTracks"
-            >
-              <i class="ph ph-shuffle"></i>
-              <span>随机播放</span>
-            </button>
-          </div>
           <div
             v-if="showUnifiedSearchStatus"
             class="unified-search-status"
@@ -2387,6 +2431,7 @@ function finishViewSwitchAndRestoreScroll(): void {
                     'playback-unsupported': !isTrackPlaybackSupported(track),
                     'playlist-draggable': isPlaylistDetail
                   }"
+                  :aria-current="currentTrack?.id === track.id ? 'true' : undefined"
                   :style="{ height: rowHeight - 4 + 'px', display: 'flex' }"
                   :draggable="isPlaylistDetail"
                   :aria-disabled="!isTrackPlaybackSupported(track) || undefined"
@@ -2426,16 +2471,12 @@ function finishViewSwitchAndRestoreScroll(): void {
                         </span>
                       </label>
                       <CoverImg
-                        v-if="track.coverSmall || track.cover"
                         :cover="track.coverSmall || track.cover"
                         :cover-source="track.coverSmallSource || track.coverSource"
                         :identity="track.id"
                         class="cover-img"
                         alt="cover"
                       />
-                      <div v-else class="cover-placeholder">
-                        <ThemeIcon icon-slot="library.empty" />
-                      </div>
                     </div>
                   </td>
                   <td class="col-info">
@@ -2907,6 +2948,13 @@ function finishViewSwitchAndRestoreScroll(): void {
                 @click="handleRestoreExclusions(excludedTracks.map((item) => item.filePath))"
               >
                 全部恢复
+              </button>
+              <button
+                class="dialog-btn danger"
+                :disabled="excludedTracks.length === 0 || exclusionRestorePending"
+                @click="handleClearExclusions"
+              >
+                清除记录
               </button>
             </div>
           </div>

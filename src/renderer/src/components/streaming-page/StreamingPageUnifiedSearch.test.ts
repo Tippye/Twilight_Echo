@@ -283,7 +283,7 @@ test('streaming detail, social, and HiFi surfaces compile working dark-theme sel
 })
 
 test('streaming page resolves player-bar artist requests through the track provider', () => {
-  assert.match(source, /artistNavigationRequest\?: StreamingArtistNavigationRequest \| null/)
+  assert.match(source, /metadataNavigationRequest\?: StreamingMetadataNavigationRequest \| null/)
   assert.match(source, /mediaProviders\.searchArtists\(providerId, artistName, 8, 0\)/)
   assert.match(source, /provider\.fetchArtistTopSongs\(artist\.id\)/)
   assert.match(
@@ -299,7 +299,7 @@ test('streaming page resolves player-bar artist requests through the track provi
 test('same-named artists are separated by provider artist id, never by search order', () => {
   // 带歌手 id 时选人只认 id，搜索结果仅用于补 picUrl 等展示字段。
   assert.match(source, /findStreamingArtistById\(request\.artistId, searchResult\.items\)/)
-  assert.match(source, /openArtist\(matched \?\? \{ id: request\.artistId/)
+  assert.match(source, /openArtist\(\s*matched \?\? \{ id: request\.artistId/)
   // 没有 id 才回退名字匹配，且要先拿到全部同名候选，由页面自己消歧并告知用户。
   assert.match(source, /matchStreamingArtistsByName\(artistName, searchResult\?\.items \?\? \[\]\)/)
   assert.match(source, /candidates\.length > 1/)
@@ -371,6 +371,7 @@ function createTrackMetadataNavigationHarness() {
     },
     detailStack,
     detailLoadToken: 0,
+    playbackNavigationSyncToken: null,
     streamingTransitionName: ref(''),
     streamingContentRef: ref(null),
     applyDetailState() {},
@@ -780,7 +781,7 @@ test('external provider home removes the redundant provider masthead', () => {
 })
 
 test('private FM and radar use a session-fenced queue stream in shuffle mode', () => {
-  assert.match(source, /const PERSONALIZED_STREAM_QUEUE_THRESHOLD = 6/)
+  assert.match(source, /playbackStore\.queue\.value\.length - playbackStore\.queueIndex\.value > 3/)
   assert.match(source, /async function loadMorePersonalizedStream/)
   assert.match(source, /session: PersonalizedStreamSession \| null = null/)
   assert.match(source, /let additions = appendUniqueTracks\(existing, incoming\)/)

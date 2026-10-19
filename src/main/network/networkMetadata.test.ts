@@ -137,3 +137,16 @@ test('saveEntryCover falls back to jpg and skips empty covers', async () => {
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+test('saveEntryCover refuses path-like entry ids', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'network-metadata-'))
+  try {
+    const coverRoot = join(dir, 'cover')
+    assert.equal(await saveEntryCover('../evil', TINY_PNG, 'image/png', coverRoot), undefined)
+    assert.equal(await saveEntryCover('a/b', TINY_PNG, 'image/png', coverRoot), undefined)
+    assert.equal(await saveEntryCover('', TINY_PNG, 'image/png', coverRoot), undefined)
+    assert.equal(await saveEntryCover('e'.repeat(129), TINY_PNG, 'image/png', coverRoot), undefined)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})

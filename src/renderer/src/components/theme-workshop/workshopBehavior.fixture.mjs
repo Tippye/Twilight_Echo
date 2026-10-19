@@ -168,16 +168,33 @@ window.runWorkshopTests = async () => {
   const overlay = document.querySelector('.workshop-canvas-overlay')
   const frame = document.querySelector('iframe')
   const decoration = frame.contentDocument.querySelector('.app-shell > .workshop-decoration > div')
-  await settle(() => decoration?.getBoundingClientRect().width > 0, 'Layer has no visible bounds')
+  await settle(
+    () =>
+      decoration?.getBoundingClientRect().width > 0 &&
+      decoration?.getBoundingClientRect().height > 0,
+    'Layer has no visible bounds'
+  )
   const rect = decoration.getBoundingClientRect(),
     root = overlay.getBoundingClientRect(),
     zoom = root.width / 1180
   const x = root.left + (rect.left + rect.width / 2) * zoom,
     y = root.top + (rect.top + rect.height / 2) * zoom
+  expect(
+    document.elementFromPoint(x, y)?.closest('.workshop-canvas-overlay') === overlay,
+    'Layer pointer is outside editable canvas: ' +
+      JSON.stringify({
+        x,
+        y,
+        root: root.toJSON(),
+        layer: rect.toJSON(),
+        hit: document.elementFromPoint(x, y)?.outerHTML.slice(0, 240)
+      })
+  )
   const pointer = async (type, dx = 0, dy = 0) => {
     await nativePointer({
       type: { pointerdown: 'mouseDown', pointermove: 'mouseMove', pointerup: 'mouseUp' }[type],
       button: 'left',
+      modifiers: type === 'pointerup' ? [] : ['leftButtonDown'],
       clickCount: 1,
       x: Math.round(x + dx),
       y: Math.round(y + dy)

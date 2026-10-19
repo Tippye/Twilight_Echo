@@ -81,6 +81,7 @@ export class DspOrchestrator {
   dspGraphAppliedRevision = 0
   dspGraphApplyState: NonNullable<DspGraphStatus['applyState']> = 'idle'
   dspGraphApplyError = ''
+  private latestDspApplication: Promise<DspGraphStatus> | null = null
   lastNativeDspGraphStatus: DspGraphStatus | null = null
   nativeConvolverIrPath: string | null = null
   nativeDspPluginChainJson = ''
@@ -585,7 +586,23 @@ export class DspOrchestrator {
     }
   }
 
-  async applyNativeDspGraph(
+  applyNativeDspGraph(context: string, auditionGraph?: DspGraphConfig): Promise<DspGraphStatus> {
+    const application = this.submitNativeDspGraph(context, auditionGraph)
+    this.latestDspApplication = application
+    return application
+  }
+
+  async applyLatestNativeDspGraph(context: string): Promise<DspGraphStatus> {
+    let application = this.applyNativeDspGraph(context)
+    for (;;) {
+      const status = await application
+      if (application === this.latestDspApplication) return status
+      // Recovery must include settings submitted while its graph was awaiting ACK.
+      application = this.latestDspApplication!
+    }
+  }
+
+  private async submitNativeDspGraph(
     context: string,
     auditionGraph?: DspGraphConfig
   ): Promise<DspGraphStatus> {
@@ -630,19 +647,31 @@ export class DspOrchestrator {
         throw new Error(status.compileError || `DSP graph revision ${revision} failed to compile`)
       }
       this.observeNativeDspGraphStatus(status)
-      this.lastNativeError = ''
-      return this.decorateDspGraphStatus(status)
+      if (revision === this.dspGraphRevision) this.lastNativeError = ''
+      // This result acknowledges this submission. The UI's aggregate status
+      // may still be pending for a newer overlapping submission.
+      return {
+        ...status,
+        requestedRevision: revision,
+        appliedRevision: status.revision,
+        applyState: 'applied',
+        applyError: ''
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       if (revision === this.dspGraphRevision) {
         this.dspGraphApplyState = 'failed'
         this.dspGraphApplyError = message
       }
-      this.lastNativeError = message
+      if (revision === this.dspGraphRevision) this.lastNativeError = message
       console.warn(`原生音频引擎${context}失败：`, message)
-      return this.decorateDspGraphStatus(
-        this.lastNativeDspGraphStatus ?? this.createDspGraphStatusFallback()
-      )
+      return {
+        ...(this.lastNativeDspGraphStatus ?? this.createDspGraphStatusFallback()),
+        requestedRevision: revision,
+        appliedRevision: this.dspGraphAppliedRevision,
+        applyState: 'failed',
+        applyError: message
+      }
     }
   }
 

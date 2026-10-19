@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, shallowRef, watch } from 'vue'
 import {
   copyWorkshopDraft,
   type WorkshopProject,
@@ -30,28 +30,49 @@ const references = computed(
     )
 )
 let generation = 0
+const pendingImages = new Set<HTMLImageElement>()
+function releaseImage(image: HTMLImageElement): void {
+  pendingImages.delete(image)
+  image.onload = null
+  image.onerror = null
+  image.src = ''
+}
+function cancelPendingImages(): void {
+  for (const image of pendingImages) releaseImage(image)
+}
 watch(
   () => props.project.assets,
   (assets) => {
     const version = ++generation
+    cancelPendingImages()
     for (const asset of assets ?? []) {
       if (asset.type !== 'image' || sizes.value[asset.id]) continue
       const image = new Image()
+      pendingImages.add(image)
       image.onload = () => {
-        if (version === generation)
-          sizes.value = {
-            ...sizes.value,
-            [asset.id]: `${image.naturalWidth} × ${image.naturalHeight}`
-          }
+        try {
+          if (version === generation)
+            sizes.value = {
+              ...sizes.value,
+              [asset.id]: `${image.naturalWidth} × ${image.naturalHeight}`
+            }
+        } finally {
+          releaseImage(image)
+        }
       }
       image.onerror = () => {
-        if (version === generation) sizes.value = { ...sizes.value, [asset.id]: '无法解码' }
+        try {
+          if (version === generation) sizes.value = { ...sizes.value, [asset.id]: '无法解码' }
+        } finally {
+          releaseImage(image)
+        }
       }
       image.src = asset.dataUrl
     }
   },
   { immediate: true }
 )
+onBeforeUnmount(cancelPendingImages)
 function update(asset: WorkshopAsset, key: 'name' | 'license' | 'source', value: string): void {
   const next = copyWorkshopDraft(props.project)
   next.assets!.find((item) => item.id === asset.id)![key] = value
@@ -115,7 +136,13 @@ function replace(asset: WorkshopAsset): void {
     :data-workshop-asset="asset.id"
     tabindex="-1"
   >
-    <img v-if="asset.type === 'image'" :src="asset.dataUrl" :alt="asset.name" />
+    <img
+      v-if="asset.type === 'image'"
+      :src="asset.dataUrl"
+      :alt="asset.name"
+      loading="lazy"
+      decoding="async"
+    />
     <h3>{{ asset.name }}</h3>
     <small
       >{{ sizes[asset.id] ?? (asset.type === 'font' ? 'WOFF2' : '读取尺寸中…') }} ·

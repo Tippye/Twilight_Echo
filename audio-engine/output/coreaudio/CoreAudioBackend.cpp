@@ -145,7 +145,7 @@ struct CoreAudioBackend::Impl {
       }
     };
 
-    RenderCallback renderCallback;
+    const RenderCallback* renderCallback = nullptr;
     int channels = 0;
     {
       std::unique_lock lock(mutex, std::try_to_lock);
@@ -153,7 +153,7 @@ struct CoreAudioBackend::Impl {
         fillOutputSilence();
         return 0;
       }
-      renderCallback = callback;
+      renderCallback = &callback;
       channels = std::max(1, outputFormat.channelCount);
     }
 
@@ -165,7 +165,7 @@ struct CoreAudioBackend::Impl {
       auto* out = reinterpret_cast<float*>(buffer.writableData());
       const size_t writableFrames = std::min(frames, buffer.byteSize() / sizeof(float) / static_cast<size_t>(channels));
       const size_t rendered =
-          coreaudio::renderFloatCallbackWithTailSilence(out, writableFrames, channels, renderCallback);
+          coreaudio::renderFloatCallbackWithTailSilence(out, writableFrames, channels, *renderCallback);
       if (rendered < frames || writableFrames < frames) {
         std::unique_lock lock(mutex, std::try_to_lock);
         if (lock.owns_lock()) {
@@ -186,7 +186,7 @@ struct CoreAudioBackend::Impl {
 
     const size_t scratchFrames = std::min(frames, renderScratch.size() / static_cast<size_t>(channels));
     const size_t rendered =
-        coreaudio::renderFloatCallbackWithTailSilence(renderScratch.data(), scratchFrames, channels, renderCallback);
+        coreaudio::renderFloatCallbackWithTailSilence(renderScratch.data(), scratchFrames, channels, *renderCallback);
     if (rendered < frames || scratchFrames < frames) {
       std::unique_lock lock(mutex, std::try_to_lock);
       if (lock.owns_lock()) {
@@ -202,14 +202,7 @@ struct CoreAudioBackend::Impl {
       }
     }
 
-    for (size_t index = 0; index < ioData->bufferCount(); ++index) {
-      auto& buffer = ioData->bufferAt(index);
-      if (buffer.hasData()) {
-        const size_t bytes = std::min(buffer.byteSize(), renderScratch.size() * sizeof(float));
-        std::memcpy(buffer.writableData(), renderScratch.data(), bytes);
-        buffer.dataByteSize = static_cast<uint32_t>(bytes);
-      }
-    }
+    coreaudio::scatterFloatOutput(renderScratch.data(), scratchFrames, channels, *ioData);
     return rendered;
   }
 };
@@ -273,6 +266,9 @@ bool CoreAudioBackend::open(const std::string& deviceId, const AudioFormat& requ
     }
   }
 
+  const double confirmedRate = impl_->host->getNominalSampleRate(selectedDevice);
+  if (confirmedRate > 0.0) actualFormat.sampleRate = static_cast<int>(confirmedRate + 0.5);
+
   if (!impl_->host->newAudioUnit(&impl_->unit, error)) {
     impl_->deviceId = 0;
     return false;
@@ -317,7 +313,7 @@ bool CoreAudioBackend::open(const std::string& deviceId, const AudioFormat& requ
 
   const uint32_t bufferFrames =
       resolvedCoreAudioBufferFrames(*impl_->host, selectedDevice, impl_->outputConfig.preferredBufferSize);
-  impl_->outputFormat = actualFormat;
+  impl_->outputFormat = audioFormatFromStreamDescription(outputFormat);
   impl_->outputFormat.sampleRate = actualFormat.sampleRate;
   impl_->outputFormat.channelCount = channels;
   impl_->outputFormat.bitDepth = effectivePcmBitDepth(impl_->outputFormat);

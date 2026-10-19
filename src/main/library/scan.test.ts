@@ -8,6 +8,7 @@ import type { LocalMusicLibraryDocument } from '../../shared/localLibrary.ts'
 const {
   assertMusicLibraryRevision,
   beginLibraryPathMutation,
+  clearLibraryExclusions,
   createMusicLibraryDocument,
   isActiveLibraryPathExcluded,
   isLibraryPathMutationInProgress,
@@ -77,10 +78,17 @@ test('local library scan persists trackNumber and discNumber from common tags', 
 test('local library scan only stores albumArtist from a real ALBUMARTIST tag', () => {
   const serviceSource = readFileSync(new URL('./libraryScanService.ts', import.meta.url), 'utf8')
 
-  assert.match(
-    serviceSource,
-    /\.\.\.\(metadata\.common\.albumartist \? \{ albumArtist: metadata\.common\.albumartist \} : \{\}\)/
-  )
+  const field = serviceSource.match(
+    /\.\.\.\((?:typeof\s+)?metadata\.common\.albumartist[\s\S]*?:\s*\{\}\)/
+  )?.[0]
+  assert.ok(field, 'the scanner must conditionally persist the ALBUMARTIST tag')
+  const readField = new Function('metadata', 'repairMojibakeText', `return ({${field}})`)
+  const normalize = (value: string): string => value.trim()
+  assert.deepEqual(readField({ common: {} }, normalize), {})
+  assert.deepEqual(readField({ common: { artist: 'Track Artist' } }, normalize), {})
+  assert.deepEqual(readField({ common: { albumartist: 'Album Artist' } }, normalize), {
+    albumArtist: 'Album Artist'
+  })
   assert.doesNotMatch(
     serviceSource,
     /albumArtist:\s*metadata\.common\.albumartist\s*\|\|\s*metadata\.common\.artist/
@@ -272,6 +280,27 @@ test('managed exclusions can be restored without dropping unrelated entries', ()
   assert.deepEqual(restored.restoredFilePaths, [firstPath])
   assert.deepEqual(
     restored.document.exclusions.map((item) => item.filePath),
+    [secondPath]
+  )
+})
+
+test('managed exclusions can be cleared without restoring tracks', () => {
+  const firstPath = join(tmpdir(), 'Twilight Clear First.flac')
+  const secondPath = join(tmpdir(), 'Twilight Clear Second.flac')
+  const document = createDocument([], 2)
+  document.exclusions = [firstPath, secondPath].map((filePath) => ({
+    filePath,
+    title: filePath,
+    artist: '',
+    excludedAt: '2026-01-01T00:00:00.000Z'
+  }))
+
+  const cleared = clearLibraryExclusions(document, [firstPath])
+
+  assert.deepEqual(cleared.clearedFilePaths, [firstPath])
+  assert.deepEqual(cleared.document.tracks, [])
+  assert.deepEqual(
+    cleared.document.exclusions.map((item) => item.filePath),
     [secondPath]
   )
 })

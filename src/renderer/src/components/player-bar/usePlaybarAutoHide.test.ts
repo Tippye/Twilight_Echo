@@ -130,12 +130,21 @@ function createHarness(options: {
   }
 }
 
-test('enabling auto-hide tucks the bar away immediately', () => {
-  const autoHide = ref(true)
-  const harness = createHarness({ autoHide })
-  assert.equal(harness.revealed(), false)
-  assert.ok(harness.listenerCount() > 0, 'listeners attach while auto-hide is on')
-  harness.dispose()
+test('auto-hide shows the bar on load before the idle delay expires', () => {
+  mock.timers.enable({ apis: ['setTimeout'] })
+  try {
+    const autoHide = ref(true)
+    const harness = createHarness({ autoHide, hideDelayMs: 900 })
+    assert.equal(harness.revealed(), true)
+    assert.ok(harness.listenerCount() > 0, 'listeners attach while auto-hide is on')
+    mock.timers.tick(899)
+    assert.equal(harness.revealed(), true)
+    mock.timers.tick(1)
+    assert.equal(harness.revealed(), false)
+    harness.dispose()
+  } finally {
+    mock.timers.reset()
+  }
 })
 
 test('disabling auto-hide pins the bar open and detaches listeners', async () => {
@@ -173,7 +182,7 @@ test('moving outside the bottom band does not restart the hide countdown', () =>
   try {
     const harness = createHarness({ autoHide: ref(true), hideDelayMs: 500 })
     harness.movePointer(200)
-    assert.equal(harness.revealed(), false)
+    assert.equal(harness.revealed(), true, 'load reveal remains until the idle delay')
     harness.movePointer(790)
     harness.movePointer(200)
     for (let index = 0; index < 5; index++) {
@@ -227,15 +236,21 @@ test('pointer focus does not keep the bar open after the pointer leaves', () => 
 })
 
 test('pointer moves are ignored while the tab is hidden', () => {
-  const autoHide = ref(true)
-  const harness = createHarness({ autoHide })
-  harness.setHidden(true)
-  harness.movePointer(790)
-  assert.equal(harness.revealed(), false, 'a background window must not animate the bar')
-  harness.setHidden(false)
-  harness.movePointer(790)
-  assert.equal(harness.revealed(), true)
-  harness.dispose()
+  mock.timers.enable({ apis: ['setTimeout'] })
+  try {
+    const autoHide = ref(true)
+    const harness = createHarness({ autoHide })
+    mock.timers.tick(900)
+    harness.setHidden(true)
+    harness.movePointer(790)
+    assert.equal(harness.revealed(), false, 'a background window must not animate the bar')
+    harness.setHidden(false)
+    harness.movePointer(790)
+    assert.equal(harness.revealed(), true)
+    harness.dispose()
+  } finally {
+    mock.timers.reset()
+  }
 })
 
 test('an open floating panel holds the bar open past the delay', () => {
@@ -336,6 +351,7 @@ test('flashReveal shows the bar for one delay window, and only while auto-hide i
   try {
     const autoHide = ref(true)
     const harness = createHarness({ autoHide, hideDelayMs: 400 })
+    mock.timers.tick(400)
     assert.equal(harness.revealed(), false)
     harness.hook.flashReveal()
     assert.equal(harness.revealed(), true, 'a track change announces itself')

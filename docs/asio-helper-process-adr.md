@@ -1,7 +1,7 @@
 # ASIO helper process isolation
 
 - **Scope**: Windows x64 ASIO compatibility backend
-- **Protocol revision**: 1
+- **Protocol revision**: 4
 
 ## Context
 
@@ -75,22 +75,33 @@ and stores, and `outputReady`. It does not allocate, lock, wait on an event, iss
 touch disk or network, or call Electron IPC. If the next generation is not ready, it writes silence
 and increments the shared underrun counter instead of reading a buffer being modified.
 
-PCM silence is zero. Native DSD silence uses the channel format's idle byte. The parent explicitly
-commits the number of frames it rendered, which preserves the existing conservative DSD buffer-unit
-probe without guessing whether a driver reports bytes or one-bit samples.
+PCM silence is zero. Native DSD silence uses the channel format's idle byte. The parent commits the
+number of packed source frames it rendered. Revision 4 also carries eight-byte PCM containers,
+post-create rate/latency/startup facts, an output-channel start, and monotonic driver callback
+timestamps. The helper publishes the approved render capacity; every copy must match the committed
+frame count and stay inside that capacity and the shared stride. Short commits fill the remaining
+tail with idle.
+
+DSD unit classification runs at the actual driver callback before copying. It starts at
+bufferSize/8 packed frames; consecutive unambiguous cadence evidence can widen packed LSB1/MSB1 to
+bufferSize. Gaps, nonmonotonic timestamps, and ambiguous intervals break an unconfirmed streak.
+Parent worker timing cannot widen capacity. Cadence is a heuristic, not an allocation-size API.
+NER8 keeps bufferSize/8 packed source frames and expands each source byte into eight 0/1 wire bytes;
+its idle uses the same expansion, so the write stays within bufferSize wire bytes. This path remains
+experimental until hardware confirms the driver's NER8 representation and allocation semantics.
 
 ### Exit and failure state machine
 
 | Trigger                       | Helper action                                                                | Parent action                                          | Playback result     | Stable reason                       |
 | ----------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------- | ----------------------------------- |
-| normal `Stop`/`Close`         | stop, dispose buffers, restore retained PCM format/rate, release COM objects | close mapping session; helper may remain for later use | stopped             | none                                |
+| normal `Stop`/`Close`         | stop, dispose buffers, restore retained format/rate, release COM objects | close mapping session; helper may remain for later use | stopped             | none                                |
 | normal `Shutdown`             | perform `Close`, publish stopped, exit 0                                     | wait boundedly, close all handles                      | stopped             | none                                |
 | control timeout/hang          | may remain stuck                                                             | terminate helper and close shared resources            | immediate safe stop | `asio_helper_control_timeout`       |
 | unexpected exit/crash         | OS closes driver/process handles                                             | observe process exit and close shared resources        | immediate safe stop | `asio_helper_process_exited`        |
 | externally killed             | no cleanup code is assumed                                                   | observe process exit and close shared resources        | immediate safe stop | `asio_helper_process_exited`        |
 | callback heartbeat stops      | no callback progress                                                         | terminate helper and close shared resources            | immediate safe stop | `asio_helper_callback_stalled`      |
 | driver/device rejects open    | close attempted session; restore any attempted DSD switch                    | return failure without starting                        | remains stopped     | `asio_helper_device_rejected`       |
-| PCM format/rate restore fails | close remaining driver objects and report failure                            | keep ASIO unavailable for this session                 | remains stopped     | `asio_helper_format_restore_failed` |
+| retained format/rate restore fails | close remaining driver objects and retain failure across repeated close calls | keep ASIO unavailable for this session            | remains stopped     | `asio_helper_format_restore_failed` |
 | malformed protocol            | stop accepting commands and exit                                             | terminate if needed and close mapping                  | remains stopped     | `asio_helper_protocol_error`        |
 
 Helper process failure is surfaced as an output render failure rather than a device-invalidated

@@ -20,6 +20,7 @@ import {
   assertMusicLibraryRevision,
   beginLibraryPathMutation,
   collectLibraryTrackPathKeys,
+  clearLibraryExclusions,
   createMusicLibraryDocument,
   loadMusicLibraryDocument,
   migrateMusicLibraryCovers,
@@ -41,6 +42,8 @@ import type {
   LocalLibraryRemoveResult,
   LocalLibraryRemovalMode,
   LocalLibraryResetResult,
+  LocalLibraryClearExclusionsRequest,
+  LocalLibraryClearExclusionsResult,
   LocalLibraryRestoreRequest,
   LocalLibrarySnapshotInput,
   LocalLibraryTrackSelection,
@@ -309,6 +312,9 @@ export function registerLibraryIpc(ipcMain: IpcMain): void {
         .filter((item) => !persistedPaths.has(normalizeLibraryFilePath(item.filePath)))
         .map((item) => ({ filePath: item.filePath, message: '曲目不在当前持久化音乐库中' }))
       const authorized = await authorizeLocalLibrarySelections(presentItems, request.mode)
+      if (request.mode === 'trash' && authorized.items.length > 0) {
+        await prepareAudioFilesForRemoval(authorized.items.map((item) => item.filePath))
+      }
       const document = createMusicLibraryDocument(request.library, loaded.document.exclusions)
       const endPathMutation = beginLibraryPathMutation(
         request.mode === 'trash' ? authorized.items.map((item) => item.filePath) : []
@@ -324,7 +330,7 @@ export function registerLibraryIpc(ipcMain: IpcMain): void {
               const authorizedPath = await resolveAuthorizedAudioFile(
                 normalizeLocalPath(filePath, 'trash item path')
               )
-              await shell.trashItem(authorizedPath)
+              await trashLocalFileWithRetry(authorizedPath)
             },
             persist: (nextDocument) => {
               nextDocument.revision = loaded.document.revision + 1
@@ -412,6 +418,28 @@ export function registerLibraryIpc(ipcMain: IpcMain): void {
     })
   })
 
+  ipcMain.handle(IPC.library.clearExclusions, async (event, rawRequest: unknown) => {
+    assertTrustedIpcSender(event, 'library mutation IPC')
+    const request = normalizeLocalLibraryClearExclusionsRequest(rawRequest)
+    request.library.folders = await filterAuthorizedLibraryRoots(request.library.folders)
+    stringifyJsonForIpcStorage(request, 'library exclusion clear request', MAX_MUSIC_LIBRARY_BYTES)
+
+    return await enqueueMusicLibraryTransaction(async () => {
+      const loaded = loadMusicLibraryForTransaction(MUSIC_LIBRARY_FILE, { consumeWarm: false })
+      assertMusicLibraryRevision(request.library.revision, loaded.document.revision)
+      const document = createMusicLibraryDocument(request.library, loaded.document.exclusions)
+      const cleared = clearLibraryExclusions(document, request.filePaths)
+      if (cleared.clearedFilePaths.length > 0) {
+        cleared.document.revision = loaded.document.revision + 1
+        persistMusicLibraryDocumentWithIndex(MUSIC_LIBRARY_FILE, cleared.document)
+      }
+      return {
+        library: cleared.clearedFilePaths.length > 0 ? cleared.document : loaded.document,
+        clearedFilePaths: cleared.clearedFilePaths
+      } satisfies LocalLibraryClearExclusionsResult
+    })
+  })
+
   ipcMain.handle(
     IPC.library.detectDuplicates,
     async (event) => await duplicateDetectionIpc.detect(event)
@@ -486,6 +514,96 @@ export async function ensureActiveLibraryExclusionsLoaded(): Promise<void> {
 
 function invalidateWarmedMusicLibrary(): void {
   warmedMusicLibrary = null
+}
+
+const TRASH_RETRY_DELAYS_MS = [0, 75, 200, 500, 1_000] as const
+
+async function prepareAudioFilesForRemoval(filePaths: string[]): Promise<void> {
+  const uniquePaths = Array.from(new Set(filePaths.filter(Boolean)))
+  if (uniquePaths.length === 0) return
+
+  // Stop the scan worker and analysis workers first. Both use native file
+  // handles on Windows, and a cancellation can take one event-loop turn to
+  // reach the worker that currently owns the decoder.
+  runtime.localLibraryIndexCoordinator?.cancel()
+  await runtime.libraryLoudnessManager?.cancel()
+  for (const filePath of uniquePaths) {
+    runtime.bpmAnalysisManager?.cancel(filePath)
+    runtime.loudnessAnalysisManager?.cancel(filePath)
+  }
+
+  const audioEngine = runtime.audioEngineManager
+  if (!audioEngine || typeof audioEngine.getCachedDiagnosticSnapshot !== 'function') return
+
+  let playback: Record<string, unknown>
+  try {
+    const snapshot = audioEngine.getCachedDiagnosticSnapshot()
+    playback =
+      snapshot.playback && typeof snapshot.playback === 'object'
+        ? (snapshot.playback as Record<string, unknown>)
+        : {}
+  } catch {
+    return
+  }
+
+  const targets = new Set(uniquePaths.map(normalizeRemovalPath))
+  const sourceMatches = (value: unknown): boolean =>
+    typeof value === 'string' && targets.has(normalizeRemovalPath(value))
+  const upcoming =
+    playback.upcomingTrack && typeof playback.upcomingTrack === 'object'
+      ? (playback.upcomingTrack as Record<string, unknown>)
+      : null
+  let queuedUpcoming: { source?: unknown } | null = null
+  try {
+    queuedUpcoming =
+      typeof audioEngine.getUpcomingTrack === 'function'
+        ? (audioEngine.getUpcomingTrack() as { source?: unknown } | null)
+        : null
+  } catch {
+    // Diagnostics are best effort; the renderer listener and trash retry still
+    // provide the normal release path when the queue snapshot is unavailable.
+  }
+  if (
+    !sourceMatches(playback.source) &&
+    !sourceMatches(upcoming?.source) &&
+    !sourceMatches(queuedUpcoming?.source)
+  )
+    return
+
+  // A native decoder also opens the preloaded next item. Stopping the engine
+  // releases both current and upcoming streams before shell.trashItem runs.
+  try {
+    await audioEngine.stop()
+  } catch (error) {
+    // A failed stop should not prevent trying the filesystem operation; the
+    // bounded trash retry below still handles a delayed decoder close.
+    console.warn(
+      '[library] Failed to stop audio before trashing a local file:',
+      error instanceof Error ? error.message : String(error)
+    )
+  }
+}
+
+async function trashLocalFileWithRetry(filePath: string): Promise<void> {
+  if (process.platform !== 'win32') {
+    await shell.trashItem(filePath)
+    return
+  }
+  let lastError: unknown
+  for (const delayMs of TRASH_RETRY_DELAYS_MS) {
+    if (delayMs > 0) await new Promise<void>((resolve) => setTimeout(resolve, delayMs))
+    try {
+      await shell.trashItem(filePath)
+      return
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(String(lastError))
+}
+
+function normalizeRemovalPath(filePath: string): string {
+  return filePath.replace(/\\/g, '/').toLocaleLowerCase('en-US')
 }
 
 function enqueueMusicLibraryTransaction<T>(operation: () => Promise<T> | T): Promise<T> {
@@ -671,6 +789,24 @@ function normalizeLocalLibraryRestoreRequest(value: unknown): LocalLibraryRestor
     throw new Error(
       `Library exclusion restore supports at most ${MAX_LIBRARY_MUTATION_ITEMS} items`
     )
+  }
+  return {
+    filePaths: record.filePaths.map((filePath) =>
+      normalizeLocalPath(filePath, 'library exclusion path')
+    ),
+    library: normalizeMusicLibrarySnapshot(record.library)
+  }
+}
+
+function normalizeLocalLibraryClearExclusionsRequest(
+  value: unknown
+): LocalLibraryClearExclusionsRequest {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Library exclusion clear request must be an object')
+  }
+  const record = value as Record<string, unknown>
+  if (!Array.isArray(record.filePaths) || record.filePaths.length > MAX_LIBRARY_MUTATION_ITEMS) {
+    throw new Error(`Library exclusion clear supports at most ${MAX_LIBRARY_MUTATION_ITEMS} items`)
   }
   return {
     filePaths: record.filePaths.map((filePath) =>

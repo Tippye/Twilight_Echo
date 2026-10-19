@@ -88,7 +88,8 @@ function installImageDom(data: Uint8ClampedArray): {
     onload: (() => void) | null = null
     onerror: (() => void) | null = null
 
-    set src(_value: string) {
+    set src(value: string) {
+      if (!value) return
       loadCount++
       queueMicrotask(() => this.onload?.())
     }

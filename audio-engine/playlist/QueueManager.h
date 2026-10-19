@@ -6,6 +6,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace twilight::audio {
 
@@ -21,7 +22,23 @@ class QueueManager {
  public:
   bool loadFromJson(const std::string& queueJson, int startIndex, std::string* error);
   bool addFromJson(const std::string& itemJson, std::string* error);
+  /**
+   * Appends every object in a JSON array as one queue mutation. The returned
+   * first index is the absolute queue index of the first appended item, so the
+   * host can map native indices back onto its logical queue without guessing.
+   * Only append is supported: existing indices must stay stable for selection,
+   * playback-info and restore handoff.
+   */
+  bool appendFromJsonBatch(const std::string& itemsJson, int* outFirstIndex, std::string* error);
+  /**
+   * Replaces the source of a queued item that is not currently playing. This is
+   * used to refresh expiring provider URLs without rebuilding the queue. The
+   * current index is rejected: its decoder is already open.
+   */
+  bool updateItemSource(int index, const std::string& source, std::string* error);
   bool removeAt(int index);
+  /** Monotonic content revision; bumped by load/add/append/remove/update. */
+  uint64_t queueRevision() const { return queueRevision_; }
 
   void setPlayMode(PlayMode mode);
   PlayMode playMode() const;
@@ -34,6 +51,8 @@ class QueueManager {
 
   std::optional<QueueItem> current() const;
   std::optional<QueueItem> upcoming() const;
+  /** Absolute index of upcoming(), or nullopt when the queue has no next item. */
+  std::optional<int> upcomingIndex() const;
   /** Linear search by source path; used so host-injected loudnorm fields survive Play(source). */
   std::optional<QueueItem> findBySource(const std::string& source) const;
   std::optional<QueueItem> next();
@@ -62,6 +81,7 @@ class QueueManager {
   int orderPosition_ = -1;
   PlayMode playMode_ = PlayMode::Sequential;
   std::string rawQueueJson_ = "[]";
+  uint64_t queueRevision_ = 0;
   mutable std::mt19937 rng_{std::random_device{}()};
 };
 

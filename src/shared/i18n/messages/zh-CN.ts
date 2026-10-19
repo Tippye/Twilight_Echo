@@ -261,6 +261,12 @@ export const ZH_CN_MESSAGES: Record<string, string> = {
     '源 PCM 的采样率或位深与设备实际打开的格式不一致，中间做了一次转换。',
   'audio.reason.pcm_converted.fix': '把设备格式设成与源一致，或改用能自动跟随源采样率的独占模式。',
 
+  'audio.reason.pcm_wire_precision_reduced.label': 'ASIO 输出有效位数低于整数容器位数',
+  'audio.reason.pcm_wire_precision_reduced.explain':
+    '驱动使用的有效 PCM 位数少于引擎的 32 位整数容器，输出可能丢失低位数据，因此不能确认 bit-perfect。',
+  'audio.reason.pcm_wire_precision_reduced.fix':
+    '选择提供足够有效位数的输出通道或设备格式；可用精度由驱动决定。',
+
   'audio.reason.integer_passthrough_unavailable.label':
     '源格式与设备实际输出格式不一致，无法 PCM 直通',
   'audio.reason.integer_passthrough_unavailable.explain':
@@ -343,6 +349,12 @@ export const ZH_CN_MESSAGES: Record<string, string> = {
   'audio.reason.dop_carrier_mismatch.explain':
     'DoP 需要特定的 PCM 载波速率（DSD64 需 176.4kHz，DSD128 需 352.8kHz），当前设备打开的载波速率不符。',
   'audio.reason.dop_carrier_mismatch.fix': '在设备驱动里允许对应的载波采样率，或改用 Native DSD。',
+
+  'audio.reason.dop_carrier_rejected.label': 'ASIO 输出格式无法承载 DoP',
+  'audio.reason.dop_carrier_rejected.explain':
+    'DoP 要求所有输出通道使用一致的整数格式，且至少保留 24 个有效位；驱动创建的输出缓冲不满足这些条件。',
+  'audio.reason.dop_carrier_rejected.fix':
+    '选择支持至少 24 个有效位的统一整数输出通道，或改用 Native DSD、PCM 输出。',
 
   'audio.reason.dop_passthrough_unproven.label': 'DoP 输出路径未能证明直通',
   'audio.reason.dop_passthrough_unproven.explain':

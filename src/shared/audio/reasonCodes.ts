@@ -89,6 +89,11 @@ export const AUDIO_REASON_CODES: Record<string, ReasonCodeEntry> = {
   device_not_found: { severity: 'blocking', origin: 'output', settingsAnchor: 'playback' },
   format_not_supported: { severity: 'degraded', origin: 'output', settingsAnchor: 'playback' },
   pcm_converted: { severity: 'blocking', origin: 'output' },
+  pcm_wire_precision_reduced: {
+    severity: 'blocking',
+    origin: 'output',
+    settingsAnchor: 'playback'
+  },
   integer_passthrough_unavailable: { severity: 'degraded', origin: 'output' },
   backend_not_output_perfect: { severity: 'info', origin: 'output', settingsAnchor: 'playback' },
   output_not_perfect: { severity: 'info', origin: 'output' },
@@ -124,6 +129,7 @@ export const AUDIO_REASON_CODES: Record<string, ReasonCodeEntry> = {
   dsd_backend_cannot_carry: { severity: 'degraded', origin: 'output', settingsAnchor: 'playback' },
   dsd_source_unsupported: { severity: 'degraded', origin: 'source' },
   dop_carrier_mismatch: { severity: 'degraded', origin: 'output', settingsAnchor: 'playback' },
+  dop_carrier_rejected: { severity: 'blocking', origin: 'output', settingsAnchor: 'playback' },
   dop_passthrough_unproven: { severity: 'info', origin: 'output' },
   dop_marker_mismatch: { severity: 'degraded', origin: 'output', settingsAnchor: 'playback' },
   native_dsd_runtime_unproven: { severity: 'info', origin: 'output' },

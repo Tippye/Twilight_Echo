@@ -39,7 +39,9 @@ const TIMESTAMPED_NCM_API_PATHS = [
   '/playlist/delete',
   '/playlist/tracks',
   '/like',
-  '/follow'
+  '/follow',
+  '/personal_fm',
+  '/personal/fm/mode'
 ]
 
 function shouldTimestampNcmApiPath(path: string): boolean {

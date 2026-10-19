@@ -3,6 +3,7 @@ import {
   globalShortcut,
   Menu,
   nativeImage,
+  Notification,
   Tray,
   type MenuItemConstructorOptions
 } from 'electron'
@@ -14,6 +15,7 @@ import {
   type PlayerShortcutKeyAction,
   type PlayerShortcutStatus
 } from '../core/types'
+import type { ShortcutId } from '../../shared/shortcutPreferences.ts'
 import { buildPlayerShortcutStatuses } from '../core/shortcutStatus'
 import { getAppIconPath } from '../app/window'
 import { applyDiscordRpcSetting } from './discord'
@@ -22,6 +24,39 @@ import { restoreMainWindowFromMiniPlayer, showMiniPlayer } from './miniPlayer'
 import { toggleDesktopLyrics, toggleDesktopLyricsLock } from './desktopLyrics'
 import { destroyTrayPlayerWindow, openMainWindowAt } from './trayPlayer'
 import type { MiniPlayerCommand, MiniPlayerPlayMode } from '../../shared/miniPlayer.ts'
+import {
+  dispatchAfterglowTransport,
+  enterAfterglowMode,
+  getAfterglowModeStatus,
+  isAfterglowModeActive,
+  restoreAfterglowMode
+} from '../app/AfterglowModeService.ts'
+import {
+  afterglowTransportCommandForAction,
+  describeAfterglowError,
+  toRendererFreePlayMode
+} from '../../shared/afterglowMode.ts'
+
+export function formatRestoreAccelerator(accelerator: string): string {
+  return accelerator.replace('CommandOrControl', process.platform === 'darwin' ? 'Cmd' : 'Ctrl')
+}
+
+/** Tray-initiated entry: explains a rejection instead of failing silently. */
+function enterAfterglowFromTray(): void {
+  void enterAfterglowMode().then((status) => {
+    if (status.active || !status.error) return
+    const body = describeAfterglowError(status.error)
+    try {
+      if (Notification.isSupported()) {
+        new Notification({ title: '暂时无法进入余晖模式', body, silent: true }).show()
+      } else {
+        console.warn('[afterglow] entry rejected:', body)
+      }
+    } catch {
+      console.warn('[afterglow] entry rejected:', body)
+    }
+  })
+}
 
 let playerShortcutStatuses: PlayerShortcutStatus[] = buildPlayerShortcutStatuses(
   buildPlayerShortcutDefinitions(),
@@ -30,6 +65,17 @@ let playerShortcutStatuses: PlayerShortcutStatus[] = buildPlayerShortcutStatuses
 )
 
 export function sendPlayerShortcut(action: PlayerShortcutAction): void {
+  if (isAfterglowModeActive()) {
+    const command = typeof action === 'string' ? afterglowTransportCommandForAction(action) : null
+    if (command) {
+      void dispatchAfterglowTransport(command)
+      return
+    }
+    // Actions without a renderer-free implementation bring the UI back instead
+    // of silently doing nothing.
+    void restoreAfterglowMode()
+    return
+  }
   if (runtime.mainWindow?.isDestroyed() === false) {
     runtime.mainWindow.webContents.send('player:shortcut', action)
   }
@@ -51,9 +97,10 @@ export function buildPlayerShortcutDefinitions(): {
   accelerator: string
   action: PlayerShortcutKeyAction
   label: string
+  enabled: boolean
 }[] {
   const bindings = runtime.appSettings.globalShortcutBindings
-  return [
+  const definitions: { accelerator: string; action: PlayerShortcutKeyAction; label: string }[] = [
     { accelerator: bindings.volumeUp, action: 'volumeUp', label: '增加音量' },
     { accelerator: bindings.volumeDown, action: 'volumeDown', label: '降低音量' },
     { accelerator: bindings.previous, action: 'previous', label: '上一首' },
@@ -71,6 +118,15 @@ export function buildPlayerShortcutDefinitions(): {
     },
     ...MEDIA_KEY_SHORTCUTS
   ]
+  return definitions.map((shortcut) => ({
+    ...shortcut,
+    enabled:
+      runtime.appSettings.shortcutEnabled[
+        (shortcut.accelerator.startsWith('Media')
+          ? shortcut.accelerator
+          : shortcut.action) as ShortcutId
+      ] !== false
+  }))
 }
 
 export function applyAutoLaunch(enabled: boolean): void {
@@ -95,7 +151,7 @@ export function registerPlayerShortcuts(): void {
     shortcuts,
     runtime.appSettings.globalShortcuts,
     (accelerator) => {
-      const shortcut = shortcuts.find((item) => item.accelerator === accelerator)
+      const shortcut = shortcuts.find((item) => item.enabled && item.accelerator === accelerator)
       if (!shortcut) return false
       const ok = globalShortcut.register(shortcut.accelerator, () => {
         handleGlobalShortcutAction(shortcut.action)
@@ -143,11 +199,55 @@ function createTrayMenuSignature(): string {
     state?.favoriteLiked ?? false,
     state?.favoriteLoading ?? false,
     runtime.appSettings.desktopLyrics.enabled,
-    runtime.appSettings.desktopLyrics.locked
+    runtime.appSettings.desktopLyrics.locked,
+    isAfterglowModeActive()
   ])
 }
 
+function routeAfterglowMiniPlayerCommand(command: MiniPlayerCommand): void {
+  switch (command.type) {
+    case 'toggle-play':
+      void dispatchAfterglowTransport({ type: 'toggle-play' })
+      return
+    case 'play':
+      void dispatchAfterglowTransport({ type: 'play' })
+      return
+    case 'pause':
+      void dispatchAfterglowTransport({ type: 'pause' })
+      return
+    case 'previous':
+      void dispatchAfterglowTransport({ type: 'previous' })
+      return
+    case 'next':
+      void dispatchAfterglowTransport({ type: 'next' })
+      return
+    case 'cycle-play-mode':
+      void dispatchAfterglowTransport({ type: 'cycle-play-mode' })
+      return
+    case 'set-play-mode':
+      void dispatchAfterglowTransport({
+        type: 'set-play-mode',
+        mode: toRendererFreePlayMode(command.value)
+      })
+      return
+    case 'seek':
+      void dispatchAfterglowTransport({ type: 'seek', positionSeconds: command.value })
+      return
+    case 'set-volume':
+      void dispatchAfterglowTransport({ type: 'set-volume', volume: command.value })
+      return
+    case 'toggle-favorite':
+      // Favorites live in the renderer store; restore so the action is not lost.
+      void restoreAfterglowMode()
+      return
+  }
+}
+
 function sendMiniPlayerCommand(command: MiniPlayerCommand): void {
+  if (isAfterglowModeActive()) {
+    routeAfterglowMiniPlayerCommand(command)
+    return
+  }
   const mainWindow = runtime.mainWindow
   if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isDestroyed()) return
   mainWindow.webContents.send('miniPlayer:command', command)
@@ -180,11 +280,15 @@ function formatTrayTrackLabel(): string {
 
 function buildPlayModeSubmenu(): MenuItemConstructorOptions[] {
   const activeMode = runtime.latestMiniPlayerState?.playMode ?? 'sequential'
+  const afterglow = isAfterglowModeActive()
   return (Object.entries(PLAY_MODE_LABELS) as [MiniPlayerPlayMode, string][]).map(
     ([mode, label]) => ({
       label,
       type: 'radio',
       checked: mode === activeMode,
+      // Shuffle and heart are renderer-owned streams; the unloaded engine only
+      // understands the three native modes.
+      enabled: !afterglow || (mode !== 'shuffle' && mode !== 'heart'),
       click: () => sendMiniPlayerCommand({ type: 'set-play-mode', value: mode })
     })
   )
@@ -195,11 +299,32 @@ function buildTrayMenuTemplate(): MenuItemConstructorOptions[] {
   const hasTrack = Boolean(state?.track)
   const isPlaying = state?.isPlaying === true
   const favoriteEnabled = hasTrack && state?.favoriteAvailable === true && !state.favoriteLoading
+  const afterglow = isAfterglowModeActive()
   return [
+    ...(afterglow
+      ? [
+          {
+            label: `恢复界面（${formatRestoreAccelerator(
+              getAfterglowModeStatus().restoreAccelerator
+            )}）`,
+            click: () => {
+              void restoreAfterglowMode()
+            }
+          } as MenuItemConstructorOptions,
+          { type: 'separator' } as MenuItemConstructorOptions
+        ]
+      : [
+          {
+            label: '进入余晖模式（后台播放）',
+            enabled: hasTrack,
+            click: enterAfterglowFromTray
+          } as MenuItemConstructorOptions,
+          { type: 'separator' } as MenuItemConstructorOptions
+        ]),
     {
       label: formatTrayTrackLabel(),
       enabled: hasTrack,
-      click: () => restoreMainWindowFromMiniPlayer()
+      click: () => (afterglow ? void restoreAfterglowMode() : restoreMainWindowFromMiniPlayer())
     },
     { type: 'separator' },
     {
@@ -231,6 +356,8 @@ function buildTrayMenuTemplate(): MenuItemConstructorOptions[] {
     {
       label: '桌面歌词',
       type: 'checkbox',
+      // A lyrics window is a renderer; creating one would undo the unload.
+      enabled: !isAfterglowModeActive(),
       checked: runtime.appSettings.desktopLyrics.enabled,
       click: () => {
         toggleDesktopLyrics()
@@ -239,7 +366,7 @@ function buildTrayMenuTemplate(): MenuItemConstructorOptions[] {
     {
       label: '锁定桌面歌词',
       type: 'checkbox',
-      enabled: runtime.appSettings.desktopLyrics.enabled,
+      enabled: !isAfterglowModeActive() && runtime.appSettings.desktopLyrics.enabled,
       checked: runtime.appSettings.desktopLyrics.locked,
       click: () => {
         toggleDesktopLyricsLock()
@@ -248,12 +375,20 @@ function buildTrayMenuTemplate(): MenuItemConstructorOptions[] {
     { type: 'separator' },
     {
       label: '迷你播放器',
+      enabled: !isAfterglowModeActive(),
       click: () => showMiniPlayer()
     },
     { type: 'separator' },
     {
       label: '设置',
-      click: () => openMainWindowAt('settings')
+      click: () => {
+        if (isAfterglowModeActive()) {
+          runtime.pendingTrayNavigation = 'settings'
+          void restoreAfterglowMode()
+          return
+        }
+        openMainWindowAt('settings')
+      }
     },
     { type: 'separator' },
     {
@@ -286,9 +421,17 @@ export function createTray(): void {
   runtime.refreshTrayMenu = refreshTrayMenu
   refreshTrayMenu(true)
   runtime.tray.on('click', () => {
+    if (isAfterglowModeActive()) {
+      void restoreAfterglowMode()
+      return
+    }
     restoreMainWindowFromMiniPlayer()
   })
   runtime.tray.on('double-click', () => {
+    if (isAfterglowModeActive()) {
+      void restoreAfterglowMode()
+      return
+    }
     restoreMainWindowFromMiniPlayer()
   })
 }

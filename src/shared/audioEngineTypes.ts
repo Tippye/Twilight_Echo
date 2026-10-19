@@ -139,6 +139,8 @@ export interface OutputConfig {
   playbackPolicy?: 'bit-perfect-first' | 'continuity-first'
   continuitySampleRate?: 44100 | 48000 | 96000
   preferredBufferSize: number
+  /** Zero-based first ASIO output channel; the interface displays channel 1. */
+  asioOutputChannelStart?: number
   routingMode: ChannelRoutingMode
   wasapiExclusivePushMode?: boolean
   /** After float decode/DSP, modulate PCM to DSD64/128/256 via native DSD or DoP. */
@@ -170,7 +172,23 @@ export interface LatencyInfo {
 }
 
 export interface OutputDiagnostics {
+  /** Live PCM worker/render samples; unavailable when the pipeline is busy or on DSD. */
+  decodeHealthAvailable?: boolean
+  decodeStreamToken?: number
+  decodeRunning?: boolean
+  decodeEof?: boolean
+  decodeStopRequested?: boolean
+  decodeBufferedFrames?: number
+  decodeProducedFrames?: number
+  decodeLastProgressAgeMs?: number
+  decodeStage?: string
+  liveRenderState?: number
+  liveRenderedFrames?: number
+  liveRenderCallbackCount?: number
   sessionUnderrunCount: number
+  asioHelperCallbackCount?: number
+  asioHelperUnderrunCount?: number
+  asioHelperBufferDropCount?: number
   sessionBufferDropCount: number
   sessionRecoveryCount: number
   lifetimeUnderrunCount: number
@@ -199,6 +217,8 @@ export interface OutputDiagnostics {
   typedRawPath?: boolean
   processingBypassed?: boolean
   nativeDsdNegotiation?: string
+  asioStartupSummary?: string
+  wireLittleEndian?: boolean
   dopRuntimeEvidence?: string
   quirkRegistryState?: string
   quirkFingerprint?: string
@@ -264,6 +284,18 @@ export interface AudioEngineQueueItem {
 export interface AudioEnginePlayOptions {
   /** Load this source at the requested position and return with playback paused. */
   paused?: boolean
+}
+
+/**
+ * Native queue control-plane state for hot append/source-refresh consumers.
+ * Indices are absolute for the lifetime of the loaded queue and never shift.
+ */
+export interface AudioEngineQueueState {
+  revision: number
+  size: number
+  currentIndex: number
+  upcomingIndex: number
+  playMode: PlayMode
 }
 
 export interface AudioEnginePlayResult {
@@ -457,6 +489,10 @@ export interface PlaybackInfo extends PlaybackOutputInfoMirror {
   requestedConfigRevision: number
   appliedConfigRevision: number
   queueIndex: number
+  /** Monotonic native queue content revision (hot append/source updates). */
+  queueRevision?: number
+  /** Absolute native index of the preloaded/upcoming item, or -1. */
+  upcomingQueueIndex?: number
   /** Main-issued content version for mapping partial native queues to logical entries. */
   queueToken?: string
   playMode: PlayMode
@@ -476,6 +512,7 @@ export interface PlaybackInfo extends PlaybackOutputInfoMirror {
   decodedChannels: number
   decodedSampleFormat: string
   outputBackend: string
+  /** Requested output device ID; runtime names live in outputInfo. */
   outputDevice: string
   outputInfo: OutputInfo
   actualBackend: string

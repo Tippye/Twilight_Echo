@@ -1,6 +1,9 @@
 import { EventEmitter } from 'events'
 import { createRequire } from 'module'
 import { randomUUID } from 'crypto'
+import { observeDiagnosticOperation } from './diagnostics/observation.ts'
+import { diagnosticContext } from './diagnostics/logger.ts'
+import { observeUtilityProcess } from './diagnostics/utilityObservation.ts'
 import { existsSync } from 'fs'
 import { fork as forkNodeChildProcess, spawnSync } from 'child_process'
 import type {
@@ -38,7 +41,7 @@ import {
 const require = createRequire(import.meta.url)
 
 type UtilityProcessLike = {
-  postMessage: (message: AudioServiceRequest) => void
+  postMessage: (message: AudioServiceRequest | AudioServicePing) => void
   kill: () => void
   on: (
     event: 'message' | 'exit' | 'error',
@@ -62,10 +65,16 @@ type ElectronModule = {
 }
 
 type AudioServiceRequest = {
+  diagnosticContext?: ReturnType<typeof diagnosticContext>
   kind: 'request'
   requestId: string
   method: keyof NativeAudioBinding
   args: unknown[]
+}
+
+type AudioServicePing = {
+  kind: 'ping'
+  requestId: string
 }
 
 const MAX_VISUALIZATION_CACHE_KEYS = 8
@@ -77,6 +86,7 @@ const AUDIO_SERVICE_TIMEOUT_CODE = 'ERR_AUDIO_SERVICE_TIMEOUT'
 // Only this binding's request timers own timeout policy. An external error
 // with the same public code must retain the existing fatal-error behavior.
 const ownedAudioServiceTimeouts = new WeakSet<Error>()
+const ownedAudioServiceCommandRejections = new WeakSet<Error>()
 const MAX_AUDIO_SERVICE_DEFAULT_RESPONSE_BYTES = 1024 * 1024
 const MAX_AUDIO_SERVICE_VISUALIZATION_RESPONSE_BYTES = 8 * 1024 * 1024
 // Embedded cover art is base64 in metadata; ordinary album covers routinely
@@ -102,6 +112,9 @@ const SLOW_NATIVE_METHODS = new Set<string>([
   'SetOutputBackend',
   'SetOutputConfig',
   'LoadQueue',
+  // Hot append/update may synchronously preload the next remote stream.
+  'AppendQueueItems',
+  'UpdateQueueItemSource',
   'SetDspConfig',
   'SetDspGraph',
   'ApplyDspState',
@@ -126,6 +139,7 @@ const SLOW_NATIVE_METHODS = new Set<string>([
 const PLAYBACK_STATE_READ_METHODS = new Set<string>([
   'GetPlaybackInfo',
   'GetUpcomingTrack',
+  'GetQueueState',
   'GetDspGraphStatus',
   'GetConvolverInfo',
   'GetDspPluginStatus',
@@ -154,6 +168,7 @@ function mutatesPlaybackState(method: keyof NativeAudioBinding): boolean {
 
 type PendingRequest = {
   method: keyof NativeAudioBinding
+  startedAt: number
   slow: boolean
   resolve: (value: unknown) => void
   reject: (error: Error) => void
@@ -214,6 +229,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   private fatalReason = ''
   private generation = 0
   private slowPendingCount = 0
+  private healthProbe: { requestId: string; timer: NodeJS.Timeout } | null = null
   private restartAttempts = 0
   private lastChildSpawnedAt = 0
   private cacheRequestSerial = new Map<string, number>()
@@ -547,6 +563,12 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     })
   }
 
+  /** Full capability JSON from the native engine (the sync version is a subset). */
+  async getEngineCapabilitiesAsync(): Promise<string> {
+    const raw = await this.call('GetEngineCapabilities', [])
+    return typeof raw === 'string' ? raw : JSON.stringify(raw ?? {})
+  }
+
   GetLastError(): string {
     return this.lastErrorJson
   }
@@ -558,6 +580,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   destroy(): void {
     this.stopped = true
     this.invalidatePlaybackInfoObservation()
+    this.clearHealthProbe()
     this.rejectQueuedDspState(new Error('音频服务已停止'))
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer)
@@ -585,7 +608,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
       const child = electron.utilityProcess.fork(this.options.serviceEntry, [], {
         serviceName: 'twilight-audio-engine',
         stdio: 'pipe',
-        env: audioServiceEnv()
+        env: { ...audioServiceEnv(), TAE_SERVICE_GENERATION: String(this.generation) }
       })
       this.child = child
       this.lastChildSpawnedAt = Date.now()
@@ -620,12 +643,14 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   private startNodeChildProcess(): void {
     try {
       const env = { ...process.env }
+      env.TAE_SERVICE_GENERATION = String(this.generation)
       delete env.ELECTRON_RUN_AS_NODE
       const child = forkNodeChildProcess(this.options.serviceEntry, [], {
         execPath: resolveNodeAudioServiceExecutable(),
         env,
         stdio: ['ignore', 'pipe', 'pipe', 'ipc']
       })
+      observeUtilityProcess(child, 'twilight-audio-engine')
       const wrappedChild: UtilityProcessLike = {
         postMessage: (message) => {
           if (!child.send(message)) throw new Error('音频服务 IPC 发送失败')
@@ -709,9 +734,21 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         }
         this.serviceCapabilities =
           (record.capabilities as AudioServiceCapabilities | undefined) ?? null
+        this.clearHealthProbe()
         this.emit('ready', this.serviceCapabilities)
       } catch {
         this.handleProtocolViolation(AUDIO_SERVICE_INVALID_MESSAGE)
+      }
+      return
+    }
+
+    if (kind === 'pong') {
+      if (!inspectUtilityProcessMessage(record, MAX_UTILITY_PROCESS_CONTROL_MESSAGE_BYTES).ok) {
+        this.handleProtocolViolation(AUDIO_SERVICE_INVALID_MESSAGE)
+        return
+      }
+      if (this.healthProbe && record.requestId === this.healthProbe.requestId) {
+        this.clearHealthProbe()
       }
       return
     }
@@ -769,6 +806,10 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     clearTimeout(pending.timer)
     this.pending.delete(response.requestId)
     if (pending.slow) this.slowPendingCount -= 1
+    // A correlated reply, including a native command rejection, proves that
+    // the service is processing requests. One other RPC timing out is not a
+    // reason to terminate this generation.
+    this.clearHealthProbe()
     // A late native completion releases its ownership and watchdog, but must
     // not revive an already-rejected caller or refresh caches with stale data.
     if (pending.callerSettled) return
@@ -789,7 +830,11 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
       if (pending.method === 'GetUpcomingTrack')
         this.lastUpcomingTrack = response.value as string | AudioEngineQueueItem | null
       pending.resolve(response.value)
-    } else pending.reject(new Error(response.error ?? '音频服务调用失败'))
+    } else {
+      const error = new Error(response.error ?? '音频服务调用失败')
+      ownedAudioServiceCommandRejections.add(error)
+      pending.reject(error)
+    }
   }
 
   private handleProtocolViolation(reason: string): void {
@@ -839,9 +884,10 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     this.child = null
     this.generation += 1
     this.clearServiceDerivedCaches()
-    this.emit('crash', reason, { fatal: Boolean(this.fatalReason) })
-    if (options.restart === false) return
-    if (this.restarting) return
+    if (options.restart === false || this.restarting) {
+      this.emit('crash', reason, { fatal: Boolean(this.fatalReason) })
+      return
+    }
     this.restarting = true
     // Exponential backoff over consecutive short-lived children so a
     // deterministic failure source (bad driver, hostile source) cannot run a
@@ -857,11 +903,21 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
       this.restarting = false
       this.start()
     }, backoffMs)
+    // Listeners run synchronously and may issue native calls. Publish the
+    // restart gate before notifying them so lazy start cannot bypass backoff.
+    this.emit('crash', reason, { fatal: Boolean(this.fatalReason) })
   }
 
   private fireAndForget(method: keyof NativeAudioBinding, args: unknown[]): void {
-    void this.call(method, args).catch((error) => {
-      if (isAudioServiceBusyError(error) || isOwnedAudioServiceTimeout(error)) {
+    const pending = this.call(method, args)
+    const generation = this.generation
+    void pending.catch((error) => {
+      if (generation !== this.generation) return
+      if (
+        isAudioServiceBusyError(error) ||
+        isOwnedAudioServiceTimeout(error) ||
+        (error instanceof Error && ownedAudioServiceCommandRejections.has(error))
+      ) {
         this.recordTransientFailure(error.message)
         return
       }
@@ -890,9 +946,16 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     request.scheduled = false
     request.inFlight = true
     const args = request.args
-    void this.call(method, args)
+    const pending = this.call(method, args)
+    const generation = this.generation
+    void pending
       .catch((error) => {
-        if (isAudioServiceBusyError(error) || isOwnedAudioServiceTimeout(error)) {
+        if (generation !== this.generation) return
+        if (
+          isAudioServiceBusyError(error) ||
+          isOwnedAudioServiceTimeout(error) ||
+          (error instanceof Error && ownedAudioServiceCommandRejections.has(error))
+        ) {
           this.recordTransientFailure(error.message)
           return
         }
@@ -900,7 +963,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
       })
       .finally(() => {
         const latest = this.coalescedControls.get(method)
-        if (!latest) return
+        if (latest !== request || generation !== this.generation) return
         latest.inFlight = false
         if (latest.args === args || this.stopped) {
           this.coalescedControls.delete(method)
@@ -1067,6 +1130,16 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   }
 
   private call(method: keyof NativeAudioBinding, args: unknown[]): Promise<unknown> {
+    return observeDiagnosticOperation(
+      'audio.rpc',
+      String(method),
+      () => this.callUnobserved(method, args),
+      args,
+      { serviceGeneration: this.generation }
+    )
+  }
+
+  private callUnobserved(method: keyof NativeAudioBinding, args: unknown[]): Promise<unknown> {
     if (this.fatalReason) return Promise.reject(new Error(this.fatalReason))
     if (!this.child && !this.restarting) this.start()
     const child = this.child
@@ -1074,7 +1147,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
     if (this.pending.size >= this.maxInFlightRequests) {
       return Promise.reject(createAudioServiceBusyError(method))
     }
-    const requestId = randomUUID()
+    const requestId = diagnosticContext().requestId ?? randomUUID()
     const generation = this.generation
     // Classify once: timeout and retained native ownership must agree. A
     // released/exclusive/unknown Pause may synchronously reopen a decoder or
@@ -1093,6 +1166,18 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         clearTimeout(pending.timer)
         pending.callerSettled = true
         pending.reject(error)
+        if (!pending.slow) this.pending.delete(requestId)
+        // Names/timings only: never include audio URLs or native arguments.
+        this.emit('rpc-timeout', {
+          method,
+          generation,
+          elapsedMs: Date.now() - pending.startedAt,
+          inFlight: [...this.pending.values()].slice(0, 16).map((request) => ({
+            method: request.method,
+            elapsedMs: Date.now() - request.startedAt,
+            slow: request.slow
+          }))
+        })
         if (pending.slow) {
           // The native call is still outstanding on the child's single JS
           // thread. Retain its slot and slow ownership after rejecting its
@@ -1111,10 +1196,11 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         this.pending.delete(requestId)
         // This remains collateral until all known slow native work completes.
         if (this.slowPendingCount > 0) return
-        this.restartUnresponsiveService(child, generation, error.message)
+        this.probeUnresponsiveService(child, generation, error.message)
       }, this.requestTimeoutForMethod(slow))
       this.pending.set(requestId, {
         method,
+        startedAt: Date.now(),
         slow,
         resolve: (value) => {
           if (generation !== this.generation) return
@@ -1125,9 +1211,18 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         callerSettled: false,
         playbackInfoMutationRevision
       })
-      if (slow) this.slowPendingCount += 1
+      if (slow) {
+        this.slowPendingCount += 1
+        this.clearHealthProbe()
+      }
       try {
-        child.postMessage({ kind: 'request', requestId, method, args })
+        child.postMessage({
+          kind: 'request',
+          requestId,
+          method,
+          args,
+          diagnosticContext: diagnosticContext()
+        })
       } catch (err) {
         clearTimeout(timer)
         this.pending.delete(requestId)
@@ -1137,6 +1232,42 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
         reject(err)
       }
     })
+  }
+
+  private clearHealthProbe(): void {
+    if (!this.healthProbe) return
+    clearTimeout(this.healthProbe.timer)
+    this.healthProbe = null
+  }
+
+  private probeUnresponsiveService(
+    child: UtilityProcessLike,
+    generation: number,
+    reason: string
+  ): void {
+    if (
+      this.stopped ||
+      generation !== this.generation ||
+      this.child !== child ||
+      this.healthProbe
+    ) {
+      return
+    }
+    const requestId = randomUUID()
+    const timer = setTimeout(() => {
+      this.clearHealthProbe()
+      if (this.slowPendingCount > 0) return
+      this.restartUnresponsiveService(child, generation, reason)
+    }, this.requestTimeoutMs)
+    this.healthProbe = { requestId, timer }
+    try {
+      // The probe is answered on the service event loop without taking native
+      // locks. Give queued/late replies another full control deadline to arrive.
+      child.postMessage({ kind: 'ping', requestId })
+    } catch {
+      // A broken pipe can also indicate a dying child. Its exit event or this
+      // unanswered probe will handle recovery through the same generation fence.
+    }
   }
 
   private restartUnresponsiveService(
@@ -1155,6 +1286,7 @@ export class AudioEngineServiceBinding extends EventEmitter implements NativeAud
   }
 
   private recordFailure(message: string): void {
+    this.clearHealthProbe()
     this.lastErrorJson = JSON.stringify({ message })
     this.coalescedControls.clear()
     this.slowPendingCount = 0

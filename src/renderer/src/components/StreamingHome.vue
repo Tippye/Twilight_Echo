@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import PlaybackIcon from '@renderer/components/icons/PlaybackIcon.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { Track } from '../types/music'
+import type { Track, TrackArtistRef } from '../types/music'
+import TrackArtistLinks from './TrackArtistLinks.vue'
 import type { MediaProviderPlaylistSummary } from '../providers/mediaProvider'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { resolveMotionMode } from '../../../shared/motion.ts'
@@ -45,6 +46,7 @@ const emit = defineEmits<{
   playTrack: [track: Track, queue: Track[]]
   requestLogin: []
   openDiscovery: []
+  openArtist: [track: Track, artist: TrackArtistRef]
 }>()
 
 // ─── Sections ───────────────────────────────────────────────────────────────
@@ -412,10 +414,13 @@ function playPersonalizedStream(section: RecSection | null): void {
           </button>
         </header>
         <div class="chart-grid">
-          <button
+          <div
             v-for="(track, index) in chartTracks"
             :key="track.id"
-            type="button"
+            role="button"
+            tabindex="0"
+            @keydown.enter.self.prevent="playChartTrack(track)"
+            @keydown.space.self.prevent="playChartTrack(track)"
             class="chart-row"
             :class="{ 'is-playing': isPlayingTrack(track) }"
             @click="playChartTrack(track)"
@@ -424,13 +429,8 @@ function playPersonalizedStream(section: RecSection | null): void {
               String(index + 1).padStart(2, '0')
             }}</span>
             <span class="chart-cover">
-              <CoverImg
-                v-if="track.cover"
-                :cover="track.cover"
-                :cover-source="track.coverSource"
-                alt=""
-              />
-              <span v-else class="chart-cover-empty"><i class="pi pi-volume-up"></i></span>
+              <CoverImg :cover="track.cover" :cover-source="track.coverSource" alt="" />
+
               <span class="chart-cover-action" aria-hidden="true">
                 <span v-if="isPlayingTrack(track)" class="chart-eq"> <i></i><i></i><i></i> </span>
                 <PlaybackIcon name="play" v-else />
@@ -438,10 +438,15 @@ function playPersonalizedStream(section: RecSection | null): void {
             </span>
             <span class="chart-meta">
               <span class="chart-title">{{ track.title }}</span>
-              <span class="chart-artist">{{ track.artist }}</span>
+              <span class="chart-artist">
+                <TrackArtistLinks
+                  :track="track"
+                  @open-artist="emit('openArtist', track, $event)"
+                />
+              </span>
             </span>
             <span class="chart-duration">{{ formatDuration(track.duration) }}</span>
-          </button>
+          </div>
         </div>
       </section>
 

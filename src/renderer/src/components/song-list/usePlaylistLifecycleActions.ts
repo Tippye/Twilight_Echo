@@ -33,13 +33,6 @@ function describeError(error: unknown, fallback: string): string {
 
 async function readPlaylistCover(file: File): Promise<string> {
   assertPlaylistCoverFile(file)
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onerror = () => reject(new Error('读取封面文件失败'))
-    reader.onload = () =>
-      typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('封面数据无效'))
-    reader.readAsDataURL(file)
-  })
   const image = await createImageBitmap(file)
   try {
     assertPlaylistCoverDimensions(image.width, image.height)
@@ -57,7 +50,13 @@ async function readPlaylistCover(file: File): Promise<string> {
     if (!handle) throw new Error('封面缓存失败')
     return handle
   }
-  return dataUrl
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('读取封面文件失败'))
+    reader.onload = () =>
+      typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('封面数据无效'))
+    reader.readAsDataURL(file)
+  })
 }
 
 /**

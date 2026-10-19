@@ -1,3 +1,4 @@
+import './diagnostics/bootstrap.ts'
 import { relaunchWithX11BackendIfNeeded } from './imeBackend'
 
 // 必须在加载应用生命周期之前执行：Chromium 的 ozone 平台在 Electron

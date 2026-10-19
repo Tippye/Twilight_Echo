@@ -71,6 +71,7 @@ class FixtureHost final : public IAsioHost {
       return false;
     }
     opened_ = true;
+    rate_ = config.format.sampleRate;
     closeError_.clear();
     if (result) {
       result->actualFormat = config.format;
@@ -96,7 +97,7 @@ class FixtureHost final : public IAsioHost {
     buffersCreated_ = true;
     outputReadyCalls_.store(0, std::memory_order_release);
     for (auto& channel : buffers_) {
-      for (auto& buffer : channel) buffer.fill(0);
+      for (auto& buffer : channel) buffer.fill(0xcd);
     }
     return true;
   }
@@ -116,12 +117,27 @@ class FixtureHost final : public IAsioHost {
       }
       long bufferIndex = 0;
       int callbackCount = 0;
+      uint8_t expectedDsdBlock = 1;
       while (started_.load(std::memory_order_acquire)) {
         if (mode_ == "callback-stop" && callbackCount >= 4) return;
         if (mode_ == "delayed-callback" && callbackCount == 0) {
           std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
         if (bufferSwitch_) bufferSwitch_(bufferIndex);
+        if (mode_ == "verify-dsd-queue" && eventCallback_) {
+          const uint8_t first = buffers_[0][bufferIndex][0];
+          if (first != 0x96) {
+            bool exact = first == expectedDsdBlock;
+            for (const auto& channel : buffers_) {
+              for (size_t byte = 0; byte < kFrames / 8; ++byte)
+                exact &= channel[bufferIndex][byte] == expectedDsdBlock;
+              for (size_t byte = kFrames / 8; byte < channel[bufferIndex].size(); ++byte)
+                exact &= channel[bufferIndex][byte] == 0xcd;
+            }
+            ++expectedDsdBlock;
+            eventCallback_(AsioHostEvent::Xrun, exact ? "dsd-queue-verified" : "dsd-queue-corrupted");
+          }
+        }
         if (mode_ == "verify-pcm" && eventCallback_) {
           float first = 0;
           std::memcpy(&first, buffers_[0][bufferIndex].data(), sizeof(first));
@@ -136,6 +152,21 @@ class FixtureHost final : public IAsioHost {
             }
             eventCallback_(AsioHostEvent::Xrun, exact ? "pcm-verified" : "pcm-corrupted");
           }
+        }
+        if ((mode_ == "verify-float64" || mode_ == "verify-bounds") && eventCallback_ && callbackCount == 0) {
+          bool exact = true;
+          const size_t wireBytes = mode_ == "verify-float64" ? 512 : 256;
+          for (size_t channel = 0; channel < 2; ++channel) {
+            const auto& bytes = buffers_[channel][bufferIndex];
+            for (size_t i = wireBytes; i < bytes.size(); ++i) exact &= bytes[i] == 0xcd;
+            if (mode_ == "verify-float64") {
+              for (size_t i = 0; i < kFrames; ++i) {
+                double value = 0; std::memcpy(&value, bytes.data() + i * 8, 8);
+                exact &= value == (channel == 0 ? 0.25 : -0.5);
+              }
+            } else for (size_t i = 0; i < wireBytes; ++i) exact &= bytes[i] == 0;
+          }
+          eventCallback_(AsioHostEvent::Xrun, exact ? "wire-verified" : "wire-corrupted");
         }
         bufferIndex = 1 - bufferIndex;
         ++callbackCount;
@@ -172,8 +203,25 @@ class FixtureHost final : public IAsioHost {
   }
 
   AsioChannelFormat outputChannelFormat(long) const override {
+    if (mode_ == "verify-dsd-queue") {
+      AsioChannelFormat format;
+      format.logicalFormat = AudioSampleFormat::DsdInt8Msb1;
+      format.containerBits = 8;
+      format.validBits = 1;
+      format.dsdPacking = AsioDsdPacking::Msb1;
+      return format;
+    }
+    if (mode_ == "verify-float64") {
+      AsioChannelFormat format;
+      format.containerBits = format.validBits = 64;
+      return format;
+    }
     return {};
   }
+
+  int activeSampleRate() const override { return rate_; }
+  long activeLatencyFrames() const override { return 77; }
+  std::string startupSummary() const override { return "fixture post-create summary"; }
 
   bool outputReady() override {
     const int calls = outputReadyCalls_.fetch_add(1, std::memory_order_acq_rel) + 1;
@@ -222,12 +270,13 @@ class FixtureHost final : public IAsioHost {
   std::string closeError_;
   AsioBufferSwitchCallback bufferSwitch_;
   AsioEventCallback eventCallback_;
-  std::array<std::array<std::array<uint8_t, kFrames * sizeof(float)>, 2>, 2> buffers_{};
+  std::array<std::array<std::array<uint8_t, kFrames * sizeof(double) + 16>, 2>, 2> buffers_{};
   std::thread callbackThread_;
   std::atomic<bool> started_{false};
   std::atomic<int> outputReadyCalls_{0};
   bool opened_ = false;
   bool buffersCreated_ = false;
+  int rate_ = 0;
 };
 
 struct Arguments {

@@ -1,7 +1,14 @@
 import { collectClosePersistenceOutcome } from '../closePersistence.ts'
 import { ipcRenderer } from 'electron'
+import { afterglowApi } from './afterglowApi.ts'
+import {
+  normalizePlaybackSessionSaveOptions,
+  type PlaybackSessionSaveOptions
+} from '../../shared/closePersistence.ts'
 import type { EqualizerClipboardApi, NativeContextMenuRequest } from '../types'
 import { NCM_CLOUD_TRANSFER_PROGRESS_CHANNEL } from '../../shared/ncmCloud.ts'
+import { IPC } from '../../shared/ipcChannels.ts'
+import { isAppHistoryCommand, type AppHistoryCommand } from '../../shared/appHistory.ts'
 import type {
   NcmCloudDownloadRequest,
   NcmCloudDownloadResult,
@@ -23,27 +30,39 @@ import type {
 } from '../../shared/appUpdate.ts'
 
 const appNavigationCallbacks = new Set<(target: TrayNavigationTarget) => void>()
-const savePlaybackSessionCallbacks = new Set<() => Promise<void> | void>()
+const historyCommandCallbacks = new Set<(command: AppHistoryCommand) => void>()
+const savePlaybackSessionCallbacks = new Set<
+  (options?: PlaybackSessionSaveOptions) => Promise<void> | void
+>()
 const equalizerClipboardApi: EqualizerClipboardApi = {
   copyEqBands: (bands) => ipcRenderer.invoke('window:copy-eq-bands', bands),
   pasteEqBands: () => ipcRenderer.invoke('window:paste-eq-bands')
 }
 
 export function bindSystemIpcEvents(): void {
-  ipcRenderer.on('app:save-playback-session', async (_event, requestId: string) => {
-    const outcome = await collectClosePersistenceOutcome(savePlaybackSessionCallbacks)
-    try {
-      await ipcRenderer.invoke('app:playback-session-saved', requestId, outcome)
-    } catch (error) {
-      // The main process treats a missing result as a timeout and keeps the
-      // window open. Do not convert this IPC failure into a successful ACK.
-      console.error('[persistence] Failed to report close persistence outcome:', error)
+  ipcRenderer.on(
+    'app:save-playback-session',
+    async (_event, requestId: string, rawOptions: unknown) => {
+      const options = normalizePlaybackSessionSaveOptions(rawOptions)
+      const outcome = await collectClosePersistenceOutcome(savePlaybackSessionCallbacks, options)
+      try {
+        await ipcRenderer.invoke('app:playback-session-saved', requestId, outcome)
+      } catch (error) {
+        // The main process treats a missing result as a timeout and keeps the
+        // window open. Do not convert this IPC failure into a successful ACK.
+        console.error('[persistence] Failed to report close persistence outcome:', error)
+      }
     }
-  })
+  )
 
   ipcRenderer.on('app:navigate', (_event, target: TrayNavigationTarget) => {
     if (target !== 'local' && target !== 'streaming') return
     for (const cb of appNavigationCallbacks) cb(target)
+  })
+
+  ipcRenderer.on(IPC.app.historyCommand, (_event, command: unknown) => {
+    if (!isAppHistoryCommand(command)) return
+    for (const cb of historyCommandCallbacks) cb(command)
   })
 }
 
@@ -123,14 +142,21 @@ export const systemApi = {
       ipcRenderer.on('app:update-progress', handler)
       return () => ipcRenderer.removeListener('app:update-progress', handler)
     },
-    onSavePlaybackSession: (cb: () => Promise<void> | void): (() => void) => {
+    onSavePlaybackSession: (
+      cb: (options?: PlaybackSessionSaveOptions) => Promise<void> | void
+    ): (() => void) => {
       savePlaybackSessionCallbacks.add(cb)
       return () => savePlaybackSessionCallbacks.delete(cb)
     },
     onNavigate: (cb: (target: TrayNavigationTarget) => void): (() => void) => {
       appNavigationCallbacks.add(cb)
       return () => appNavigationCallbacks.delete(cb)
-    }
+    },
+    onHistoryCommand: (cb: (command: AppHistoryCommand) => void): (() => void) => {
+      historyCommandCallbacks.add(cb)
+      return () => historyCommandCallbacks.delete(cb)
+    },
+    afterglow: afterglowApi
   },
   ncmCloud: {
     chooseUploadFiles: (): Promise<NcmCloudSelectedFile[]> =>

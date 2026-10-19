@@ -1,3 +1,6 @@
+import { initializeUtilityDiagnostics } from './diagnostics/utility.ts'
+import { observeDiagnosticOperation } from './diagnostics/observation.ts'
+import { writeDiagnostic } from './diagnostics/logger.ts'
 import {
   AUDIO_ANALYSIS_PROTOCOL_VERSION,
   type AudioAnalysisWorkerMessage,
@@ -43,6 +46,7 @@ if (!parentPort) {
 }
 
 const servicePort = parentPort
+initializeUtilityDiagnostics('twilight-audio-analysis')
 const nativeLoad = loadNativeBindingWithDiagnostics()
 const native = nativeLoad.binding
 const missingMethods = (['AnalyzeBpm', 'AnalyzeLoudness'] as const).filter(
@@ -72,7 +76,10 @@ if (startupError) {
 
 servicePort.on('message', (message) => {
   if (message.kind !== 'request') return
-  handleRequest(message)
+  observeDiagnosticOperation('audio.analysis', message.analysis, () => handleRequest(message), [], {
+    requestId: message.requestId,
+    ...(message as any).diagnosticContext
+  })
 })
 
 function handleRequest(message: AudioAnalysisWorkerRequest): void {
@@ -100,6 +107,12 @@ function handleRequest(message: AudioAnalysisWorkerRequest): void {
     )
     servicePort.postMessage({ kind: 'response', requestId: message.requestId, ok: true, value })
   } catch (error) {
+    writeDiagnostic(
+      'audio.analysis',
+      'analysis.failed',
+      { error, analysis: message.analysis },
+      'error'
+    )
     servicePort.postMessage({
       kind: 'response',
       requestId: message.requestId,

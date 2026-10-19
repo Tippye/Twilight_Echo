@@ -1,5 +1,6 @@
 #include "../RealAsioHost.h"
 #include "AsioHelperServer.h"
+#include "AsioHelperProtocol.h"
 
 #include <Windows.h>
 
@@ -32,7 +33,8 @@ bool parseArguments(int argc, wchar_t* argv[], Arguments* result) {
 
 int wmain(int argc, wchar_t* argv[]) {
   if (argc == 2 && std::wstring_view(argv[1]) == L"--self-test") {
-    std::cout << "{\"kind\":\"twilight-asio-helper\",\"protocolVersion\":1,\"status\":\"ready\"}";
+    std::cout << "{\"kind\":\"twilight-asio-helper\",\"protocolVersion\":"
+              << twilight::audio::asio_helper::kProtocolVersion << ",\"status\":\"ready\"}";
     return 0;
   }
   Arguments arguments;

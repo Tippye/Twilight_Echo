@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { writeDiagnostic } from '../diagnostics/logger.ts'
 
 export type RemoteCoverResizer = (
   bytes: Uint8Array,
@@ -27,29 +28,52 @@ export function createRemoteCoverCache(
   return {
     async read(source: string): Promise<Response | null> {
       const path = cachePath(source)
-      if (!path) return null
+      const miss = (reason: string) => {
+        writeDiagnostic('cover.cache', 'read.miss', { source, reason }, 'debug')
+        return null
+      }
+      if (!path) return miss('disabled')
       try {
         const info = await stat(path)
-        if (
-          Date.now() - info.mtimeMs > 7 * 24 * 60 * 60 * 1000 ||
-          info.size > 25 * 1024 * 1024 + 256
-        )
-          return null
+        if (Date.now() - info.mtimeMs > 7 * 24 * 60 * 60 * 1000) return miss('expired')
+        if (info.size > 25 * 1024 * 1024 + 256) return miss('oversized')
         const bytes = await readFile(path)
         const separator = bytes.indexOf(10)
-        if (separator < 1 || separator > 255) return null
+        if (separator < 1 || separator > 255) return miss('invalid-header')
         const type = bytes.subarray(0, separator).toString('utf8')
-        if (!/^image\/[a-z0-9.+-]+$/i.test(type)) return null
+        if (!/^image\/[a-z0-9.+-]+$/i.test(type)) return miss('invalid-content-type')
+        writeDiagnostic(
+          'cover.cache',
+          'read.hit',
+          { source, bytes: bytes.length - separator - 1, contentType: type },
+          'debug'
+        )
         return new Response(bytes.subarray(separator + 1), { headers: { 'content-type': type } })
-      } catch {
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') return miss('not-found')
+        writeDiagnostic('cover.cache', 'read.failed', { source, error }, 'warn')
         return null
       }
     },
     async write(source: string, type: string, bytes: Uint8Array): Promise<void> {
       const path = cachePath(source)
       let mime = type.split(';', 1)[0].trim()
-      if (!path || !/^image\/[a-z0-9.+-]+$/i.test(mime) || bytes.byteLength > 25 * 1024 * 1024)
+      if (!path || !/^image\/[a-z0-9.+-]+$/i.test(mime) || bytes.byteLength > 25 * 1024 * 1024) {
+        writeDiagnostic(
+          'cover.cache',
+          'write.skipped',
+          {
+            source,
+            reason: !path
+              ? 'disabled'
+              : bytes.byteLength > 25 * 1024 * 1024
+                ? 'oversized'
+                : 'content-type'
+          },
+          'debug'
+        )
         return
+      }
       let stored = bytes
       if (options.resize) {
         try {
@@ -58,7 +82,8 @@ export function createRemoteCoverCache(
             stored = resized.bytes
             mime = resized.mime.split(';', 1)[0].trim() || mime
           }
-        } catch {
+        } catch (error) {
+          writeDiagnostic('cover.cache', 'resize.failed', { source, error }, 'warn')
           // Keep the original bytes when downscaling fails.
         }
       }
@@ -67,7 +92,14 @@ export function createRemoteCoverCache(
         await mkdir(join(path, '..'), { recursive: true })
         await writeFile(temporary, Buffer.concat([Buffer.from(`${mime}\n`), stored]))
         await rename(temporary, path)
-      } catch {
+        writeDiagnostic(
+          'cover.cache',
+          'write.complete',
+          { source, inputBytes: bytes.byteLength, bytes: stored.byteLength, contentType: mime },
+          'debug'
+        )
+      } catch (error) {
+        writeDiagnostic('cover.cache', 'write.failed', { source, error }, 'warn')
         await rm(temporary, { force: true }).catch(() => undefined)
       }
     }

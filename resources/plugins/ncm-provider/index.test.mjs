@@ -524,6 +524,41 @@ test('private radar resolves the personalized radar playlist instead of private-
   }
 })
 
+test('level-based playback uses eapi without needing an xeapi key or the classic URL endpoint', async () => {
+  const requests = []
+  const provider = await activateProvider(async (path, cookie) => {
+    requests.push(path)
+    const url = parseRequest(path)
+    assert.equal(cookie, 'MUSIC_U=test;')
+    if (url.pathname !== '/song/url/v1' || url.searchParams.get('crypto') !== 'eapi') {
+      return { code: 404, msg: 'xeapi public key is missing', data: null }
+    }
+    return {
+      code: 200,
+      data: [{ id: 76, url: 'https://music.example/76.flac', code: 200 }]
+    }
+  })
+
+  try {
+    for (const quality of ['auto', 'hires', 'lossless', 'exhigh', 'standard']) {
+      assert.equal(
+        await provider.getPlaybackUrl({ id: 'ncm:76' }, { quality, force: true }),
+        'https://music.example/76.flac'
+      )
+    }
+    assert.equal(requests.length, 5)
+    assert.deepEqual(
+      requests.map((path) => parseRequest(path).searchParams.get('level')),
+      ['hires', 'hires', 'lossless', 'exhigh', 'standard']
+    )
+    assert.ok(
+      requests.every((path) => parseRequest(path).searchParams.get('encodeType') === 'flac')
+    )
+  } finally {
+    ncmProvider.deactivate()
+  }
+})
+
 test('playback quality falls back only through official lower compatible levels', async () => {
   const requests = []
   const provider = await activateProvider(async (path) => {
@@ -531,6 +566,7 @@ test('playback quality falls back only through official lower compatible levels'
     const url = parseRequest(path)
     assert.equal(url.pathname, '/song/url/v1')
     assert.equal(url.searchParams.get('encodeType'), 'flac')
+    assert.equal(url.searchParams.get('crypto'), 'eapi')
     if (url.searchParams.get('level') === 'lossless') {
       return {
         code: 200,
@@ -1935,6 +1971,81 @@ test('saved albums and artists paginate and normalize cloud collections', async 
     const artists = await provider.fetchSavedArtists()
     assert.equal(artists[0].id, 7)
     assert.equal(artists[0].name, 'Saved artist')
+  } finally {
+    ncmProvider.deactivate()
+  }
+})
+
+test('album collections retain upstream release kinds without guessing from track counts', async () => {
+  const source = [
+    { ...album(1), name: 'LONG SEASON', size: 1, type: 'Single', subType: '录音室版' },
+    { ...album(2), name: 'Spitfire EP', size: 11, type: '专辑', subType: '录音室版' },
+    { ...album(3), type: ' EP ', subType: ' 现场版 ' },
+    { ...album(4), type: 'EP/Single', subType: 'Remix' },
+    { ...album(5), type: 'Mixtape', subType: 'Demo' },
+    { ...album(6), type: ' ', subType: 7 },
+    album(7)
+  ]
+  const provider = await activateProvider(async (path) => {
+    const url = parseRequest(path)
+    if (url.pathname === '/artist/album') return { hotAlbums: source, more: false }
+    if (url.pathname === '/album/sublist') return { data: source, more: false }
+    throw new Error(`unexpected endpoint: ${url.pathname}`)
+  })
+  try {
+    for (const result of [
+      await provider.fetchArtistAlbums(185871),
+      await provider.fetchSavedAlbums()
+    ]) {
+      assert.deepEqual(
+        result.map(({ releaseType }) => releaseType),
+        ['Single', '专辑', 'EP', 'EP/Single', 'Mixtape', undefined, undefined]
+      )
+      assert.equal(result[0].trackCount, 1)
+      assert.equal(result[1].name, 'Spitfire EP')
+      assert.equal(result[1].trackCount, 11)
+    }
+  } finally {
+    ncmProvider.deactivate()
+  }
+})
+
+test('album explicit badges use the upstream flag bit and leave invalid metadata unknown', async () => {
+  const cases = [
+    [1048576, true],
+    [1056768, true],
+    [2 ** 40 + 1048576, true],
+    ['1056768', true],
+    [0, false],
+    [8192, false],
+    ['0', false],
+    [undefined, undefined],
+    [null, undefined],
+    ['', undefined],
+    [' ', undefined],
+    ['invalid', undefined],
+    [true, undefined],
+    [-1, undefined],
+    [1048576.5, undefined],
+    [Number.MAX_SAFE_INTEGER + 1, undefined]
+  ]
+  const source = cases.map(([mark], id) => ({ ...album(id + 1), name: 'Explicit', mark }))
+  const provider = await activateProvider(async (path) => {
+    const url = parseRequest(path)
+    if (url.pathname === '/artist/album') return { hotAlbums: source, more: false }
+    if (url.pathname === '/album/sublist') return { data: source, more: false }
+    throw new Error(`unexpected endpoint: ${url.pathname}`)
+  })
+  try {
+    for (const result of [
+      await provider.fetchArtistAlbums(53092),
+      await provider.fetchSavedAlbums()
+    ]) {
+      assert.deepEqual(
+        result.map(({ isExplicit }) => isExplicit),
+        cases.map(([, expected]) => expected)
+      )
+    }
   } finally {
     ncmProvider.deactivate()
   }

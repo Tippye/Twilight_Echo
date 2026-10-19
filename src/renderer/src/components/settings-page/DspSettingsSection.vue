@@ -395,7 +395,7 @@ onMounted(() => {
     <div class="dsp-signal-chain">
       <div class="signal-node static" :class="{ active: true }">
         <div class="signal-node-circle active">
-          <i class="pi pi-file-audio"></i>
+          <i class="pi pi-file" aria-hidden="true"></i>
         </div>
         <span class="signal-node-label">Input</span>
         <span class="signal-node-name">SOURCE</span>

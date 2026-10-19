@@ -70,6 +70,25 @@ async function save(): Promise<void> {
 function close(): void {
   if (!busy.value) emit('close')
 }
+let backdropPressed = false
+function isBackdrop(event: MouseEvent): boolean {
+  const element = dialog.value
+  if (!element || event.target !== element) return false
+  const bounds = element.getBoundingClientRect()
+  return (
+    event.clientX < bounds.left ||
+    event.clientX > bounds.right ||
+    event.clientY < bounds.top ||
+    event.clientY > bounds.bottom
+  )
+}
+function onBackdropPointerDown(event: PointerEvent): void {
+  backdropPressed = isBackdrop(event)
+}
+function onBackdropClick(event: MouseEvent): void {
+  if (backdropPressed && isBackdrop(event)) close()
+  backdropPressed = false
+}
 useEscapeToClose(() => !busy.value, close)
 </script>
 
@@ -79,6 +98,8 @@ useEscapeToClose(() => !busy.value, close)
     class="navigation-pages-dialog"
     aria-labelledby="navigation-pages-title"
     @cancel.prevent="close"
+    @pointerdown="onBackdropPointerDown"
+    @click="onBackdropClick"
   >
     <header>
       <div>

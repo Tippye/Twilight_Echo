@@ -518,7 +518,7 @@ test('desktop lyrics loads the shared renderer bundle as a satellite window', ()
   assert.match(integrationSource, /rendererUrl\.searchParams\.set\('window', 'desktop-lyrics'\)/)
   assert.match(
     integrationSource,
-    /loadFile\(join\(__dirname, '\.\.\/renderer\/index\.html'\), \{\s*query: \{ window: 'desktop-lyrics' \}/
+    /loadFile\(join\(__dirname, '\.\.\/renderer\/index\.html'\), \{\s*query: \{ window: 'desktop-lyrics', experienceTheme: desktopLyricsExperienceTheme \}/
   )
   assert.doesNotMatch(integrationSource, /desktop-lyrics\.html/)
   // The window is the shared renderer document now, so it needs no CSP or IPC-trust
@@ -743,6 +743,21 @@ test('player state persists a selected track before shell-level autosave is avai
     setupSideEffects,
     /currentTrack\.value\?\.id[\s\S]*persistSelectedTrackSession\(\)[\s\S]*flush: 'sync'/
   )
+})
+
+test('local removal normalizes paths in the renderer without Node globals', () => {
+  const source = readFileSync(new URL('./usePlayerStore.ts', import.meta.url), 'utf8')
+  const body = extractInternalFunctionBody(source, 'normalizeRemovalPath')
+  const normalize = (platform: string, filePath: string): string =>
+    vm.runInNewContext(`((filePath) => {${body}})(filePath)`, {
+      appPlatform: ref(platform),
+      filePath
+    })
+
+  assert.equal(normalize('win32', 'C:\\Music\\Song.FLAC'), 'c:/music/song.flac')
+  assert.equal(normalize('win32', 'c:/music/song.flac'), 'c:/music/song.flac')
+  assert.equal(normalize('linux', '/Music/Song.FLAC'), '/Music/Song.FLAC')
+  assert.notEqual(normalize('linux', '/Music/Song.FLAC'), normalize('linux', '/music/song.flac'))
 })
 
 test('removing a non-current local queue item persists the pruned restart session', () => {
@@ -1045,7 +1060,7 @@ test('NetEase next-track prefetch wires into playback progress and the native qu
   assert.match(prefetch, /const quality = appSettings\.value\.ncmPlaybackQuality/)
   assert.match(prefetch, /stillUpcoming\.streamUrl = resolved/)
   // 迟到守卫：解析期间目标漂移即丢弃结果，绝不写共享轨状态。
-  const resolveAt = prefetch.indexOf('resolvePlaybackUrl')
+  const resolveAt = prefetch.indexOf('callProvider')
   const guardAt = prefetch.indexOf('currentUpcoming()', resolveAt)
   const writeAt = prefetch.indexOf('stillUpcoming.streamUrl = resolved')
   assert.ok(resolveAt >= 0 && guardAt > resolveAt && writeAt > guardAt)
@@ -1062,9 +1077,14 @@ test('NetEase next-track prefetch wires into playback progress and the native qu
   )
 })
 
+type NcmPrefetchResult =
+  | string
+  | { streamUrl: string; sampleRate?: number; bitrate?: number }
+  | null
+
 function ncmGaplessFixture(
   options: {
-    resolve?: (track: Track, quality: Track['streamQuality']) => Promise<string | null>
+    resolve?: (track: Track, quality: Track['streamQuality']) => Promise<NcmPrefetchResult>
     authorize?: (path: string) => Promise<boolean>
   } = {}
 ) {
@@ -1111,8 +1131,18 @@ function ncmGaplessFixture(
     getNcmPrefetchScope: () => context.scope,
     syncPluginProviders: async () => {},
     isUsableLocalPlaybackFile: options.authorize ?? (async () => false),
-    useMediaProviders: () => ({
-      resolvePlaybackUrl: async (track: Track, resolution: { quality: Track['streamQuality'] }) => {
+    useProviderStore: () => ({
+      callProvider: async (
+        providerId: string,
+        method: string,
+        [track, resolution]: [
+          Track,
+          { quality: Track['streamQuality']; _twilightPlaybackMetadata?: boolean }
+        ]
+      ) => {
+        assert.equal(providerId, 'ncm')
+        assert.equal(method, 'getPlaybackUrl')
+        assert.equal(resolution._twilightPlaybackMetadata, true)
         calls.push({ id: track.id, quality: resolution.quality })
         return options.resolve
           ? options.resolve(track, resolution.quality)
@@ -1180,6 +1210,75 @@ function ncmGaplessFixture(
     }
   }
 }
+
+test('NetEase prefetch writes source metadata to the latest cloned queue entry', async () => {
+  let release!: (result: NcmPrefetchResult) => void
+  const f = ncmGaplessFixture({
+    resolve: async () =>
+      new Promise<NcmPrefetchResult>((done) => {
+        release = done
+      })
+  })
+  const upcoming = f.context.queue.value[1]
+  const pending = f.prefetch()
+  await new Promise<void>((done) => setImmediate(done))
+  f.context.queue.value = f.context.queue.value.map((track) => ({ ...track }))
+  release({ streamUrl: 'twilight-media://audio/b', sampleRate: 96000, bitrate: 4608000 })
+  await pending
+  assert.equal(upcoming.sampleRate, undefined)
+  assert.equal(f.context.queue.value[1].sampleRate, 96000)
+  assert.equal(f.context.queue.value[1].bitrate, 4608000)
+  assert.notEqual(f.context.queue.value[1], upcoming)
+  assert.deepEqual(f.calls, [{ id: 'ncm:b', quality: 'lossless' }])
+  assert.deepEqual(f.loaded, [['twilight-media://audio/a', 'twilight-media://audio/b']])
+})
+
+for (const invalid of [undefined, NaN, Infinity, -Infinity, 0, -1]) {
+  test(`NetEase prefetch clears invalid source metadata (${String(invalid)})`, async () => {
+    const f = ncmGaplessFixture({
+      resolve: async () => ({
+        streamUrl: 'twilight-media://audio/b',
+        sampleRate: invalid,
+        bitrate: invalid
+      })
+    })
+    f.context.queue.value[1].sampleRate = 192000
+    f.context.queue.value[1].bitrate = 9216000
+    await f.prefetch()
+    assert.equal(f.context.queue.value[1].sampleRate, undefined)
+    assert.equal(f.context.queue.value[1].bitrate, undefined)
+    assert.equal(f.loaded[0][1], 'twilight-media://audio/b')
+  })
+}
+
+test('native HiFi identity rejects old queue tokens and mismatched duplicate entries', async () => {
+  const f = ncmGaplessFixture()
+  f.context.queue.value[1] = {
+    ...f.context.currentTrack.value,
+    queueEntryId: 'entry:duplicate'
+  }
+  await f.context.queueNativeQueueStateSync()
+  const source = readFileSync(new URL('./usePlayerStore.ts', import.meta.url), 'utf8')
+  const code = ts.transpileModule(
+    `function isCurrentTrackNativePlaybackInfo(info) {${extractInternalFunctionBody(source, 'isCurrentTrackNativePlaybackInfo')}}`,
+    { compilerOptions: { target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+  const matches = vm.runInNewContext(
+    `${code}\nisCurrentTrackNativePlaybackInfo`,
+    f.context
+  ) as (info: { queueIndex: number; queueToken?: string }) => boolean
+  assert.equal(matches({ queueIndex: 0, queueToken: 'version:1' }), true)
+  assert.equal(matches({ queueIndex: 0, queueToken: 'old-version' }), false)
+  assert.equal(matches({ queueIndex: 0 }), false)
+  assert.equal(matches({ queueIndex: 1, queueToken: 'version:1' }), false)
+  f.context.queueIndex.value = 1
+  assert.equal(matches({ queueIndex: 1, queueToken: 'version:1' }), false)
+  f.context.currentTrack.value = f.context.queue.value[1]
+  assert.equal(matches({ queueIndex: 1, queueToken: 'version:1' }), true)
+  f.context.queue.value[1] = { ...f.context.queue.value[1], queueEntryId: 'replacement' }
+  f.context.currentTrack.value = f.context.queue.value[1]
+  assert.equal(matches({ queueIndex: 1, queueToken: 'version:1' }), false)
+})
 
 test('NetEase grants reach native preload even with unresolved later album tracks', async () => {
   const f = ncmGaplessFixture()
@@ -1290,7 +1389,7 @@ test('NetEase prefetch retries a failed native commit without retaining false fr
 
 for (const change of ['account', 'quality', 'load', 'queue-entry'] as const) {
   test(`NetEase prefetch discards a late result after a ${change} change and prepares the new target`, async () => {
-    let release!: (target: string) => void
+    let release!: (target: NcmPrefetchResult) => void
     let markStarted!: () => void
     const started = new Promise<void>((resolve) => {
       markStarted = resolve
@@ -1299,11 +1398,11 @@ for (const change of ['account', 'quality', 'load', 'queue-entry'] as const) {
     const f = ncmGaplessFixture({
       resolve: async () =>
         ++count === 1
-          ? new Promise<string>((resolve) => {
+          ? new Promise<NcmPrefetchResult>((resolve) => {
               release = resolve
               markStarted()
             })
-          : 'twilight-media://audio/new-target'
+          : { streamUrl: 'twilight-media://audio/new-target', sampleRate: 44100, bitrate: 1411200 }
     })
     const pending = f.prefetch()
     await started
@@ -1316,11 +1415,17 @@ for (const change of ['account', 'quality', 'load', 'queue-entry'] as const) {
     if (change === 'queue-entry') {
       f.context.queue.value[1] = { ...f.context.queue.value[1], queueEntryId: 'replacement' }
     }
-    release('twilight-media://audio/stale-target')
+    release({
+      streamUrl: 'twilight-media://audio/stale-target',
+      sampleRate: 96000,
+      bitrate: 4608000
+    })
     await pending
     await new Promise<void>((resolve) => setImmediate(resolve))
     assert.equal(f.loaded.length, 1)
     assert.equal(f.loaded[0][1], 'twilight-media://audio/new-target')
+    assert.equal(f.context.queue.value[1].sampleRate, 44100)
+    assert.equal(f.context.queue.value[1].bitrate, 1411200)
     assert.equal(
       f.context.queue.value[1].streamQuality,
       f.context.appSettings.value.ncmPlaybackQuality
@@ -1794,6 +1899,7 @@ function volumeRestoreFixture(savedVolume: number) {
     .join('\n')
   const implementation = ts.transpileModule(
     `let suppressVolumePersist = false
+     let adoptedAfterglowRestore = false
      const playbackAudio = null
      const lastAudibleVolume = ref(0.7)
      const muted = ref(false)

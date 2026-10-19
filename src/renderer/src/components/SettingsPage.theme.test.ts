@@ -94,7 +94,7 @@ test('liquid glass settings expose unified and independent targets', () => {
   assert.match(liquidGlassSettingsSource, /主导航液态玻璃/)
   assert.match(liquidGlassSettingsSource, /播放栏液态玻璃/)
   assert.match(liquidGlassSettingsSource, /设置导航液态玻璃/)
-  assert.match(liquidGlassSettingsSource, /首页媒体焦点液态玻璃/)
+  assert.doesNotMatch(liquidGlassSettingsSource, /首页媒体焦点液态玻璃|扩展实验/)
   assert.match(liquidGlassSettingsSource, /navigationEnabled/)
   assert.match(liquidGlassSettingsSource, /playbarEnabled/)
   assert.match(liquidGlassSettingsSource, /settingsNavigationEnabled/)
@@ -134,7 +134,7 @@ test('native checkboxes inherit the active dark color scheme and theme accent', 
     baseStyles,
     /input\[type='checkbox'\][\s\S]*?accent-color:\s*var\(--te-primary-500\)/
   )
-  assert.match(baseStyles, /:root\[data-theme='dark'\]\s*\{\s*color-scheme:\s*dark/)
+  assert.match(baseStyles, /:root\[data-theme='dark'\]\s*\{[^}]*color-scheme:\s*dark/)
   assert.match(baseStyles, /html input\[type='checkbox'\][\s\S]*?appearance:\s*none/)
   assert.match(
     baseStyles,
@@ -181,7 +181,7 @@ test('settings wallpaper is painted once by the overlay root, never per element'
   assert.doesNotMatch(darkSettingsPageRule, /--te-settings-bg-image/)
   assert.match(
     appSource,
-    /class="settings-overlay-root"[\s\S]*?settings-overlay-root--active[\s\S]*?<Transition name="settings-page">[\s\S]*?<SettingsPage/
+    /class="settings-overlay-root"[\s\S]*?settings-overlay-root--active[\s\S]*?<Transition\s+name="settings-page"[\s\S]*?<SettingsPage/
   )
   assert.match(
     appSource,
@@ -218,7 +218,12 @@ test('settings wallpaper is painted once by the overlay root, never per element'
 test('plugin center uses the settings wallpaper painter over streaming content', () => {
   const overlay =
     appSource.match(/<div\s+class="settings-overlay-root"[\s\S]*?<CommandPalette/)?.[0] ?? ''
-  assert.match(overlay, /settings-overlay-root--active': showSettingsPage \|\| showPluginPage/)
+  assert.match(overlay, /settings-overlay-root--active': settingsOverlayVisible/)
+  assert.match(overlay, /v-show="settingsOverlayVisible && !appearanceFullWindowPreview"/)
+  assert.match(
+    appSource,
+    /showSettingsPage\.value \|\| showPluginPage\.value \|\| settingsOverlayLeaves\.value > 0/
+  )
   assert.match(overlay, /<PluginPage\s+v-if="showPluginPage"/)
 })
 

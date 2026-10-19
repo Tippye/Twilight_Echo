@@ -1,6 +1,7 @@
 #include "MockAsioHost.h"
 
 #include <algorithm>
+#include <chrono>
 
 namespace twilight::audio {
 namespace {
@@ -217,12 +218,12 @@ bool MockAsioHost::createBuffers(
   }
   channelBuffers.assign(static_cast<size_t>(channels), ChannelBuffer{});
   for (int channel = 0; channel < channels; ++channel) {
-    const AudioSampleFormat format =
-        channel < static_cast<int>(channelFormats.size()) ? channelFormats[static_cast<size_t>(channel)] : lastOpenConfig.format.sampleFormat;
-    const size_t bytes = frames * bytesPerSample(format);
+    const size_t bytes = asio::wireBytesForFrames(outputChannelFormat(channel), frames);
     channelBuffers[static_cast<size_t>(channel)].buffers[0].assign(bytes, 0);
     channelBuffers[static_cast<size_t>(channel)].buffers[1].assign(bytes, 0);
   }
+  dsdGeometry_.reset(frames, lastOpenConfig.format.sampleRate,
+      outputChannelFormat(0).dsdPacking == AsioDsdPacking::Ner8, lastOpenConfig.dsdCadenceConfirmCallbacks);
   return true;
 }
 
@@ -283,8 +284,19 @@ long MockAsioHost::activeBufferSize() const { return openResult.bufferSizeFrames
 std::string MockAsioHost::lastCloseError() const { return lastHostError; }
 
 void MockAsioHost::triggerBufferSwitch(long bufferIndex) {
+  if (isDsdSampleFormat(lastOpenConfig.format.sampleFormat)) {
+    dsdGeometry_.observe(static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count()));
+  }
   if (bufferSwitch_) bufferSwitch_(bufferIndex);
 }
+
+size_t MockAsioHost::activeRenderFrameCapacity() const {
+  return isDsdSampleFormat(lastOpenConfig.format.sampleFormat) ? dsdGeometry_.capacity()
+      : static_cast<size_t>(std::max<long>(0, openResult.bufferSizeFrames));
+}
+
+bool MockAsioHost::dsdBufferUnitConfirmed() const { return dsdGeometry_.confirmed(); }
 
 void MockAsioHost::triggerEvent(AsioHostEvent event, const std::string& message) {
   if (eventCallback_) eventCallback_(event, message);

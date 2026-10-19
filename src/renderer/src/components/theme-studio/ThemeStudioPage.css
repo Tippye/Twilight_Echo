@@ -1,15 +1,7 @@
 .theme-studio-page {
   position: fixed;
-  /* Reserve the native title-bar strip, the way the settings route does. This
-     surface resolves to `titleSurface: 'settings'`, so the bar paints an opaque
-     backplate at z-index 9999 over its configured height — anything laid out underneath is
-     covered outright, not merely overlapped. The header centers a 68px row, so
-     without this its title and the top half of every control disappear.
-     The offset cannot be shared with SettingsPage.css verbatim: this page lives
-     inside `.main-content`, whose `transform` makes it the containing block for
-     fixed children, and theme-authored shells put the bar in flow above that box
-     (see the reset below). */
-  inset: var(--te-titlebar-height, 32px) 0 0;
+  /* The main-content containing block already starts below the title strip. */
+  inset: 0;
   /* Above the sidebar (1000) and player bar (1002); below the title bar (9999). */
   z-index: 2000;
   display: flex;

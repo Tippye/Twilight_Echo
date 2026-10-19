@@ -34,6 +34,47 @@ export function clampMiniPlayerBoundsToWorkArea(bounds: Rectangle, workArea: Rec
   }
 }
 
+/**
+ * Approximates a rounded rectangle with 1px rows for `BrowserWindow#setShape` on
+ * Windows. The mini player no longer clips natively, but the dynamic island
+ * does: a transparent always-on-top window needs an explicit region or the
+ * antialiased CSS corners leave stray opaque pixels behind.
+ */
+export function createMiniPlayerWindowShape(
+  width: number,
+  height: number,
+  cornerRadius: number
+): Rectangle[] {
+  const roundedWidth = Math.max(1, Math.round(width))
+  const roundedHeight = Math.max(1, Math.round(height))
+  const radius = Math.min(
+    Math.max(0, Math.round(cornerRadius)),
+    Math.floor(roundedWidth / 2),
+    Math.floor(roundedHeight / 2)
+  )
+  if (radius === 0) return [{ x: 0, y: 0, width: roundedWidth, height: roundedHeight }]
+
+  const shape: Rectangle[] = []
+  const middleHeight = roundedHeight - radius * 2
+  if (middleHeight > 0) {
+    shape.push({ x: 0, y: radius, width: roundedWidth, height: middleHeight })
+  }
+
+  for (let y = 0; y < radius; y += 1) {
+    const distanceFromCenter = radius - y - 0.5
+    const geometricInset =
+      radius - Math.sqrt(Math.max(0, radius * radius - distanceFromCenter * distanceFromCenter))
+    const inset = Math.min(radius, Math.ceil(geometricInset) + 1)
+    const rowWidth = roundedWidth - inset * 2
+    if (rowWidth <= 0) continue
+    shape.push({ x: inset, y, width: rowWidth, height: 1 })
+    const mirroredY = roundedHeight - y - 1
+    if (mirroredY !== y) shape.push({ x: inset, y: mirroredY, width: rowWidth, height: 1 })
+  }
+
+  return shape
+}
+
 const MAX_MINI_PLAYER_COORDINATE = 100_000
 // Windows lands a frameless thick-frame window up to a few pixels off the bounds
 // it was given at fractional scale factors.

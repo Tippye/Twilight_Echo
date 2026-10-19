@@ -12,12 +12,43 @@ export interface PlaybackQueueRemovalResult extends PlaybackQueueRemovalState {
 }
 
 type LocalTracksUnavailableListener = (trackIds: string[], filePaths: string[]) => void
+type LocalTracksRemovalRequestedListener = (
+  trackIds: string[],
+  filePaths: string[]
+) => void | Promise<void>
 
 const unavailableListeners = new Set<LocalTracksUnavailableListener>()
+const removalRequestedListeners = new Set<LocalTracksRemovalRequestedListener>()
 
 export function onLocalTracksUnavailable(listener: LocalTracksUnavailableListener): () => void {
   unavailableListeners.add(listener)
   return () => unavailableListeners.delete(listener)
+}
+
+/**
+ * Gives playback and other local-file consumers a chance to close their
+ * handles before the main process asks the operating system to trash a file.
+ * The listeners are intentionally awaited in registration order so a caller
+ * never races the following library mutation with an in-flight release.
+ */
+export function onLocalTracksRemovalRequested(
+  listener: LocalTracksRemovalRequestedListener
+): () => void {
+  removalRequestedListeners.add(listener)
+  return () => removalRequestedListeners.delete(listener)
+}
+
+export async function prepareLocalTracksForRemoval(
+  trackIds: string[],
+  filePaths: string[]
+): Promise<void> {
+  for (const listener of removalRequestedListeners) {
+    try {
+      await listener(trackIds, filePaths)
+    } catch (error) {
+      console.error('[library] Failed to release a local track before trashing:', error)
+    }
+  }
 }
 
 export function notifyLocalTracksUnavailable(trackIds: string[], filePaths: string[]): void {

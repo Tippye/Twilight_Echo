@@ -1,4 +1,4 @@
-﻿'use strict'
+'use strict'
 
 const fs = require('node:fs')
 const path = require('node:path')
@@ -84,7 +84,7 @@ function collectPreloadInvoke(entries) {
     /ipcRenderer\.invoke\s*\(\s*['"]\s*([^'"]+)['"]\s*[,)]/g,
     /ipcRenderer\.invoke\(\s*`([^`]+)`\s*[,)]/g,
     /invoke(?:Optional)?VersionedDataWrite\s*\(\s*['"]\s*([^'"]+)['"]\s*,/g,
-    /ipcRenderer\.invoke\s*\(\s*(IPC\.[\w.]+)\s*[,)]/g
+    /(?:ipcRenderer\.invoke|originalInvoke)\s*\(\s*(IPC\.[\w.]+)\s*[,)]/g
   ]
   for (const { rel: r, source } of entries) {
     for (const pattern of patterns) {
@@ -103,7 +103,7 @@ function collectPreloadSend(entries) {
   const patterns = [
     /ipcRenderer\.send\s*\(\s*['"]\s*([^'"]+)['"]\s*,/g,
     /ipcRenderer\.send\(\s*`([^`]+)`\s*,/g,
-    /ipcRenderer\.send\s*\(\s*(IPC\.[\w.]+)\s*,/g
+    /(?:ipcRenderer\.send|originalSend)\s*\(\s*(IPC\.[\w.]+)\s*,/g
   ]
   for (const { rel: r, source } of entries) {
     for (const pattern of patterns) {
@@ -182,6 +182,7 @@ function buildReport() {
 
   const rendererDomains = unique(rendererUses.map((i) => i.domain))
   const knownPreloadDomains = [
+    'diagnostics',
     'sleepTimer',
     'systemMedia',
     'window',
@@ -205,11 +206,13 @@ function buildReport() {
     'settings',
     'fonts',
     'themes',
+    'themeWorkshop',
     'plugins',
     'providers',
     'providerDownloads',
     'extensions',
     'desktopLyrics',
+    'dynamicIsland',
     'miniPlayer',
     'trayPlayer',
     'debug'

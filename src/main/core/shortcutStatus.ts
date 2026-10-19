@@ -1,9 +1,11 @@
 import { isCommandPaletteAccelerator } from '../../shared/commandPaletteShortcut.ts'
+import { isCloseWindowAccelerator } from '../../shared/shortcutPreferences.ts'
 
 export interface PlayerShortcutDefinition<Action extends string = string> {
   accelerator: string
   action: Action
   label: string
+  enabled?: boolean
 }
 
 export function buildPlayerShortcutStatuses<Action extends string>(
@@ -12,7 +14,7 @@ export function buildPlayerShortcutStatuses<Action extends string>(
   register: (accelerator: string) => boolean
 ): Array<PlayerShortcutDefinition<Action> & { registered: boolean; error: string | null }> {
   return shortcuts.map((shortcut) => {
-    if (!enabled) {
+    if (!enabled || shortcut.enabled === false) {
       return {
         ...shortcut,
         registered: false,
@@ -25,6 +27,13 @@ export function buildPlayerShortcutStatuses<Action extends string>(
         ...shortcut,
         registered: false,
         error: 'Ctrl+K / ⌘K 已保留给应用内命令面板，请选择其他全局组合键'
+      }
+    }
+    if (isCloseWindowAccelerator(shortcut.accelerator)) {
+      return {
+        ...shortcut,
+        registered: false,
+        error: 'Ctrl+W / ⌘W 已保留给应用内关闭窗口，请选择其他全局组合键'
       }
     }
     const registered = register(shortcut.accelerator)

@@ -1,4 +1,4 @@
-export const TWILIGHT_PLUGIN_API_VERSION = 3 as const
+export const TWILIGHT_PLUGIN_API_VERSION = 4 as const
 export const TAE_DSP_PLUGIN_ABI_VERSION = 1 as const
 export const TAE_DSP_PLUGIN_ABI_VERSION_V2 = 2 as const
 
@@ -17,6 +17,8 @@ export type TwilightPluginPermission =
   | 'settings'
   | 'clipboard'
   | 'ui:inject'
+  | 'app:settings'
+  | 'plugins:manage'
   | 'dsp:native'
 
 export interface TwilightPluginManifest {
@@ -41,6 +43,30 @@ export interface TwilightPluginManifest {
   icon?: string
   signature?: unknown
 }
+
+/** API v4: isolated, packaged full-window interface. No preload or Node access. */
+export interface PluginExperience {
+  id: string
+  name: string
+  /** HTML file relative to the installed version root, e.g. dist/index.html. */
+  entry: string
+  bridgeVersion: 1 | 2
+}
+
+export interface PluginExperienceContribution {
+  experiences: PluginExperience[]
+}
+
+export interface PluginExperienceRequest {
+  id: number
+  method: string
+  args?: Record<string, unknown>
+}
+
+export type PluginExperienceMessage =
+  | { id: number; value: unknown }
+  | { id: number; error: string }
+  | { event: 'player' | 'queue' | 'lyrics' | 'library'; value: unknown }
 
 export type TwilightPluginStatus = 'installed' | 'enabled' | 'disabled' | 'invalid' | 'failed'
 export type TwilightPluginSource = 'directory' | 'tep' | 'bundled' | 'index'
@@ -223,6 +249,14 @@ export interface Track {
   /** Metadata is available, but this provider cannot currently play the track. */
   playbackStatus?: 'unsupported'
   title: string
+  /** Optional grouping metadata; each part retains its own playable id and duration. */
+  mediaPart?: {
+    groupId: string
+    groupTitle: string
+    title: string
+    index: number
+    count: number
+  }
   artist: string
   /** Structured artist identities behind the `artist` display string. */
   artists?: TrackArtistRef[]
@@ -267,6 +301,10 @@ export interface AlbumSummary {
   cover?: string | null
   trackCount?: number
   publishTime?: number
+  /** Provider-reported release kind; do not infer LP/EP from the track count. */
+  releaseType?: string
+  /** Provider-reported explicit-content flag; omitted when unavailable. */
+  isExplicit?: boolean
 }
 
 /** Public music charts, including the provider's compact song previews. */
@@ -1018,14 +1056,120 @@ export interface NativeDspPluginStatus {
   parameters?: NativeDspParameterInfo[]
 }
 
+export interface TwilightOverlayAppearanceConfig {
+  backgroundColor: string
+  /** Surface opacity in percent (host clamps to 30–100). */
+  backgroundOpacity: number
+  textColor: string
+  accentColor: string
+  accentSource: 'custom' | 'cover'
+  visualizerColor: string
+  /** Text scale in percent (host clamps to 80–130). */
+  fontScale: number
+  collapsedRadius: number
+  expandedRadius: number
+  audioReactive: boolean
+}
+
+export interface TwilightOverlayLayoutConfig {
+  collapsedWidth: number
+  collapsedHeight: number
+  expandedWidth: number
+  anchor: 'left' | 'center' | 'right'
+  offsetX: number
+  offsetY: number
+  display: 'main-window' | 'primary'
+}
+
+export interface TwilightOverlayComponentsConfig {
+  collapsedContent: 'artwork' | 'track' | 'lyric'
+  cover: boolean
+  visualizer: boolean
+  lyric: boolean
+  progress: boolean
+  time: boolean
+  favorite: boolean
+  skip: boolean
+  volume: boolean
+}
+
+export interface TwilightOverlayBehaviorConfig {
+  expandTrigger: 'hover' | 'click'
+  collapseDelayMs: number
+  motion: 'off' | 'fast' | 'normal' | 'slow'
+  visibility: 'always' | 'when-track' | 'when-playing'
+}
+
+/** Complete, normalized dynamic island config as returned by `overlay.configure`. */
+export interface TwilightOverlayConfig {
+  appearance: TwilightOverlayAppearanceConfig
+  layout: TwilightOverlayLayoutConfig
+  components: TwilightOverlayComponentsConfig
+  behavior: TwilightOverlayBehaviorConfig
+}
+
+/** Partial DIY config submitted by a plugin; the host fills and clamps every field. */
+export interface TwilightOverlayConfigInput {
+  appearance?: Partial<TwilightOverlayAppearanceConfig>
+  layout?: Partial<TwilightOverlayLayoutConfig>
+  components?: Partial<TwilightOverlayComponentsConfig>
+  behavior?: Partial<TwilightOverlayBehaviorConfig>
+}
+
+/**
+ * Controls the host-owned dynamic island window. Requires the `ui:inject`
+ * permission and exclusive ownership: only one plugin may use it at a time.
+ * Older hosts omit this namespace, so probe `typeof twilight.overlay?.configure`
+ * before calling.
+ */
+export interface TwilightOverlayApi {
+  show(): Promise<void>
+  hide(): Promise<void>
+  /** Returns the config the host actually rendered; persist this value. */
+  configure(config?: TwilightOverlayConfigInput): Promise<TwilightOverlayConfig>
+}
+
+/**
+ * Create or extend the user's local playlists.
+ *
+ * The renderer owns the playlist store, so the call is fire-and-forget: it
+ * resolves once the request has been queued in the current application session.
+ * Imports wait for the main renderer's library and playlists to finish loading,
+ * and the host reports how many entries matched with a single combined toast. Entries are
+ * matched by file path, exactly like the built-in `.m3u8` importer, so a plugin
+ * never needs to know local track ids.
+ *
+ * Requests are batched because plugins typically import tens of playlists at
+ * once; an empty playlist is skipped, and one with no matching paths still
+ * creates the (empty) playlist.
+ *
+ * Requires the `library:write` permission. Hosts predating this namespace omit
+ * `twilight.library`, so probe `typeof twilight.library?.importPlaylists`
+ * before calling.
+ */
+export interface TwilightLibraryApi {
+  importPlaylists(request: {
+    playlists: Array<{
+      /** Playlist to create, or append to by name. Maximum 80 normalized characters; longer names reject the request. */
+      name: string
+      /** Absolute audio file paths, in playlist order. */
+      paths: string[]
+    }>
+  }): Promise<void>
+}
+
 export interface TwilightApi {
   events: TwilightEventsApi
   player: TwilightPlayerApi
   providers: TwilightProvidersApi
   ui: TwilightUiApi
   themes: TwilightThemesApi
+  /** Host-owned dynamic island window (requires `ui:inject`). */
+  overlay?: TwilightOverlayApi
   /** Optional host-owned secure QR flow for the Qishui provider. */
   qishuiAuth?: TwilightQishuiAuthApi
+  /** Local playlist import (requires `library:write`). */
+  library?: TwilightLibraryApi
 }
 
 export type Activate = (context: TwilightPluginContext) => void | Promise<void>

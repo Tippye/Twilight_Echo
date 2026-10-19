@@ -8,6 +8,7 @@ import { promisify } from 'node:util'
 import test from 'node:test'
 import { compileScript, compileStyle, parse } from '@vue/compiler-sfc'
 import ts from 'typescript'
+import { THEME_ICON_SLOT_REGISTRY } from '../../../../shared/theme.ts'
 
 const require = createRequire(import.meta.url)
 
@@ -55,7 +56,9 @@ test('login and title bar recover from disabled providers in real Electron rende
       iconStyle,
       iconPaths,
       baseStyle,
-      appearanceStyle
+      appearanceStyle,
+      themeIcon,
+      themeIconStyle
     ] = await Promise.all([
       readFile(require.resolve('vue/dist/vue.global.prod.js'), 'utf8'),
       component('../LoginPage.vue'),
@@ -68,11 +71,13 @@ test('login and title bar recover from disabled providers in real Electron rende
       componentStyle('../icons/TitleBarIcon.vue'),
       readFile(new URL('../icons/titleBarIconPaths.ts', import.meta.url), 'utf8'),
       readFile(new URL('../../assets/base.css', import.meta.url), 'utf8'),
-      readFile(new URL('../../assets/appearance.css', import.meta.url), 'utf8')
+      readFile(new URL('../../assets/appearance.css', import.meta.url), 'utf8'),
+      component('../ThemeIcon.vue'),
+      componentStyle('../ThemeIcon.vue')
     ])
     await writeFile(
       join(directory, 'index.html'),
-      `<!doctype html><meta charset="utf-8"><style>${baseStyle}\n${appearanceStyle}\n${await readFile(new URL('../../assets/theme-layouts/obsidian-glass.css', import.meta.url), 'utf8')}\n${await readFile(new URL('../../assets/theme-layouts/paper-light.css', import.meta.url), 'utf8')}\n${titleStyle}\n${iconStyle}</style><div id="title"></div><div id="app"></div>
+      `<!doctype html><meta charset="utf-8"><style>${baseStyle}\n${appearanceStyle}\n${await readFile(new URL('../../assets/theme-layouts/obsidian-glass.css', import.meta.url), 'utf8')}\n${await readFile(new URL('../../assets/theme-layouts/paper-light.css', import.meta.url), 'utf8')}\n${titleStyle}\n${iconStyle}\n${themeIconStyle}</style><div id="title"></div><div id="app"></div>
       <script>${vue}</script><script>${runtime}</script>
       <script>
         const load = source => {
@@ -85,6 +90,8 @@ test('login and title bar recover from disabled providers in real Electron rende
         window.ServerLoginForm = load(${JSON.stringify(serverForm)}).default;
         window.LoginPage = load(${JSON.stringify(login)}).default;
         window.titleBarIconPaths = load(${JSON.stringify(commonJs(iconPaths))});
+        window.themeIconRegistry = ${JSON.stringify(THEME_ICON_SLOT_REGISTRY)};
+        window.ThemeIcon = load(${JSON.stringify(themeIcon)}).default;
         window.TitleBarIcon = load(${JSON.stringify(titleIcon)}).default;
         window.TitleBar = load(${JSON.stringify(title)}).default;
       </script>`
@@ -92,12 +99,36 @@ test('login and title bar recover from disabled providers in real Electron rende
     await writeFile(
       join(directory, 'runner.cjs'),
       `const { app, BrowserWindow } = require('electron');
+      app.setPath('userData', require('node:path').join(require('node:path').dirname(process.argv.at(-1)), 'user-data'));
       app.whenReady().then(async () => {
         const win = new BrowserWindow({ show: false, webPreferences: { backgroundThrottling: false, offscreen: true } });
         win.webContents.on('console-message', event => { if (event.level === 'error') console.error(event.message); });
         try {
           await win.loadFile(process.argv.at(-1));
           const cases = await win.webContents.executeJavaScript('window.runProviderFallbackTests()');
+          win.webContents.debugger.attach('1.3');
+          for (const preference of ['normal', 'reduced-transparency', 'more-contrast']) {
+            await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [
+              { name: 'prefers-reduced-transparency', value: preference === 'reduced-transparency' ? 'reduce' : 'no-preference' },
+              { name: 'prefers-contrast', value: preference === 'more-contrast' ? 'more' : 'no-preference' }
+            ] });
+            for (const theme of ['pureWhite', 'dark']) for (const menuOpen of [false, true]) for (const light of [false, true]) for (const layout of ['default', 'obsidian-glass', 'paper-light']) {
+              const scenario = { preference, theme, menuOpen, light, layout };
+              const expected = await win.webContents.executeJavaScript('window.preparePlaybackCaptionCase(' + JSON.stringify(scenario) + ')');
+              const capture = await win.webContents.capturePage();
+              const pixels = capture.toBitmap(), width = capture.getSize().width;
+              for (const [x, y] of [[10, 2], [90, 2], [200, 20], [300, 20], [500, 2]]) {
+                const offset = (y * width + x) * 4;
+                const actual = [pixels[offset + 2], pixels[offset + 1], pixels[offset]];
+                if (actual.some((channel, index) => Math.abs(channel - expected[index]) > 1)) {
+                  throw new Error('Playback caption has a separate color block at ' + x + ',' + y + ': ' + JSON.stringify({ scenario, actual, expected }));
+                }
+              }
+            }
+          }
+          await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'forced-colors', value: 'active' }] });
+          await win.webContents.executeJavaScript('window.checkForcedColorPlaybackCaption()');
+          await win.webContents.executeJavaScript('window.finishPlaybackCaptionCases()');
           console.log('LOGIN_PROVIDER_FALLBACK_OK ' + cases);
           app.exit(0);
         } catch (error) { console.error(error.stack); app.exit(1); }
@@ -132,6 +163,49 @@ const settings = { id: 'apple', name: 'Apple Music', capabilities: ['login'], su
 const searchOnly = { id: 'search', name: '搜索', capabilities: ['search'], supportedMethods: [] };
 const loggedIn = ref(false), profile = ref(null), canGoBack = ref(false), titleProps = ref({ streaming: true });
 let available = [], calls = [], changed, handler, loginApp, titleApp, success = 0, configure = 0;
+window.preparePlaybackCaptionCase = async ({ preference, theme, menuOpen, light, layout }) => {
+  if (!titleApp) {
+    titleApp = createApp({ render: () => h(window.TitleBar, { ...titleProps.value }) });
+    titleApp.mount('#title');
+    const backdrop = document.createElement('div');
+    backdrop.id = 'playback-caption-backdrop';
+    backdrop.style.cssText = 'position:fixed;inset:0;z-index:9998';
+    document.body.append(backdrop);
+  }
+  const expected = light ? [244, 244, 247] : [37, 49, 79];
+  document.querySelector('#playback-caption-backdrop').style.background = 'rgb(' + expected.join(',') + ')';
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.tePresetLayout = layout;
+  // The artwork or background filters paint a different color from the base fill.
+  document.documentElement.style.setProperty('--te-player-bg', theme === 'dark' ? '#14282b' : '#d0dadb');
+  document.documentElement.style.setProperty('--te-app-bg', theme === 'dark' ? '#14282b' : '#d0dadb');
+  document.documentElement.style.setProperty('--te-playback-page-text', light ? '#1a202c' : '#f4f7fb');
+  canGoBack.value = true;
+  titleProps.value = { immersive: true, menuOpen, glass: true, liquidMaterial: true, titleSurface: light ? 'settings' : 'streaming', streaming: true };
+  await settle();
+  expect(matchMedia('(prefers-reduced-transparency: reduce)').matches === (preference === 'reduced-transparency'), 'transparency preference was not emulated');
+  expect(matchMedia('(prefers-contrast: more)').matches === (preference === 'more-contrast'), 'contrast preference was not emulated');
+  const frame = document.querySelector('#title .title-bar');
+  const expectedColor = light ? 'rgb(26, 32, 44)' : 'rgb(244, 247, 251)';
+  expect([...frame.querySelectorAll('button')].every(element => getComputedStyle(element).color === expectedColor), 'caption controls lost playback contrast');
+  expect(frame.querySelector('.back-btn') && frame.querySelector('.menu-btn') && frame.querySelector('.login-btn'), 'left playback commands disappeared');
+  return expected;
+};
+window.checkForcedColorPlaybackCaption = async () => {
+  await settle();
+  expect(matchMedia('(forced-colors: active)').matches, 'forced colors were not emulated');
+  const probe = document.createElement('div');
+  probe.style.cssText = 'color:CanvasText;background:Canvas';
+  document.body.append(probe);
+  const frame = document.querySelector('#title .title-bar');
+  expect(getComputedStyle(frame).backgroundColor === getComputedStyle(probe).backgroundColor, 'high contrast caption lost its system surface');
+  expect([...frame.querySelectorAll('button')].every(element => getComputedStyle(element).color === getComputedStyle(probe).color), 'high contrast caption lost its system foreground');
+  probe.remove();
+};
+window.finishPlaybackCaptionCases = () => {
+  titleApp.unmount(); titleApp = null;
+  document.querySelector('#playback-caption-backdrop').remove();
+};
 const timers = new Map();
 let timerId = 0;
 // Keep stage transitions advancing even when the test window is hidden.
@@ -161,6 +235,8 @@ window.fixtureRequire = id => {
   if (id.endsWith('.css')) return {};
   if (id.endsWith('/ServerLoginForm.vue')) return { default: window.ServerLoginForm };
   if (id.endsWith('/TitleBarIcon.vue')) return { default: window.TitleBarIcon };
+  if (id.endsWith('/ThemeIcon.vue')) return { default: window.ThemeIcon };
+  if (id.includes('shared/theme')) return { THEME_ICON_SLOT_REGISTRY: window.themeIconRegistry };
   if (id.includes('titleBarIconPaths')) return window.titleBarIconPaths;
   if (id.endsWith('.vue')) return { default: { render: () => h('span') } };
   if (id.includes('useProviderStore')) return window.providerStoreModule;
@@ -300,8 +376,8 @@ window.runProviderFallbackTests = async () => {
       document.documentElement.dataset.windowTransparent = transparent ? 'on' : 'off';
       document.documentElement.dataset.teSurfaceMaterial = transparent ? 'transparent' : 'theme';
       const material = getComputedStyle(document.querySelector('#title .title-bar-background'));
-      expect(material.display !== 'none' && material.backgroundColor !== 'rgba(0, 0, 0, 0)', 'title tint disappeared: ' + theme + '/' + surface + '/' + transparent);
-      expect(material.backdropFilter.includes('blur(20px)'), 'title backdrop lost its blur: ' + theme + '/' + surface + '/' + transparent);
+      expect(material.display !== 'none' && (material.backgroundColor === 'rgba(0, 0, 0, 0)') === transparent, 'title ignores transparent material preference: ' + theme + '/' + surface + '/' + transparent);
+      expect(transparent ? material.backdropFilter === 'none' : material.backdropFilter.includes('blur(24px)'), 'title backdrop does not follow material preference: ' + theme + '/' + surface + '/' + transparent);
       expect(material.pointerEvents === 'none', 'material blocks title commands');
       if(theme === 'dark') expect(material.boxShadow === 'none' && material.backgroundImage === 'none', 'dark caption has a pale rim or wash');
     }
@@ -314,24 +390,25 @@ window.runProviderFallbackTests = async () => {
       document.documentElement.style.setProperty('--te-playback-page-text', playerText);
       titleProps.value = { immersive: true, liquidMaterial: liquid, preview }; await settle();
       const frame = document.querySelector('#title .title-bar');
-      const material = getComputedStyle(frame.querySelector('.title-bar-background'));
+      const layer = frame.querySelector('.title-bar-background');
+      const material = layer && getComputedStyle(layer);
       expect(!frame.classList.contains('title-bar-liquid'), 'liquid material overrides immersive playback');
-      expect(material.backgroundColor === 'rgba(0, 0, 0, 0)' && material.backgroundImage === 'none' && material.boxShadow === 'none' && material.backdropFilter === 'none', 'playback caption still paints a separate strip: ' + theme + '/' + liquid + '/' + preview);
+      expect(!material || (material.backgroundColor === 'rgba(0, 0, 0, 0)' && material.backgroundImage === 'none' && material.boxShadow === 'none' && material.backdropFilter === 'none'), 'playback caption still paints a separate strip: ' + theme + '/' + liquid + '/' + preview);
       expect(frame.getBoundingClientRect().height === 40, 'immersive title changed its height');
       expect([...frame.querySelectorAll('button')].every((element,index) => getComputedStyle(element).color === playerText && element.getBoundingClientRect().left === restingPositions[index]), 'immersive controls lost playback colors or moved: ' + JSON.stringify({theme,liquid,preview,playerText,controls:[...frame.querySelectorAll('button')].map((element,index)=>({name:element.className,color:getComputedStyle(element).color,left:element.getBoundingClientRect().left,expectedLeft:restingPositions[index]}))}));
-      expect(getComputedStyle(frame.querySelector('.title-bar-background')).pointerEvents === 'none', 'immersive backdrop intercepts controls');
+      expect(!material || material.pointerEvents === 'none', 'immersive backdrop intercepts controls');
     }
     document.documentElement.style.removeProperty('--te-playback-page-text');
     titleProps.value = { streaming: false }; await settle();
     await new Promise(resolve => setTimeout(resolve, 350));
     const restoredMaterial = getComputedStyle(document.querySelector('#title .title-bar-background'));
-    expect(restoredMaterial.backgroundColor !== 'rgba(0, 0, 0, 0)' && restoredMaterial.backdropFilter.includes('blur(20px)') && getComputedStyle(document.querySelector('#title .menu-btn')).color === normalColor, 'leaving playback did not restore normal chrome');
+    expect(restoredMaterial.backgroundColor !== 'rgba(0, 0, 0, 0)' && restoredMaterial.backdropFilter.includes('blur(24px)') && getComputedStyle(document.querySelector('#title .menu-btn')).color === normalColor, 'leaving playback did not restore normal chrome');
     expect(bar.height === 40 && menu.width === close.width && close.width === 46, 'caption geometry differs');
     expect(!document.querySelector('#title .title-bar-back'), 'root page keeps an empty return slot');
     expect(menu.left - bar.left === bar.right - close.right, 'outer margins differ');
     expect(menu.left + menu.width / 2 - bar.left === bar.right - close.left - close.width / 2, 'outer icon centers differ');
-    expect(document.querySelector('#title .menu-btn svg').getBoundingClientRect().width === 18, 'left icon size did not grow');
-    expect(document.querySelector('#title .settings-btn svg').getBoundingClientRect().width === 18, 'right application icon differs from left application icons');
+    expect(document.querySelector('#title .menu-btn .title-bar-icon').getBoundingClientRect().width === 18, 'left icon size did not grow');
+    expect(document.querySelector('#title .settings-btn .title-bar-icon').getBoundingClientRect().width === 18, 'right application icon differs from left application icons');
     expect(document.querySelector('#title .close svg').getBoundingClientRect().width === 16, 'caption icon size changed');
     const controlPositions = [...document.querySelectorAll('#title .plugins-btn, #title .settings-btn, #title .notification-btn, #title .minimize, #title .maximize, #title .close')].map(element => element.getBoundingClientRect().left);
     const tools = document.querySelector('#title .title-bar-tools').getBoundingClientRect();
@@ -341,7 +418,7 @@ window.runProviderFallbackTests = async () => {
       document.documentElement.dataset.tePresetLayout = layout;
       await settle();
       const frame = document.querySelector('#title .title-bar').getBoundingClientRect();
-      const icon = document.querySelector('#title .menu-btn svg').getBoundingClientRect();
+      const icon = document.querySelector('#title .menu-btn .title-bar-icon').getBoundingClientRect();
       expect(frame.height === 40 && Math.abs(icon.top + icon.height / 2 - frame.top - frame.height / 2) < .6, 'theme changed title height or vertical alignment: ' + layout);
     }
     delete document.documentElement.dataset.tePresetLayout;
@@ -358,11 +435,11 @@ window.runProviderFallbackTests = async () => {
   let avatar = button.querySelector('img');
   expect(avatar && avatar.getBoundingClientRect().width === 18, 'connected avatar is missing');
   avatar.dispatchEvent(new Event('error')); await settle();
-  expect(!button.querySelector('img') && button.querySelector('svg'), 'failed avatar lost its fallback');
+  expect(!button.querySelector('img') && button.querySelector('.title-bar-icon'), 'failed avatar lost its fallback');
   profile.value = { ...profile.value, userId: 2 }; await settle();
   expect(button.querySelector('img'), 'new profile did not retry avatar');
   loggedIn.value = false; await settle();
-  expect(button.title === '网易云音乐登录' && !button.querySelector('img') && button.querySelector('svg'), 'logged-out account disappeared');
+  expect(button.title === '网易云音乐登录' && !button.querySelector('img') && button.querySelector('.title-bar-icon'), 'logged-out account disappeared');
   await replaceProviders([searchOnly]); button.click();
   expect(selected === null && button.title === '流媒体登录', 'empty title bar selected an unavailable provider');
   titleApp.unmount(); titleApp = null;

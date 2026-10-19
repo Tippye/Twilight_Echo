@@ -25,6 +25,7 @@
 
 #if defined(__APPLE__) && defined(TAE_ENABLE_COREAUDIO)
 #include <CoreAudio/CoreAudio.h>
+#include "../output/coreaudio/CoreAudioCommon.h"
 #include <CoreFoundation/CoreFoundation.h>
 #ifndef kAudioObjectPropertyElementMain
 #define kAudioObjectPropertyElementMain kAudioObjectPropertyElementMaster
@@ -243,10 +244,14 @@ std::string enumeratePlatformDevicesJson() {
 #elif defined(__APPLE__) && defined(TAE_ENABLE_COREAUDIO)
   std::ostringstream json;
   const std::string defaultUid = defaultCoreAudioUid();
+  AudioDeviceID defaultDevice = kAudioObjectUnknown;
+  coreaudio::defaultOutputDevice(&defaultDevice, nullptr);
+  const bool defaultHog = coreaudio::supportsHogMode(defaultDevice);
   json << "[{\"id\":\"auto\",\"label\":\"\\u7cfb\\u7edf\\u9ed8\\u8ba4\",\"isDefault\":true,"
-       << "\"supportsExclusive\":true,\"supportsHogMode\":true,\"supportsDirectHw\":false,"
+       << "\"supportsExclusive\":" << (defaultHog ? "true" : "false")
+       << ",\"supportsHogMode\":" << (defaultHog ? "true" : "false") << ",\"supportsDirectHw\":false,"
        << "\"supportsDop\":false,\"supportsNativeDsd\":false,\"supportedDsdRates\":[],"
-       << "\"pathKind\":\"hal\",\"capabilityReason\":\"CoreAudio HAL path; Hog Mode exclusive available\"}";
+       << "\"pathKind\":\"hal\",\"capabilityReason\":\"CoreAudio HAL; exclusive requires device Hog Mode support and ownership\"}";
 
   AudioObjectPropertyAddress address{
       kAudioHardwarePropertyDevices,
@@ -264,11 +269,13 @@ std::string enumeratePlatformDevicesJson() {
         if (uid.empty()) continue;
         std::string label = readCoreAudioString(devices[i], kAudioObjectPropertyName);
         if (label.empty()) label = uid;
+        const bool supportsHog = coreaudio::supportsHogMode(devices[i]);
         json << ",{\"id\":\"" << escapeJson(uid) << "\",\"label\":\"" << escapeJson(label)
              << "\",\"isDefault\":" << (uid == defaultUid ? "true" : "false")
-             << ",\"supportsExclusive\":true,\"supportsHogMode\":true,\"supportsDirectHw\":false,"
+             << ",\"supportsExclusive\":" << (supportsHog ? "true" : "false")
+             << ",\"supportsHogMode\":" << (supportsHog ? "true" : "false") << ",\"supportsDirectHw\":false,"
              << "\"supportsDop\":false,\"supportsNativeDsd\":false,\"supportedDsdRates\":[],"
-             << "\"pathKind\":\"hal\",\"capabilityReason\":\"CoreAudio HAL path; Hog Mode exclusive available\"}";
+             << "\"pathKind\":\"hal\",\"capabilityReason\":\"CoreAudio HAL; exclusive requires device Hog Mode support and ownership\"}";
       }
     }
   }

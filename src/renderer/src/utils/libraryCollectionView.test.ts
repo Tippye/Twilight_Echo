@@ -10,6 +10,7 @@ import {
   collectionLetterAtScroll,
   firstCollectionIndexForLetter,
   LibraryCollectionViewPreferences,
+  resolveLibraryArtistTracks,
   type LibraryCollectionItem
 } from './libraryCollectionView.ts'
 
@@ -38,6 +39,35 @@ function item(name: string, genresAndTimes: Array<[string | null, number]>): Lib
     )
   }
 }
+
+test('artist details include solo tracks and every collaboration without substring matches', () => {
+  const solo = { ...track('solo', null, 0), artist: 'Alice' }
+  const duet = { ...track('duet', null, 0), artist: 'Alice / Bob' }
+  const guest = { ...track('guest', null, 0), artist: ' Carol  /  Alice ' }
+  const other = { ...track('other', null, 0), artist: 'Alice Cooper' }
+  const tracks = [solo, duet, guest, other]
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'Alice'), [solo, duet, guest])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'Bob'), [duet])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'Alice / Bob'), [duet])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'Missing'), [])
+})
+
+test('artist details respect structured names and retain literal slashes and unknown artists', () => {
+  const structured = {
+    ...track('structured', null, 0),
+    artist: 'Band / Guest',
+    artists: [{ name: 'Band / Guest' }, { name: ' Alice ' }, { name: 'Alice' }]
+  }
+  const band = { ...track('band', null, 0), artist: 'AC/DC' }
+  const unknown = { ...track('unknown', null, 0), artist: '' }
+  const tracks = [structured, band, unknown]
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'Alice'), [structured])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'Band'), [])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'Band / Guest'), [structured])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, 'AC/DC'), [band])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, '未知艺术家'), [unknown])
+  assert.deepEqual(resolveLibraryArtistTracks(tracks, ''), [])
+})
 
 test('combines genre filters, natural order and stable ties without mutating the input', () => {
   const items = Object.freeze([

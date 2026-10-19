@@ -45,6 +45,8 @@ import {
   isNonDynamicTimeline,
   type LyricPlayheadState
 } from '../utils/lyricTimeline'
+import type { TrackArtistRef } from '../types/music'
+import { useAppNoticeStore } from '../stores/useAppNoticeStore'
 
 const playbackStore = usePlayerStore()
 const visualizationStore = useVisualizationStore()
@@ -65,11 +67,54 @@ const { visualizerActive } = storeToRefs(visualizationStore)
 const { seek } = playbackStore
 const { settings } = useSettingsStore()
 const lyricsManagement = useLyricsManagement()
-const emit = defineEmits<{ customizeAppearance: [] }>()
+const { pushNotice } = useAppNoticeStore()
+const emit = defineEmits<{
+  customizeAppearance: []
+  openArtist: [artist: TrackArtistRef]
+  openAlbum: []
+}>()
+
+const currentArtists = computed<TrackArtistRef[]>(() => {
+  const track = currentTrack.value
+  if (!track) return []
+  if (track.artists?.length) return track.artists
+  return track.artist
+    .split(/\s+\/\s+/)
+    .map((name) => ({ name: name.trim() }))
+    .filter((artist) => artist.name)
+})
 const appearanceMenuOpen = ref(false)
+const metadataCopyText = ref<string | null>(null)
+let metadataPointerStart: { x: number; y: number } | null = null
+let metadataDragged = false
+
+function beginMetadataSelection(event: PointerEvent): void {
+  metadataPointerStart = event.button === 0 ? { x: event.clientX, y: event.clientY } : null
+  metadataDragged = false
+}
+
+function trackMetadataSelection(event: PointerEvent): void {
+  if (!metadataPointerStart || !(event.buttons & 1)) return
+  if (Math.hypot(event.clientX - metadataPointerStart.x, event.clientY - metadataPointerStart.y) > 4) {
+    metadataDragged = true
+  }
+}
+
+function canOpenMetadataLink(event: MouseEvent): boolean {
+  if (event.detail === 0) return true
+  if (metadataDragged) return false
+  const selection = window.getSelection()
+  return !(
+    selection &&
+    !selection.isCollapsed &&
+    selection.rangeCount > 0 &&
+    selection.getRangeAt(0).intersectsNode(event.currentTarget as Node)
+  )
+}
 const appearanceMenuPosition = ref({ x: 0, y: 0 })
 
 function openAppearanceMenu(event: MouseEvent): void {
+  metadataCopyText.value = null
   appearanceMenuPosition.value = {
     x: Math.max(8, Math.min(event.clientX, window.innerWidth - 210)),
     y: Math.max(8, Math.min(event.clientY, window.innerHeight - 52))
@@ -79,6 +124,52 @@ function openAppearanceMenu(event: MouseEvent): void {
 
 function closeAppearanceMenu(): void {
   appearanceMenuOpen.value = false
+  metadataCopyText.value = null
+}
+
+function openMetadataCopyMenu(event: MouseEvent): void {
+  const selection = window.getSelection()
+  const container = event.currentTarget as HTMLElement
+  const selectedText =
+    selection &&
+    !selection.isCollapsed &&
+    selection.rangeCount > 0 &&
+    selection.getRangeAt(0).intersectsNode(container)
+      ? selection.toString()
+      : ''
+  const target = (event.target as HTMLElement).closest(
+    '.cover-metadata-link, .track-title, .track-artist, .track-album'
+  )
+  const text = selectedText || target?.textContent?.trim()
+  if (!text) return
+  openAppearanceMenu(event)
+  metadataCopyText.value = text
+}
+
+function copyMetadataText(): void {
+  const text = metadataCopyText.value
+  closeAppearanceMenu()
+  if (!text) return
+  const selection = window.getSelection()
+  const ranges = selection
+    ? Array.from({ length: selection.rangeCount }, (_, index) => selection.getRangeAt(index).cloneRange())
+    : []
+  const activeElement = document.activeElement as HTMLElement | null
+  const input = document.createElement('textarea')
+  input.value = text
+  input.style.cssText = 'position:fixed;left:-9999px;top:0'
+  document.body.append(input)
+  try {
+    input.select()
+    if (!document.execCommand('copy')) throw new Error('Copy failed')
+  } catch {
+    pushNotice({ kind: 'error', message: '复制失败，请选中文字后按 Ctrl+C 重试' })
+  } finally {
+    input.remove()
+    activeElement?.focus({ preventScroll: true })
+    selection?.removeAllRanges()
+    for (const range of ranges) selection?.addRange(range)
+  }
 }
 
 function customizePlayerAppearance(): void {
@@ -729,22 +820,50 @@ onBeforeUnmount(() => {
             <section class="cover-column">
               <div class="cover-frame" :style="coverStyle">
                 <CoverImg
-                  v-if="currentTrack.cover || currentTrack.coverSource"
                   :cover="currentTrack.cover"
                   :cover-source="currentTrack.coverSource"
                   :identity="currentTrack.id"
                   class="cover-image"
                   alt="cover"
                 />
-                <div v-else class="cover-placeholder">
-                  <i class="pi pi-wave-pulse"></i>
-                </div>
               </div>
 
-              <div class="cover-meta">
+              <div
+                class="cover-meta"
+                @pointerdown.capture="beginMetadataSelection"
+                @pointermove.capture="trackMetadataSelection"
+                @contextmenu.stop.prevent="openMetadataCopyMenu"
+              >
                 <h1 class="track-title">{{ currentTrack.title }}</h1>
-                <p class="track-artist">{{ currentTrack.artist }}</p>
-                <p v-if="currentTrack.album" class="track-album">{{ currentTrack.album }}</p>
+                <p class="track-artist">
+                  <template v-for="(artist, index) in currentArtists" :key="index">
+                    <span v-if="index > 0" aria-hidden="true"> / </span>
+                    <span
+                      role="button"
+                      tabindex="0"
+                      class="cover-metadata-link"
+                      :title="`打开歌手：${artist.name}`"
+                      @click.stop="canOpenMetadataLink($event) && emit('openArtist', artist)"
+                      @keydown.enter.stop.prevent="emit('openArtist', artist)"
+                      @keydown.space.stop.prevent="emit('openArtist', artist)"
+                    >
+                      {{ artist.name }}
+                    </span>
+                  </template>
+                </p>
+                <p v-if="currentTrack.album" class="track-album">
+                  <span
+                    role="button"
+                    tabindex="0"
+                    class="cover-metadata-link"
+                    :title="`打开专辑：${currentTrack.album}`"
+                    @click.stop="canOpenMetadataLink($event) && emit('openAlbum')"
+                    @keydown.enter.stop.prevent="emit('openAlbum')"
+                    @keydown.space.stop.prevent="emit('openAlbum')"
+                  >
+                    {{ currentTrack.album }}
+                  </span>
+                </p>
               </div>
             </section>
 
@@ -871,12 +990,22 @@ onBeforeUnmount(() => {
         }"
         @pointerdown.stop
       >
-        <button type="button" @click="customizeLyricsAppearance">
-          <i class="ph ph-text-aa"></i><span>个性化歌词</span>
+        <button
+          v-if="metadataCopyText !== null"
+          type="button"
+          @mousedown.prevent
+          @click="copyMetadataText"
+        >
+          <i class="ph ph-copy"></i><span>复制</span>
         </button>
-        <button type="button" @click="customizePlayerAppearance">
-          <i class="ph ph-palette"></i><span>定制此区域外观</span>
-        </button>
+        <template v-else>
+          <button type="button" @click="customizeLyricsAppearance">
+            <i class="ph ph-text-aa"></i><span>个性化歌词</span>
+          </button>
+          <button type="button" @click="customizePlayerAppearance">
+            <i class="ph ph-palette"></i><span>定制此区域外观</span>
+          </button>
+        </template>
       </div>
     </Teleport>
     <Teleport to="body">
@@ -889,6 +1018,26 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.cover-metadata-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.cover-metadata-link:hover {
+  text-decoration: underline;
+}
+
+.cover-metadata-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 .playback-cover-view {
   position: absolute;
   inset: 0;
@@ -900,21 +1049,45 @@ onBeforeUnmount(() => {
 
 .playback-view-enter-active,
 .playback-view-leave-active {
-  transition: opacity 80ms var(--te-ease-out-strong);
+  will-change: opacity, transform;
+}
+
+/*
+ * Cover/lyrics <-> native visualizer handoff. The outgoing surface lifts away
+ * while the incoming one rises into place, so the swap reads as a depth change
+ * instead of a hard cut. Both surfaces still end fully opaque at rest.
+ */
+.playback-view-enter-active {
+  transition:
+    opacity 220ms var(--te-ease-out-strong),
+    transform 280ms var(--te-ease-out-strong);
 }
 
 .playback-view-leave-active {
+  transition:
+    opacity 140ms var(--te-ease-out-strong),
+    transform 180ms var(--te-ease-out-strong);
   pointer-events: none;
 }
 
-.playback-view-enter-from,
+.playback-view-enter-from {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0) scale(0.97);
+}
+
 .playback-view-leave-to {
   opacity: 0;
+  transform: translate3d(0, -12px, 0) scale(0.975);
 }
 
 html[data-te-motion='reduced'] .playback-view-enter-active,
 html[data-te-motion='reduced'] .playback-view-leave-active {
-  transition: opacity 60ms var(--te-ease-out-strong) !important;
+  transition: opacity 80ms var(--te-ease-out-strong) !important;
+}
+
+html[data-te-motion='reduced'] .playback-view-enter-from,
+html[data-te-motion='reduced'] .playback-view-leave-to {
+  transform: none;
 }
 
 .playing-music {
@@ -1261,6 +1434,12 @@ html[data-te-motion='off'] .backdrop-fluid::before {
   min-width: 0;
 }
 
+.cover-meta,
+.cover-meta * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 :global(html[data-te-motion='full'] .cover-meta) {
   animation: te-playing-meta-arrive var(--te-motion-panel) var(--te-ease-spring) 36ms both;
 }
@@ -1277,7 +1456,8 @@ html[data-te-motion='off'] .backdrop-fluid::before {
   font-family: var(--te-font-display);
   font-size: calc(var(--te-font-size-body, 14px) * 32 / 14);
   font-weight: 400;
-  line-height: 1.22;
+  line-height: normal;
+  border-radius: 0;
   color: var(--te-playback-track-title, #fff);
   overflow: hidden;
   display: -webkit-box;
@@ -1290,10 +1470,10 @@ html[data-te-motion='off'] .backdrop-fluid::before {
   font-family: var(--te-font-rounded);
   font-size: calc(var(--te-font-size-body, 14px) * 18 / 14);
   font-weight: 700;
+  line-height: normal;
   color: var(--te-playback-track-artist, rgba(255, 255, 255, 0.78));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .track-album {

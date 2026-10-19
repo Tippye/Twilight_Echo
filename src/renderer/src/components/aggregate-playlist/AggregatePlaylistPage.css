@@ -24,7 +24,10 @@
 }
 
 .aggregate-page.has-player {
-  padding-bottom: calc(20px + var(--te-player-bar-height, 96px));
+  padding-bottom: max(
+    calc(20px + var(--te-player-bar-height, 96px)),
+    calc(var(--te-playbar-bottom-clearance, 0px) + 12px)
+  );
 }
 
 /* ── 头部 ─────────────────────────────────────────────────────────────── */

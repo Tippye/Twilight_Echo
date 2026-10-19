@@ -12,6 +12,7 @@ export const SCROLL_TOP_REVEAL_MIN_PX = 240
 export const SCROLL_TOP_REVEAL_MAX_PX = 420
 export const SCROLL_TOP_BUTTON_SIZE = 40
 export const SCROLL_TOP_EDGE_GAP = 16
+export const SCROLL_CONTROL_STACK_GAP = 8
 
 export interface ScrollTopMetrics {
   scrollTop: number
@@ -39,10 +40,12 @@ export interface ScrollTopAnchorInput {
   clientWidth: number
   viewportWidth: number
   viewportHeight: number
-  /** Bottom-docked chrome (the player bar) the control must stay clear of. */
+  /** Bottom-docked chrome (the player bar) the controls must stay clear of. */
   obstruction?: ScrollTopObstruction | null
   buttonSize?: number
   gap?: number
+  /** Controls are stacked vertically; the locate action sits below back-to-top. */
+  controlCount?: number
 }
 
 export interface ScrollTopAnchor {
@@ -83,6 +86,7 @@ export function isScrollTopRevealed(metrics: ScrollTopMetrics): boolean {
 export function resolveScrollTopAnchor(input: ScrollTopAnchorInput): ScrollTopAnchor | null {
   const size = input.buttonSize ?? SCROLL_TOP_BUTTON_SIZE
   const gap = input.gap ?? SCROLL_TOP_EDGE_GAP
+  const controlCount = Math.max(1, Math.floor(input.controlCount ?? 1))
   const rect = input.rect
   // getBoundingClientRect spans the border box while clientWidth stops before
   // the scrollbar; the difference is the gutter to sit inside of.
@@ -98,7 +102,8 @@ export function resolveScrollTopAnchor(input: ScrollTopAnchorInput): ScrollTopAn
   }
 
   const left = right - size
-  const top = bottomEdge - gap - size
+  const stackHeight = size * controlCount + SCROLL_CONTROL_STACK_GAP * (controlCount - 1)
+  const top = bottomEdge - gap - stackHeight
   if (top < rect.top + gap || left < rect.left + gap) return null
   if (top < 0 || left < 0) return null
   return { left: Math.round(left), top: Math.round(top) }

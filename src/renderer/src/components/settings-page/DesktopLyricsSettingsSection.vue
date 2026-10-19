@@ -252,53 +252,61 @@ function updatePaletteColor(key: 'customActiveColor' | 'customInactiveColor', ev
       </template>
     </div>
     <div class="setting-card desktop-lyrics-style-card">
-      <div class="style-control-grid">
-        <label data-setting-id="desktop-font" id="setting-desktop-font" class="field">
-          <span>字体</span>
-          <select
-            :value="draft.fontFamily"
-            @change="update('fontFamily', ($event.target as HTMLSelectElement).value, true)"
+      <div class="control-group">
+        <h3>文字样式</h3>
+        <div class="style-control-grid">
+          <label data-setting-id="desktop-font" id="setting-desktop-font" class="field">
+            <span>字体</span>
+            <select
+              :value="draft.fontFamily"
+              @change="update('fontFamily', ($event.target as HTMLSelectElement).value, true)"
+            >
+              <option v-for="option in fontOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+          <label data-setting-id="desktop-font-size" id="setting-desktop-font-size" class="field">
+            <span>字号</span>
+            <select :value="draft.fontSize" @change="update('fontSize', numberValue($event), true)">
+              <option v-for="size in fontSizes" :key="size" :value="size">{{ size }}</option>
+            </select>
+          </label>
+          <label
+            data-setting-id="desktop-font-weight"
+            id="setting-desktop-font-weight"
+            class="field"
           >
-            <option v-for="option in fontOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-        </label>
-        <label data-setting-id="desktop-font-size" id="setting-desktop-font-size" class="field">
-          <span>字号</span>
-          <select :value="draft.fontSize" @change="update('fontSize', numberValue($event), true)">
-            <option v-for="size in fontSizes" :key="size" :value="size">{{ size }}</option>
-          </select>
-        </label>
-        <label data-setting-id="desktop-font-weight" id="setting-desktop-font-weight" class="field">
-          <span>字粗</span>
-          <select
-            :value="draft.fontWeight"
-            @change="update('fontWeight', numberValue($event), true)"
-          >
-            <option v-for="option in fontWeightOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-        </label>
-        <label data-setting-id="desktop-outline" id="setting-desktop-outline" class="field">
-          <span>描边</span>
-          <select
-            :value="draft.textOutline ? 'on' : 'off'"
-            @change="
-              update('textOutline', ($event.target as HTMLSelectElement).value === 'on', true)
-            "
-          >
-            <option value="on">有描边</option>
-            <option value="off">无描边</option>
-          </select>
-        </label>
+            <span>字粗</span>
+            <select
+              :value="draft.fontWeight"
+              @change="update('fontWeight', numberValue($event), true)"
+            >
+              <option v-for="option in fontWeightOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
+          <label data-setting-id="desktop-outline" id="setting-desktop-outline" class="field">
+            <span>描边</span>
+            <select
+              :value="draft.textOutline ? 'on' : 'off'"
+              @change="
+                update('textOutline', ($event.target as HTMLSelectElement).value === 'on', true)
+              "
+            >
+              <option value="on">有描边</option>
+              <option value="off">无描边</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div class="control-group">
         <h3>调整排版样式</h3>
         <div class="layout-control-grid">
           <label data-setting-id="desktop-lines" id="setting-desktop-lines" class="field">
+            <span>显示行数</span>
             <select
               :value="draft.displayMode"
               aria-label="显示行数"
@@ -316,6 +324,7 @@ function updatePaletteColor(key: 'customActiveColor' | 'customInactiveColor', ev
             </select>
           </label>
           <label data-setting-id="desktop-writing" id="setting-desktop-writing" class="field">
+            <span>文字排列</span>
             <select
               :value="draft.writingMode"
               aria-label="文字排列方向"
@@ -330,6 +339,7 @@ function updatePaletteColor(key: 'customActiveColor' | 'customInactiveColor', ev
             </select>
           </label>
           <label data-setting-id="desktop-align" id="setting-desktop-align" class="field">
+            <span>对齐方式</span>
             <select
               :value="draft.textAlign"
               aria-label="歌词对齐方式"
@@ -353,6 +363,7 @@ function updatePaletteColor(key: 'customActiveColor' | 'customInactiveColor', ev
         <h3>更改配色方案</h3>
         <div class="palette-control-grid">
           <label data-setting-id="desktop-palette" id="setting-desktop-palette" class="field">
+            <span>配色方案</span>
             <select
               :value="draft.palette"
               aria-label="歌词配色方案"
