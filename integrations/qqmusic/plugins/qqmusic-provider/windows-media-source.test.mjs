@@ -328,6 +328,104 @@ test('each resolve transfers an independent key while cache still rechecks login
   second.decoder.key.fill(0)
 })
 
+test('pure caller cancellation retains a warm source for fresh validation without repeating Vkey or preflight', async t => {
+  for (const phase of ['preaborted', 'cached-confirm']) {
+    const requests = [], h = harness(t, { quality: 'lossless', fetch: serving(encrypted(flac()), requests) })
+    const first = await h.resolver.resolve()
+    first.decoder.key.fill(0)
+    const controller = new AbortController(), entered = deferred(), release = deferred()
+    let checks = 0
+    h.client.checkLogin = async () => {
+      if (++checks === 2) { entered.resolve(); await release.promise }
+      return true
+    }
+    if (phase === 'preaborted') controller.abort()
+    const pending = h.resolver.resolve({ signal: controller.signal })
+    if (phase === 'cached-confirm') { await entered.promise; controller.abort(); release.resolve() }
+    await assert.rejects(pending, { name: 'AbortError' })
+    h.client.checkLogin = async () => true
+    const next = await h.resolver.resolve()
+    assert.equal(next.sourceId, first.sourceId)
+    assert.deepEqual(next.decoder.key, internalKey)
+    next.decoder.key.fill(0)
+    assert.equal(h.calls.length, 1, phase)
+    assert.equal(requests.length, 3, phase)
+  }
+})
+
+test('caller cancellation never preserves forced refresh, expired or observed changed authorization', async t => {
+  for (const variant of ['refresh', 'expired', 'session', 'device', 'unknown-abort']) {
+    let clock = 1000, token = session.access_token, guid = device.guid
+    const entered = deferred(), release = deferred()
+    let holdDevice = false, holdIssuer = false
+    const h = harness(t, { now: () => clock,
+      getDevice: async () => { if (holdDevice) { entered.resolve(); await release.promise }; return { guid } },
+      client: { getSession: async () => ({ ...session, access_token: token }) } })
+    await h.resolver.resolve()
+    const controller = new AbortController()
+    if (variant === 'refresh' || variant === 'expired') {
+      if (variant === 'expired') clock = 61000
+      controller.abort()
+    }
+    if (variant === 'session') { token = 'public-replaced'; holdDevice = true }
+    if (variant === 'device') {
+      guid = 'public-replaced-guid'; holdIssuer = true
+      const issue = h.client.request
+      h.client.request = async (...args) => { if (holdIssuer) { entered.resolve(); await release.promise }; return issue(...args) }
+    }
+    if (variant === 'unknown-abort') h.client.checkLogin = async () => { throw Object.assign(Error('PRIVATE'), { name: 'AbortError' }) }
+    const pending = h.resolver.resolve({ signal: controller.signal, refresh: variant === 'refresh' })
+    if (variant === 'session' || variant === 'device') { await entered.promise; controller.abort(); release.resolve() }
+    await assert.rejects(pending, { name: 'AbortError' })
+    holdDevice = false; holdIssuer = false; token = session.access_token; guid = device.guid; clock = 1000
+    h.client.checkLogin = async () => true
+    const before = h.calls.length
+    await h.resolver.resolve()
+    assert.equal(h.calls.length, before + 1, variant)
+  }
+})
+
+test('internal resolver timeout wins over a later caller abort and still clears cached authorization', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  t.after(() => t.mock.timers.reset())
+  const h = harness(t), entered = deferred(), release = deferred()
+  await h.resolver.resolve()
+  h.client.checkLogin = async () => { entered.resolve(); await release.promise; return true }
+  const controller = new AbortController(), pending = h.resolver.resolve({ signal: controller.signal })
+  await entered.promise
+  t.mock.timers.tick(10000)
+  controller.abort()
+  release.resolve()
+  await assert.rejects(pending, { name: 'AbortError' })
+  h.client.checkLogin = async () => true
+  await h.resolver.resolve()
+  assert.equal(h.calls.length, 2)
+})
+
+test('an observed unknown or owned failure still invalidates cache when caller abort follows its rejection', async t => {
+  for (const variant of ['unknown', 'owned-login']) {
+    const h = harness(t), entered = deferred()
+    let rejectCheck
+    const pendingCheck = new Promise((_, reject) => { rejectCheck = reject })
+    let error = Error('PRIVATE_UNKNOWN')
+    if (variant === 'owned-login') {
+      h.client.checkLogin = async () => false
+      try { await h.resolver.resolve() } catch (failure) { error = failure }
+      h.client.checkLogin = async () => true
+    }
+    await h.resolver.resolve()
+    h.client.checkLogin = () => { entered.resolve(); return pendingCheck }
+    const controller = new AbortController(), pending = h.resolver.resolve({ signal: controller.signal })
+    await entered.promise
+    rejectCheck(error)
+    queueMicrotask(() => controller.abort())
+    await assert.rejects(pending)
+    h.client.checkLogin = async () => true
+    await h.resolver.resolve()
+    assert.equal(h.calls.length, 2, variant)
+  }
+})
+
 test('refresh revalidates CDN identity; TTL and session changes invalidate transport cache', async t => {
   let clock = 1000
   let token = 'public-one'
