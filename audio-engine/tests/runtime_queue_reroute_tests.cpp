@@ -2831,6 +2831,8 @@ void testNaturalEofSeekPreparesPausedSourceBeforeResume() {
 }
 
 void testStoppedSeekCannotReopenAfterManualStopQueueChangeOrFailure() {
+  // Health age is sampled on every read and advances independently of transport.
+  const std::regex elapsedAge(R"("decodeLastProgressAgeMs":[0-9]+)");
   for (const std::string action : {"fresh", "stop", "queue", "select", "next", "previous", "render-error"}) {
     EngineHarness harness;
     auto& engine = harness.engine();
@@ -2855,7 +2857,11 @@ void testStoppedSeekCannotReopenAfterManualStopQueueChangeOrFailure() {
     const auto before = engine.getPlaybackInfoJson();
     const auto backendCount = g_backendRegistry.snapshots().size();
     assert(engine.seek(45.0) == TAE_RESULT_NOT_INITIALIZED);
-    assert(engine.getPlaybackInfoJson() == before);
+    const auto after = engine.getPlaybackInfoJson();
+    assert(playbackJsonNumber(after, "decodeLastProgressAgeMs") >=
+           playbackJsonNumber(before, "decodeLastProgressAgeMs"));
+    assert(std::regex_replace(after, elapsedAge, "\"decodeLastProgressAgeMs\":0") ==
+           std::regex_replace(before, elapsedAge, "\"decodeLastProgressAgeMs\":0"));
     assert(engine.pause() == TAE_RESULT_OK);
     assertLatestPlaybackContains(engine, "\"state\":\"stopped\"");
     assert(g_backendRegistry.snapshots().size() == backendCount);

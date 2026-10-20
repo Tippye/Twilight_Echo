@@ -413,6 +413,74 @@ void assertPreciseSeekMatchesExternalPcm(const std::string& source) {
 }
 
 #if defined(_WIN32)
+void assertFlacDeclaredEndPreservesPcmAndRealFailures() {
+  const auto path = std::filesystem::temp_directory_path() / "twilight-flac-declared-end-unit.flac";
+  const auto decode = [&](const std::vector<uint8_t>& bytes, int outputRate,
+                          bool expectFailure, bool viaHttp = false) {
+    { std::ofstream file(path, std::ios::binary);
+      file.write(reinterpret_cast<const char*>(bytes.data()), bytes.size()); }
+    TempAudioFixture file(path);
+    std::unique_ptr<FlacIndexHttpFixture> server;
+    if (viaHttp) server = std::make_unique<FlacIndexHttpFixture>(
+        std::make_shared<const std::vector<uint8_t>>(bytes));
+    FFmpegDecoder decoder;
+    std::string error;
+    assert(decoder.open(server ? server->url() : file.string(), &error));
+    auto format = decoder.outputFormat();
+    format.sampleRate = outputRate;
+    format.bitDepth = 32;
+    format.sampleFormat = AudioSampleFormat::Float32Interleaved;
+    assert(decoder.setOutputFormat(format, &error));
+    std::vector<float> pcm, block(257 * 2);
+    for (;;) {
+      const auto frames = decoder.readFrames(block.data(), 257, &error);
+      pcm.insert(pcm.end(), block.begin(), block.begin() + frames * 2);
+      if (!frames || !error.empty()) break;
+    }
+    if (expectFailure) {
+      assert(!error.empty() && !decoder.eof());
+      const auto savedError = error;
+      error.clear();
+      assert(decoder.readFrames(block.data(), 257, &error) == 0 && error == savedError);
+    } else {
+      if (!error.empty()) std::fprintf(stderr, "FLAC end unit: %s\n", error.c_str());
+      assert(error.empty() && decoder.eof());
+      // Seeking after EOF must reopen the logical sample range.
+      assert(decoder.seekOutputFrame(0, &error));
+      assert(decoder.readFrames(block.data(), 257, &error) == 257);
+      assert(std::equal(block.begin(), block.end(), pcm.begin()));
+      const auto tailStart = pcm.size() / 2 - 199;
+      assert(decoder.seekOutputFrame(tailStart, &error));
+      assert(decoder.readFrames(block.data(), 257, &error) == 199);
+      assert(error.empty() && decoder.eof());
+      assert(std::equal(block.begin(), block.begin() + 398, pcm.end() - 398));
+    }
+    return pcm;
+  };
+  for (const int rate : {44100, 96000}) {
+    std::vector<size_t> offsets;
+    const auto clean = makeSparseIndexedFlac(false, rate, rate / 2 + 37, &offsets);
+    auto tailed = clean;
+    tailed.insert(tailed.end(), 4096, 0x5a);
+    for (const int outputRate : {rate, 48000}) {
+      const auto expected = decode(clean, outputRate, false);
+      const auto actual = decode(tailed, outputRate, false);
+      assert(expected == actual);
+      assert(expected == decode(tailed, outputRate, false, true));
+    }
+    // An unspecified sample count cannot establish a logical EOF boundary.
+    auto unknown = tailed;
+    unknown[8 + 13] &= 0xf0;
+    std::fill(unknown.begin() + 8 + 14, unknown.begin() + 8 + 18, 0);
+    decode(unknown, 48000, true);
+    decode(unknown, 48000, true, true);
+    // Damage inside the declared audio range must remain a sticky error.
+    auto damaged = clean;
+    std::fill(damaged.begin() + offsets.back(), damaged.end(), 0x5a);
+    decode(damaged, 48000, true);
+  }
+}
+
 void assertOrdinaryIndexedHttpFlacSeekMatchesContinuousPcm() {
   const auto bytes = std::make_shared<const std::vector<uint8_t>>(makeSparseIndexedFlac(true));
   const auto path = std::filesystem::temp_directory_path() / "twilight-http-indexed-flac-unit.flac";
@@ -618,6 +686,9 @@ void assertDecoderOpensExternalFixturesWhenProvided() {
 int main(int argc,char** argv) {
 #if defined(TAE_HAS_FFMPEG)
 #if defined(_WIN32)
+  if(argc==2 && std::string(argv[1])=="--flac-end-unit") {
+    assertFlacDeclaredEndPreservesPcmAndRealFailures(); return 0;
+  }
   if(argc==2 && std::string(argv[1])=="--http-flac-index-unit") {
     assertOrdinaryIndexedHttpFlacSeekMatchesContinuousPcm(); return 0;
   }
@@ -665,6 +736,9 @@ int main(int argc,char** argv) {
   assertDecoderReportsPcm("twilight-fixture-s24.wav", 24);
   assertDecoderReportsPcm("twilight-fixture-s32.wav", 32);
   assertDecoderCancellationCanBeResetBeforeSeek();
+#if defined(_WIN32)
+  assertFlacDeclaredEndPreservesPcmAndRealFailures();
+#endif
   assertDecoderReportsDsdFallbackWhenSupported();
   assertDecoderSoxrTiersProbeAndFallBackGracefully();
   assertPreciseSeekMatchesContinuousPcm();
